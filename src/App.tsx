@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { PublicWebsite } from './components/PublicWebsite';
 import { LoginModal } from './components/LoginModal';
-import { Dashboard } from './components/Dashboard';
-import { AdminDashboard } from './components/AdminDashboard';
 import { FirstLoginOnboarding } from './components/FirstLoginOnboarding';
 import { DashboardV2 } from './experimental/DashboardV2';
 import { AdminDashboardV2 } from './experimental/AdminDashboardV2';
-import { FamilyDashboardV2 } from './components/dashboard/FamilyDashboardV2';
+import { PublicWebsiteV2 } from './experimental/publicV2/PublicWebsiteV2';
 import { useAuth } from './hooks/useAuth';
 import { Alert, AlertDescription } from './components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { Toaster } from './components/ui/sonner';
 
 function ProtectedRoute({
   children,
@@ -58,9 +57,10 @@ function ProtectedRoute({
 }
 
 function AppRoutes() {
-  const { user, loading, accessState, accessMessage, signOut } = useAuth();
+  const { user, loading, accessState, accessMessage, signOut, refreshUser } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const handleLoginClick = () => {
     setShowLoginModal(true);
@@ -106,9 +106,9 @@ function AppRoutes() {
           element={
             <ProtectedRoute user={user} loading={loading} accessState={accessState}>
               {user?.role === 'admin' ? (
-                <AdminDashboard user={user} onLogout={handleLogout} />
+                <AdminDashboardV2 user={user} onLogout={handleLogout} onRefreshUser={refreshUser} />
               ) : (
-                <Dashboard user={user!} onLogout={handleLogout} />
+                <DashboardV2 user={user!} onLogout={handleLogout} onRefreshUser={refreshUser} />
               )}
             </ProtectedRoute>
           }
@@ -117,7 +117,7 @@ function AppRoutes() {
           path="/admin"
           element={
             <ProtectedRoute user={user} loading={loading} accessState={accessState} requireAdmin>
-              {user && <AdminDashboard user={user} onLogout={handleLogout} />}
+              {user && <AdminDashboardV2 user={user} onLogout={handleLogout} onRefreshUser={refreshUser} />}
             </ProtectedRoute>
           }
         />
@@ -127,7 +127,8 @@ function AppRoutes() {
             <ProtectedRoute user={user} loading={loading} accessState={accessState}>
               {user?.role === 'family' ? (
                 <FirstLoginOnboarding user={user} onComplete={async () => {
-                  window.location.assign('/dashboard');
+                  await refreshUser();
+                  navigate('/dashboard');
                 }} onLogout={handleLogout} />
               ) : (
                 <Navigate to="/dashboard" replace />
@@ -135,35 +136,7 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        {/* Experimental routes — new sidebar-based UI prototypes */}
-        <Route
-          path="/experimental/dashboard"
-          element={
-            <ProtectedRoute user={user} loading={loading} accessState={accessState}>
-              {user?.role === 'admin' ? (
-                <AdminDashboardV2 user={user} onLogout={handleLogout} />
-              ) : (
-                <DashboardV2 user={user!} onLogout={handleLogout} />
-              )}
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/experimental/admin"
-          element={
-            <ProtectedRoute user={user} loading={loading} accessState={accessState} requireAdmin>
-              {user && <AdminDashboardV2 user={user} onLogout={handleLogout} />}
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/experimental/dashboard-v2"
-          element={
-            <ProtectedRoute user={user} loading={loading} accessState={accessState}>
-              <FamilyDashboardV2 user={user!} onLogout={handleLogout} />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/experimental/public/*" element={<PublicWebsiteV2 />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
@@ -174,6 +147,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppRoutes />
+      <Toaster richColors position="top-right" />
     </BrowserRouter>
   );
 }
