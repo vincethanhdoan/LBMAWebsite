@@ -6,6 +6,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Send, Paperclip, Users as UsersIcon, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   getGlobalConversation,
   getUserConversations,
@@ -172,7 +173,7 @@ export function MessagesTab({ user, onUnreadCountChange }: MessagesTabProps) {
       setSelectedConversationId(directConversation.conversation_id);
       setSelectedDirectTargetId('');
     } catch (error) {
-      alert('Error creating direct conversation: ' + getErrorMessage(error));
+      toast.error('Error creating direct conversation: ' + getErrorMessage(error));
     } finally {
       setCreatingDirectConversation(false);
     }
@@ -279,7 +280,7 @@ export function MessagesTab({ user, onUnreadCountChange }: MessagesTabProps) {
         }
       } catch (error) {
         console.error('Error loading conversations:', error);
-        alert('Error loading conversations: ' + getErrorMessage(error));
+        toast.error('Error loading conversations: ' + getErrorMessage(error));
       } finally {
         setLoading(false);
       }
@@ -348,7 +349,7 @@ export function MessagesTab({ user, onUnreadCountChange }: MessagesTabProps) {
 
       setMessageText('');
     } catch (error) {
-      alert('Error sending message: ' + getErrorMessage(error));
+      toast.error('Error sending message: ' + getErrorMessage(error));
     } finally {
       setSending(false);
     }
@@ -358,18 +359,18 @@ export function MessagesTab({ user, onUnreadCountChange }: MessagesTabProps) {
     const file = e.target.files?.[0];
     if (!file || !selectedConversationId || !user) return;
     if (!canSendInSelectedConversation) {
-      alert('Attachments are only allowed in family-to-staff or staff-to-staff direct messages and the group chat.');
+      toast.error('Attachments are only allowed in family-to-staff or staff-to-staff direct messages and the group chat.');
       return;
     }
 
     if (!isValidFileType(file.name)) {
-      alert('Invalid file type. Please upload images, PDFs, or documents.');
+      toast.error('Invalid file type. Please upload images, PDFs, or documents.');
       return;
     }
 
     const fileSizeMB = getFileSizeMB(file.size);
     if (fileSizeMB > MAX_FILE_SIZE_MB) {
-      alert(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
+      toast.error(`File size exceeds ${MAX_FILE_SIZE_MB} MB.`);
       return;
     }
 
@@ -404,7 +405,7 @@ export function MessagesTab({ user, onUnreadCountChange }: MessagesTabProps) {
         [selectedConversationId]: formatMessages(messagesData),
       }));
     } catch (error) {
-      alert('Error uploading file: ' + getErrorMessage(error));
+      toast.error('Error uploading file: ' + getErrorMessage(error));
     } finally {
       setUploadingFile(false);
       if (fileInputRef.current) {
@@ -421,7 +422,7 @@ export function MessagesTab({ user, onUnreadCountChange }: MessagesTabProps) {
       const signedUrl = await getSignedUrl(message.attachmentPath, 300);
       window.open(signedUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
-      alert('Unable to open attachment: ' + getErrorMessage(error));
+      toast.error('Unable to open attachment: ' + getErrorMessage(error));
     } finally {
       setOpeningAttachmentId(null);
     }

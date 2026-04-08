@@ -6,6 +6,7 @@ import { Textarea } from '../ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Plus, MessageCircle, Send, Pin, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { getBlogPosts, getBlogComments } from '../../lib/supabase/queries';
 import { createBlogPost, createBlogComment } from '../../lib/supabase/mutations';
 import { subscribeToBlogPosts, subscribeToBlogComments, unsubscribe } from '../../lib/supabase/realtime';
@@ -137,7 +138,7 @@ export function BlogTab({ user }: { user: User }) {
       setComments(commentsMap);
     } catch (error) {
       console.error('Error loading blog posts:', error);
-      alert('Error loading blog posts: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error loading blog posts: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -211,7 +212,7 @@ export function BlogTab({ user }: { user: User }) {
       setIsCreateDialogOpen(false);
       await loadData();
     } catch (error) {
-      alert('Error creating post: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error creating post: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setSaving(false);
     }
@@ -243,7 +244,7 @@ export function BlogTab({ user }: { user: User }) {
 
       setCommentTexts({ ...commentTexts, [postId]: '' });
     } catch (error) {
-      alert('Error adding comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error adding comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setSavingComment(null);
     }

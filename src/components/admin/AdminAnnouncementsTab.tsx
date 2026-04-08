@@ -4,9 +4,11 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Label } from '../ui/label';
 import { Plus, Edit2, Trash2, Upload, Pin, PinOff, Loader2, X } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { toast } from 'sonner';
 import { getAnnouncements } from '../../lib/supabase/queries';
 import { createAnnouncement, updateAnnouncement, deleteAnnouncement } from '../../lib/supabase/mutations';
 import { subscribeToAnnouncements, unsubscribe } from '../../lib/supabase/realtime';
@@ -56,6 +58,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadAnnouncements = async () => {
@@ -74,7 +77,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       setAnnouncements(formatted);
     } catch (error) {
       console.error('Error loading announcements:', error);
-      alert('Error loading announcements: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error loading announcements: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -106,9 +109,9 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       resetForm();
       setIsCreateDialogOpen(false);
       await loadAnnouncements();
-      alert('Announcement created successfully!');
+      toast.success('Announcement created!');
     } catch (error) {
-      alert('Error creating announcement: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error creating announcement: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setSaving(false);
     }
@@ -127,23 +130,29 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       resetForm();
       setEditingAnnouncement(null);
       await loadAnnouncements();
-      alert('Announcement updated successfully!');
+      toast.success('Announcement updated!');
     } catch (error) {
-      alert('Error updating announcement: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error updating announcement: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this announcement?')) return;
-    try {
-      await deleteAnnouncement(id);
-      await loadAnnouncements();
-      alert('Announcement deleted successfully!');
-    } catch (error) {
-      alert('Error deleting announcement: ' + (error instanceof Error ? error.message : 'Unknown error'));
-    }
+  const handleDelete = (id: string) => {
+    setConfirmState({
+      title: 'Delete announcement',
+      description: 'Are you sure you want to delete this announcement?',
+      onConfirm: async () => {
+        setConfirmState(null);
+        try {
+          await deleteAnnouncement(id);
+          await loadAnnouncements();
+          toast.success('Announcement deleted!');
+        } catch (error) {
+          toast.error('Error deleting announcement: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        }
+      },
+    });
   };
 
   const handleTogglePin = async (id: string) => {
@@ -155,7 +164,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       });
       await loadAnnouncements();
     } catch (error) {
-      alert('Error updating pin status: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error updating pin status: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
@@ -197,11 +206,11 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      alert('Only JPG, PNG, GIF, and WebP images are allowed.');
+      toast.error('Only JPG, PNG, GIF, and WebP images are allowed.');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be under 5 MB.');
+      toast.error('Image must be under 5 MB.');
       return;
     }
 
@@ -218,7 +227,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
         .getPublicUrl(path);
       setSelectedImage(urlData.publicUrl);
     } catch (err) {
-      alert('Image upload failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toast.error('Image upload failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setUploadingImage(false);
       // Reset input so same file can be re-selected
@@ -468,6 +477,16 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
           </Card>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={confirmState !== null}
+        title={confirmState?.title ?? ''}
+        description={confirmState?.description ?? ''}
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

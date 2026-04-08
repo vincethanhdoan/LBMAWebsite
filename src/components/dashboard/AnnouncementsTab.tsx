@@ -5,6 +5,7 @@ import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { MessageCircle, Send, Pin, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { getAnnouncements, getAnnouncementComments } from '../../lib/supabase/queries';
 import { createAnnouncementComment } from '../../lib/supabase/mutations';
@@ -77,7 +78,7 @@ export function AnnouncementsTab({ user }: { user: User }) {
       setComments(commentsMap);
     } catch (error) {
       console.error('Error loading announcements:', error);
-      alert('Error loading announcements: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error loading announcements: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -163,7 +164,7 @@ export function AnnouncementsTab({ user }: { user: User }) {
 
       setCommentTexts({ ...commentTexts, [announcementId]: '' });
     } catch (error) {
-      alert('Error adding comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error adding comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setSavingComment(null);
     }
