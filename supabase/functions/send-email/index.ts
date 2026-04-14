@@ -39,7 +39,7 @@ async function handleEnrollmentNotification(record: EnrollmentLeadNotificationRe
     .eq('lead_id', record.lead_id)
     .single<EnrollmentLead>()
 
-  if (error || !lead) throw new Error(`Enrollment lead not found: ${record.lead_id}`)
+  if (error || !lead) throw new Error(`Enrollment lead not found: ${record.lead_id} — supabase error: ${JSON.stringify(error)}`)
 
   const adminUrl = `${Deno.env.get('APP_URL') ?? 'https://lbmaa.com'}/admin`
 
