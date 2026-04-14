@@ -5,7 +5,7 @@ import type { WebhookPayload, EnrollmentLeadNotificationRecord, MessageRecord, E
 import { enrollmentNotificationHtml, messagingNotificationHtml } from './templates.ts'
 
 const RESEND_API_URL = 'https://api.resend.com/emails'
-const FROM = 'Los Banos Martial Arts Academy <onboarding@resend.dev>'
+const FROM = 'Los Banos Martial Arts Academy <no-reply@notifications.lbmartialarts.com>'
 
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   const res = await fetch(RESEND_API_URL, {
