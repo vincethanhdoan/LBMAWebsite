@@ -127,7 +127,8 @@ ALTER TABLE public.admin_notification_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Admins can manage notification settings" ON public.admin_notification_settings;
 CREATE POLICY "Admins can manage notification settings"
   ON public.admin_notification_settings FOR ALL
-  USING (is_admin(auth.uid()));
+  USING (is_admin(auth.uid()))
+  WITH CHECK (is_admin(auth.uid()));
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin_notification_settings TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin_notification_settings TO service_role;
@@ -332,6 +333,9 @@ BEGIN
     WHERE slot_id = p_slot_id
     RETURNING slot_id INTO v_id;
   ELSE
+    IF p_day_of_week IS NULL OR p_start_time IS NULL OR p_end_time IS NULL OR p_label IS NULL THEN
+      RAISE EXCEPTION 'day_of_week, start_time, end_time, and label are required when creating a new slot';
+    END IF;
     INSERT INTO appointment_slots (day_of_week, start_time, end_time, label)
     VALUES (p_day_of_week, p_start_time, p_end_time, p_label)
     RETURNING slot_id INTO v_id;
