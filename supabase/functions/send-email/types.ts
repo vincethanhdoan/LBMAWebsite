@@ -13,6 +13,7 @@ export interface EnrollmentLeadNotificationRecord {
   lead_id: string
   recipient_email: string
   channel: string
+  type: 'new_lead' | 'approval' | 'denial' | 'booking_confirmation' | 'reminder'
   status: string
   created_at: string
 }
@@ -35,5 +36,10 @@ export interface EnrollmentLead {
   student_age: number | null
   message: string | null
   source_page: string
+  status: string
+  booking_token: string | null
+  appointment_date: string | null
+  appointment_time: string | null
+  denial_message: string | null
   created_at: string
 }

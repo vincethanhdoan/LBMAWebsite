@@ -63,3 +63,73 @@ export function messagingNotificationHtml(senderName: string, portalUrl: string)
     <p style="margin:0 0 18px;font-size:11px;color:#aaa;text-align:center;">Reply directly in the portal — do not reply to this email.</p>
   `)
 }
+
+// Booking approval email — sent when admin approves a lead
+export function approvalEmailHtml(lead: EnrollmentLead, bookingUrl: string): string {
+  return wrap(`
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Your enrollment request has been approved!</p>
+    <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">
+      Hi ${lead.parent_name}! We'd love to welcome your family to Los Banos Martial Arts Academy.
+      Use the button below to choose an appointment date that works for you.
+    </p>
+    ${ctaButton(bookingUrl, 'Book Your Appointment')}
+    <p style="margin:0 0 18px;font-size:12px;color:#aaa;text-align:center;">
+      This booking link is unique to your inquiry. Do not share it.
+    </p>
+  `)
+}
+
+// Denial email — sent when admin denies a lead
+export function denialEmailHtml(lead: EnrollmentLead): string {
+  const message = lead.denial_message ?? 'Thank you for your interest in LBMAA. Unfortunately, we are unable to accommodate your enrollment request at this time.'
+  return wrap(`
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Your enrollment inquiry — LBMAA</p>
+    <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">Hi ${lead.parent_name},</p>
+    <p style="margin:0 0 22px;color:#555;font-size:13px;line-height:1.65;">${message}</p>
+  `)
+}
+
+// Booking confirmation email — sent after an appointment is booked
+export function bookingConfirmationHtml(lead: EnrollmentLead, rebookingUrl: string): string {
+  const dateStr = lead.appointment_date
+    ? new Date(lead.appointment_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+    : 'your scheduled date'
+  const timeStr = lead.appointment_time
+    ? new Date('1970-01-01T' + lead.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    : ''
+
+  return wrap(`
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Appointment confirmed!</p>
+    <p style="margin:0 0 6px;color:#555;font-size:13px;">Hi ${lead.parent_name}, your enrollment appointment is set:</p>
+    <div style="background:#f9f9f9;border:1px solid #e8e8e8;border-radius:6px;padding:14px 18px;margin:0 0 20px;">
+      <div style="font-size:16px;font-weight:700;color:#1a1a2e;">${dateStr}</div>
+      ${timeStr ? `<div style="font-size:13px;color:#555;margin-top:4px;">${timeStr}</div>` : ''}
+    </div>
+    <p style="margin:0 0 18px;font-size:12px;color:#888;text-align:center;">
+      Need to reschedule? <a href="${rebookingUrl}" style="color:#c8102e;text-decoration:none;">Click here</a> to pick a new date.
+    </p>
+  `)
+}
+
+// Reminder email — sent 2 days before appointment
+export function reminderEmailHtml(lead: EnrollmentLead, confirmUrl: string, rebookingUrl: string): string {
+  const dateStr = lead.appointment_date
+    ? new Date(lead.appointment_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+    : 'your appointment'
+  const timeStr = lead.appointment_time
+    ? new Date('1970-01-01T' + lead.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    : ''
+
+  return wrap(`
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Reminder: your LBMAA appointment is in 2 days</p>
+    <p style="margin:0 0 6px;color:#555;font-size:13px;">Hi ${lead.parent_name}, just a reminder:</p>
+    <div style="background:#f9f9f9;border:1px solid #e8e8e8;border-radius:6px;padding:14px 18px;margin:0 0 20px;">
+      <div style="font-size:16px;font-weight:700;color:#1a1a2e;">${dateStr}</div>
+      ${timeStr ? `<div style="font-size:13px;color:#555;margin-top:4px;">${timeStr}</div>` : ''}
+    </div>
+    ${ctaButton(confirmUrl, 'Confirm My Attendance')}
+    <p style="margin:0 0 18px;font-size:12px;color:#888;text-align:center;">
+      Need to reschedule? <a href="${rebookingUrl}" style="color:#c8102e;text-decoration:none;">Click here</a>
+    </p>
+  `)
+}

@@ -2,7 +2,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { WebhookPayload, EnrollmentLeadNotificationRecord, MessageRecord, EnrollmentLead } from './types.ts'
-import { enrollmentNotificationHtml, messagingNotificationHtml } from './templates.ts'
+import { enrollmentNotificationHtml, messagingNotificationHtml, approvalEmailHtml, denialEmailHtml, bookingConfirmationHtml, reminderEmailHtml } from './templates.ts'
 
 const RESEND_API_URL = 'https://api.resend.com/emails'
 const FROM = 'Los Banos Martial Arts Academy <no-reply@notifications.lbmartialarts.com>'
@@ -41,13 +41,41 @@ async function handleEnrollmentNotification(record: EnrollmentLeadNotificationRe
 
   if (error || !lead) throw new Error(`Enrollment lead not found: ${record.lead_id}`)
 
-  const adminUrl = `${Deno.env.get('APP_URL') ?? 'https://lbmaa.com'}/admin`
+  const appUrl = Deno.env.get('APP_URL') ?? 'https://lbmaa.com'
+  const adminUrl = `${appUrl}/admin`
+  const bookingUrl = lead.booking_token ? `${appUrl}/book/${lead.booking_token}` : appUrl
+  const confirmUrl = lead.booking_token ? `${appUrl}/confirm/${lead.booking_token}` : appUrl
 
-  await sendEmail(
-    record.recipient_email,
-    `New enrollment inquiry — ${lead.parent_name}`,
-    enrollmentNotificationHtml(lead, adminUrl)
-  )
+  let subject: string
+  let html: string
+
+  switch (record.type) {
+    case 'new_lead':
+      subject = `New enrollment inquiry — ${lead.parent_name}`
+      html = enrollmentNotificationHtml(lead, adminUrl)
+      break
+    case 'approval':
+      subject = 'Your enrollment request — book your appointment'
+      html = approvalEmailHtml(lead, bookingUrl)
+      break
+    case 'denial':
+      subject = 'Your enrollment inquiry at LBMAA'
+      html = denialEmailHtml(lead)
+      break
+    case 'booking_confirmation':
+      subject = `Appointment confirmed — LBMAA`
+      html = bookingConfirmationHtml(lead, bookingUrl)
+      break
+    case 'reminder':
+      subject = `Reminder: your LBMAA appointment in 2 days`
+      html = reminderEmailHtml(lead, confirmUrl, bookingUrl)
+      break
+    default:
+      console.warn('[send-email] Unknown notification type:', record.type)
+      return
+  }
+
+  await sendEmail(record.recipient_email, subject, html)
 
   await supabase
     .from('enrollment_lead_notifications')
