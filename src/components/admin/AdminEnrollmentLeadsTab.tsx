@@ -362,7 +362,7 @@ export function AdminEnrollmentLeadsTab() {
             <div
               key={lead.lead_id}
               className={`bg-card rounded-lg border overflow-hidden ${
-                lead.status === 'new' ? 'border-primary/25' : 'border-border'
+                lead.status === 'new' && !lead.deleted_at ? 'border-primary/25' : 'border-border'
               }`}
             >
               <div className="p-4 space-y-3">
@@ -476,66 +476,68 @@ export function AdminEnrollmentLeadsTab() {
                 </div>
 
                 {/* Actions — denied leads are terminal; no actions shown */}
-                <div className="flex flex-wrap gap-2">
-                  {lead.status === 'new' && (
-                    <>
-                      <Button size="sm" onClick={() => handleApprove(lead)}>
-                        Approve &amp; Send Invite
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-destructive border-destructive/40 hover:bg-destructive/5"
-                        onClick={() => setDenyTarget(lead)}
+                {!lead.deleted_at && (
+                  <div className="flex flex-wrap gap-2">
+                    {lead.status === 'new' && (
+                      <>
+                        <Button size="sm" onClick={() => handleApprove(lead)}>
+                          Approve &amp; Send Invite
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive border-destructive/40 hover:bg-destructive/5"
+                          onClick={() => setDenyTarget(lead)}
+                        >
+                          Deny
+                        </Button>
+                      </>
+                    )}
+                    {lead.status === 'approved' && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)}>
+                          Resend Booking Link
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
+                          Pick Date for Them
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive border-destructive/40 hover:bg-destructive/5"
+                          onClick={() => setDenyTarget(lead)}
+                        >
+                          Deny
+                        </Button>
+                      </>
+                    )}
+                    {(lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)}>
+                          Resend Booking Link
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
+                          Pick New Date
+                        </Button>
+                      </>
+                    )}
+                    {(lead.status === 'enrolled' || lead.status === 'closed') && (
+                      <Select
+                        value={lead.status}
+                        onValueChange={val => handleStatusChange(lead.lead_id, val as EnrollmentLead['status'])}
+                        disabled={updatingId === lead.lead_id}
                       >
-                        Deny
-                      </Button>
-                    </>
-                  )}
-                  {lead.status === 'approved' && (
-                    <>
-                      <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)}>
-                        Resend Booking Link
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
-                        Pick Date for Them
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-destructive border-destructive/40 hover:bg-destructive/5"
-                        onClick={() => setDenyTarget(lead)}
-                      >
-                        Deny
-                      </Button>
-                    </>
-                  )}
-                  {(lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && (
-                    <>
-                      <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)}>
-                        Resend Booking Link
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
-                        Pick New Date
-                      </Button>
-                    </>
-                  )}
-                  {(lead.status === 'enrolled' || lead.status === 'closed') && (
-                    <Select
-                      value={lead.status}
-                      onValueChange={val => handleStatusChange(lead.lead_id, val as EnrollmentLead['status'])}
-                      disabled={updatingId === lead.lead_id}
-                    >
-                      <SelectTrigger className="w-40 h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="enrolled">Enrolled</SelectItem>
-                        <SelectItem value="closed">Closed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
+                        <SelectTrigger className="w-40 h-9 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="enrolled">Enrolled</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
 
               </div>
             </div>
