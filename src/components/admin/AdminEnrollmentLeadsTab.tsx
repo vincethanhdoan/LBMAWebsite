@@ -299,28 +299,18 @@ export function AdminEnrollmentLeadsTab() {
       <div className="border-b border-border">
         <div className="flex gap-0 overflow-x-auto">
           {TABS.map(tab => {
-            const count = tabCount(leads, tab);
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setSearch(''); setClosedDeniedFilter('all'); }}
-                className={`px-4 py-2.5 text-sm whitespace-nowrap flex items-center gap-1.5 border-b-2 transition-colors ${
+                className={`px-4 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors ${
                   isActive
                     ? 'border-primary text-primary font-semibold -mb-px'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab.label}
-                {count > 0 && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  }`}>
-                    {count}
-                  </span>
-                )}
               </button>
             );
           })}

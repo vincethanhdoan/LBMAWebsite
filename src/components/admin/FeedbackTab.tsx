@@ -55,6 +55,9 @@ export function FeedbackTab() {
   // Feedback entries search
   const [feedbackSearchQuery, setFeedbackSearchQuery] = useState('');
 
+  // Test list search
+  const [testSearchQuery, setTestSearchQuery] = useState('');
+
   useEffect(() => {
     loadData();
   }, []);
@@ -96,6 +99,28 @@ export function FeedbackTab() {
       .toLowerCase()
       .includes(feedbackSearchQuery.toLowerCase());
   });
+
+  const studentNamesByTest = new Map<string, string[]>();
+  for (const entry of feedback) {
+    const student = students.find((s) => s.student_id === entry.student_id);
+    if (student) {
+      const names = studentNamesByTest.get(entry.test_id) ?? [];
+      names.push(`${student.first_name} ${student.last_name}`);
+      studentNamesByTest.set(entry.test_id, names);
+    }
+  }
+
+  const filteredTests = testSearchQuery.trim()
+    ? tests.filter((test) => {
+        const q = testSearchQuery.toLowerCase();
+        if (test.title.toLowerCase().includes(q)) return true;
+        if (test.description?.toLowerCase().includes(q)) return true;
+        if (formatTestDate(test.test_date).toLowerCase().includes(q)) return true;
+        return (studentNamesByTest.get(test.test_id) ?? []).some((name) =>
+          name.toLowerCase().includes(q)
+        );
+      })
+    : tests;
 
   async function handleCreateTest() {
     if (!testTitle.trim() || !testDate) return;
@@ -302,7 +327,16 @@ export function FeedbackTab() {
             <CardDescription>{tests.length} total</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {tests.map((test) => {
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search by name, date, or student…"
+                className="pl-9"
+                value={testSearchQuery}
+                onChange={(e) => setTestSearchQuery(e.target.value)}
+              />
+            </div>
+            {filteredTests.map((test) => {
               const count = feedback.filter((f) => f.test_id === test.test_id).length;
               return (
                 <div
@@ -339,13 +373,17 @@ export function FeedbackTab() {
                 </div>
               );
             })}
-            {tests.length === 0 && (
+            {tests.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>No tests yet</p>
                 <p className="text-sm mt-1">Create a test to get started</p>
               </div>
-            )}
+            ) : filteredTests.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground text-sm">
+                No tests match your search.
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
