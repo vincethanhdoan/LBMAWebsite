@@ -155,3 +155,51 @@ export function submissionConfirmationHtml(lead: EnrollmentLead): string {
     <p style="margin:0;font-size:13px;color:#555;">— The LBMAA Team</p>
   `)
 }
+
+export function announcementNotificationHtml(title: string, body: string, url: string): string {
+  return wrap(`
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">New announcement from LBMAA</p>
+    <div style="background:#f8f9fa;border-left:4px solid #c8102e;padding:14px 16px;margin-bottom:20px;border-radius:0 4px 4px 0;">
+      <p style="font-size:15px;font-weight:700;color:#1a1a2e;margin:0 0 6px 0;">${title}</p>
+      <p style="font-size:13px;color:#555;margin:0;line-height:1.5;">${body.substring(0, 200)}${body.length > 200 ? '…' : ''}</p>
+    </div>
+    ${ctaButton(url, 'Read Announcement')}
+  `)
+}
+
+export function blogPostNotificationHtml(title: string, authorName: string, url: string): string {
+  return wrap(`
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">New post in the Parent Blog</p>
+    <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">
+      <strong>${authorName}</strong> published a new post:
+    </p>
+    <div style="background:#f8f9fa;border-left:4px solid #c8102e;padding:14px 16px;margin-bottom:20px;border-radius:0 4px 4px 0;">
+      <p style="font-size:15px;font-weight:700;color:#1a1a2e;margin:0;">${title}</p>
+    </div>
+    ${ctaButton(url, 'Read Post')}
+  `)
+}
+
+export function commentReplyHtml(replierName: string, originalSnippet: string, url: string): string {
+  return wrap(`
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">${replierName} replied to your comment</p>
+    <p style="margin:0 0 12px;color:#555;font-size:13px;line-height:1.65;">Your comment:</p>
+    <div style="background:#f8f9fa;border:1px solid #e2e8f0;padding:12px 16px;margin-bottom:20px;border-radius:4px;">
+      <p style="font-size:13px;color:#666;margin:0;font-style:italic;">"${originalSnippet}${originalSnippet.length >= 100 ? '…' : ''}"</p>
+    </div>
+    ${ctaButton(url, 'View Reply')}
+  `)
+}
+
+export function postCommentHtml(commenterName: string, postTitle: string, url: string): string {
+  return wrap(`
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">New comment on your post</p>
+    <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">
+      <strong>${commenterName}</strong> commented on:
+    </p>
+    <div style="background:#f8f9fa;border-left:4px solid #c8102e;padding:14px 16px;margin-bottom:20px;border-radius:0 4px 4px 0;">
+      <p style="font-size:15px;font-weight:600;color:#1a1a2e;margin:0;">${postTitle}</p>
+    </div>
+    ${ctaButton(url, 'View Comment')}
+  `)
+}
