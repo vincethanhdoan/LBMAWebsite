@@ -173,11 +173,7 @@ export function AdminBlogTab({ user }: { user: User }) {
     const commentText = commentTexts[postId];
     if (!commentText?.trim() || !user) return;
     try {
-      await createBlogComment({
-        post_id: postId,
-        author_user_id: user.id,
-        body: commentText.trim(),
-      });
+      await createBlogComment(postId, commentText.trim());
       setCommentTexts({ ...commentTexts, [postId]: '' });
       await loadPosts();
     } catch (error) {

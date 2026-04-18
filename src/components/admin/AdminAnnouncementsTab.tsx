@@ -152,11 +152,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
     if (!commentText?.trim() || !user) return;
     setSavingComment(announcementId);
     try {
-      await createAnnouncementComment({
-        announcement_id: announcementId,
-        author_user_id: user.id,
-        body: commentText.trim(),
-      });
+      await createAnnouncementComment(announcementId, commentText.trim());
       const commentsData = await getAnnouncementComments(announcementId);
       setComments((prev) => ({
         ...prev,

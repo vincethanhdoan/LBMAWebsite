@@ -144,11 +144,7 @@ export function AnnouncementsTab({ user }: { user: User }) {
 
     setSavingComment(announcementId);
     try {
-      await createAnnouncementComment({
-        announcement_id: announcementId,
-        author_user_id: user.id,
-        body: commentText.trim(),
-      });
+      await createAnnouncementComment(announcementId, commentText.trim());
 
       // Reload comments
       const commentsData = await getAnnouncementComments(announcementId);

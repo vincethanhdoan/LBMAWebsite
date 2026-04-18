@@ -224,11 +224,7 @@ export function BlogTab({ user }: { user: User }) {
 
     setSavingComment(postId);
     try {
-      await createBlogComment({
-        post_id: postId,
-        author_user_id: user.id,
-        body: commentText.trim(),
-      });
+      await createBlogComment(postId, commentText.trim());
 
       // Reload comments
       const commentsData = await getBlogComments(postId);
