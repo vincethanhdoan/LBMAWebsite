@@ -9,9 +9,12 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Switch } from '../ui/switch';
+import { Skeleton } from '../ui/skeleton';
 import { Plus, Edit2, User as UserIcon, Users, Home, Trash2, Star, Check, Loader2 } from 'lucide-react';
 import { useProfile } from '../../hooks/useProfile';
-import { createReview, updateProfile, updateReview } from '../../lib/supabase/mutations';
+import { createReview, updateProfile, updateReview, upsertUserNotificationPreferences } from '../../lib/supabase/mutations';
+import { getUserNotificationPreferences } from '../../lib/supabase/queries';
 import type { User, Review } from '../../lib/types';
 import { toast } from 'sonner';
 
@@ -73,6 +76,17 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
   const [saving, setSaving] = useState(false);
   const [confirmState, setConfirmState] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
 
+  const defaultPrefs = {
+    notify_messages: true,
+    notify_announcements: true,
+    notify_blog_posts: false,
+    notify_comment_replies: true,
+    notify_post_comments: true,
+  };
+
+  const [prefs, setPrefs] = useState(defaultPrefs);
+  const [prefsLoading, setPrefsLoading] = useState(true);
+
   const [newStudent, setNewStudent] = useState<Partial<Student>>({
     firstName: '',
     lastName: '',
@@ -125,6 +139,23 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
       });
     }
   }, [family]);
+
+  useEffect(() => {
+    getUserNotificationPreferences()
+      .then((data) => {
+        if (data) {
+          setPrefs({
+            notify_messages: data.notify_messages,
+            notify_announcements: data.notify_announcements,
+            notify_blog_posts: data.notify_blog_posts,
+            notify_comment_replies: data.notify_comment_replies,
+            notify_post_comments: data.notify_post_comments,
+          });
+        }
+      })
+      .catch(console.error)
+      .finally(() => setPrefsLoading(false));
+  }, []);
 
   // Convert database types to UI types
   const guardians: Guardian[] = dbGuardians.map(g => ({
@@ -402,6 +433,21 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
     }
     setIsEditingReview(false);
   };
+
+  async function handlePrefToggle(
+    key: keyof typeof defaultPrefs,
+    value: boolean
+  ) {
+    const updated = { ...prefs, [key]: value };
+    setPrefs(updated);
+    try {
+      await upsertUserNotificationPreferences({ [key]: value });
+      toast.success('Notification preferences saved');
+    } catch {
+      setPrefs(prefs); // rollback
+      toast.error('Failed to save preferences');
+    }
+  }
 
   const formatReviewDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -1108,6 +1154,45 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
           </CardContent>
         </Card>
       )}
+
+      {/* Notification Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Notification Preferences</CardTitle>
+          <CardDescription>Choose when you'd like to receive emails</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {prefsLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
+            <>
+              {([
+                { key: 'notify_messages' as const,        label: 'New Messages',           sub: 'Email me when I receive a message' },
+                { key: 'notify_announcements' as const,   label: 'Academy Announcements',  sub: 'Email me when a new announcement is posted' },
+                { key: 'notify_blog_posts' as const,      label: 'Blog Posts',             sub: 'Email me when a new blog post is published' },
+                { key: 'notify_comment_replies' as const, label: 'Replies to My Comments', sub: 'Email me when someone replies to a comment I left' },
+                { key: 'notify_post_comments' as const,   label: 'Comments on My Posts',   sub: 'Email me when someone comments on a blog post I wrote' },
+              ] as const).map(({ key, label, sub }) => (
+                <div key={key} className="flex items-center justify-between gap-4 py-1">
+                  <Label htmlFor={key} className="flex flex-col gap-0.5 cursor-pointer flex-1">
+                    <span className="font-medium">{label}</span>
+                    <span className="text-xs text-muted-foreground font-normal">{sub}</span>
+                  </Label>
+                  <Switch
+                    id={key}
+                    checked={prefs[key]}
+                    onCheckedChange={(checked) => handlePrefToggle(key, checked)}
+                  />
+                </div>
+              ))}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <ConfirmDialog
         open={confirmState !== null}
