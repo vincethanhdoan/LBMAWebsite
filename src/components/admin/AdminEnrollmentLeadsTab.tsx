@@ -8,10 +8,106 @@ import { getEnrollmentLeads } from '../../lib/supabase/queries';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { updateLeadStatus, updateLeadAdminNotes, dismissLeadSilently, deleteEnrollmentLead } from '../../lib/supabase/mutations';
-import type { EnrollmentLead } from '../../lib/types';
+import type { EnrollmentLead, EnrollmentLeadProgramBooking } from '../../lib/types';
 import { DenyModal } from './DenyModal';
 import { PickDateModal } from './PickDateModal';
 import { NewLeadModal } from './NewLeadModal';
+
+// ─── Program booking helpers ───────────────────────────────────────────────
+
+const PROGRAM_LABELS: Record<string, string> = {
+  little_dragons: 'Little Dragons',
+  youth: 'Youth Program',
+}
+
+const PROGRAM_BADGE_STYLES: Record<string, string> = {
+  little_dragons: 'bg-purple-100 text-purple-700',
+  youth: 'bg-blue-100 text-blue-700',
+}
+
+function formatProgramBookingStatus(booking: { status: string; appointment_date: string | null; appointment_time: string | null }): string {
+  if (booking.status === 'pending') return 'awaiting approval'
+  if (booking.status === 'link_sent') return 'link sent · not booked yet'
+  if ((booking.status === 'scheduled' || booking.status === 'confirmed') && booking.appointment_date) {
+    const date = new Date(booking.appointment_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    const time = booking.appointment_time
+      ? new Date('1970-01-01T' + booking.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      : ''
+    const icon = booking.status === 'confirmed' ? '✓' : '📅'
+    return `${icon} ${date}${time ? ' · ' + time : ''}`
+  }
+  return booking.status
+}
+
+function computeLeadStatus(programBookings: EnrollmentLeadProgramBooking[]): EnrollmentLead['status'] {
+  if (!programBookings?.length) return 'new'
+  const statuses = programBookings.map(b => b.status)
+  if (statuses.every(s => s === 'confirmed')) return 'appointment_confirmed'
+  if (statuses.some(s => s === 'scheduled' || s === 'confirmed')) return 'appointment_scheduled'
+  return 'approved'
+}
+
+function ChildrenSection({ lead }: { lead: EnrollmentLead }) {
+  const hasChildren = lead.children && lead.children.length > 0
+  const hasBookings = lead.programBookings && lead.programBookings.length > 0
+
+  if (!hasChildren && !lead.student_name) return null
+
+  if (!hasChildren) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        [legacy] {lead.student_name}{lead.student_age ? `, age ${lead.student_age}` : ''}
+      </p>
+    )
+  }
+
+  if (!hasBookings) {
+    return (
+      <div className="flex flex-col gap-1">
+        {lead.children.map(c => (
+          <div key={c.child_id} className="flex items-center gap-2 text-sm">
+            <span>{c.name}</span>
+            <span className="text-muted-foreground">age {c.age}</span>
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PROGRAM_BADGE_STYLES[c.program_type]}`}>
+              {PROGRAM_LABELS[c.program_type]}
+            </span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {lead.programBookings.map(booking => {
+        const groupChildren = lead.children.filter(c => c.program_type === booking.program_type)
+        return (
+          <div key={booking.booking_id}>
+            <div className="flex items-center justify-between gap-2">
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PROGRAM_BADGE_STYLES[booking.program_type]}`}>
+                {PROGRAM_LABELS[booking.program_type]}
+              </span>
+              <span className={`text-xs ${
+                booking.status === 'confirmed' ? 'text-green-600 font-medium'
+                : booking.status === 'scheduled' ? 'text-green-600'
+                : 'text-muted-foreground'
+              }`}>
+                {formatProgramBookingStatus(booking)}
+              </span>
+            </div>
+            <div className="pl-2 mt-1 flex flex-col gap-0.5">
+              {groupChildren.map(c => (
+                <span key={c.child_id} className="text-sm text-muted-foreground">
+                  {c.name} · age {c.age}
+                </span>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 // ─── Tab config ────────────────────────────────────────────────────────────
 
@@ -80,7 +176,8 @@ function filterLeads(
     result = result.filter(l =>
       l.parent_name.toLowerCase().includes(q) ||
       l.parent_email.toLowerCase().includes(q) ||
-      (l.student_name?.toLowerCase().includes(q) ?? false)
+      (l.student_name?.toLowerCase().includes(q) ?? false) ||
+      (l.children?.some(c => c.name.toLowerCase().includes(q)) ?? false)
     );
   }
   return result;
@@ -195,18 +292,23 @@ export function AdminEnrollmentLeadsTab() {
     setDenyTarget(null);
   }
 
-  async function handleBookingConfirm(leadId: string, slotId: string, appointmentDate: string) {
+  async function handleBookingConfirm(
+    bookings: Array<{ programBookingId: string; slotId: string; appointmentDate: string }>
+  ) {
     const fnHeaders = await edgeFunctionUserAuthHeaders();
     if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
-    const { data, error } = await supabase.functions.invoke('admin-book-appointment', {
-      body: { leadId, slotId, appointmentDate },
-      headers: fnHeaders,
-    });
-    if (error || !data) { toast.error('Failed to book appointment'); return; }
-    setLeads(prev => prev.map(l => l.lead_id === leadId
-      ? { ...l, status: data.status, appointment_date: appointmentDate } : l));
+
+    for (const b of bookings) {
+      const { data, error } = await supabase.functions.invoke('admin-book-appointment', {
+        body: { programBookingId: b.programBookingId, slotId: b.slotId, appointmentDate: b.appointmentDate },
+        headers: fnHeaders,
+      });
+      if (error || !data) { toast.error('Failed to book appointment'); return; }
+    }
+
+    await load();
     setPickDateTarget(null);
-    toast.success(`Appointment booked for ${appointmentDate}`);
+    toast.success('Appointment(s) booked');
   }
 
   async function handleStatusChange(leadId: string, status: EnrollmentLead['status']) {
@@ -419,13 +521,14 @@ export function AdminEnrollmentLeadsTab() {
                       {lead.phone}
                     </a>
                   )}
-                  {lead.student_name && (
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <User className="w-3.5 h-3.5" />
-                      {lead.student_name}{lead.student_age ? `, age ${lead.student_age}` : ''}
-                    </span>
-                  )}
                 </div>
+
+                {/* Children / program bookings */}
+                {(lead.children?.length > 0 || lead.student_name) && (
+                  <div className="border-t border-border/50 pt-3">
+                    <ChildrenSection lead={lead} />
+                  </div>
+                )}
 
                 {/* Approval timestamp + appointment date */}
                 {(lead.approval_email_sent_at || ((lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && lead.appointment_date)) && (
@@ -504,7 +607,7 @@ export function AdminEnrollmentLeadsTab() {
                     {lead.status === 'new' && (
                       <>
                         <Button size="sm" onClick={() => handleApprove(lead)}>
-                          Approve &amp; Send Invite
+                          Approve &amp; Send Invites
                         </Button>
                         <Button
                           size="sm"
@@ -519,7 +622,7 @@ export function AdminEnrollmentLeadsTab() {
                     {lead.status === 'approved' && (
                       <>
                         <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)}>
-                          Resend Booking Link
+                          Resend Invites
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
                           Pick Date for Them
@@ -537,7 +640,7 @@ export function AdminEnrollmentLeadsTab() {
                     {(lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && (
                       <>
                         <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)}>
-                          Resend Booking Link
+                          Resend Invites
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
                           Pick New Date
