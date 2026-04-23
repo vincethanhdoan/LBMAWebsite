@@ -13,6 +13,8 @@ import type {
   Message,
   MessageAttachment,
   EnrollmentLead,
+  EnrollmentLeadChild,
+  EnrollmentLeadProgramBooking,
   StudentFeedback,
   FeedbackTest,
   Review,
@@ -487,11 +489,19 @@ export async function getCommunicationCounts(userId: string): Promise<{
 export async function getEnrollmentLeads(): Promise<EnrollmentLead[]> {
   const { data, error } = await supabase
     .from('enrollment_leads')
-    .select(ENROLLMENT_LEAD_COLUMNS)
+    .select(`
+      ${ENROLLMENT_LEAD_COLUMNS},
+      children:enrollment_lead_children(child_id, lead_id, name, age, program_type, created_at),
+      programBookings:enrollment_lead_program_bookings(booking_id, lead_id, program_type, booking_token, appointment_slot_id, appointment_date, appointment_time, status, created_at)
+    `)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data ?? []).map(row => ({
+    ...row,
+    children: (row.children ?? []) as EnrollmentLeadChild[],
+    programBookings: (row.programBookings ?? []) as EnrollmentLeadProgramBooking[],
+  })) as EnrollmentLead[];
 }
 
 // ============================================
@@ -634,14 +644,22 @@ export async function getUserReview(userId: string): Promise<Review | null> {
 // APPOINTMENT SLOTS
 // ============================================
 
-export async function getAppointmentSlots(): Promise<AppointmentSlot[]> {
-  const { data, error } = await supabase
+export async function getAppointmentSlots(
+  programType?: 'little_dragons' | 'youth'
+): Promise<AppointmentSlot[]> {
+  let query = supabase
     .from('appointment_slots')
     .select('*')
     .eq('is_active', true)
-    .order('day_of_week')
-  if (error) throw error
-  return data ?? []
+    .order('day_of_week');
+
+  if (programType) {
+    query = query.in('program_type', [programType, 'all']);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function getUpcomingBookableDates(slotId: string, weeksAhead = 20): Promise<string[]> {
@@ -657,6 +675,20 @@ export async function getLeadByToken(token: string) {
   const { data, error } = await supabase.rpc('get_lead_by_token', { p_token: token })
   if (error) throw error
   return data?.[0] ?? null
+}
+
+export async function getProgramBookingByToken(token: string): Promise<{
+  booking_id: string;
+  program_type: 'little_dragons' | 'youth';
+  status: string;
+  appointment_date: string | null;
+  appointment_time: string | null;
+  parent_name: string;
+  child_names: string[];
+} | null> {
+  const { data, error } = await supabase.rpc('get_program_booking_by_token', { p_token: token });
+  if (error) throw error;
+  return data?.[0] ?? null;
 }
 
 // ============================================

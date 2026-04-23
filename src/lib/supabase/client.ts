@@ -20,10 +20,9 @@ export type EnrollmentLeadInput = {
   parentName: string;
   parentEmail: string;
   phone?: string;
-  studentName?: string;
-  studentAge?: number;
   message?: string;
   sourcePage?: string;
+  children: Array<{ name: string; age: number }>;
 };
 
 /**
@@ -107,10 +106,9 @@ export async function submitEnrollmentLeadWithTimeout(
         p_parent_name: input.parentName,
         p_parent_email: input.parentEmail,
         p_phone: input.phone ?? null,
-        p_student_name: input.studentName ?? null,
-        p_student_age: input.studentAge ?? null,
         p_message: input.message ?? null,
         p_source_page: input.sourcePage ?? "contact",
+        p_children: input.children,
       }),
       signal: controller.signal,
     });
