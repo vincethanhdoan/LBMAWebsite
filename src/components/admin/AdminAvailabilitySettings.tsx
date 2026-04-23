@@ -39,6 +39,7 @@ export function AdminAvailabilitySettings() {
   const [slotStart, setSlotStart] = useState('')
   const [slotEnd, setSlotEnd] = useState('')
   const [slotLabel, setSlotLabel] = useState('')
+  const [slotProgramType, setSlotProgramType] = useState<'little_dragons' | 'youth' | 'all'>('all')
   const [slotSaving, setSlotSaving] = useState(false)
 
   // Override form state
@@ -83,6 +84,7 @@ export function AdminAvailabilitySettings() {
     setSlotStart(slot.start_time.slice(0, 5))
     setSlotEnd(slot.end_time.slice(0, 5))
     setSlotLabel(slot.label)
+    setSlotProgramType((slot.program_type ?? 'all') as 'little_dragons' | 'youth' | 'all')
     setShowSlotForm(true)
   }
 
@@ -93,6 +95,7 @@ export function AdminAvailabilitySettings() {
     setSlotStart('')
     setSlotEnd('')
     setSlotLabel('')
+    setSlotProgramType('all')
     setShowSlotForm(false)
   }
 
@@ -107,18 +110,21 @@ export function AdminAvailabilitySettings() {
         p_label: slotLabel,
         p_week_of_month: slotWeekOfMonth,
       })
+      const savedSlotId = editSlotId ?? (data as string)
+      await supabase.from('appointment_slots').update({ program_type: slotProgramType }).eq('slot_id', savedSlotId)
       if (editSlotId) {
         setSlots(prev => prev.map(s => s.slot_id === editSlotId
-          ? { ...s, day_of_week: parseInt(slotDay), week_of_month: slotWeekOfMonth, start_time: slotStart, end_time: slotEnd, label: slotLabel }
+          ? { ...s, day_of_week: parseInt(slotDay), week_of_month: slotWeekOfMonth, start_time: slotStart, end_time: slotEnd, label: slotLabel, program_type: slotProgramType }
           : s))
       } else {
         const newSlot: AppointmentSlot = {
-          slot_id: data as string,
+          slot_id: savedSlotId,
           day_of_week: parseInt(slotDay),
           week_of_month: slotWeekOfMonth,
           start_time: slotStart,
           end_time: slotEnd,
           label: slotLabel,
+          program_type: slotProgramType,
           is_active: true,
           created_at: new Date().toISOString(),
         }
@@ -211,7 +217,9 @@ export function AdminAvailabilitySettings() {
             <div key={slot.slot_id} className="flex items-center justify-between min-h-[44px] px-3 py-2 rounded border">
               <div>
                 <span className="font-medium text-sm">{slot.label}</span>
-                <span className="text-xs text-muted-foreground ml-2">{slotScheduleLabel(slot)}</span>
+                <span className="text-xs text-muted-foreground ml-2">
+                  {slotScheduleLabel(slot)} · {slot.program_type === 'all' ? 'All programs' : slot.program_type === 'little_dragons' ? 'Little Dragons' : 'Youth Program'}
+                </span>
               </div>
               <div className="flex gap-1.5">
                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditSlot(slot)}><Pencil className="w-3.5 h-3.5" /></Button>
@@ -255,6 +263,18 @@ export function AdminAvailabilitySettings() {
                   </button>
                 ))}
               </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label>Program type</Label>
+              <select
+                value={slotProgramType}
+                onChange={e => setSlotProgramType(e.target.value as 'little_dragons' | 'youth' | 'all')}
+                className="border border-border rounded-md px-3 py-2 text-sm bg-background"
+              >
+                <option value="all">All programs</option>
+                <option value="little_dragons">Little Dragons</option>
+                <option value="youth">Youth Program</option>
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
