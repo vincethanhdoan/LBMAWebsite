@@ -22,9 +22,6 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
 
-  // Use a client initialized with the user's auth header to verify identity via
-  // the Supabase Auth API. This works with ES256 asymmetric JWTs, unlike
-  // manual JWT decoding + verify_jwt:true (which only supports HS256).
   const userClient = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_ANON_KEY')!,
@@ -49,25 +46,54 @@ Deno.serve(async (req) => {
 
   if (!lead) return new Response('Lead not found', { status: 404, headers: CORS_HEADERS })
 
-  let token = lead.booking_token
-  const updateFields: Record<string, unknown> = {
+  // Fetch program bookings (new flow) — may be empty for legacy leads
+  const { data: programBookings } = await supabase
+    .from('enrollment_lead_program_bookings')
+    .select('booking_id, program_type, booking_token, status')
+    .eq('lead_id', leadId)
+
+  const hasNewFlow = programBookings && programBookings.length > 0
+
+  // Build lead update: always set approved status
+  const updateLeadFields: Record<string, unknown> = {
     status: 'approved',
     approved_at: new Date().toISOString(),
   }
 
-  if (!token) {
-    token = crypto.randomUUID()
-    updateFields.booking_token = token
+  // Legacy leads: keep the old single booking_token on enrollment_leads
+  if (!hasNewFlow && !lead.booking_token) {
+    updateLeadFields.booking_token = crypto.randomUUID()
   }
 
   const { error: updateError } = await supabase
     .from('enrollment_leads')
-    .update(updateFields)
+    .update(updateLeadFields)
     .eq('lead_id', leadId)
 
   if (updateError) {
     console.error('[approve-enrollment-lead] update error:', updateError)
     return new Response('Update failed', { status: 500, headers: CORS_HEADERS })
+  }
+
+  // New flow: generate tokens for program bookings that don't have one yet
+  if (hasNewFlow) {
+    for (const b of programBookings) {
+      if (!b.booking_token) {
+        const { error: pbError } = await supabase
+          .from('enrollment_lead_program_bookings')
+          .update({ booking_token: crypto.randomUUID(), status: 'link_sent' })
+          .eq('booking_id', b.booking_id)
+        if (pbError) {
+          console.error('[approve-enrollment-lead] program booking token error:', pbError)
+          return new Response('Program booking update failed', { status: 500, headers: CORS_HEADERS })
+        }
+      } else if (b.status === 'pending') {
+        await supabase
+          .from('enrollment_lead_program_bookings')
+          .update({ status: 'link_sent' })
+          .eq('booking_id', b.booking_id)
+      }
+    }
   }
 
   const { error: notifError } = await supabase
@@ -85,7 +111,7 @@ Deno.serve(async (req) => {
     return new Response('Notification failed', { status: 500, headers: CORS_HEADERS })
   }
 
-  return new Response(JSON.stringify({ ok: true, booking_token: token }), {
+  return new Response(JSON.stringify({ ok: true }), {
     status: 200,
     headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
   })

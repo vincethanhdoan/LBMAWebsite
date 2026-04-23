@@ -64,6 +64,31 @@ export function messagingNotificationHtml(senderName: string, portalUrl: string)
   `)
 }
 
+// Multi-program approval email — sent when admin approves a lead with program bookings
+export function multiProgramApprovalEmailHtml(
+  parentName: string,
+  programs: Array<{ programLabel: string; childNames: string; bookingUrl: string }>
+): string {
+  const sections = programs.map(p => `
+    <div style="margin-bottom:20px;">
+      <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1a1a2e;">${p.programLabel}${p.childNames ? ` — ${p.childNames}` : ''}</p>
+      ${ctaButton(p.bookingUrl, `Book ${p.programLabel} Intro`)}
+    </div>
+  `).join('')
+
+  return wrap(`
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Your enrollment request has been approved!</p>
+    <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">
+      Hi ${parentName}! We'd love to welcome your family to Los Banos Martial Arts Academy.
+      Use the buttons below to choose an appointment date for each program.
+    </p>
+    ${sections}
+    <p style="margin:0 0 18px;font-size:12px;color:#aaa;text-align:center;">
+      Each booking link is unique to your inquiry. Do not share them.
+    </p>
+  `)
+}
+
 // Booking approval email — sent when admin approves a lead
 export function approvalEmailHtml(lead: EnrollmentLead, bookingUrl: string): string {
   return wrap(`

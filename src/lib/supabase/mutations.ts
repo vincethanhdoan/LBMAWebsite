@@ -669,17 +669,15 @@ export async function createEnrollmentLead(fields: {
   parentName: string
   parentEmail: string
   phone?: string
-  studentName?: string
-  studentAge?: number
   notes?: string
+  children: Array<{ name: string; age: number }>
 }): Promise<string> {
   const { data, error } = await supabase.rpc('create_enrollment_lead', {
     p_parent_name: fields.parentName,
     p_parent_email: fields.parentEmail,
     p_phone: fields.phone ?? null,
-    p_student_name: fields.studentName ?? null,
-    p_student_age: fields.studentAge ?? null,
     p_notes: fields.notes ?? null,
+    p_children: fields.children,
   })
   if (error) throw error
   return data as string

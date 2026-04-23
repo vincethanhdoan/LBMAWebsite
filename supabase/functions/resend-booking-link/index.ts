@@ -50,8 +50,23 @@ Deno.serve(async (req) => {
   if (!RESENDABLE_STATUSES.includes(lead.status)) {
     return new Response('Lead is not in a resendable state', { status: 422, headers: CORS_HEADERS })
   }
-  if (!lead.booking_token) return new Response('Lead has no booking token', { status: 422, headers: CORS_HEADERS })
 
+  // Check for program bookings (new flow)
+  const { data: programBookings } = await supabase
+    .from('enrollment_lead_program_bookings')
+    .select('booking_id, booking_token')
+    .eq('lead_id', leadId)
+    .not('booking_token', 'is', null)
+
+  const hasNewFlow = programBookings && programBookings.length > 0
+
+  // Legacy: require enrollment_leads.booking_token
+  if (!hasNewFlow && !lead.booking_token) {
+    return new Response('Lead has no booking token', { status: 422, headers: CORS_HEADERS })
+  }
+
+  // Insert approval notification — send-email handler uses multiProgramApprovalEmailHtml for
+  // new-flow leads and approvalEmailHtml for legacy leads automatically
   const { error: notifError } = await supabase
     .from('enrollment_lead_notifications')
     .insert({

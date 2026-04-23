@@ -1,5 +1,5 @@
 // supabase/functions/confirm-appointment/index.ts
-// Public endpoint — auth is the booking_token.
+// Public endpoint — auth is the booking_token on enrollment_lead_program_bookings.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -11,6 +11,33 @@ function adminClient() {
   )
 }
 
+async function recalculateLeadStatus(
+  supabase: ReturnType<typeof adminClient>,
+  leadId: string
+): Promise<void> {
+  const { data: bookings } = await supabase
+    .from('enrollment_lead_program_bookings')
+    .select('status')
+    .eq('lead_id', leadId)
+
+  if (!bookings || bookings.length === 0) return
+
+  const statuses = bookings.map((b: { status: string }) => b.status)
+  const hasScheduledOrConfirmed = statuses.some((s: string) => s === 'scheduled' || s === 'confirmed')
+  const allConfirmed = statuses.every((s: string) => s === 'confirmed')
+
+  const leadStatus = allConfirmed
+    ? 'appointment_confirmed'
+    : hasScheduledOrConfirmed
+    ? 'appointment_scheduled'
+    : 'approved'
+
+  await supabase
+    .from('enrollment_leads')
+    .update({ status: leadStatus })
+    .eq('lead_id', leadId)
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
 
@@ -19,34 +46,47 @@ Deno.serve(async (req) => {
 
   const supabase = adminClient()
 
-  const { data: lead } = await supabase
-    .from('enrollment_leads')
-    .select('lead_id, status, appointment_date, appointment_time')
+  // Resolve token to program booking
+  const { data: programBooking } = await supabase
+    .from('enrollment_lead_program_bookings')
+    .select('booking_id, lead_id, status, appointment_date, appointment_time')
     .eq('booking_token', token)
     .single()
 
-  if (!lead) return new Response('Invalid token', { status: 404 })
+  if (!programBooking) return new Response('Invalid token', { status: 404 })
 
-  if (lead.status === 'appointment_confirmed') {
+  if (programBooking.status === 'confirmed') {
     return new Response(
-      JSON.stringify({ ok: true, already_confirmed: true, appointment_date: lead.appointment_date, appointment_time: lead.appointment_time }),
+      JSON.stringify({
+        ok: true,
+        already_confirmed: true,
+        appointment_date: programBooking.appointment_date,
+        appointment_time: programBooking.appointment_time,
+      }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     )
   }
 
-  if (lead.status !== 'appointment_scheduled') {
+  if (programBooking.status !== 'scheduled') {
     return new Response('Cannot confirm from current status', { status: 422 })
   }
 
   const { error } = await supabase
-    .from('enrollment_leads')
-    .update({ status: 'appointment_confirmed' })
-    .eq('lead_id', lead.lead_id)
+    .from('enrollment_lead_program_bookings')
+    .update({ status: 'confirmed' })
+    .eq('booking_id', programBooking.booking_id)
 
   if (error) return new Response('Confirmation failed', { status: 500 })
 
+  await recalculateLeadStatus(supabase, programBooking.lead_id)
+
   return new Response(
-    JSON.stringify({ ok: true, already_confirmed: false, appointment_date: lead.appointment_date, appointment_time: lead.appointment_time }),
+    JSON.stringify({
+      ok: true,
+      already_confirmed: false,
+      appointment_date: programBooking.appointment_date,
+      appointment_time: programBooking.appointment_time,
+    }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   )
 })

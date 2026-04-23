@@ -2,7 +2,12 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { WebhookPayload, EnrollmentLeadNotificationRecord, MessageRecord, EnrollmentLead, PortalEmailQueueRecord } from './types.ts'
-import { enrollmentNotificationHtml, messagingNotificationHtml, approvalEmailHtml, denialEmailHtml, bookingConfirmationHtml, reminderEmailHtml, submissionConfirmationHtml, announcementNotificationHtml, blogPostNotificationHtml, commentReplyHtml, postCommentHtml } from './templates.ts'
+import { enrollmentNotificationHtml, messagingNotificationHtml, approvalEmailHtml, multiProgramApprovalEmailHtml, denialEmailHtml, bookingConfirmationHtml, reminderEmailHtml, submissionConfirmationHtml, announcementNotificationHtml, blogPostNotificationHtml, commentReplyHtml, postCommentHtml } from './templates.ts'
+
+const PROGRAM_LABELS: Record<string, string> = {
+  little_dragons: 'Little Dragons',
+  youth: 'Youth Program',
+}
 
 const RESEND_API_URL = 'https://api.resend.com/emails'
 const FROM = 'Los Banos Martial Arts Academy <no-reply@notifications.lbmartialarts.com>'
@@ -73,10 +78,36 @@ async function handleEnrollmentNotification(record: EnrollmentLeadNotificationRe
       subject = 'Thank you for your interest in LBMAA'
       html = submissionConfirmationHtml(lead)
       break
-    case 'approval':
+    case 'approval': {
+      const { data: programBookings } = await supabase
+        .from('enrollment_lead_program_bookings')
+        .select('booking_id, program_type, booking_token')
+        .eq('lead_id', record.lead_id)
+
       subject = 'Your enrollment request — book your appointment'
-      html = approvalEmailHtml(lead, bookingUrl)
+
+      if (programBookings && programBookings.length > 0) {
+        const programs = await Promise.all(
+          programBookings.map(async (b: { booking_id: string; program_type: string; booking_token: string | null }) => {
+            const { data: children } = await supabase
+              .from('enrollment_lead_children')
+              .select('name')
+              .eq('lead_id', record.lead_id)
+              .eq('program_type', b.program_type)
+            const childNames = children?.map((c: { name: string }) => c.name).join(' & ') ?? ''
+            return {
+              programLabel: PROGRAM_LABELS[b.program_type] ?? b.program_type,
+              childNames,
+              bookingUrl: b.booking_token ? `${appUrl}/book/${b.booking_token}` : appUrl,
+            }
+          })
+        )
+        html = multiProgramApprovalEmailHtml(lead.parent_name, programs)
+      } else {
+        html = approvalEmailHtml(lead, bookingUrl)
+      }
       break
+    }
     case 'denial':
       subject = 'Your enrollment inquiry at LBMAA'
       html = denialEmailHtml(lead)

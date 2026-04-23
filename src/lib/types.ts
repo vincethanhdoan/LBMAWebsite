@@ -166,6 +166,29 @@ export type EnrollmentLead = {
   admin_notes: string | null;
   deleted_at: string | null;
   created_at: string;
+  children: EnrollmentLeadChild[];
+  programBookings: EnrollmentLeadProgramBooking[];
+};
+
+export type EnrollmentLeadChild = {
+  child_id: string;
+  lead_id: string;
+  name: string;
+  age: number;
+  program_type: 'little_dragons' | 'youth';
+  created_at: string;
+};
+
+export type EnrollmentLeadProgramBooking = {
+  booking_id: string;
+  lead_id: string;
+  program_type: 'little_dragons' | 'youth';
+  booking_token: string | null;
+  appointment_slot_id: string | null;
+  appointment_date: string | null;
+  appointment_time: string | null;
+  status: 'pending' | 'link_sent' | 'scheduled' | 'confirmed';
+  created_at: string;
 };
 
 export type AppointmentSlot = {
@@ -176,6 +199,7 @@ export type AppointmentSlot = {
   end_time: string;          // "HH:MM:SS"
   label: string;
   is_active: boolean;
+  program_type: 'little_dragons' | 'youth' | 'all';
   created_at: string;
 };
 
