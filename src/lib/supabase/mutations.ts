@@ -610,7 +610,7 @@ export async function registerInvitedEmail(email: string): Promise<string> {
 // NOTIFICATIONS
 // ============================================
 
-export async function markSectionSeen(section: 'announcements' | 'blog'): Promise<void> {
+export async function markSectionSeen(section: 'announcements' | 'blog' | 'feedback'): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
   const { error } = await supabase

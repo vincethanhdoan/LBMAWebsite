@@ -3,15 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Badge } from '../ui/badge';
-import { Bell, BookOpen, Loader2, MessageCircle, MessageSquare, Trophy, Pin, Award, Star } from 'lucide-react';
+import { Bell, BookOpen, Loader2, MessageCircle, MessageSquare, Trophy, Award, Star } from 'lucide-react';
 import { useProfile } from '../../hooks/useProfile';
 import {
-  getAnnouncements,
-  getBlogPosts,
   getSectionUnreadCounts,
   getUnreadMessageCount,
   getUnreadNotificationCount,
-  getStudentFeedbackByFamily,
+  getNewFeedbackCount,
 } from '../../lib/supabase/queries';
 
 type User = {
@@ -28,41 +26,6 @@ type Student = {
   beltLevel: string;
 };
 
-type Announcement = {
-  id: string;
-  title: string;
-  body: string;
-  authorName: string;
-  createdAt: string;
-  isPinned?: boolean;
-};
-
-type BlogPost = {
-  id: string;
-  title: string;
-  body: string;
-  authorName: string;
-  createdAt: string;
-  isPinned: boolean;
-};
-
-type AnnouncementRecord = {
-  announcement_id: string;
-  title: string;
-  body: string;
-  created_at: string;
-  is_pinned?: boolean;
-  profiles?: { display_name?: string | null } | null;
-};
-
-type BlogPostRecord = {
-  post_id: string;
-  title: string;
-  body: string;
-  created_at: string;
-  is_pinned?: boolean;
-  profiles?: { display_name?: string | null } | null;
-};
 
 type HomeTabProps = {
   user: User;
@@ -78,8 +41,6 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
     error: profileError,
     reload: reloadProfile,
   } = useProfile(user);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [announcementCount, setAnnouncementCount] = useState(0);
   const [blogCount, setBlogCount] = useState(0);
@@ -87,23 +48,6 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
   const [feedbackCount, setFeedbackCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      return 'Today';
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-  };
 
   const getInitials = (name: string) => {
     return name
@@ -139,46 +83,19 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
       setLoading(true);
       setError(null);
 
-      const [announcementsResult, blogPostsResult, sectionCountsResult, unreadMessagesResult, commentCountResult] = await Promise.allSettled([
-        getAnnouncements(),
-        getBlogPosts(),
+      const [sectionCountsResult, unreadMessagesResult, commentCountResult] = await Promise.allSettled([
         getSectionUnreadCounts(user.id),
         getUnreadMessageCount(),
         getUnreadNotificationCount(),
       ]);
 
-      if (announcementsResult.status === 'rejected') throw announcementsResult.reason;
-      if (blogPostsResult.status === 'rejected') throw blogPostsResult.reason;
       if (sectionCountsResult.status === 'rejected') throw sectionCountsResult.reason;
       if (unreadMessagesResult.status === 'rejected') throw unreadMessagesResult.reason;
       if (commentCountResult.status === 'rejected') throw commentCountResult.reason;
 
-      const announcementsData = announcementsResult.value;
-      const blogPostsData = blogPostsResult.value;
       const sectionCounts = sectionCountsResult.value;
       const commentCount = commentCountResult.value;
 
-      setAnnouncements(
-        (announcementsData as AnnouncementRecord[]).slice(0, 3).map((announcement) => ({
-          id: announcement.announcement_id,
-          title: announcement.title,
-          body: announcement.body,
-          authorName: announcement.profiles?.display_name || 'Unknown',
-          createdAt: announcement.created_at,
-          isPinned: announcement.is_pinned || false,
-        })),
-      );
-
-      setBlogPosts(
-        (blogPostsData as BlogPostRecord[]).slice(0, 3).map((post) => ({
-          id: post.post_id,
-          title: post.title,
-          body: post.body,
-          authorName: post.profiles?.display_name || 'Unknown',
-          createdAt: post.created_at,
-          isPinned: Boolean(post.is_pinned),
-        })),
-      );
       setUnreadMessages(unreadMessagesResult.value);
       setAnnouncementCount(sectionCounts.announcements);
       setBlogCount(sectionCounts.blog);
@@ -195,13 +112,13 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
     loadHomeData();
   }, [loadHomeData]);
 
-  // Load feedback count once family is known
+  // Load new feedback count once family is known
   useEffect(() => {
     if (!family?.family_id) return;
-    getStudentFeedbackByFamily(family.family_id)
-      .then((data) => setFeedbackCount(data.length))
+    getNewFeedbackCount(user.id, family.family_id)
+      .then(setFeedbackCount)
       .catch(() => {}); // non-critical
-  }, [family?.family_id]);
+  }, [family?.family_id, user.id]);
 
   const newFeedbackCount = feedbackCount;
   const newAnnouncementsCount = announcementCount;
@@ -409,71 +326,6 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
         </Card>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Recent Announcements</CardTitle>
-                <CardDescription>Latest updates from instructors and staff</CardDescription>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => onNavigate('announcements')}>
-                View All
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {announcements.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No announcements available right now.</p>
-            ) : (
-              announcements.map((announcement) => (
-                <div key={announcement.id} className="space-y-1 border-b pb-3 last:border-b-0 last:pb-0">
-                  <div className="flex items-center gap-2">
-                    {announcement.isPinned && <Pin className="w-3.5 h-3.5 text-primary" />}
-                    <p className="font-medium">{announcement.title}</p>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{announcement.body}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {announcement.authorName} • {formatDate(announcement.createdAt)}
-                  </p>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Recent Blog Posts</CardTitle>
-                <CardDescription>Latest family community discussions</CardDescription>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => onNavigate('blog')}>
-                View All
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {blogPosts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No blog posts available right now.</p>
-            ) : (
-              blogPosts.map((post) => (
-                <div key={post.id} className="space-y-1 border-b pb-3 last:border-b-0 last:pb-0">
-                  <div className="flex items-center gap-2">
-                    {post.isPinned && <Pin className="w-3.5 h-3.5 text-primary" />}
-                    <p className="font-medium">{post.title}</p>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{post.body}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {post.authorName} • {formatDate(post.createdAt)}
-                  </p>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

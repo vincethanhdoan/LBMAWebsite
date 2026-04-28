@@ -744,6 +744,34 @@ export async function getSectionUnreadCounts(userId: string): Promise<{
   };
 }
 
+export async function getNewFeedbackCount(userId: string, familyId: string): Promise<number> {
+  const { data: lastSeen } = await supabase
+    .from('user_section_last_seen')
+    .select('last_seen_at')
+    .eq('user_id', userId)
+    .eq('section', 'feedback')
+    .maybeSingle();
+
+  const since = lastSeen?.last_seen_at ?? '1970-01-01T00:00:00Z';
+
+  const { data: students } = await supabase
+    .from('students')
+    .select('student_id')
+    .eq('family_id', familyId);
+
+  if (!students || students.length === 0) return 0;
+
+  const studentIds = students.map((s: { student_id: string }) => s.student_id);
+
+  const { count } = await supabase
+    .from('student_feedback')
+    .select('*', { count: 'exact', head: true })
+    .in('student_id', studentIds)
+    .gt('created_at', since);
+
+  return count ?? 0;
+}
+
 export async function getUnreadNotificationCount(): Promise<number> {
   const { count } = await supabase
     .from('user_notifications')

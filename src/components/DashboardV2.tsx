@@ -26,6 +26,7 @@ import { FeedbackTab } from './dashboard/FeedbackTab';
 import { ReviewTab } from './dashboard/ReviewTab';
 import { ProfileTab } from './dashboard/ProfileTab';
 import { getUnreadMessageCount, getSectionUnreadCounts } from '../lib/supabase/queries';
+import { markSectionSeen } from '../lib/supabase/mutations';
 import { getInitials } from '../lib/format';
 import type { User } from '../lib/types';
 import { NotificationBell } from './NotificationBell';
@@ -61,7 +62,10 @@ const navItems: { id: TabId; label: string; icon: React.ElementType }[] = [
 export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get('tab') as TabId) ?? 'home';
-  const setActiveTab = (tab: TabId) => setSearchParams({ tab }, { replace: true });
+  function setActiveTab(tab: TabId) {
+    setSearchParams({ tab }, { replace: true });
+    if (tab === 'feedback') markSectionSeen('feedback').catch(console.error);
+  }
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
   const [unreadBlog, setUnreadBlog] = useState(0);
@@ -113,8 +117,9 @@ export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props)
                       isActive={activeTab === id}
                       onClick={() => {
                         setActiveTab(id);
-                        if (id === 'announcements') setUnreadAnnouncements(0);
-                        if (id === 'blog') setUnreadBlog(0);
+                        if (id === 'announcements') { setUnreadAnnouncements(0); markSectionSeen('announcements').catch(console.error); }
+                        if (id === 'blog') { setUnreadBlog(0); markSectionSeen('blog').catch(console.error); }
+                        if (id === 'feedback') markSectionSeen('feedback').catch(console.error);
                       }}
                       tooltip={label}
                       size="lg"
