@@ -2,27 +2,44 @@
 
 import type { EnrollmentLead, AppointmentInfo } from './types.ts'
 
-const STRIPE = `<div style="height:5px;background:linear-gradient(to right,#c8102e,#1a1a2e);"></div>`
+const STRIPE = `<div style="height:4px;background:#A01F23;"></div>`
 
-const HEADER = `
-  <div style="padding:20px 28px 16px;border-bottom:1px solid #f0f0f0;">
-    <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#c8102e;font-weight:700;margin-bottom:3px;">Los Banos Martial Arts Academy</div>
-    <div style="font-size:12px;color:#999;">Member Family Portal</div>
-  </div>
-`
+function makeHeader(logoUrl?: string, subtitle?: string): string {
+  const subtitleHtml = subtitle
+    ? `<div style="font-size:11px;color:#595959;margin-top:2px;">${subtitle}</div>`
+    : ''
+  const nameBlock = `
+    <div>
+      <div style="font-size:13px;font-weight:700;color:#1a1a1a;line-height:1.3;">Los Banos Martial Arts Academy</div>
+      ${subtitleHtml}
+    </div>`
+  if (logoUrl) {
+    return `
+  <div style="padding:16px 28px;border-bottom:1px solid #e2dbd5;display:flex;align-items:center;gap:14px;">
+    <img src="${logoUrl}" alt="Los Banos Martial Arts Academy" style="width:48px;height:48px;border-radius:4px;display:block;flex-shrink:0;" />
+    ${nameBlock}
+  </div>`
+  }
+  return `
+  <div style="padding:16px 28px;border-bottom:1px solid #e2dbd5;">
+    ${nameBlock}
+  </div>`
+}
 
 const FOOTER = `
-  <hr style="border:none;border-top:1px solid #f0f0f0;margin:0 0 16px;" />
-  <p style="margin:0;font-size:11px;color:#bbb;line-height:1.5;">
-    <strong style="color:#aaa;">Need help?</strong> Reach us at
-    <a href="mailto:info@lbmaa.com" style="color:#c8102e;text-decoration:none;">info@lbmaa.com</a>
+  <hr style="border:none;border-top:1px solid #e2dbd5;margin:0 0 16px;" />
+  <p style="margin:0 0 6px;font-size:12px;color:#595959;line-height:1.6;text-align:center;">
+    <strong style="color:#3d3d3d;">Need help?</strong> Reach us at
+    <a href="mailto:info@lbmaa.com" style="color:#A01F23;text-decoration:underline;">info@lbmaa.com</a>
+    or call <a href="tel:+14086200252" style="color:#A01F23;text-decoration:underline;">(408) 620-0252</a>
   </p>
+  <p style="margin:0;font-size:12px;color:#595959;line-height:1.6;text-align:center;">1209 South 6th St Suite E, Los Banos, CA</p>
 `
 
-function wrap(inner: string): string {
-  return `<div style="font-family:Arial,sans-serif;font-size:13px;color:#333;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:6px;overflow:hidden;">
+function wrap(inner: string, logoUrl?: string, subtitle?: string): string {
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#3d3d3d;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #e2dbd5;border-radius:6px;overflow:hidden;">
     ${STRIPE}
-    ${HEADER}
+    ${makeHeader(logoUrl, subtitle)}
     <div style="padding:24px 28px;">
       ${inner}
       ${FOOTER}
@@ -32,11 +49,11 @@ function wrap(inner: string): string {
 
 function ctaButton(href: string, label: string): string {
   return `<div style="text-align:center;margin-bottom:20px;">
-    <a href="${href}" style="display:inline-block;background:#c8102e;color:#fff;font-weight:700;padding:13px 36px;border-radius:4px;text-decoration:none;font-size:14px;letter-spacing:0.5px;">${label}</a>
+    <a href="${href}" style="display:inline-block;background:#A01F23;color:#fff;font-weight:700;padding:13px 36px;border-radius:4px;text-decoration:none;font-size:14px;letter-spacing:0.5px;">${label}</a>
   </div>`
 }
 
-export function enrollmentNotificationHtml(lead: EnrollmentLead, adminUrl: string): string {
+export function enrollmentNotificationHtml(lead: EnrollmentLead, adminUrl: string, logoUrl?: string): string {
   const rows = [
     `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;width:110px;">Parent</td><td style="padding:4px 0;color:#555;">${lead.parent_name}</td></tr>`,
     `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Email</td><td style="padding:4px 0;color:#555;">${lead.parent_email}</td></tr>`,
@@ -50,24 +67,25 @@ export function enrollmentNotificationHtml(lead: EnrollmentLead, adminUrl: strin
     <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">A family submitted an enrollment inquiry through the website.</p>
     <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">${rows}</table>
     ${ctaButton(adminUrl, 'View in Admin Dashboard')}
-  `)
+  `, logoUrl, 'Admin Portal')
 }
 
-export function messagingNotificationHtml(senderName: string, portalUrl: string): string {
+export function messagingNotificationHtml(senderName: string, portalUrl: string, logoUrl?: string): string {
   return wrap(`
     <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">You have a new message</p>
     <p style="margin:0 0 22px;color:#555;font-size:13px;line-height:1.65;">
       <strong>${senderName}</strong> sent you a message in the LBMAA portal.
     </p>
     ${ctaButton(portalUrl, 'Read Message')}
-    <p style="margin:0 0 18px;font-size:11px;color:#aaa;text-align:center;">Reply directly in the portal — do not reply to this email.</p>
-  `)
+    <p style="margin:0 0 18px;font-size:12px;color:#595959;text-align:center;">Reply directly in the portal — do not reply to this email.</p>
+  `, logoUrl)
 }
 
 // Multi-program approval email — sent when admin approves a lead with program bookings
 export function multiProgramApprovalEmailHtml(
   parentName: string,
-  programs: Array<{ programLabel: string; childNames: string; bookingUrl: string }>
+  programs: Array<{ programLabel: string; childNames: string; bookingUrl: string }>,
+  logoUrl?: string
 ): string {
   const sections = programs.map(p => `
     <div style="margin-bottom:20px;">
@@ -86,11 +104,11 @@ export function multiProgramApprovalEmailHtml(
     <p style="margin:0 0 18px;font-size:12px;color:#aaa;text-align:center;">
       Each booking link is unique to your inquiry. Do not share them.
     </p>
-  `)
+  `, logoUrl)
 }
 
 // Booking approval email — sent when admin approves a lead
-export function approvalEmailHtml(lead: EnrollmentLead, bookingUrl: string): string {
+export function approvalEmailHtml(lead: EnrollmentLead, bookingUrl: string, logoUrl?: string): string {
   return wrap(`
     <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Your enrollment request has been approved!</p>
     <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">
@@ -101,30 +119,30 @@ export function approvalEmailHtml(lead: EnrollmentLead, bookingUrl: string): str
     <p style="margin:0 0 18px;font-size:12px;color:#aaa;text-align:center;">
       This booking link is unique to your inquiry. Do not share it.
     </p>
-  `)
+  `, logoUrl)
 }
 
 // Denial email — sent when admin denies a lead
-export function denialEmailHtml(lead: EnrollmentLead): string {
+export function denialEmailHtml(lead: EnrollmentLead, logoUrl?: string): string {
   const message = lead.denial_message ?? 'Thank you for your interest in LBMAA. Unfortunately, we are unable to accommodate your enrollment request at this time.'
   return wrap(`
     <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Your enrollment inquiry — LBMAA</p>
     <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">Hi ${lead.parent_name},</p>
     <p style="margin:0 0 22px;color:#555;font-size:13px;line-height:1.65;">${message}</p>
-  `)
+  `, logoUrl)
 }
 
 // Booking confirmation email — sent after an appointment is booked
-export function bookingConfirmationHtml(parentName: string, appointments: AppointmentInfo[]): string {
+export function bookingConfirmationHtml(parentName: string, appointments: AppointmentInfo[], logoUrl?: string): string {
   const cards = appointments.map(a => `
     <div style="background:#f9f9f9;border:1px solid #e8e8e8;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#c8102e;margin-bottom:6px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
         ${a.programLabel}${a.childNames ? ` — ${a.childNames}` : ''}
       </div>
       <div style="font-size:16px;font-weight:700;color:#1a1a2e;">${a.date}</div>
       <div style="font-size:13px;color:#555;margin-top:4px;">${a.time}</div>
       <p style="margin:10px 0 0;font-size:12px;color:#888;">
-        Need to reschedule? <a href="${a.rebookingUrl}" style="color:#c8102e;text-decoration:none;">Click here</a>
+        Need to reschedule? <a href="${a.rebookingUrl}" style="color:#A01F23;text-decoration:none;">Click here</a>
       </p>
     </div>
   `).join('')
@@ -136,20 +154,20 @@ export function bookingConfirmationHtml(parentName: string, appointments: Appoin
     <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">${heading}</p>
     <p style="margin:0 0 16px;color:#555;font-size:13px;">Hi ${parentName}, ${intro}</p>
     ${cards}
-  `)
+  `, logoUrl)
 }
 
 // Reminder email — sent 2 days before appointment
-export function reminderEmailHtml(parentName: string, appointments: AppointmentInfo[], confirmUrl: string): string {
+export function reminderEmailHtml(parentName: string, appointments: AppointmentInfo[], confirmUrl: string, logoUrl?: string): string {
   const cards = appointments.map(a => `
     <div style="background:#f9f9f9;border:1px solid #e8e8e8;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#c8102e;margin-bottom:6px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
         ${a.programLabel}${a.childNames ? ` — ${a.childNames}` : ''}
       </div>
       <div style="font-size:16px;font-weight:700;color:#1a1a2e;">${a.date}</div>
       <div style="font-size:13px;color:#555;margin-top:4px;">${a.time}</div>
       <p style="margin:10px 0 0;font-size:12px;color:#888;">
-        Need to reschedule? <a href="${a.rebookingUrl}" style="color:#c8102e;text-decoration:none;">Click here</a>
+        Need to reschedule? <a href="${a.rebookingUrl}" style="color:#A01F23;text-decoration:none;">Click here</a>
       </p>
     </div>
   `).join('')
@@ -166,10 +184,10 @@ export function reminderEmailHtml(parentName: string, appointments: AppointmentI
     <p style="margin:0 0 16px;color:#555;font-size:13px;">Hi ${parentName}, ${intro}</p>
     ${cards}
     ${ctaButton(confirmUrl, 'Confirm My Attendance')}
-  `)
+  `, logoUrl)
 }
 
-export function submissionConfirmationHtml(lead: EnrollmentLead): string {
+export function submissionConfirmationHtml(lead: EnrollmentLead, logoUrl?: string): string {
   return wrap(`
     <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Thank you for your interest in LBMAA!</p>
     <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">
@@ -185,37 +203,37 @@ export function submissionConfirmationHtml(lead: EnrollmentLead): string {
     </div>
     <p style="margin:0 0 18px;font-size:13px;color:#555;line-height:1.65;">
       We look forward to meeting your family. In the meantime, feel free to reach us at
-      <a href="mailto:info@lbmartialarts.com" style="color:#c8102e;text-decoration:none;">info@lbmartialarts.com</a>.
+      <a href="mailto:info@lbmaa.com" style="color:#A01F23;text-decoration:none;">info@lbmaa.com</a>.
     </p>
     <p style="margin:0;font-size:13px;color:#555;">— The LBMAA Team</p>
-  `)
+  `, logoUrl)
 }
 
-export function announcementNotificationHtml(title: string, body: string, url: string): string {
+export function announcementNotificationHtml(title: string, body: string, url: string, logoUrl?: string): string {
   return wrap(`
     <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">New announcement from LBMAA</p>
-    <div style="background:#f8f9fa;border-left:4px solid #c8102e;padding:14px 16px;margin-bottom:20px;border-radius:0 4px 4px 0;">
+    <div style="background:#fdf5f5;border:1px solid #e8d0d0;border-radius:4px;padding:14px 16px;margin-bottom:20px;">
       <p style="font-size:15px;font-weight:700;color:#1a1a2e;margin:0 0 6px 0;">${title}</p>
       <p style="font-size:13px;color:#555;margin:0;line-height:1.5;">${body.substring(0, 200)}${body.length > 200 ? '…' : ''}</p>
     </div>
     ${ctaButton(url, 'Read Announcement')}
-  `)
+  `, logoUrl)
 }
 
-export function blogPostNotificationHtml(title: string, authorName: string, url: string): string {
+export function blogPostNotificationHtml(title: string, authorName: string, url: string, logoUrl?: string): string {
   return wrap(`
     <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">New post in the Parent Blog</p>
     <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">
       <strong>${authorName}</strong> published a new post:
     </p>
-    <div style="background:#f8f9fa;border-left:4px solid #c8102e;padding:14px 16px;margin-bottom:20px;border-radius:0 4px 4px 0;">
+    <div style="background:#fdf5f5;border:1px solid #e8d0d0;border-radius:4px;padding:14px 16px;margin-bottom:20px;">
       <p style="font-size:15px;font-weight:700;color:#1a1a2e;margin:0;">${title}</p>
     </div>
     ${ctaButton(url, 'Read Post')}
-  `)
+  `, logoUrl)
 }
 
-export function commentReplyHtml(replierName: string, originalSnippet: string, url: string): string {
+export function commentReplyHtml(replierName: string, originalSnippet: string, url: string, logoUrl?: string): string {
   return wrap(`
     <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">${replierName} replied to your comment</p>
     <p style="margin:0 0 12px;color:#555;font-size:13px;line-height:1.65;">Your comment:</p>
@@ -223,18 +241,18 @@ export function commentReplyHtml(replierName: string, originalSnippet: string, u
       <p style="font-size:13px;color:#666;margin:0;font-style:italic;">"${originalSnippet}${originalSnippet.length >= 100 ? '…' : ''}"</p>
     </div>
     ${ctaButton(url, 'View Reply')}
-  `)
+  `, logoUrl)
 }
 
-export function postCommentHtml(commenterName: string, postTitle: string, url: string): string {
+export function postCommentHtml(commenterName: string, postTitle: string, url: string, logoUrl?: string): string {
   return wrap(`
     <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">New comment on your post</p>
     <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">
       <strong>${commenterName}</strong> commented on:
     </p>
-    <div style="background:#f8f9fa;border-left:4px solid #c8102e;padding:14px 16px;margin-bottom:20px;border-radius:0 4px 4px 0;">
+    <div style="background:#fdf5f5;border:1px solid #e8d0d0;border-radius:4px;padding:14px 16px;margin-bottom:20px;">
       <p style="font-size:15px;font-weight:600;color:#1a1a2e;margin:0;">${postTitle}</p>
     </div>
     ${ctaButton(url, 'View Comment')}
-  `)
+  `, logoUrl)
 }
