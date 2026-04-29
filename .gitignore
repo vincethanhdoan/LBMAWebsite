@@ -36,6 +36,12 @@ CLAUDE.md
 .impeccable.md
 skills-lock.json
 docs/superpowers/
+.playwright-mcp/
+
+# Root-level screenshots / test artifacts
+/*.png
+/*.jpg
+/*.jpeg
 
 # Environment secrets
 .env
