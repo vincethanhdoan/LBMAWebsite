@@ -25,6 +25,7 @@ import {
   createMessage,
   createMessageAttachment,
   createOrGetDirectConversation,
+  joinGlobalConversation,
   markConversationAsRead,
   updateConversationHidden,
 } from '../../lib/supabase/mutations';
@@ -261,14 +262,7 @@ export function MessagesTab({ user, onUnreadCountChange }: MessagesTabProps) {
         if (globalConv) {
           setGlobalConvId(globalConv.conversation_id);
           setGlobalConvHidden(globalConv.hidden);
-
-          try {
-            await safeAddConversationMember(globalConv.conversation_id, user.id);
-          } catch (memberError: any) {
-            if (memberError?.code !== '42501') {
-              throw memberError;
-            }
-          }
+          await joinGlobalConversation();
         }
 
         // Load user's conversations

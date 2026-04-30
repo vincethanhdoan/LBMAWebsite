@@ -363,6 +363,11 @@ export async function createConversation(conversation: Omit<Conversation, 'conve
   return data;
 }
 
+export async function joinGlobalConversation(): Promise<void> {
+  const { error } = await supabase.rpc('join_global_conversation');
+  if (error) throw error;
+}
+
 export async function updateConversationHidden(conversationId: string, hidden: boolean): Promise<void> {
   const { error } = await supabase
     .from('conversations')
