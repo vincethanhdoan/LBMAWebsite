@@ -1,18 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Skeleton } from './ui/skeleton';
-import { getNotificationSummary } from '../lib/supabase/queries';
 import { markSectionSeen, markNotificationsRead } from '../lib/supabase/mutations';
-import { subscribeToUserNotifications, unsubscribe } from '../lib/supabase/realtime';
+import { useNotificationSummary } from '../lib/hooks/notifications';
 import type { UserNotification } from '../lib/types';
-
-type Summary = {
-  unreadMessages: number;
-  announcements: { count: number; latestTitle: string | null };
-  blog: { count: number; latestTitle: string | null };
-  commentNotifications: UserNotification[];
-};
 
 type NotificationBellProps = {
   userId: string;
@@ -21,8 +13,7 @@ type NotificationBellProps = {
 
 export function NotificationBell({ userId, onNavigate }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<Summary | null>(null);
+  const { data: summary, isLoading: loading, refetch: loadSummary } = useNotificationSummary(userId);
 
   const totalUnread = summary
     ? summary.unreadMessages +
@@ -31,51 +22,19 @@ export function NotificationBell({ userId, onNavigate }: NotificationBellProps) 
       summary.commentNotifications.length
     : 0;
 
-  const loadSummary = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getNotificationSummary(userId);
-      setSummary(data);
-    } catch {
-      // non-critical; leave stale state
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    loadSummary();
-    const channel = subscribeToUserNotifications(userId, () => loadSummary());
-    return () => { unsubscribe(channel); };
-  }, [userId, loadSummary]);
-
   async function handleMarkAllRead() {
     await Promise.all([
       markSectionSeen('announcements'),
       markSectionSeen('blog'),
       markNotificationsRead(),
     ]);
-    setSummary((prev) =>
-      prev
-        ? {
-            ...prev,
-            announcements: { count: 0, latestTitle: null },
-            blog: { count: 0, latestTitle: null },
-            commentNotifications: [],
-          }
-        : null
-    );
+    loadSummary();
   }
 
   async function handleNavigate(tab: string, section?: 'announcements' | 'blog') {
     if (section) {
       await markSectionSeen(section).catch(console.error);
-      setSummary((prev) => {
-        if (!prev) return prev;
-        return section === 'announcements'
-          ? { ...prev, announcements: { count: 0, latestTitle: null } }
-          : { ...prev, blog: { count: 0, latestTitle: null } };
-      });
+      loadSummary();
     }
     onNavigate(tab);
     setOpen(false);
@@ -85,9 +44,7 @@ export function NotificationBell({ userId, onNavigate }: NotificationBellProps) 
     const tab =
       notif.reference_type === 'announcement_comment' ? 'announcements' : 'blog';
     await markNotificationsRead().catch(console.error);
-    setSummary((prev) =>
-      prev ? { ...prev, commentNotifications: [] } : null
-    );
+    loadSummary();
     onNavigate(tab);
     setOpen(false);
   }
