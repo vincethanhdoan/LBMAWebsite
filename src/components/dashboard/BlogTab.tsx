@@ -7,9 +7,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Plus, MessageCircle, Send, Pin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getBlogPosts, getBlogComments } from '../../lib/supabase/queries';
-import { createBlogPost, createBlogComment, markSectionSeen } from '../../lib/supabase/mutations';
-import { subscribeToBlogPosts, subscribeToBlogComments, unsubscribe } from '../../lib/supabase/realtime';
+import { createBlogPost, markSectionSeen } from '../../lib/supabase/mutations';
+import {
+  useBlogPosts,
+  useBlogComments,
+  useCreateBlogComment,
+} from '../../lib/hooks/blog';
 
 type User = {
   id: string;
@@ -32,116 +35,185 @@ type BlogPost = {
   body: string;
   authorName: string;
   createdAt: string;
-  comments: Comment[];
   isPinned?: boolean;
 };
 
-export function BlogTab({ user }: { user: User }) {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [comments, setComments] = useState<{ [postId: string]: Comment[] }>({});
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newPostTitle, setNewPostTitle] = useState('');
-  const [newPostBody, setNewPostBody] = useState('');
-  const [commentTexts, setCommentTexts] = useState<{ [key: string]: string }>({});
-  const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [savingComment, setSavingComment] = useState<string | null>(null);
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function BlogCommentSection({ postId }: { postId: string }) {
+  const [commentText, setCommentText] = useState('');
+  const [savingComment, setSavingComment] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{
-    postId: string;
     commentId: string;
     authorName: string;
   } | null>(null);
   const [replyText, setReplyText] = useState('');
 
+  const { data: rawComments = [] } = useBlogComments(postId);
+  const createComment = useCreateBlogComment(postId);
+
+  const comments: Comment[] = rawComments.map((c: any) => ({
+    id: c.comment_id,
+    authorName: c.profiles?.display_name || 'Unknown',
+    body: c.body,
+    createdAt: c.created_at,
+    parentCommentId: c.parent_comment_id ?? null,
+  }));
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+    setSavingComment(true);
+    try {
+      await createComment.mutateAsync({ body: commentText.trim() });
+      setCommentText('');
+    } catch (error) {
+      toast.error('Error adding comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setSavingComment(false);
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!replyText.trim() || !replyingTo) return;
+    setSavingComment(true);
+    try {
+      await createComment.mutateAsync({ body: replyText.trim(), parentCommentId: replyingTo.commentId });
+      setReplyText('');
+      setReplyingTo(null);
+    } catch {
+      toast.error('Failed to send reply');
+    } finally {
+      setSavingComment(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4 pl-4 border-l-2 border-border">
+      {comments.map((comment) => (
+        <div key={comment.id} className="space-y-1">
+          {comment.parentCommentId && (
+            <p className="text-xs text-muted-foreground pl-2 border-l-2 border-muted mb-1">
+              ↩ Replying to {
+                comments.find(c => c.id === comment.parentCommentId)?.authorName ?? 'comment'
+              }
+            </p>
+          )}
+          <div className="flex items-center gap-2">
+            <Avatar className="h-6 w-6">
+              <AvatarFallback className="text-xs">
+                {comment.authorName[0]}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium">{comment.authorName}</span>
+            <span className="text-xs text-muted-foreground">
+              {formatDate(comment.createdAt)}
+            </span>
+          </div>
+          <p className="text-sm pl-8">{comment.body}</p>
+          {!comment.parentCommentId && (
+            <button
+              onClick={() => setReplyingTo({
+                commentId: comment.id,
+                authorName: comment.authorName,
+              })}
+              className="text-xs text-muted-foreground hover:text-foreground mt-1 transition-colors"
+            >
+              Reply
+            </button>
+          )}
+          {replyingTo?.commentId === comment.id && (
+            <div className="ml-8 mt-2 space-y-2">
+              <Textarea
+                autoFocus
+                placeholder={`Reply to ${replyingTo.authorName}…`}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="text-sm min-h-[60px] resize-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') { setReplyingTo(null); setReplyText(''); }
+                }}
+              />
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setReplyingTo(null); setReplyText(''); }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSendReply}
+                  disabled={!replyText.trim() || savingComment}
+                >
+                  {savingComment ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5" />
+                  )}
+                  Send
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Add Comment */}
+      <div className="flex gap-2 pt-2">
+        <Textarea
+          placeholder="Add a comment..."
+          value={commentText}
+          onChange={(e) => setCommentText(e.target.value)}
+          className="min-h-[80px]"
+        />
+        <Button
+          onClick={handleAddComment}
+          disabled={!commentText.trim() || savingComment}
+          size="sm"
+          className="gap-1.5"
+        >
+          {savingComment ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Send className="w-4 h-4" />
+          )}
+          Post
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function BlogTab({ user }: { user: User }) {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostBody, setNewPostBody] = useState('');
+  const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
+  const [saving, setSaving] = useState(false);
+
+  const { data: rawPosts = [], isLoading: loading } = useBlogPosts();
+
   useEffect(() => {
     markSectionSeen('blog').catch(console.error);
   }, []);
 
-  // Load blog posts and comments
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const postsData = await getBlogPosts();
-      
-      // Convert to UI format
-      const formattedPosts: BlogPost[] = postsData.map((p: any) => ({
-        id: p.post_id,
-        title: p.title,
-        body: p.body,
-        authorName: p.profiles?.display_name || 'Unknown',
-        createdAt: p.created_at,
-        isPinned: p.is_pinned || false,
-      }));
-
-      setPosts(formattedPosts);
-
-      // Load comments for each post
-      const commentsMap: { [key: string]: Comment[] } = {};
-      for (const post of formattedPosts) {
-        const commentsData = await getBlogComments(post.id);
-        commentsMap[post.id] = commentsData.map((c: any) => ({
-          id: c.comment_id,
-          authorName: c.profiles?.display_name || 'Unknown',
-          body: c.body,
-          createdAt: c.created_at,
-          parentCommentId: c.parent_comment_id ?? null,
-        }));
-      }
-      setComments(commentsMap);
-    } catch (error) {
-      console.error('Error loading blog posts:', error);
-      toast.error('Error loading blog posts: ' + (error instanceof Error ? error.message : 'Unknown error'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-
-    // Set up real-time subscriptions
-    const postsChannel = subscribeToBlogPosts((payload) => {
-      if (payload.eventType === 'INSERT' && payload.new) {
-        loadData();
-      }
-    });
-
-    return () => {
-      unsubscribe(postsChannel);
-    };
-  }, []);
-
-  // Set up comment subscriptions when comments are expanded
-  useEffect(() => {
-    const channels: any[] = [];
-    
-    Object.keys(expandedComments).forEach((postId) => {
-      if (expandedComments[postId]) {
-        const channel = subscribeToBlogComments(postId, (payload) => {
-          if (payload.eventType === 'INSERT' && payload.new) {
-            getBlogComments(postId).then((commentsData) => {
-              setComments((prev) => ({
-                ...prev,
-                [postId]: commentsData.map((c: any) => ({
-                  id: c.comment_id,
-                  authorName: c.profiles?.display_name || 'Unknown',
-                  body: c.body,
-                  createdAt: c.created_at,
-                  parentCommentId: c.parent_comment_id ?? null,
-                })),
-              }));
-            });
-          }
-        });
-        channels.push(channel);
-      }
-    });
-
-    return () => {
-      channels.forEach(channel => unsubscribe(channel));
-    };
-  }, [expandedComments]);
+  const posts: BlogPost[] = rawPosts.map((p: any) => ({
+    id: p.post_id,
+    title: p.title,
+    body: p.body,
+    authorName: p.profiles?.display_name || 'Unknown',
+    createdAt: p.created_at,
+    isPinned: p.is_pinned || false,
+  }));
 
   // Sort posts: pinned first, then by date
   const sortedPosts = [...posts].sort((a, b) => {
@@ -160,70 +232,15 @@ export function BlogTab({ user }: { user: User }) {
         title: newPostTitle.trim(),
         body: newPostBody.trim(),
       });
-      
+
       setNewPostTitle('');
       setNewPostBody('');
       setIsCreateDialogOpen(false);
-      await loadData();
     } catch (error) {
       toast.error('Error creating post: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleAddComment = async (postId: string) => {
-    const commentText = commentTexts[postId];
-    if (!commentText?.trim() || !user) return;
-
-    setSavingComment(postId);
-    try {
-      await createBlogComment(postId, commentText.trim());
-
-      // Reload comments
-      const commentsData = await getBlogComments(postId);
-      setComments((prev) => ({
-        ...prev,
-        [postId]: commentsData.map((c: any) => ({
-          id: c.comment_id,
-          authorName: c.profiles?.display_name || 'Unknown',
-          body: c.body,
-          createdAt: c.created_at,
-          parentCommentId: c.parent_comment_id ?? null,
-        })),
-      }));
-
-      setCommentTexts({ ...commentTexts, [postId]: '' });
-    } catch (error) {
-      toast.error('Error adding comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
-    } finally {
-      setSavingComment(null);
-    }
-  };
-
-  async function handleSendReply(postId: string) {
-    if (!replyText.trim() || !replyingTo) return;
-    setSavingComment(replyingTo.commentId);
-    try {
-      await createBlogComment(postId, replyText.trim(), replyingTo.commentId);
-      setReplyText('');
-      setReplyingTo(null);
-      await loadData();
-    } catch {
-      toast.error('Failed to send reply');
-    } finally {
-      setSavingComment(null);
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const toggleComments = (postId: string) => {
@@ -304,9 +321,7 @@ export function BlogTab({ user }: { user: User }) {
             </CardContent>
           </Card>
         ) : (
-          sortedPosts.map((post) => {
-            const postComments = comments[post.id] || [];
-            return (
+          sortedPosts.map((post) => (
           <Card key={post.id}>
             <CardHeader className={post.isPinned ? 'bg-secondary/50 border-l-4 border-l-primary' : ''}>
               <div className="flex items-start justify-between">
@@ -344,116 +359,16 @@ export function BlogTab({ user }: { user: User }) {
                   className="gap-2"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  {postComments.length} {postComments.length === 1 ? 'Comment' : 'Comments'}
+                  Comments
                 </Button>
 
                 {expandedComments[post.id] && (
-                  <div className="space-y-4 pl-4 border-l-2 border-border">
-                    {postComments.map((comment) => (
-                      <div key={comment.id} className="space-y-1">
-                        {comment.parentCommentId && (
-                          <p className="text-xs text-muted-foreground pl-2 border-l-2 border-muted mb-1">
-                            ↩ Replying to {
-                              comments[post.id]?.find(c => c.id === comment.parentCommentId)?.authorName ?? 'comment'
-                            }
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs">
-                              {comment.authorName[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm font-medium">{comment.authorName}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(comment.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-sm pl-8">{comment.body}</p>
-                        {!comment.parentCommentId && (
-                          <button
-                            onClick={() => setReplyingTo({
-                              postId: post.id,
-                              commentId: comment.id,
-                              authorName: comment.authorName,
-                            })}
-                            className="text-xs text-muted-foreground hover:text-foreground mt-1 transition-colors"
-                          >
-                            Reply
-                          </button>
-                        )}
-                        {replyingTo?.commentId === comment.id && (
-                          <div className="ml-8 mt-2 space-y-2">
-                            <Textarea
-                              autoFocus
-                              placeholder={`Reply to ${replyingTo.authorName}…`}
-                              value={replyText}
-                              onChange={(e) => setReplyText(e.target.value)}
-                              className="text-sm min-h-[60px] resize-none"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Escape') { setReplyingTo(null); setReplyText(''); }
-                              }}
-                            />
-                            <div className="flex gap-2 justify-end">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => { setReplyingTo(null); setReplyText(''); }}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => handleSendReply(post.id)}
-                                disabled={!replyText.trim() || savingComment === comment.id}
-                              >
-                                {savingComment === comment.id ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <Send className="h-3.5 w-3.5" />
-                                )}
-                                Send
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Add Comment */}
-                    <div className="flex gap-2 pt-2">
-                      <Textarea
-                        placeholder="Add a comment..."
-                        value={commentTexts[post.id] || ''}
-                        onChange={(e) =>
-                          setCommentTexts({
-                            ...commentTexts,
-                            [post.id]: e.target.value
-                          })
-                        }
-                        className="min-h-[80px]"
-                      />
-                      <Button
-                        onClick={() => handleAddComment(post.id)}
-                        disabled={!commentTexts[post.id]?.trim() || savingComment === post.id}
-                        size="sm"
-                        className="gap-1.5"
-                      >
-                        {savingComment === post.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Send className="w-4 h-4" />
-                        )}
-                        Post
-                      </Button>
-                    </div>
-                  </div>
+                  <BlogCommentSection postId={post.id} />
                 )}
               </div>
             </CardContent>
           </Card>
-            );
-          })
+          ))
         )}
       </div>
     </div>
