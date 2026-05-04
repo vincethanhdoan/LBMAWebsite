@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
@@ -48,7 +48,13 @@ function formatDate(dateString: string) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function AnnouncementCommentSection({ announcementId }: { announcementId: string }) {
+function AnnouncementCommentSection({
+  announcementId,
+  onCountLoaded,
+}: {
+  announcementId: string;
+  onCountLoaded?: (count: number) => void;
+}) {
   const [commentText, setCommentText] = useState('');
   const [replyingTo, setReplyingTo] = useState<{
     commentId: string;
@@ -66,6 +72,12 @@ function AnnouncementCommentSection({ announcementId }: { announcementId: string
     createdAt: c.created_at,
     parentCommentId: c.parent_comment_id ?? null,
   }));
+
+  const onCountLoadedRef = useRef(onCountLoaded);
+  useEffect(() => { onCountLoadedRef.current = onCountLoaded; });
+  useEffect(() => {
+    onCountLoadedRef.current?.(comments.length);
+  }, [comments.length]);
 
   const handleAddComment = async () => {
     if (!commentText.trim()) return;
@@ -188,6 +200,7 @@ function AnnouncementCommentSection({ announcementId }: { announcementId: string
 
 export function AnnouncementsTab({ user: _user }: { user: User }) {
   const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
 
   const { data: rawAnnouncements = [], isLoading: loading } = useAnnouncements();
 
@@ -292,11 +305,16 @@ export function AnnouncementsTab({ user: _user }: { user: User }) {
                   className="gap-2"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Comments
+                  {commentCounts[announcement.id] !== undefined
+                    ? `${commentCounts[announcement.id]} ${commentCounts[announcement.id] === 1 ? 'Comment' : 'Comments'}`
+                    : 'Comments'}
                 </Button>
 
                 {expandedComments[announcement.id] && (
-                  <AnnouncementCommentSection announcementId={announcement.id} />
+                  <AnnouncementCommentSection
+                    announcementId={announcement.id}
+                    onCountLoaded={(count) => setCommentCounts((prev) => ({ ...prev, [announcement.id]: count }))}
+                  />
                 )}
               </div>
             </CardContent>

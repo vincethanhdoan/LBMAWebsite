@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +29,8 @@ import { AdminAvailabilitySettings } from './admin/AdminAvailabilitySettings';
 import { AdminProfileTab } from './admin/AdminProfileTab';
 import { useSidebarCounts } from '../lib/hooks/notifications';
 import { useRealtimeInvalidation } from '../lib/hooks/useRealtimeInvalidation';
+import { markSectionSeen } from '../lib/supabase/mutations';
+import { queryKeys } from '../lib/queryKeys';
 import { getInitials } from '../lib/format';
 import type { User } from '../lib/types';
 import { NotificationBell } from './NotificationBell';
@@ -98,6 +101,7 @@ function getTabLabel(id: AdminTabId): string {
 export function AdminDashboardV2({ user, onLogout, onRefreshUser }: AdminDashboardV2Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get('tab') as AdminTabId) ?? 'announcements';
+  const queryClient = useQueryClient();
   const setActiveTab = (tab: AdminTabId) => setSearchParams({ tab }, { replace: true });
   const { data: counts } = useSidebarCounts(user.id);
   const unreadMessages = counts?.unreadMessages ?? 0;
@@ -141,6 +145,13 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser }: AdminDashboa
                         isActive={activeTab === id}
                         onClick={() => {
                           setActiveTab(id);
+                          if (id === 'announcements' || id === 'blog') {
+                            markSectionSeen(id).then(() => {
+                              queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(user.id) });
+                              queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(user.id) });
+                              queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(user.id) });
+                            }).catch(console.error);
+                          }
                         }}
                         tooltip={label}
                         size="lg"

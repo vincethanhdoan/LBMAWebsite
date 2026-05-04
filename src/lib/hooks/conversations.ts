@@ -59,7 +59,7 @@ async function fetchConversationsForUser(user: FetchUser): Promise<Conversations
   const allowedDirectIds: string[] = [];
 
   for (const conv of userConvs) {
-    if ((conv as any).hidden) continue;
+    if ((conv as any).hidden && user.role !== 'admin') continue;
 
     if (conv.type === 'global') {
       const convMessages = await getMessages(conv.conversation_id);
@@ -217,6 +217,8 @@ export function useMarkConversationRead(userId: string) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.conversations(userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(userId) });
     },
   });
 }

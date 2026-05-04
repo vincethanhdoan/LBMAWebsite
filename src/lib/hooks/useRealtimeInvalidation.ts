@@ -27,11 +27,12 @@ export function useRealtimeInvalidation(userId: string) {
         queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(userId) });
       }),
 
-      subscribeToAllAnnouncementComments(({ new: row }) => {
-        if (row?.announcement_id) {
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.announcementComments(row.announcement_id),
-          });
+      subscribeToAllAnnouncementComments(({ new: n, old: o }) => {
+        const announcementId = (n as any)?.announcement_id ?? (o as any)?.announcement_id;
+        if (announcementId) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.announcementComments(announcementId) });
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['announcement-comments'] });
         }
       }),
 
@@ -42,9 +43,12 @@ export function useRealtimeInvalidation(userId: string) {
         queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(userId) });
       }),
 
-      subscribeToAllBlogComments(({ new: row }) => {
-        if (row?.post_id) {
-          queryClient.invalidateQueries({ queryKey: queryKeys.blogComments(row.post_id) });
+      subscribeToAllBlogComments(({ new: n, old: o }) => {
+        const postId = (n as any)?.post_id ?? (o as any)?.post_id;
+        if (postId) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.blogComments(postId) });
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['blog-comments'] });
         }
       }),
 
@@ -52,13 +56,15 @@ export function useRealtimeInvalidation(userId: string) {
         queryClient.invalidateQueries({ queryKey: queryKeys.conversations(userId) });
       }),
 
-      subscribeToAllMessages(({ new: row }) => {
-        if (row?.conversation_id) {
-          queryClient.invalidateQueries({ queryKey: queryKeys.messages(row.conversation_id) });
+      subscribeToAllMessages(({ new: n, old: o }) => {
+        const conversationId = (n as any)?.conversation_id ?? (o as any)?.conversation_id;
+        if (conversationId) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.messages(conversationId) });
         }
         queryClient.invalidateQueries({ queryKey: queryKeys.conversations(userId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(userId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(userId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(userId) });
       }),
 
       subscribeToEnrollmentLeads(() => {

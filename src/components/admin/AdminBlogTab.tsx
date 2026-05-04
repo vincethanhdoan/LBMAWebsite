@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -43,8 +43,10 @@ type BlogPost = {
 
 function AdminBlogCommentSection({
   postId,
+  onCountLoaded,
 }: {
   postId: string;
+  onCountLoaded?: (count: number) => void;
 }) {
   const [commentText, setCommentText] = useState('');
   const [confirmState, setConfirmState] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
@@ -58,6 +60,12 @@ function AdminBlogCommentSection({
     body: c.body,
     createdAt: c.created_at,
   }));
+
+  const onCountLoadedRef = useRef(onCountLoaded);
+  useEffect(() => { onCountLoadedRef.current = onCountLoaded; });
+  useEffect(() => {
+    onCountLoadedRef.current?.(comments.length);
+  }, [comments.length]);
 
   const handleAddComment = async () => {
     if (!commentText.trim()) return;
@@ -161,6 +169,7 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
   const [editTitle, setEditTitle] = useState('');
   const [editBody, setEditBody] = useState('');
   const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [confirmState, setConfirmState] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
 
@@ -394,12 +403,15 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
                   className="gap-2"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Comments
+                  {commentCounts[post.id] !== undefined
+                    ? `${commentCounts[post.id]} ${commentCounts[post.id] === 1 ? 'Comment' : 'Comments'}`
+                    : 'Comments'}
                 </Button>
 
                 {expandedComments[post.id] && (
                   <AdminBlogCommentSection
                     postId={post.id}
+                    onCountLoaded={(count) => setCommentCounts((prev) => ({ ...prev, [post.id]: count }))}
                   />
                 )}
               </div>

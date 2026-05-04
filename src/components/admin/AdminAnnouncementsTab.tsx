@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -43,7 +43,13 @@ type Announcement = {
   isPinned?: boolean;
 };
 
-function AdminAnnouncementCommentSection({ announcementId }: { announcementId: string }) {
+function AdminAnnouncementCommentSection({
+  announcementId,
+  onCountLoaded,
+}: {
+  announcementId: string;
+  onCountLoaded?: (count: number) => void;
+}) {
   const [commentText, setCommentText] = useState('');
 
   const { data: rawComments = [] } = useAnnouncementComments(announcementId);
@@ -55,6 +61,12 @@ function AdminAnnouncementCommentSection({ announcementId }: { announcementId: s
     body: c.body,
     createdAt: c.created_at,
   }));
+
+  const onCountLoadedRef = useRef(onCountLoaded);
+  useEffect(() => { onCountLoadedRef.current = onCountLoaded; });
+  useEffect(() => {
+    onCountLoadedRef.current?.(comments.length);
+  }, [comments.length]);
 
   const handleAddComment = async () => {
     if (!commentText.trim()) return;
@@ -124,6 +136,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
   const [saving, setSaving] = useState(false);
   const [confirmState, setConfirmState] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
   const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: rawAnnouncements = [], isLoading: loading } = useAnnouncements();
@@ -532,11 +545,16 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
                   className="gap-2"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Comments
+                  {commentCounts[announcement.id] !== undefined
+                    ? `${commentCounts[announcement.id]} ${commentCounts[announcement.id] === 1 ? 'Comment' : 'Comments'}`
+                    : 'Comments'}
                 </Button>
 
                 {expandedComments[announcement.id] && (
-                  <AdminAnnouncementCommentSection announcementId={announcement.id} />
+                  <AdminAnnouncementCommentSection
+                    announcementId={announcement.id}
+                    onCountLoaded={(count) => setCommentCounts((prev) => ({ ...prev, [announcement.id]: count }))}
+                  />
                 )}
               </div>
             </CardContent>

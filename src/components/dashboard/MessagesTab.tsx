@@ -15,6 +15,7 @@ import {
   useSendMessage,
   useMarkConversationRead,
   type FormattedConversation,
+  type ConversationsData,
 } from '../../lib/hooks/conversations';
 import { useUsers } from '../../lib/hooks/users';
 import { queryKeys } from '../../lib/queryKeys';
@@ -119,11 +120,15 @@ export function MessagesTab({ user }: MessagesTabProps) {
       .then((globalConv) => {
         if (globalConv) {
           setGlobalConvHidden(globalConv.hidden);
-          joinGlobalConversation().catch(() => {});
+          joinGlobalConversation()
+            .then(() => {
+              queryClient.invalidateQueries({ queryKey: queryKeys.conversations(user.id) });
+            })
+            .catch(() => {});
         }
       })
       .catch(() => {});
-  }, [user.id]);
+  }, [user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-select the first (or global) conversation once loaded
   useEffect(() => {
@@ -141,12 +146,12 @@ export function MessagesTab({ user }: MessagesTabProps) {
     scrollToBottom();
   }, [rawMessages, selectedConversationId]);
 
-  // Mark conversation as read when selected
+  // Mark conversation as read when selected or when new messages arrive
   useEffect(() => {
     if (!selectedConversationId || loading) return;
     markRead(selectedConversationId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedConversationId, loading]);
+  }, [selectedConversationId, loading, rawMessages.length]);
 
   const currentMessages = useMemo(() => formatMessages(rawMessages), [rawMessages]);
 
@@ -173,11 +178,24 @@ export function MessagesTab({ user }: MessagesTabProps) {
     setCreatingDirectConversation(true);
     try {
       const conversationId = await createOrGetDirectConversation(selectedDirectTargetId);
-      // Invalidate in background — don't await
+      // Optimistically add the new conversation so the input is usable immediately
+      queryClient.setQueryData<ConversationsData>(
+        queryKeys.conversations(user.id),
+        (old) => {
+          if (!old) return old;
+          if (old.conversations.some((c) => c.id === conversationId)) return old;
+          return {
+            conversations: [
+              ...old.conversations,
+              { id: conversationId, name: target.displayName, type: 'direct' as const, unreadCount: 0 },
+            ],
+            allowedDirectIds: [...old.allowedDirectIds, conversationId],
+          };
+        }
+      );
+      // Background sync to reconcile full server state
       queryClient.invalidateQueries({ queryKey: queryKeys.conversations(user.id) });
-      // Navigate immediately using the returned ID
       setSelectedConversationId(conversationId);
-      setCreatingDirectConversation(false);
       setSelectedDirectTargetId('');
       setShowParticipants(false);
     } catch (error) {
@@ -245,7 +263,10 @@ export function MessagesTab({ user }: MessagesTabProps) {
     if (!messageText.trim() || !selectedConversationId || !user || !canSendInSelectedConversation) return;
     const text = messageText.trim();
     setMessageText('');
-    sendMessage({ conversationId: selectedConversationId, body: text });
+    sendMessage(
+      { conversationId: selectedConversationId, body: text },
+      { onError: () => setMessageText(text) }
+    );
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {

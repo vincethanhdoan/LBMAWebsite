@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +27,7 @@ import { ProfileTab } from './dashboard/ProfileTab';
 import { useSidebarCounts } from '../lib/hooks/notifications';
 import { useRealtimeInvalidation } from '../lib/hooks/useRealtimeInvalidation';
 import { markSectionSeen } from '../lib/supabase/mutations';
+import { queryKeys } from '../lib/queryKeys';
 import { getInitials } from '../lib/format';
 import type { User } from '../lib/types';
 import { NotificationBell } from './NotificationBell';
@@ -58,6 +60,7 @@ const navItems: { id: TabId; label: string; icon: React.ElementType }[] = [
 export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get('tab') as TabId) ?? 'home';
+  const queryClient = useQueryClient();
   function setActiveTab(tab: TabId) {
     setSearchParams({ tab }, { replace: true });
   }
@@ -101,9 +104,13 @@ export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props)
                       isActive={activeTab === id}
                       onClick={() => {
                         setActiveTab(id);
-                        if (id === 'announcements') markSectionSeen('announcements').catch(console.error);
-                        if (id === 'blog') markSectionSeen('blog').catch(console.error);
-                        if (id === 'feedback') markSectionSeen('feedback').catch(console.error);
+                        if (id === 'announcements' || id === 'blog' || id === 'feedback') {
+                          markSectionSeen(id).then(() => {
+                            queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(user.id) });
+                            queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(user.id) });
+                            queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(user.id) });
+                          }).catch(console.error);
+                        }
                       }}
                       tooltip={label}
                       size="lg"

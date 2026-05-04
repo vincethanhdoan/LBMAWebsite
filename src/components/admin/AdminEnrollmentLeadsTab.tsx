@@ -338,13 +338,15 @@ export function AdminEnrollmentLeadsTab() {
 
   useEffect(() => {
     setNotesDraft(d => {
-      const next = { ...d };
+      const next: Record<string, string> = {};
       for (const l of leads) {
-        if (!(l.lead_id in next)) next[l.lead_id] = l.admin_notes ?? '';
+        next[l.lead_id] = notesExpanded[l.lead_id] && l.lead_id in d
+          ? d[l.lead_id]
+          : (l.admin_notes ?? '');
       }
       return next;
     });
-  }, [leads]);
+  }, [leads, notesExpanded]);
 
   async function handleApprove(lead: EnrollmentLead) {
     const fnHeaders = await edgeFunctionUserAuthHeaders();

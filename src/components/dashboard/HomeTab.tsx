@@ -2,9 +2,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Badge } from '../ui/badge';
-import { Bell, BookOpen, Loader2, MessageSquare, Trophy, Award } from 'lucide-react';
+import { Bell, BookOpen, Loader2, MessageCircle, MessageSquare, Trophy, Award } from 'lucide-react';
 import { useProfile } from '../../hooks/useProfile';
-import { useHomeCounts } from '../../lib/hooks/notifications';
+import { useHomeCounts, useFeedbackCount } from '../../lib/hooks/notifications';
 
 type User = {
   id: string;
@@ -28,15 +28,18 @@ type HomeTabProps = {
 
 export function HomeTab({ user, onNavigate }: HomeTabProps) {
   const {
+    family,
     students: profileStudents,
     loading: profileLoading,
     error: profileError,
     reload: reloadProfile,
   } = useProfile(user);
   const { data: counts, isLoading: loading, error: countsError, refetch: reloadCounts } = useHomeCounts(user.id);
+  const { data: feedbackCount = 0 } = useFeedbackCount(user.id, family?.family_id ?? '');
   const unreadMessages = counts?.unreadMessages ?? 0;
   const announcementCount = counts?.announcementCount ?? 0;
   const blogCount = counts?.blogCount ?? 0;
+  const notifCount = counts?.notifCount ?? 0;
   const error = countsError instanceof Error ? countsError.message : null;
 
   const getInitials = (name: string) => {
@@ -92,10 +95,24 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
       icon: BookOpen,
       action: () => onNavigate('blog'),
     },
+    {
+      type: 'feedback',
+      count: feedbackCount,
+      label: 'New Instructor Feedback',
+      icon: Award,
+      action: () => onNavigate('feedback'),
+    },
+    {
+      type: 'comments',
+      count: notifCount,
+      label: 'New Comment Replies',
+      icon: MessageCircle,
+      action: () => onNavigate('announcements'),
+    },
   ];
 
   const notifications = allNotifications.filter((n) => n.count > 0);
-  const totalNotifications = unreadMessages + newAnnouncementsCount + blogCount;
+  const totalNotifications = unreadMessages + newAnnouncementsCount + blogCount + feedbackCount + notifCount;
 
   const isLoading = loading || profileLoading;
   const loadError = error || profileError;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -49,7 +49,7 @@ function formatDate(dateString: string) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function BlogCommentSection({ postId }: { postId: string }) {
+function BlogCommentSection({ postId, onCountLoaded }: { postId: string; onCountLoaded?: (count: number) => void }) {
   const [commentText, setCommentText] = useState('');
   const [replyingTo, setReplyingTo] = useState<{
     commentId: string;
@@ -67,6 +67,12 @@ function BlogCommentSection({ postId }: { postId: string }) {
     createdAt: c.created_at,
     parentCommentId: c.parent_comment_id ?? null,
   }));
+
+  const onCountLoadedRef = useRef(onCountLoaded);
+  useEffect(() => { onCountLoadedRef.current = onCountLoaded; });
+  useEffect(() => {
+    onCountLoadedRef.current?.(comments.length);
+  }, [comments.length]);
 
   const handleAddComment = async () => {
     if (!commentText.trim()) return;
@@ -192,6 +198,7 @@ export function BlogTab({ user }: { user: User }) {
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostBody, setNewPostBody] = useState('');
   const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
 
   const { data: rawPosts = [], isLoading: loading } = useBlogPosts();
@@ -354,11 +361,16 @@ export function BlogTab({ user }: { user: User }) {
                   className="gap-2"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Comments
+                  {commentCounts[post.id] !== undefined
+                    ? `${commentCounts[post.id]} ${commentCounts[post.id] === 1 ? 'Comment' : 'Comments'}`
+                    : 'Comments'}
                 </Button>
 
                 {expandedComments[post.id] && (
-                  <BlogCommentSection postId={post.id} />
+                  <BlogCommentSection
+                    postId={post.id}
+                    onCountLoaded={(count) => setCommentCounts((prev) => ({ ...prev, [post.id]: count }))}
+                  />
                 )}
               </div>
             </CardContent>
