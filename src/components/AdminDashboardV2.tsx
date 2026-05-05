@@ -50,6 +50,7 @@ type AdminDashboardV2Props = {
   user: NonNullable<User>;
   onLogout: () => void;
   onRefreshUser: () => Promise<void>;
+  isOwner: boolean;
 };
 
 type AdminTabId =
@@ -98,7 +99,7 @@ function getTabLabel(id: AdminTabId): string {
   return 'Profile';
 }
 
-export function AdminDashboardV2({ user, onLogout, onRefreshUser }: AdminDashboardV2Props) {
+export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: AdminDashboardV2Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get('tab') as AdminTabId) ?? 'announcements';
   const queryClient = useQueryClient();

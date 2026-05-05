@@ -60,7 +60,7 @@ function ProtectedRoute({
 }
 
 function AppRoutes() {
-  const { user, loading, accessState, accessMessage, signOut, refreshUser } = useAuth();
+  const { user, loading, accessState, accessMessage, signOut, refreshUser, isOwner } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -112,7 +112,7 @@ function AppRoutes() {
           path="/admin"
           element={
             <ProtectedRoute user={user} loading={loading} accessState={accessState} requireAdmin>
-              {user && <AdminDashboardV2 user={user} onLogout={handleLogout} onRefreshUser={refreshUser} />}
+              {user && <AdminDashboardV2 user={user} onLogout={handleLogout} onRefreshUser={refreshUser} isOwner={isOwner} />}
             </ProtectedRoute>
           }
         />
