@@ -71,7 +71,7 @@ export function PhotoUploader({
   return (
     <div className="flex items-center gap-4">
       <div className="relative group">
-        <Avatar className={sizeClasses[size]}>
+        <Avatar key={currentUrl ?? 'no-image'} className={sizeClasses[size]}>
           {currentUrl && <AvatarImage src={currentUrl} alt="Profile photo" />}
           <AvatarFallback className="text-lg">{fallback}</AvatarFallback>
         </Avatar>
