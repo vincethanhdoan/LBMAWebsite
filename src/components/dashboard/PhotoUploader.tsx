@@ -73,7 +73,7 @@ export function PhotoUploader({
       <div className="relative group">
         <Avatar key={currentUrl ?? 'no-image'} className={sizeClasses[size]}>
           {currentUrl && <AvatarImage src={currentUrl} alt="Profile photo" />}
-          <AvatarFallback className="text-lg">{fallback}</AvatarFallback>
+          <AvatarFallback className="text-lg bg-sidebar-primary text-sidebar-primary-foreground font-semibold">{fallback}</AvatarFallback>
         </Avatar>
         {!disabled && (
           <button

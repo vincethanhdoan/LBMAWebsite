@@ -17,6 +17,7 @@ import { createReview, updateProfile, updateReview, upsertUserNotificationPrefer
 import { PhotoUploader } from './PhotoUploader';
 import { uploadProfileImage, deleteProfileImage } from '../../lib/supabase/storage';
 import { getUserNotificationPreferences } from '../../lib/supabase/queries';
+import { getInitials } from '../../lib/format';
 import type { User, Review } from '../../lib/types';
 import { toast } from 'sonner';
 
@@ -511,7 +512,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
         <CardContent>
           <PhotoUploader
             currentUrl={user.avatarUrl}
-            fallback={user.displayName?.[0] ?? '?'}
+            fallback={getInitials(user.displayName ?? '?')}
             onUpload={async (file) => {
               const path = `profiles/${user.id}/avatar`;
               const url = await uploadProfileImage(path, file);
