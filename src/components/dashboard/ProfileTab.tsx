@@ -803,51 +803,51 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
         </CardHeader>
         <CardContent className="space-y-4">
           {students.map((student) => (
-            <div key={student.id} className="p-4 border rounded-lg">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-start gap-4">
+            <div key={student.id} className="border rounded-lg overflow-hidden">
+              <div className="grid grid-cols-[108px_1fr]">
+                <div className="flex flex-col items-center justify-center gap-2 px-3 py-4 border-r border-border">
                   <PhotoUploader
                     currentUrl={student.photoUrl}
                     fallback={`${student.firstName[0]}${student.lastName[0]}`}
-                    size="md"
+                    size="lg"
+                    layout="vertical"
                     onUpload={(file) => handleUploadStudentPhoto(student.id, file)}
                     onRemove={() => handleRemoveStudentPhoto(student.id)}
                   />
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg">
+                </div>
+                <div className="p-4 flex flex-col">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="flex items-center flex-wrap gap-2">
+                      <h3 className="font-semibold text-lg leading-tight">
                         {student.firstName} {student.lastName}
                       </h3>
                       <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
                         {student.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Age {calculateAge(student.dateOfBirth)} • Born {new Date(student.dateOfBirth).toLocaleDateString()}
-                    </p>
-                    <div className="mt-2">
-                      <Badge className="bg-[#303030] text-background border-primary">
-                        {student.beltLevel}
-                      </Badge>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingStudent(student)}
+                    >
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
                   </div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Age {calculateAge(student.dateOfBirth)} • Born {new Date(student.dateOfBirth).toLocaleDateString()}
+                  </p>
+                  <Badge className="bg-[#303030] text-background border-primary self-start">
+                    {student.beltLevel}
+                  </Badge>
+                  {student.notes && (
+                    <div className="mt-3 p-3 bg-secondary rounded-md">
+                      <Label className="text-xs text-muted-foreground">Notes</Label>
+                      <p className="text-sm mt-1">{student.notes}</p>
+                    </div>
+                  )}
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditingStudent(student)}
-                >
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
               </div>
-              
-              {student.notes && (
-                <div className="mt-3 p-3 bg-secondary rounded-md">
-                  <Label className="text-xs text-muted-foreground">Notes</Label>
-                  <p className="text-sm mt-1">{student.notes}</p>
-                </div>
-              )}
             </div>
           ))}
         </CardContent>
