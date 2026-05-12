@@ -20,3 +20,6 @@ BEGIN
     ORDER BY p.display_name;
 END;
 $$;
+
+-- Any authenticated user can attempt the call; access is enforced at runtime via is_admin() above
+GRANT EXECUTE ON FUNCTION public.get_admin_emails() TO authenticated;
