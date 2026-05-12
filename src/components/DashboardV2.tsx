@@ -230,7 +230,7 @@ export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props)
         </header>
 
         {/* Scrollable page content */}
-        <main className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden' : 'overflow-auto p-6'}`}>
+        <main className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}>
           {activeTab === 'home' && <HomeTab user={user} onNavigate={(tab) => setActiveTab(tab as TabId)} />}
           {activeTab === 'announcements' && <AnnouncementsTab user={user} />}
           {activeTab === 'blog' && <BlogTab user={user} />}

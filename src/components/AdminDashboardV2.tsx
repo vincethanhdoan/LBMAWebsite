@@ -295,7 +295,7 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
         </header>
 
         {/* Scrollable page content */}
-        <main className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden' : 'overflow-auto p-6'}`}>
+        <main className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}>
           {activeTab === 'announcements' && <AdminAnnouncementsTab user={user} />}
           {activeTab === 'blog' && <AdminBlogTab user={user} />}
           {activeTab === 'messages' && (
