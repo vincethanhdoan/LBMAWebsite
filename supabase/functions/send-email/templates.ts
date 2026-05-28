@@ -1,10 +1,15 @@
 // supabase/functions/send-email/templates.ts
 
-import type { EnrollmentLead, AppointmentInfo } from './types.ts'
+import type { EnrollmentLead, AppointmentInfo, ChildRecord } from './types.ts'
 
 function escHtml(s: string | null | undefined): string {
   if (!s) return ''
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+const PROGRAM_LABELS: Record<string, string> = {
+  little_dragons: 'Little Dragons',
+  youth: 'Youth Program',
 }
 
 const STRIPE = `<div style="height:4px;background:#A01F23;"></div>`
@@ -60,7 +65,13 @@ export function enrollmentNotificationHtml(lead: EnrollmentLead, adminUrl: strin
     `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;width:110px;">Parent</td><td style="padding:4px 0;color:#555;">${escHtml(lead.parent_name)}</td></tr>`,
     `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Email</td><td style="padding:4px 0;color:#555;">${escHtml(lead.parent_email)}</td></tr>`,
     lead.phone ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Phone</td><td style="padding:4px 0;color:#555;">${escHtml(lead.phone)}</td></tr>` : '',
-    lead.student_name ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Student</td><td style="padding:4px 0;color:#555;">${escHtml(lead.student_name)}${lead.student_age ? ` (age ${lead.student_age})` : ''}</td></tr>` : '',
+    lead.children && lead.children.length > 0
+      ? lead.children.map((c: ChildRecord) =>
+          `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Child</td><td style="padding:4px 0;color:#555;">${escHtml(c.name)}, age ${c.age} — ${PROGRAM_LABELS[c.program_type] ?? c.program_type}</td></tr>`
+        ).join('')
+      : lead.student_name
+        ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Student</td><td style="padding:4px 0;color:#555;">${escHtml(lead.student_name)}${lead.student_age ? ` (age ${lead.student_age})` : ''}</td></tr>`
+        : '',
     lead.message ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;vertical-align:top;">Message</td><td style="padding:4px 0;color:#555;">${escHtml(lead.message)}</td></tr>` : '',
   ].join('')
 
@@ -195,7 +206,16 @@ export function submissionConfirmationHtml(lead: EnrollmentLead, logoUrl?: strin
     <div style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 20px;">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#595959;margin-bottom:8px;">Your inquiry details</div>
       <table style="width:100%;border-collapse:collapse;">
-        ${lead.student_name ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;width:110px;">Student</td><td style="padding:4px 0;color:#555;">${escHtml(lead.student_name)}${lead.student_age ? ` (age ${lead.student_age})` : ''}</td></tr>` : ''}
+        ${lead.phone ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;width:110px;">Phone</td><td style="padding:4px 0;color:#555;">${escHtml(lead.phone)}</td></tr>` : ''}
+        ${lead.children && lead.children.length > 0
+          ? lead.children.map((c: ChildRecord) =>
+              `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;width:110px;">Child</td><td style="padding:4px 0;color:#555;">${escHtml(c.name)}, age ${c.age} — ${PROGRAM_LABELS[c.program_type] ?? c.program_type}</td></tr>`
+            ).join('')
+          : lead.student_name
+            ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;width:110px;">Student</td><td style="padding:4px 0;color:#555;">${escHtml(lead.student_name)}${lead.student_age ? ` (age ${lead.student_age})` : ''}</td></tr>`
+            : ''
+        }
+        ${lead.message ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;vertical-align:top;width:110px;">Message</td><td style="padding:4px 0;color:#555;">${escHtml(lead.message)}</td></tr>` : ''}
         <tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Contact</td><td style="padding:4px 0;color:#555;">${escHtml(lead.parent_email)}</td></tr>
       </table>
     </div>

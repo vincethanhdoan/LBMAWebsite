@@ -5,6 +5,7 @@ import {
   messagingNotificationHtml,
   bookingConfirmationHtml,
   reminderEmailHtml,
+  submissionConfirmationHtml,
 } from './templates.ts'
 import type { AppointmentInfo } from './types.ts'
 
@@ -137,4 +138,58 @@ Deno.test('reminderEmailHtml — contains all appointments, confirm button, resc
   assertEquals(html.includes('Confirm My Attendance'), true)
   assertEquals(html.includes('https://lbmaa.com/book/abc123'), true)
   assertEquals(html.includes('https://lbmaa.com/book/def456'), true)
+})
+
+// ── enrollmentNotificationHtml: children ──────────────────────────────────
+
+const LEAD_WITH_CHILDREN = {
+  ...DUMMY_LEAD,
+  student_name: null as null,
+  student_age: null as null,
+  children: [
+    { name: 'Emma', age: 6, program_type: 'little_dragons' },
+    { name: 'Jake', age: 12, program_type: 'youth' },
+  ],
+}
+
+Deno.test('enrollmentNotificationHtml — shows each child name, age, and program', () => {
+  const html = enrollmentNotificationHtml(LEAD_WITH_CHILDREN, 'https://example.com/admin', LOGO)
+  assertEquals(html.includes('Emma'), true)
+  assertEquals(html.includes('age 6'), true)
+  assertEquals(html.includes('Little Dragons'), true)
+  assertEquals(html.includes('Jake'), true)
+  assertEquals(html.includes('age 12'), true)
+  assertEquals(html.includes('Youth Program'), true)
+})
+
+Deno.test('enrollmentNotificationHtml — falls back to legacy student_name when children absent', () => {
+  const html = enrollmentNotificationHtml(DUMMY_LEAD, 'https://example.com/admin', LOGO)
+  assertEquals(html.includes('Sam'), true)
+  assertEquals(html.includes('age 8'), true)
+})
+
+// ── submissionConfirmationHtml: children, phone, message ──────────────────
+
+Deno.test('submissionConfirmationHtml — shows children, phone, and message', () => {
+  const lead = {
+    ...DUMMY_LEAD,
+    phone: '(209) 555-0100' as string | null,
+    message: 'Interested in morning classes.' as string | null,
+    student_name: null as null,
+    student_age: null as null,
+    children: [
+      { name: 'Emma', age: 6, program_type: 'little_dragons' },
+    ],
+  }
+  const html = submissionConfirmationHtml(lead, LOGO)
+  assertEquals(html.includes('Emma'), true)
+  assertEquals(html.includes('age 6'), true)
+  assertEquals(html.includes('Little Dragons'), true)
+  assertEquals(html.includes('(209) 555-0100'), true)
+  assertEquals(html.includes('Interested in morning classes.'), true)
+})
+
+Deno.test('submissionConfirmationHtml — falls back to legacy student_name when children absent', () => {
+  const html = submissionConfirmationHtml(DUMMY_LEAD, LOGO)
+  assertEquals(html.includes('Sam'), true)
 })
