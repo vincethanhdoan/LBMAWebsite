@@ -1,5 +1,6 @@
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { V3 } from './design';
+import { useLanguage } from './lang';
 
 const STORM_WARM_TONES = [
   'oklch(82% 0.030 32)',
@@ -11,23 +12,20 @@ const STORM_WARM_TONES = [
   'oklch(81% 0.020 42)',
 ];
 
-const STORM_STUDENTS: { name: string; rank: string; photo?: string }[] = [
-  { name: 'Alex M.',    rank: 'Green Belt'  },
-  { name: 'Sofia R.',   rank: 'Blue Belt'   },
-  { name: 'Marcus T.',  rank: 'Red Belt'    },
-  { name: 'Lily C.',    rank: 'Purple Belt' },
-  { name: 'Jordan K.',  rank: 'Brown Belt'  },
+const STORM_STUDENTS: { name: string; rankIdx: number; photo?: string }[] = [
+  { name: 'Alex M.',    rankIdx: 0 },
+  { name: 'Sofia R.',   rankIdx: 1 },
+  { name: 'Marcus T.',  rankIdx: 2 },
+  { name: 'Lily C.',    rankIdx: 3 },
+  { name: 'Jordan K.',  rankIdx: 4 },
 ];
 
-const STATS = [
-  { num: '25+',    label: 'Years Training',     sub: 'Started at age 9'                  },
-  { num: '5th',    label: 'Degree Black Belt',  sub: 'WCWMA system'                      },
-  { num: '1st',    label: 'Degree Black Belt',  sub: 'Marine Corps Martial Arts'         },
-  { num: '2020',   label: 'Est.',               sub: 'LBMAA founded'                     },
-];
-
+const STATS_NUMS = ['25+', '5th', '1st', '2020'];
 
 export function InstructorsPage() {
+  const { t } = useLanguage();
+  const ins = t.instructors;
+
   return (
     <div>
 
@@ -38,7 +36,7 @@ export function InstructorsPage() {
 
             {/* Text */}
             <div className="order-last md:order-first">
-              <p className="v3-eyebrow mb-3">Master Instructor</p>
+              <p className="v3-eyebrow mb-3">{ins.masterEyebrow}</p>
               <h1
                 className="v3-h font-black leading-[0.88]"
                 style={{
@@ -84,8 +82,8 @@ export function InstructorsPage() {
       <section style={{ backgroundColor: V3.primary }}>
         <div className="max-w-7xl mx-auto px-5 md:px-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4 md:gap-x-10 md:gap-y-0 py-5 md:py-6">
-            {STATS.map(({ num, label, sub }) => (
-              <div key={num + label}>
+            {ins.stats.map(({ label, sub }, i) => (
+              <div key={i}>
                 <div className="flex items-baseline gap-1.5 mb-0.5" style={{ flexWrap: 'nowrap' }}>
                   <span
                     className="font-black leading-none"
@@ -96,7 +94,7 @@ export function InstructorsPage() {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {num}
+                    {STATS_NUMS[i]}
                   </span>
                   <span
                     className="font-bold"
@@ -151,28 +149,15 @@ export function InstructorsPage() {
                 className="v3-h font-black leading-[1.0] mb-5"
                 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', color: V3.text }}
               >
-                About Me
+                {ins.aboutMeHeading}
               </h2>
               <div
                 className="flex flex-col gap-4 text-[0.95rem] leading-relaxed"
                 style={{ color: V3.muted }}
               >
-                <p>
-                  I didn't plan on five black belts. I just kept finding things worth
-                  learning. That's part of why I teach the way I do. I can pull from
-                  different systems to find what actually clicks for each student, not
-                  just what works in general.
-                </p>
-                <p>
-                  What ten years in the Marines gave me as an instructor wasn't toughness
-                  to hand down. It was patience. Knowing how to hold a real expectation
-                  and still make someone feel like they can meet it.
-                </p>
-                <p>
-                  That photo is from a tournament. Those are my students. They've trained
-                  hard, they're nervous, and look at their faces. That's what I'm here for.
-                  Every single class.
-                </p>
+                {ins.aboutMe.map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
               </div>
             </div>
 
@@ -180,21 +165,20 @@ export function InstructorsPage() {
         </div>
       </section>
 
-{/* ── QUOTE ── */}
+      {/* ── QUOTE ── */}
       <section className="py-12" style={{ backgroundColor: V3.primary }}>
         <div className="max-w-3xl mx-auto px-6 text-center">
           <p
             className="text-xs font-bold uppercase tracking-[0.2em] mb-6"
             style={{ color: 'oklch(85% 0.055 20)', fontFamily: "'Nunito', sans-serif" }}
           >
-            Why I do this
+            {ins.quoteEyebrow}
           </p>
           <blockquote
             className="v3-h font-black leading-[1.1]"
             style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', color: 'white' }}
           >
-            "I'm not building fighters. I'm building kids who walk
-            a little taller on the way to school."
+            {ins.quote}
           </blockquote>
           <p
             className="mt-6 text-sm"
@@ -243,7 +227,7 @@ export function InstructorsPage() {
                   color: V3.primary,
                 }}
               >
-                Super Team of Role Models
+                {ins.stormSubtitle}
               </p>
               <p
                 style={{
@@ -255,8 +239,7 @@ export function InstructorsPage() {
                   textAlign: 'right' as const,
                 }}
               >
-                These students go above and beyond every single day — passing our values and
-                traditions to the next generation of martial artists.
+                {ins.stormTagline}
               </p>
             </div>
           </div>
@@ -331,7 +314,7 @@ export function InstructorsPage() {
                       color: V3.muted,
                     }}
                   >
-                    {student.rank}
+                    {ins.beltRanks[student.rankIdx]}
                   </p>
                 </div>
               </div>

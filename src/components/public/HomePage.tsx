@@ -2,39 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { BASE, V3 } from './design';
+import { useLanguage } from './lang';
 
-const COMING_SOON = [
-  {
-    name: 'Adults',
-    ages: 'Ages 18+',
-    desc: 'Dynamic, goal-oriented classes that build self-defense, strength, fitness, confidence, and stress relief.',
-  },
-  {
-    name: 'Endurance Fitness Kickboxing',
-    ages: 'Ages 16+',
-    desc: 'High-energy cardio kickboxing classes focused on building stamina, strength, coordination, and overall fitness.',
-  },
-];
-
-const PROGRAMS = [
-  {
-    name: 'Little Dragons',
-    ages: 'Ages 4–7',
-    image: '/photos/29-IMG_5072.jpg',
-    desc: 'Fun, structured classes that build listening, coordination, early discipline, and fitness.',
-  },
-  {
-    name: 'Youth Program',
-    ages: 'Ages 8–17',
-    image: '/photos/1-_MG_5182.jpg',
-    desc: 'Dynamic, goal-oriented classes that build self-defense, discipline, fitness, coordination, confidence, and a strong mind and body.',
-  },
-  {
-    name: 'Extreme Performance',
-    ages: 'All Ages',
-    image: '/photos/ep-team-dojo.jpg',
-    desc: 'Invite-only advanced training for handpicked students in gymnastics, weapons, creative forms, and individual and team performance.',
-  },
+const PROGRAM_PHOTOS = [
+  '/photos/29-IMG_5072.jpg',
+  '/photos/1-_MG_5182.jpg',
+  '/photos/ep-team-dojo.jpg',
 ];
 
 const STUDENT_PHOTOS = [
@@ -52,22 +25,19 @@ const STUDENT_PHOTOS = [
   '/photos/IMG_1403.jpg',
 ];
 
-const VALUES = [
-  { label: 'Honor',   desc: 'We act with integrity on and off the mat.' },
-  { label: 'Loyalty', desc: 'We stand by our school, our team, and each other.' },
-  { label: 'Family',  desc: 'We train together and grow together.' },
-  { label: 'Bravery', desc: 'We face every challenge and never give up.' },
-];
-
 export function HomePage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [hoveredValue, setHoveredValue] = useState<number | null>(null);
+
+  const h = t.home;
+  const c = t.common;
 
   return (
     <div>
 
       {/* ── HERO ── */}
-      <section className="relative overflow-hidden" style={{ minHeight: 'max(88svh, 580px)' }}>
+      <section className="relative flex flex-col" style={{ minHeight: 'max(calc(100svh - 72px), 520px)' }}>
         <ImageWithFallback
           src="/photos/class-synchronized.jpg"
           alt="Los Banos Martial Arts Academy"
@@ -81,8 +51,8 @@ export function HomePage() {
           }}
         />
 
-        <div className="relative h-full flex items-center">
-          <div className="max-w-7xl mx-auto px-6 md:px-10 py-20 w-full">
+        <div className="relative flex-1 flex items-center">
+          <div className="max-w-7xl mx-auto px-6 md:px-10 py-12 md:py-20 w-full">
             <div style={{ maxWidth: '580px' }}>
 
               <div style={{ width: '36px', height: '3px', backgroundColor: V3.primary, marginBottom: '20px' }} />
@@ -96,24 +66,24 @@ export function HomePage() {
                   letterSpacing: '-0.02em',
                 }}
               >
-                Black Belts<br />
-                in Martial Arts.<br />
-                <span style={{ color: V3.primary }}>Black Belts in Life.</span>
+                {h.heroHeading1}<br />
+                {h.heroHeading2}<br />
+                <span style={{ color: V3.primary }}>{h.heroHeading3}</span>
               </h1>
 
               <p
                 className="leading-relaxed mb-8"
                 style={{ color: 'oklch(82% 0.007 30)', maxWidth: '42ch', fontSize: '1rem' }}
               >
-                Healthier active lifestyle through martial arts. <br />Start Your black belt journey today. <br />English and Spanish speaking.
+                {h.heroSub}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
                 <button className="v3-btn-primary" onClick={() => navigate(`${BASE}/contact`)}>
-                  Book a Trial Class
+                  {c.bookTrial}
                 </button>
                 <button className="v3-btn-ghost" onClick={() => navigate(`${BASE}/programs`)}>
-                  Explore Programs
+                  {h.explorePrograms}
                 </button>
               </div>
 
@@ -130,7 +100,7 @@ export function HomePage() {
             style={{ maxWidth: '1040px', margin: '0 auto' }}
           >
             <div>
-              <p className="v3-eyebrow mb-5">About</p>
+              <p className="v3-eyebrow mb-5">{h.aboutEyebrow}</p>
               <h2
                 className="v3-h font-black mb-6"
                 style={{
@@ -140,31 +110,26 @@ export function HomePage() {
                   letterSpacing: '-0.015em',
                 }}
               >
-                More Than Kicking<br />and Punching.<br /><span style={{ color: V3.primary }}>It's a Way of Life.</span>
+                {h.aboutHeading1}<br />{h.aboutHeading2}<br /><span style={{ color: V3.primary }}>{h.aboutHeading3}</span>
               </h2>
               <p
                 className="leading-relaxed mb-4"
                 style={{ color: V3.muted, fontSize: '0.95rem', maxWidth: '50ch' }}
               >
-                The physical training matters — your child gets stronger, more coordinated,
-                and more capable. However, what stays with them is the discipline to show up when
-                something becomes challenging, the respect for the people around them, and the
-                confidence that comes with earning an Ernie Reyes West Coast World martial arts
-                black belt.
+                {h.aboutP1}
               </p>
               <p
                 className="leading-relaxed mb-8"
                 style={{ color: V3.muted, fontSize: '0.95rem', maxWidth: '50ch' }}
               >
-                Our academy has been part of a legacy spanning over 40 years at Ernie Reyes'
-                West Coast World Martial Arts Association.
+                {h.aboutP2}
               </p>
               <button
                 onClick={() => navigate(`${BASE}/about`)}
                 className="v3-h font-bold uppercase tracking-wide text-sm"
                 style={{ color: V3.primary, letterSpacing: '0.08em' }}
               >
-                Our full story →
+                {h.aboutLink}
               </button>
             </div>
 
@@ -174,6 +139,100 @@ export function HomePage() {
                 alt="LBMAA instructor with students"
                 className="w-full h-full object-cover"
               />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FIRST VISIT ── */}
+      <section className="py-20" style={{ backgroundColor: V3.surface }}>
+        <div className="max-w-7xl mx-auto px-6 md:px-10">
+          <div style={{ maxWidth: '1040px', margin: '0 auto' }}>
+            <div style={{ width: '36px', height: '3px', backgroundColor: V3.primary, marginBottom: '20px' }} />
+            <p className="v3-eyebrow mb-5">{h.firstVisitEyebrow}</p>
+            <h2
+              className="v3-h font-black mb-16"
+              style={{
+                fontSize: 'clamp(1.9rem, 3.5vw, 2.75rem)',
+                color: V3.text,
+                lineHeight: 1.0,
+                letterSpacing: '-0.015em',
+              }}
+            >
+              {h.firstVisitHeading}
+            </h2>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '48px',
+              }}
+            >
+              {[
+                { n: '01', title: h.step01Title, body: h.step01Body },
+                { n: '02', title: h.step02Title, body: h.step02Body },
+                { n: '03', title: h.step03Title, body: h.step03Body },
+              ].map((step) => (
+                <div key={step.n} style={{ position: 'relative' }}>
+                  <span
+                    aria-hidden
+                    style={{
+                      position: 'absolute',
+                      top: '-0.2em',
+                      left: '-0.05em',
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 900,
+                      fontSize: 'clamp(5rem, 9vw, 7rem)',
+                      lineHeight: 1,
+                      letterSpacing: '-0.04em',
+                      color: V3.primary,
+                      opacity: 0.07,
+                      userSelect: 'none',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {step.n}
+                  </span>
+                  <div style={{ position: 'relative' }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontWeight: 700,
+                        fontSize: '0.65rem',
+                        letterSpacing: '0.2em',
+                        color: V3.primary,
+                        marginBottom: '12px',
+                      }}
+                    >
+                      {step.n}
+                    </span>
+                    <h3
+                      className="v3-h font-black mb-3"
+                      style={{
+                        fontSize: 'clamp(1.5rem, 2.5vw, 2rem)',
+                        color: V3.text,
+                        lineHeight: 1.0,
+                        letterSpacing: '-0.015em',
+                      }}
+                    >
+                      {step.title}
+                    </h3>
+                    <p
+                      style={{
+                        fontFamily: "'Nunito', sans-serif",
+                        fontSize: '1rem',
+                        lineHeight: 1.65,
+                        color: V3.muted,
+                        maxWidth: '36ch',
+                      }}
+                    >
+                      {step.body}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -209,7 +268,6 @@ export function HomePage() {
             </div>
           ))}
         </div>
-        {/* Fade edges */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
           background: 'linear-gradient(to right, oklch(10% 0.012 28) 0%, transparent 8%, transparent 92%, oklch(10% 0.012 28) 100%)',
@@ -217,19 +275,19 @@ export function HomePage() {
       </div>
 
       {/* ── PROGRAMS ── */}
-      <section style={{ backgroundColor: V3.surface, paddingTop: '64px', paddingBottom: '64px' }}>
+      <section style={{ backgroundColor: 'white', paddingTop: '64px', paddingBottom: '64px' }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div
             className="flex items-end justify-between mb-8"
             style={{ maxWidth: '1040px', margin: '0 auto 32px' }}
           >
             <div>
-              <p className="v3-eyebrow mb-3">Our Programs</p>
+              <p className="v3-eyebrow mb-3">{h.programsEyebrow}</p>
               <h2
                 className="v3-h font-black"
                 style={{ fontSize: 'clamp(1.9rem, 3.5vw, 2.75rem)', color: V3.text, lineHeight: 1.0 }}
               >
-                Training for Every Stage of Life
+                {h.programsHeading}
               </h2>
             </div>
             <button
@@ -237,7 +295,7 @@ export function HomePage() {
               className="v3-h font-bold uppercase tracking-wide hidden md:block flex-shrink-0 ml-8 text-sm"
               style={{ color: V3.primary, letterSpacing: '0.08em' }}
             >
-              View all →
+              {c.viewAll}
             </button>
           </div>
 
@@ -252,10 +310,10 @@ export function HomePage() {
               margin: '0 auto',
             }}
           >
-            {PROGRAMS.map((p) => (
+            {h.programs.map((p, idx) => (
               <div key={p.name} className="relative overflow-hidden" style={{ borderRadius: '10px' }}>
                 <ImageWithFallback
-                  src={p.image}
+                  src={PROGRAM_PHOTOS[idx]}
                   alt={p.name}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
@@ -314,7 +372,7 @@ export function HomePage() {
               gap: '6px',
             }}
           >
-            {COMING_SOON.map((p) => (
+            {h.comingSoon.map((p) => (
               <div
                 key={p.name}
                 style={{
@@ -324,7 +382,7 @@ export function HomePage() {
                 }}
               >
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-                  <span style={{ display: 'inline-block', fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: 'oklch(74% 0.11 54)', backgroundColor: 'oklch(74% 0.11 54 / 0.14)', padding: '2px 8px', borderRadius: '999px' }}>Coming Soon</span>
+                  <span style={{ display: 'inline-block', fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: 'oklch(74% 0.11 54)', backgroundColor: 'oklch(74% 0.11 54 / 0.14)', padding: '2px 8px', borderRadius: '999px' }}>{c.comingSoon}</span>
                   <span style={{ display: 'inline-block', fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: 'oklch(52% 0.007 30)', backgroundColor: 'oklch(29% 0.012 30)', padding: '2px 8px', borderRadius: '999px' }}>{p.ages}</span>
                 </div>
                 <h3 className="v3-h font-black mb-2" style={{ fontSize: 'clamp(1.1rem, 1.6vw, 1.35rem)', color: 'oklch(72% 0.005 30)', lineHeight: 1.05 }}>{p.name}</h3>
@@ -339,7 +397,7 @@ export function HomePage() {
               className="v3-h font-bold uppercase tracking-wide text-sm"
               style={{ color: V3.primary, letterSpacing: '0.08em' }}
             >
-              View all programs →
+              {c.viewAllPrograms}
             </button>
           </div>
         </div>
@@ -351,7 +409,7 @@ export function HomePage() {
           <div style={{ maxWidth: '1040px', margin: '0 auto' }}>
 
             <div style={{ marginBottom: '36px' }}>
-              <p className="v3-eyebrow mb-3">What We Stand For</p>
+              <p className="v3-eyebrow mb-3">{h.valuesEyebrow}</p>
               <h2
                 className="v3-h font-black"
                 style={{
@@ -361,7 +419,7 @@ export function HomePage() {
                   letterSpacing: '-0.015em',
                 }}
               >
-                Our Martial Arts Values
+                {h.valuesHeading}
               </h2>
             </div>
 
@@ -372,7 +430,7 @@ export function HomePage() {
                 gap: '6px',
               }}
             >
-              {VALUES.map((v, i) => (
+              {h.values.map((v, i) => (
                 <div
                   key={v.label}
                   onMouseEnter={() => setHoveredValue(i)}
@@ -397,7 +455,6 @@ export function HomePage() {
                     transform: hoveredValue === i ? 'scale(1.02)' : 'scale(1)',
                   }}
                 >
-                  {/* Giant first-letter watermark */}
                   <span
                     aria-hidden
                     style={{
@@ -419,7 +476,6 @@ export function HomePage() {
                     {v.label[0]}
                   </span>
 
-                  {/* Ordinal */}
                   <span
                     style={{
                       display: 'block',
@@ -434,7 +490,6 @@ export function HomePage() {
                     0{i + 1}
                   </span>
 
-                  {/* Value word */}
                   <p
                     className="v3-h font-black"
                     style={{
@@ -448,7 +503,6 @@ export function HomePage() {
                     {v.label}
                   </p>
 
-                  {/* Descriptor — reveals on hover */}
                   <div
                     style={{
                       overflow: 'hidden',
@@ -498,7 +552,7 @@ export function HomePage() {
                 marginBottom: '20px',
               }}
             >
-              Get Started
+              {c.getStarted}
             </p>
             <h2
               className="v3-h font-black mb-5"
@@ -509,18 +563,16 @@ export function HomePage() {
                 letterSpacing: '-0.015em',
               }}
             >
-              One Week Trial Offer
+              {c.trialOffer}
             </h2>
             <p
               className="leading-relaxed mb-8"
               style={{ color: 'oklch(88% 0.032 22)', fontSize: '0.95rem' }}
             >
-              To try our program is $30 with a uniform included for 5 consecutive training days.
-              Come in, meet the instructors, and let your child try a class. We'll answer your
-              questions before class and after class.
+              {c.trialBody}
             </p>
             <button onClick={() => navigate(`${BASE}/contact`)} className="v3-btn-white">
-              Contact Us to Get Started
+              {c.bookTrial}
             </button>
             <p
               style={{
@@ -530,7 +582,7 @@ export function HomePage() {
                 fontFamily: "'Nunito', sans-serif",
               }}
             >
-              We'll guide you through it
+              {c.guideYou}
             </p>
           </div>
         </div>

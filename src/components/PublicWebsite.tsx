@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { LoginModal } from './LoginModal';
+import { LanguageProvider } from './public/lang';
 import { Navbar } from './public/Navbar';
 import { Footer } from './public/Footer';
 import { HomePage } from './public/HomePage';
@@ -25,6 +26,7 @@ export function PublicWebsite() {
   const [showLogin, setShowLogin] = useState(false);
 
   return (
+    <LanguageProvider>
     <div className="v3-root min-h-screen flex flex-col">
       <ScrollToTop />
       <Navbar onLogin={() => setShowLogin(true)} />
@@ -47,5 +49,6 @@ export function PublicWebsite() {
 
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
     </div>
+    </LanguageProvider>
   );
 }

@@ -2,116 +2,62 @@ import { useNavigate } from 'react-router-dom';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { CheckCircle2 } from 'lucide-react';
 import { BASE, V3 } from './design';
+import { useLanguage } from './lang';
 
-const PROGRAMS = [
-  {
-    name: 'Little Dragons',
-    ages: 'Ages 4–7',
-    summary: 'Fun, structured classes that build listening, coordination, early discipline, and fitness. Our youngest students learn in an age-appropriate environment where confidence and character are built alongside martial arts fundamentals.',
-    highlights: [
-      'Structured classes designed for young learners',
-      'Builds listening skills, coordination, and early discipline',
-      'Age-appropriate curriculum in a safe, fun environment',
-      'Develops physical fitness and motor skills',
-      'Small class sizes for individual attention',
-    ],
-    photo: '/photos/29-IMG_5072.jpg',
-    photoAlt: 'Little Dragons class at LBMAA',
-    photoRight: false,
-    dark: false,
-  },
-  {
-    name: 'Youth Program',
-    ages: 'Ages 8–17',
-    summary: 'Dynamic, goal-oriented classes that build self-defense, discipline, fitness, coordination, confidence, and a strong mind and body. Students follow a clear belt progression with a curriculum that grows with them through the junior and teen years.',
-    highlights: [
-      'Goal-oriented training in self-defense and martial arts',
-      'Builds discipline, fitness, and coordination',
-      'Develops confidence and a strong mind and body',
-      'Clear belt progression with defined skill standards',
-      'Separate class tracks for juniors and teens',
-    ],
-    photo: '/photos/youth-class.jpg',
-    photoAlt: 'Youth martial arts class at LBMAA',
-    photoRight: true,
-    dark: false,
-  },
-  {
-    name: 'Extreme Performance',
-    ages: 'All Ages',
-    summary: 'Invite-only advanced training for handpicked students in gymnastics, weapons, creative forms, and individual and team performance. Selected students train at a higher intensity and compete at regional and national events.',
-    highlights: [
-      'Invite-only — students are selected by instructors',
-      'Advanced gymnastics and acrobatics training',
-      'Weapons and creative forms curriculum',
-      'Individual and team performance preparation',
-      'Competitive team opportunities at regional and national events',
-    ],
-    photo: '/photos/ep-team-dojo.jpg',
-    photoAlt: 'Extreme Performance team at LBMAA',
-    photoRight: false,
-    dark: true,
-  },
+const PROGRAM_VISUAL = [
+  { photo: '/photos/29-IMG_5072.jpg', photoAlt: 'Little Dragons class at LBMAA', photoRight: false, dark: false },
+  { photo: '/photos/youth-class.jpg', photoAlt: 'Youth martial arts class at LBMAA', photoRight: true, dark: false },
+  { photo: '/photos/ep-team-dojo.jpg', photoAlt: 'Extreme Performance team at LBMAA', photoRight: false, dark: true },
 ];
 
-const COMING_SOON = [
-  {
-    name: 'Adults',
-    ages: 'Ages 18+',
-    desc: 'Dynamic, goal-oriented classes that build self-defense, strength, fitness, confidence, and stress relief.',
-  },
-  {
-    name: 'Endurance Fitness Kickboxing',
-    ages: 'Ages 16+',
-    desc: 'High-energy cardio kickboxing classes focused on building stamina, strength, coordination, and overall fitness.',
-  },
-];
-
-const BELT_RANKS = [
-  { belt: 'White',       color: '#f9f8f5', border: '#c9c4bc' },
-  { belt: 'Yellow',      color: '#fef08a', border: '#ca8a04' },
-  { belt: 'Orange',      color: '#fed7aa', border: '#ea580c' },
-  { belt: 'Green',       color: '#bbf7d0', border: '#16a34a' },
-  { belt: 'Blue',        color: '#bfdbfe', border: '#2563eb' },
-  { belt: 'Purple',      color: '#e9d5ff', border: '#9333ea' },
-  { belt: 'Red',         color: '#fecaca', border: '#dc2626' },
-  { belt: 'Red/Black',   color: '#fecaca', border: '#1f2937' },
-  { belt: 'Brown',       color: '#d6b899', border: '#92400e' },
-  { belt: 'Brown/Black', color: '#d6b899', border: '#1f2937' },
-  { belt: 'Black Belt',  color: '#1f2937', border: '#1f2937' },
-  { belt: 'Dan Ranks',   color: '#1f2937', border: '#A01F23' },
+const BELT_VISUAL = [
+  { color: '#f9f8f5', border: '#c9c4bc' },
+  { color: '#fef08a', border: '#ca8a04' },
+  { color: '#fed7aa', border: '#ea580c' },
+  { color: '#bbf7d0', border: '#16a34a' },
+  { color: '#bfdbfe', border: '#2563eb' },
+  { color: '#e9d5ff', border: '#9333ea' },
+  { color: '#fecaca', border: '#dc2626' },
+  { color: '#fecaca', border: '#1f2937' },
+  { color: '#d6b899', border: '#92400e' },
+  { color: '#d6b899', border: '#1f2937' },
+  { color: '#1f2937', border: '#1f2937' },
+  { color: '#1f2937', border: '#A01F23' },
 ];
 
 export function ProgramsPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const goToTrial = () => navigate(`${BASE}/contact`);
+
+  const p = t.programs;
+  const c = t.common;
 
   return (
     <div>
 
-      {/* ── PAGE HERO ── white, consistent with all other pages */}
+      {/* ── PAGE HERO ── */}
       <section
         className="py-16"
         style={{ backgroundColor: 'white', borderBottom: `1px solid ${V3.border}` }}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div style={{ maxWidth: '1040px', margin: '0 auto' }}>
-            <p className="v3-eyebrow mb-4">Our Programs</p>
+            <p className="v3-eyebrow mb-4">{p.eyebrow}</p>
             <h1
               className="v3-h font-black leading-[1.0] mb-6"
               style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: V3.text }}
             >
-              Training for Every Stage of Life
+              {p.heading}
             </h1>
             <p className="text-base leading-relaxed" style={{ color: V3.muted, maxWidth: '52ch' }}>
-              From our youngest Little Dragons to advanced Extreme Performance competitors — every
-              program is built around what students at that stage actually need.
+              {p.subheading}
             </p>
           </div>
         </div>
       </section>
 
-      {/* ── PHOTO STRIP ── visual break between hero and first program */}
+      {/* ── PHOTO STRIP ── */}
       <div
         style={{
           display: 'grid',
@@ -133,36 +79,33 @@ export function ProgramsPage() {
         ))}
       </div>
 
-      {/* ── PROGRAM DETAILS ──
-          Rhythm: cream (idx 0) → white (idx 1) → dark (Extreme Performance)
-          Hero is white so starting on cream creates immediate contrast. Dark section
-          provides the visual weight the page needs beyond just white and cream.
-      */}
-      {PROGRAMS.map((p, idx) => {
-        const sectionBg   = p.dark ? V3.dark    : idx === 0 ? V3.surface : 'white';
-        const borderCol   = p.dark ? V3.borderDark : V3.border;
-        const headingCol  = p.dark ? V3.onDark   : V3.text;
-        const bodyCol     = p.dark ? V3.mutedOnDark : V3.muted;
-        const photoBgCol  = p.dark ? 'oklch(30% 0.014 30)' : V3.border;
-        const ageBadgeBg  = p.dark ? 'oklch(30% 0.016 28)' : V3.primaryBg;
-        const ageBadgeCol = p.dark ? V3.onDark  : V3.primary;
+      {/* ── PROGRAM DETAILS ── */}
+      {p.programs.map((prog, idx) => {
+        const vis = PROGRAM_VISUAL[idx];
+        const sectionBg   = vis.dark ? V3.dark    : idx === 0 ? V3.surface : 'white';
+        const borderCol   = vis.dark ? V3.borderDark : V3.border;
+        const headingCol  = vis.dark ? V3.onDark   : V3.text;
+        const bodyCol     = vis.dark ? V3.mutedOnDark : V3.muted;
+        const photoBgCol  = vis.dark ? 'oklch(30% 0.014 30)' : V3.border;
+        const ageBadgeBg  = vis.dark ? 'oklch(30% 0.016 28)' : V3.primaryBg;
+        const ageBadgeCol = vis.dark ? V3.onDark  : V3.primary;
 
         return (
           <section
-            key={p.name}
+            key={prog.name}
             className="py-20"
             style={{ backgroundColor: sectionBg, borderBottom: `1px solid ${borderCol}` }}
           >
             <div className="max-w-7xl mx-auto px-6 md:px-10">
               <div
                 className={`grid md:grid-cols-2 gap-14 items-center max-w-5xl mx-auto ${
-                  p.photoRight ? '' : 'md:[&>*:first-child]:order-last'
+                  vis.photoRight ? '' : 'md:[&>*:first-child]:order-last'
                 }`}
               >
                 <div className="rounded-xl overflow-hidden aspect-[4/3]" style={{ backgroundColor: photoBgCol }}>
                   <ImageWithFallback
-                    src={p.photo}
-                    alt={p.photoAlt}
+                    src={vis.photo}
+                    alt={vis.photoAlt}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -172,19 +115,19 @@ export function ProgramsPage() {
                     className="inline-block text-[0.65rem] font-bold uppercase tracking-wide px-3 py-1 rounded-full mb-5"
                     style={{ backgroundColor: ageBadgeBg, color: ageBadgeCol }}
                   >
-                    {p.ages}
+                    {prog.ages}
                   </span>
                   <h2
                     className="v3-h font-black leading-[1.0] mb-4"
                     style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: headingCol }}
                   >
-                    {p.name}
+                    {prog.name}
                   </h2>
                   <p className="text-[0.95rem] leading-relaxed mb-7" style={{ color: bodyCol }}>
-                    {p.summary}
+                    {prog.summary}
                   </p>
                   <ul className="flex flex-col gap-3 mb-8">
-                    {p.highlights.map((h) => (
+                    {prog.highlights.map((h) => (
                       <li key={h} className="flex items-start gap-3">
                         <CheckCircle2
                           className="w-4 h-4 flex-shrink-0 mt-0.5"
@@ -196,9 +139,9 @@ export function ProgramsPage() {
                       </li>
                     ))}
                   </ul>
-                  {p.name !== 'Extreme Performance' && (
+                  {idx !== 2 && (
                     <button className="v3-btn-primary" onClick={goToTrial}>
-                      Book a Trial
+                      {c.bookTrial}
                     </button>
                   )}
                 </div>
@@ -208,24 +151,24 @@ export function ProgramsPage() {
         );
       })}
 
-      {/* ── COMING SOON ── cream after the dark Extreme Performance section */}
+      {/* ── COMING SOON ── */}
       <section
         className="py-16"
         style={{ backgroundColor: V3.surface, borderBottom: `1px solid ${V3.border}` }}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div style={{ maxWidth: '1040px', margin: '0 auto' }}>
-            <p className="v3-eyebrow mb-3">Expanding</p>
+            <p className="v3-eyebrow mb-3">{p.expandingEyebrow}</p>
             <h2
               className="v3-h font-black mb-8"
               style={{ fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', color: V3.text, lineHeight: 1.0 }}
             >
-              More Programs on the Way
+              {p.expandingHeading}
             </h2>
             <div className="grid md:grid-cols-2 gap-4">
-              {COMING_SOON.map((p) => (
+              {p.comingSoon.map((cs) => (
                 <div
-                  key={p.name}
+                  key={cs.name}
                   style={{
                     borderRadius: '10px',
                     backgroundColor: 'white',
@@ -245,7 +188,7 @@ export function ProgramsPage() {
                       backgroundColor: 'oklch(92% 0.06 65)',
                       padding: '2px 8px',
                       borderRadius: '999px',
-                    }}>Coming Soon</span>
+                    }}>{c.comingSoon}</span>
                     <span style={{
                       display: 'inline-block',
                       fontFamily: "'Nunito', sans-serif",
@@ -257,16 +200,16 @@ export function ProgramsPage() {
                       backgroundColor: V3.surface,
                       padding: '2px 8px',
                       borderRadius: '999px',
-                    }}>{p.ages}</span>
+                    }}>{cs.ages}</span>
                   </div>
                   <h3
                     className="v3-h font-black mb-2"
                     style={{ fontSize: 'clamp(1.1rem, 1.6vw, 1.35rem)', color: V3.muted, lineHeight: 1.05 }}
                   >
-                    {p.name}
+                    {cs.name}
                   </h3>
                   <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.85rem', lineHeight: 1.55, color: 'oklch(65% 0.008 35)' }}>
-                    {p.desc}
+                    {cs.desc}
                   </p>
                 </div>
               ))}
@@ -275,29 +218,28 @@ export function ProgramsPage() {
         </div>
       </section>
 
-      {/* ── BELT SYSTEM ── white section, cream cards so they're visible */}
+      {/* ── BELT SYSTEM ── */}
       <section
         className="py-16"
         style={{ backgroundColor: 'white', borderBottom: `1px solid ${V3.border}` }}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div className="max-w-4xl">
-            <p className="v3-eyebrow mb-4">Belt System</p>
+            <p className="v3-eyebrow mb-4">{p.beltEyebrow}</p>
             <h2
               className="v3-h font-black leading-[1.0] mb-4"
               style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: V3.text }}
             >
-              Your Path to Black Belt
+              {p.beltHeading}
             </h2>
             <p className="text-sm leading-relaxed mb-8 max-w-lg" style={{ color: V3.muted }}>
-              Every promotion is earned — based on demonstrated skill, effort, and character.
-              Students test when their instructor says they're ready, not on a fixed schedule.
+              {p.beltBody}
             </p>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-              {BELT_RANKS.map(({ belt, color, border }) => (
+              {BELT_VISUAL.map(({ color, border }, idx) => (
                 <div
-                  key={belt}
+                  key={idx}
                   className="rounded-lg p-3 text-center"
                   style={{
                     backgroundColor: V3.surface,
@@ -309,7 +251,7 @@ export function ProgramsPage() {
                     style={{ backgroundColor: color, border: `2px solid ${border}` }}
                   />
                   <p className="text-xs font-semibold leading-tight" style={{ color: V3.muted }}>
-                    {belt}
+                    {p.beltRanks[idx]}
                   </p>
                 </div>
               ))}
@@ -318,7 +260,7 @@ export function ProgramsPage() {
         </div>
       </section>
 
-      {/* ── CTA ── the one red moment on this page */}
+      {/* ── CTA ── */}
       <section className="py-20" style={{ backgroundColor: V3.primary }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div style={{ maxWidth: '44ch', margin: '0 auto', textAlign: 'center' }}>
@@ -333,7 +275,7 @@ export function ProgramsPage() {
                 marginBottom: '20px',
               }}
             >
-              Get Started
+              {c.getStarted}
             </p>
             <h2
               className="v3-h font-black mb-5"
@@ -344,18 +286,16 @@ export function ProgramsPage() {
                 letterSpacing: '-0.015em',
               }}
             >
-              One Week Trial Offer
+              {c.trialOffer}
             </h2>
             <p
               className="leading-relaxed mb-8"
               style={{ color: 'oklch(88% 0.032 22)', fontSize: '0.95rem' }}
             >
-              To try our program is $30 with a uniform included for 5 consecutive training days.
-              Come in, meet the instructors, and let your child try a class. We'll answer your
-              questions before class and after class.
+              {c.trialBody}
             </p>
             <button onClick={goToTrial} className="v3-btn-white">
-              Contact Us to Get Started
+              {c.bookTrial}
             </button>
             <p
               style={{
@@ -365,7 +305,7 @@ export function ProgramsPage() {
                 fontFamily: "'Nunito', sans-serif",
               }}
             >
-              We'll guide you through it
+              {c.guideYou}
             </p>
           </div>
         </div>

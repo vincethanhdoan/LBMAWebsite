@@ -6,7 +6,7 @@
   --v3-dark:          oklch(22% 0.014 30);
   --v3-dark-surface:  oklch(26% 0.012 30);
   --v3-text:          oklch(20% 0.012 30);
-  --v3-muted:         oklch(52% 0.010 30);
+  --v3-muted:         oklch(38% 0.012 30);
   --v3-on-dark:       oklch(93% 0.006 30);
   --v3-muted-on-dark: oklch(68% 0.007 30);
   --v3-primary:       #A01F23;
@@ -18,6 +18,7 @@
   background-color: var(--v3-bg);
   color: var(--v3-text);
   font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

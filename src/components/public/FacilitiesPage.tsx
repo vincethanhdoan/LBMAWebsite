@@ -1,14 +1,6 @@
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { V3 } from './design';
-
-const FEATURES = [
-  { label: 'Fully Padded Training Area',  desc: 'Floor-to-wall padding throughout the training floor for safe practice at every level.' },
-  { label: 'Dedicated Little Dragons Zone', desc: 'A separate, smaller mat area sized for our youngest students to help them feel comfortable.' },
-  { label: 'Clean Changing Areas',          desc: 'Separate changing rooms for students before and after class.' },
-  { label: 'Observation Area',             desc: 'A dedicated seating area for parents to watch class comfortably from the side.' },
-  { label: 'Air Conditioned',              desc: 'Year-round climate control so every class is comfortable regardless of season.' },
-  { label: 'Safe Neighborhood Location',   desc: 'Conveniently located in Los Banos with easy parking and a safe, accessible setting.' },
-];
+import { useLanguage } from './lang';
 
 const GALLERY = [
   { src: '/photos/19-IMG_5093.jpg', alt: 'LBMAA training floor' },
@@ -20,22 +12,24 @@ const GALLERY = [
 ];
 
 export function FacilitiesPage() {
+  const { t } = useLanguage();
+  const f = t.facilities;
+
   return (
     <div>
 
       {/* ── PAGE HERO ── */}
       <section className="py-14" style={{ backgroundColor: 'white', borderBottom: `1px solid ${V3.border}` }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
-          <p className="v3-eyebrow mb-4">Our Facilities</p>
+          <p className="v3-eyebrow mb-4">{f.eyebrow}</p>
           <h1
             className="v3-h font-black leading-[1.0] mb-6"
             style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: V3.text }}
           >
-            A Space Designed for Learning
+            {f.heading}
           </h1>
           <p className="text-base leading-relaxed max-w-xl" style={{ color: V3.muted }}>
-            Our training space is purpose-built for martial arts education — safe, clean,
-            and welcoming for students of all ages and experience levels.
+            {f.sub}
           </p>
         </div>
       </section>
@@ -56,16 +50,16 @@ export function FacilitiesPage() {
       {/* ── FEATURES ── */}
       <section className="py-16" style={{ backgroundColor: 'white' }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
-          <p className="v3-eyebrow mb-4">What We Offer</p>
+          <p className="v3-eyebrow mb-4">{f.featuresEyebrow}</p>
           <h2
             className="v3-h font-black leading-[1.0] mb-10"
             style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: V3.text }}
           >
-            Everything You'd Expect. Nothing You Wouldn't.
+            {f.featuresHeading}
           </h2>
 
           <div className="grid md:grid-cols-3 gap-0 max-w-5xl">
-            {FEATURES.map(({ label, desc }, i) => (
+            {f.features.map(({ label, desc }, i) => (
               <div
                 key={label}
                 className="py-6 pr-8"
@@ -89,12 +83,12 @@ export function FacilitiesPage() {
       {/* ── GALLERY ── */}
       <section className="py-20" style={{ backgroundColor: V3.surface }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
-          <p className="v3-eyebrow mb-4">Gallery</p>
+          <p className="v3-eyebrow mb-4">{f.galleryEyebrow}</p>
           <h2
             className="v3-h font-black leading-[1.0] mb-8"
             style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: V3.text }}
           >
-            See the Space
+            {f.galleryHeading}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {GALLERY.map(({ src, alt }) => (
@@ -105,7 +99,6 @@ export function FacilitiesPage() {
           </div>
         </div>
       </section>
-
 
     </div>
   );

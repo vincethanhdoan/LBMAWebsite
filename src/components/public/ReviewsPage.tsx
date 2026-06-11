@@ -3,6 +3,8 @@ import { Loader2 } from 'lucide-react';
 import { useReviews } from '../../lib/hooks/reviews';
 import type { Review } from '../../lib/types';
 import { V3 } from './design';
+import { useLanguage } from './lang';
+import type { Lang } from './lang';
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -20,17 +22,17 @@ function StarRow({ rating }: { rating: number }) {
   );
 }
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, lang: Lang, r: { timeToday: string; time1Day: string; timeDays: (d: number) => string; timeWeeks: (w: number) => string; timeMonths: (m: number) => string; timeYears: (y: number) => string }): string {
   const diffDays = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return '1 day ago';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
-  return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
+  if (diffDays === 0) return r.timeToday;
+  if (diffDays === 1) return r.time1Day;
+  if (diffDays < 7) return r.timeDays(diffDays);
+  if (diffDays < 30) return r.timeWeeks(Math.floor(diffDays / 7));
+  if (diffDays < 365) return r.timeMonths(Math.floor(diffDays / 30));
+  return r.timeYears(Math.floor(diffDays / 365));
 }
 
-function RatingSummary({ reviews }: { reviews: Review[] }) {
+function RatingSummary({ reviews, overallRating, reviewWord, reviewsWord }: { reviews: Review[]; overallRating: string; reviewWord: string; reviewsWord: string }) {
   if (reviews.length < 1) return null;
 
   const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
@@ -56,10 +58,10 @@ function RatingSummary({ reviews }: { reviews: Review[] }) {
             className="text-white uppercase tracking-wide"
             style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '0.7rem', fontWeight: 700 }}
           >
-            Overall Rating
+            {overallRating}
           </div>
           <div className="italic text-xs" style={{ color: 'oklch(82% 0.025 20)' }}>
-            {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+            {reviews.length} {reviews.length === 1 ? reviewWord : reviewsWord}
           </div>
         </div>
 
@@ -94,7 +96,12 @@ function RatingSummary({ reviews }: { reviews: Review[] }) {
   );
 }
 
-function ReviewCard({ review }: { review: Review }) {
+function ReviewCard({ review, defaultName, lang, timeStrings }: {
+  review: Review;
+  defaultName: string;
+  lang: Lang;
+  timeStrings: Parameters<typeof timeAgo>[2];
+}) {
   return (
     <div
       className="rounded-xl p-5 flex flex-col"
@@ -107,10 +114,10 @@ function ReviewCard({ review }: { review: Review }) {
         "{review.review}"
       </p>
       <p className="text-sm font-semibold" style={{ color: V3.text }}>
-        {review.display_name || 'LBMAA Parent'}
+        {review.display_name || defaultName}
       </p>
       <p className="text-xs mt-0.5" style={{ color: V3.muted }}>
-        {timeAgo(review.created_at)}
+        {timeAgo(review.created_at, lang, timeStrings)}
       </p>
     </div>
   );
@@ -118,10 +125,21 @@ function ReviewCard({ review }: { review: Review }) {
 
 export function ReviewsPage() {
   const { data: reviews = [], isLoading: loading, isError } = useReviews();
+  const { t, lang } = useLanguage();
+  const rv = t.reviews;
   const [visibleCount, setVisibleCount] = useState(6);
 
   const visible = reviews.slice(0, visibleCount);
   const remaining = reviews.length - visibleCount;
+
+  const timeStrings = {
+    timeToday: rv.timeToday,
+    time1Day: rv.time1Day,
+    timeDays: rv.timeDays,
+    timeWeeks: rv.timeWeeks,
+    timeMonths: rv.timeMonths,
+    timeYears: rv.timeYears,
+  };
 
   return (
     <div>
@@ -131,16 +149,15 @@ export function ReviewsPage() {
         style={{ backgroundColor: 'white', borderBottom: `1px solid ${V3.border}` }}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
-          <p className="v3-eyebrow mb-4">What Families Say</p>
+          <p className="v3-eyebrow mb-4">{rv.eyebrow}</p>
           <h1
             className="v3-h font-black leading-[1.0] mb-6"
             style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: V3.text }}
           >
-            Real Reviews From the Community
+            {rv.heading}
           </h1>
           <p className="text-base leading-relaxed max-w-xl" style={{ color: V3.muted }}>
-            Every review below comes from a parent or student who was exactly where you are
-            right now — wondering if this is the right place.
+            {rv.sub}
           </p>
         </div>
       </section>
@@ -151,22 +168,33 @@ export function ReviewsPage() {
         </section>
       ) : isError ? (
         <section className="py-32 text-center" style={{ color: V3.muted }}>
-          <p>Unable to load reviews. Please try again later.</p>
+          <p>{rv.errLoad}</p>
         </section>
       ) : reviews.length === 0 ? (
         <section className="py-32 text-center" style={{ color: V3.muted }}>
-          <p className="text-sm">No reviews yet — check back soon.</p>
+          <p className="text-sm">{rv.noReviews}</p>
         </section>
       ) : (
         <>
-          <RatingSummary reviews={reviews} />
+          <RatingSummary
+            reviews={reviews}
+            overallRating={rv.overallRating}
+            reviewWord={rv.review}
+            reviewsWord={rv.reviews}
+          />
 
           {/* Card grid */}
           <section className="py-6 px-6 md:px-10" style={{ backgroundColor: V3.surface }}>
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {visible.map(r => (
-                  <ReviewCard key={r.review_id} review={r} />
+                  <ReviewCard
+                    key={r.review_id}
+                    review={r}
+                    defaultName={rv.defaultName}
+                    lang={lang}
+                    timeStrings={timeStrings}
+                  />
                 ))}
               </div>
               {remaining > 0 && (
@@ -175,10 +203,10 @@ export function ReviewsPage() {
                     className="v3-btn-outline"
                     onClick={() => setVisibleCount(c => c + 6)}
                   >
-                    Load more reviews
+                    {rv.loadMore}
                   </button>
                   <p className="text-xs mt-2" style={{ color: V3.muted }}>
-                    {remaining} more {remaining === 1 ? 'review' : 'reviews'}
+                    {rv.moreLabel(remaining)}
                   </p>
                 </div>
               )}
