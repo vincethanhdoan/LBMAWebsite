@@ -189,9 +189,9 @@ const EN = {
   footer: {
     brandDesc: 'Los Banos Martial Arts Academy develops champions in life — physically, mentally, and spiritually.',
     programs: 'Programs', academy: 'Academy', getInTouch: 'Get In Touch',
-    privacyPolicy: 'Privacy Policy', bookTrial: 'Book a Trial Class',
+    bookTrial: 'Book a Trial Class',
     copyright: '© 2026 Los Banos Martial Arts Academy',
-    programLinks: ['Little Dragons (Ages 4–6)', 'Kids Martial Arts (Ages 7–12)', 'Teens & Adults (Ages 13+)', 'Kickboxing Fitness'],
+    programLinks: ['Little Dragons (Ages 4–7)', 'Youth Program (Ages 8–17)', 'Extreme Performance (All Ages)'],
     academyLinks: ['About Us', 'Our Instructors', 'Facilities', 'Reviews', 'FAQ'],
     hoursMon: 'Mon–Fri: 4:00 – 9:00 PM', hoursWeekend: 'Weekends: Closed', hoursHoliday: 'Federal Holidays: Closed',
   },
@@ -473,9 +473,9 @@ const ES: T = {
   footer: {
     brandDesc: 'Los Banos Martial Arts Academy desarrolla campeones en la vida — física, mental y espiritualmente.',
     programs: 'Programas', academy: 'Academia', getInTouch: 'Contáctanos',
-    privacyPolicy: 'Política de Privacidad', bookTrial: 'Reservar Clase de Prueba',
+    bookTrial: 'Reservar Clase de Prueba',
     copyright: '© 2026 Los Banos Martial Arts Academy',
-    programLinks: ['Pequeños Dragones (Edades 4–6)', 'Artes Marciales Infantiles (Edades 7–12)', 'Adolescentes y Adultos (Edades 13+)', 'Kickboxing Fitness'],
+    programLinks: ['Pequeños Dragones (Edades 4–7)', 'Programa Juvenil (Edades 8–17)', 'Rendimiento Extremo (Todas las Edades)'],
     academyLinks: ['Sobre Nosotros', 'Nuestros Instructores', 'Instalaciones', 'Reseñas', 'Preguntas Frecuentes'],
     hoursMon: 'Lun–Vie: 4:00 – 9:00 PM', hoursWeekend: 'Fines de Semana: Cerrado', hoursHoliday: 'Días Festivos: Cerrado',
   },

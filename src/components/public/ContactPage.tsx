@@ -156,6 +156,7 @@ export function ContactPage() {
                         onChange={e => setParentName(e.target.value)}
                         disabled={isSubmitting}
                         required
+                        maxLength={100}
                         className="min-h-[48px] text-base"
                         autoComplete="name"
                       />
@@ -172,6 +173,7 @@ export function ContactPage() {
                         onChange={e => setPhone(e.target.value)}
                         disabled={isSubmitting}
                         required
+                        maxLength={20}
                         className="min-h-[48px] text-base"
                         autoComplete="tel"
                       />
@@ -190,6 +192,7 @@ export function ContactPage() {
                       onChange={e => setParentEmail(e.target.value)}
                       disabled={isSubmitting}
                       required
+                      maxLength={254}
                       className="min-h-[48px] text-base"
                       autoComplete="email"
                     />
@@ -220,6 +223,7 @@ export function ContactPage() {
                               onChange={e => updateChild(i, 'name', e.target.value)}
                               disabled={isSubmitting}
                               required
+                              maxLength={60}
                               className="min-h-[44px] flex-1 text-base bg-white"
                             />
                             <Input
@@ -276,6 +280,7 @@ export function ContactPage() {
                       value={message}
                       onChange={e => setMessage(e.target.value)}
                       disabled={isSubmitting}
+                      maxLength={1500}
                       className="text-base"
                     />
                   </div>

@@ -139,6 +139,7 @@ export function LoginModal({ onClose }: LoginModalProps) {
                     setError(null);
                   }}
                   required
+                  maxLength={254}
                   autoFocus
                   disabled={loading}
                 />

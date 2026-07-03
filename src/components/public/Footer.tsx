@@ -1,10 +1,10 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { BASE, V3 } from './design';
 import { useLanguage } from './lang';
 
 type Page = 'about' | 'facilities' | 'programs' | 'instructors' | 'reviews' | 'faq' | 'contact';
 
-const PROGRAM_PATHS: Page[] = ['programs', 'programs', 'programs', 'programs'];
+const PROGRAM_PATHS: Page[] = ['programs', 'programs', 'programs'];
 const ACADEMY_PATHS: Page[] = ['about', 'instructors', 'facilities', 'reviews', 'faq'];
 
 export function Footer() {
@@ -96,12 +96,6 @@ export function Footer() {
         >
           <span>{f.copyright}</span>
           <div className="flex items-center gap-4">
-            <Link
-              to="/privacy"
-              className="transition-colors hover:text-white"
-            >
-              {f.privacyPolicy}
-            </Link>
             <button
               onClick={() => navigate(`${BASE}/contact`)}
               className="v3-btn-white"
