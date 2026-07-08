@@ -5,7 +5,7 @@ import { FamilyOnboarding } from './components/onboarding/FamilyOnboarding';
 import { DashboardV2 } from './components/DashboardV2';
 import { AdminDashboardV2 } from './components/AdminDashboardV2';
 import { PublicWebsiteV2 } from './experimental/publicV2/PublicWebsiteV2';
-import { PublicWebsite } from './components/PublicWebsite';
+import { LockedSite } from './components/locked/LockedSite';
 import { BookingPage } from './pages/BookingPage';
 import { ConfirmPage } from './pages/ConfirmPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -94,7 +94,7 @@ function AppRoutes() {
                   </Alert>
                 </div>
               )}
-              <PublicWebsite />
+              <LockedSite />
             </>
           }
         />
