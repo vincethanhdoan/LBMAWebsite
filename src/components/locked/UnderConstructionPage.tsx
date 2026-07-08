@@ -8,14 +8,14 @@ const COPY = {
     status: 'Our new website is on its way.',
     body: "We're building a new online home for the academy. In the meantime, if you have questions or would like to enroll, we'd love to hear from you.",
     contactUs: 'Contact Us',
-    thanks: "Thank you for your patience — we can't wait to share what's coming.",
+    thanks: "Thank you for your patience. We can't wait to share what's coming.",
   },
   es: {
     location: 'Los Banos, CA',
     status: 'Nuestro nuevo sitio web está en camino.',
     body: 'Estamos construyendo un nuevo hogar en línea para la academia. Mientras tanto, si tienes preguntas o deseas inscribir a tu hijo, nos encantaría saber de ti.',
     contactUs: 'Contáctanos',
-    thanks: 'Gracias por tu paciencia — estamos ansiosos por compartir lo que viene.',
+    thanks: 'Gracias por tu paciencia. Estamos ansiosos por compartir lo que viene.',
   },
 } as const;
 
