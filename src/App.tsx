@@ -15,7 +15,6 @@ import { useAuth } from './hooks/useAuth';
 import { Alert, AlertDescription } from './components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
-import { LockdownGate } from './components/LockdownGate';
 
 function ProtectedRoute({
   children,
@@ -150,9 +149,7 @@ export default function App() {
   return (
     <QueryProvider>
       <BrowserRouter>
-        <LockdownGate>
-          <AppRoutes />
-        </LockdownGate>
+        <AppRoutes />
         <Toaster richColors position="top-right" />
       </BrowserRouter>
     </QueryProvider>
