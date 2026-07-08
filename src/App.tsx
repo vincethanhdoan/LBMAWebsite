@@ -6,6 +6,7 @@ import { DashboardV2 } from './components/DashboardV2';
 import { AdminDashboardV2 } from './components/AdminDashboardV2';
 import { PublicWebsiteV2 } from './experimental/publicV2/PublicWebsiteV2';
 import { LockedSite } from './components/locked/LockedSite';
+import { PortalLoginPage } from './components/locked/PortalLoginPage';
 import { BookingPage } from './pages/BookingPage';
 import { ConfirmPage } from './pages/ConfirmPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -71,7 +72,7 @@ function AppRoutes() {
   };
 
   // Redirect logged-in users from public home or auth callback to onboarding/dashboard.
-  if (user && (location.pathname === '/' || location.pathname === '/auth/callback')) {
+  if (user && (location.pathname === '/' || location.pathname === '/auth/callback' || location.pathname === '/portal')) {
     if (accessState === 'needs_onboarding') {
       return <Navigate to="/onboarding" replace />;
     }
@@ -134,6 +135,7 @@ function AppRoutes() {
           }
         />
         <Route path="/experimental/public/*" element={<PublicWebsiteV2 />} />
+        <Route path="/portal" element={<PortalLoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/book/:token" element={<BookingPage />} />
         <Route path="/confirm/:token" element={<ConfirmPage />} />
