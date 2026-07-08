@@ -151,7 +151,7 @@ export function ContactPage() {
                       </Label>
                       <Input
                         id="parentName"
-                        placeholder="Destiny Reyes"
+                        placeholder="Eduardo Guerra"
                         value={parentName}
                         onChange={e => setParentName(e.target.value)}
                         disabled={isSubmitting}

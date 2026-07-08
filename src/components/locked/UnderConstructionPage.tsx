@@ -4,16 +4,14 @@ import { V3 } from '../public/design';
 
 const COPY = {
   en: {
-    location: 'Los Banos, CA',
     status: 'Our new website is on its way.',
-    body: "We're building a new online home for the academy. In the meantime, if you have questions or would like to enroll, we'd love to hear from you.",
+    body: "We're building a new online home for the academy. In the meantime, if you have questions or would like to enroll, we'd be honored to hear from you.",
     contactUs: 'Contact Us',
     thanks: "Thank you for your patience. We can't wait to share what's coming.",
   },
   es: {
-    location: 'Los Banos, CA',
     status: 'Nuestro nuevo sitio web está en camino.',
-    body: 'Estamos construyendo un nuevo hogar en línea para la academia. Mientras tanto, si tienes preguntas o deseas inscribir a tu hijo, nos encantaría saber de ti.',
+    body: 'Estamos construyendo un nuevo hogar en línea para la academia. Mientras tanto, si tienes preguntas o deseas inscribir a tu hijo, sería un honor saber de ti.',
     contactUs: 'Contáctanos',
     thanks: 'Gracias por tu paciencia. Estamos ansiosos por compartir lo que viene.',
   },
@@ -35,7 +33,6 @@ export function UnderConstructionPage() {
           className="rounded-full"
           style={{ width: '104px', height: '104px', objectFit: 'cover', marginBottom: '20px' }}
         />
-        <p className="v3-eyebrow" style={{ marginBottom: '8px' }}>{c.location}</p>
         <h1
           style={{
             fontSize: 'clamp(2rem, 9vw, 2.9rem)',
