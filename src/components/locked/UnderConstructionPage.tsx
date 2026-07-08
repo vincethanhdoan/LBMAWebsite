@@ -5,7 +5,6 @@ import { V3 } from '../public/design';
 const COPY = {
   en: {
     location: 'Los Banos, CA',
-    affiliation: 'ERWCMAA Affiliated Academy',
     status: 'Our new website is on its way.',
     body: "We're building a new online home for the academy. In the meantime, if you have questions or would like to enroll, we'd love to hear from you.",
     contactUs: 'Contact Us',
@@ -13,7 +12,6 @@ const COPY = {
   },
   es: {
     location: 'Los Banos, CA',
-    affiliation: 'Academia Afiliada a ERWCMAA',
     status: 'Nuestro nuevo sitio web está en camino.',
     body: 'Estamos construyendo un nuevo hogar en línea para la academia. Mientras tanto, si tienes preguntas o deseas inscribir a tu hijo, nos encantaría saber de ti.',
     contactUs: 'Contáctanos',
@@ -44,23 +42,11 @@ export function UnderConstructionPage() {
             fontWeight: 800,
             lineHeight: 1.02,
             letterSpacing: '-0.01em',
-            marginBottom: '6px',
+            marginBottom: '36px',
           }}
         >
           LOS BANOS<br />MARTIAL ARTS ACADEMY
         </h1>
-        <p
-          style={{
-            fontSize: '0.7rem',
-            fontWeight: 700,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: V3.muted,
-            marginBottom: '36px',
-          }}
-        >
-          {c.affiliation}
-        </p>
 
         <div className="w-full" style={{ borderTop: `1px solid ${V3.border}`, paddingTop: '28px' }}>
           <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '10px' }}>{c.status}</h2>
