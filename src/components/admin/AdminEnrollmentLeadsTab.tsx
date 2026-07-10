@@ -8,7 +8,7 @@ import { edgeFunctionUserAuthHeaders, supabase } from '../../lib/supabase/client
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import type { EnrollmentLead, EnrollmentLeadNotification } from '../../lib/types';
-import { useEnrollmentLeads, useUpdateLeadStatus, useUpdateLeadNotes, useDismissLead, useDeleteLead } from '../../lib/hooks/leads';
+import { useEnrollmentLeads, useUpdateLeadStatus, useUpdateLeadNotes, useDismissLead, useCloseLead, useDeleteLead } from '../../lib/hooks/leads';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { DenyModal } from './DenyModal';
@@ -356,6 +356,7 @@ export function AdminEnrollmentLeadsTab() {
   const updateStatus = useUpdateLeadStatus();
   const updateNotes = useUpdateLeadNotes();
   const dismissLead = useDismissLead();
+  const closeLead = useCloseLead();
   const deleteLead = useDeleteLead();
   const [now] = useState(Date.now);
   const [error, setError] = useState<string | null>(null);
@@ -512,6 +513,17 @@ export function AdminEnrollmentLeadsTab() {
     setUpdatingId(leadId);
     try {
       await updateStatus.mutateAsync({ leadId, status });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update status');
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function handleCloseLead(leadId: string) {
+    setUpdatingId(leadId);
+    try {
+      await closeLead.mutateAsync(leadId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update status');
     } finally {
@@ -893,7 +905,7 @@ export function AdminEnrollmentLeadsTab() {
                     variant="outline"
                     className="text-muted-foreground"
                     disabled={updatingId === lead.lead_id}
-                    onClick={() => handleStatusChange(lead.lead_id, 'closed')}
+                    onClick={() => handleCloseLead(lead.lead_id)}
                   >
                     Close lead
                   </Button>
@@ -1194,7 +1206,7 @@ export function AdminEnrollmentLeadsTab() {
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {pendingAction.type === 'dismiss'
-                  ? `This will mark ${pendingAction.lead.parent_name}'s lead as denied without notifying them.`
+                  ? 'No email will be sent. Any booked appointment is cancelled.'
                   : `This will permanently delete ${pendingAction.lead.parent_name}'s lead. This cannot be undone.`}
               </AlertDialogDescription>
             </AlertDialogHeader>

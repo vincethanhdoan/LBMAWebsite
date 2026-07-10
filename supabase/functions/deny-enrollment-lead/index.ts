@@ -56,14 +56,11 @@ Deno.serve(async (req) => {
 
   if (!lead) return new Response('Lead not found', { status: 404, headers: cors })
 
-  const { error: updateError } = await supabase
-    .from('enrollment_leads')
-    .update({
-      status: 'denied',
-      denial_message: message ?? null,
-      denied_at: new Date().toISOString(),
-    })
-    .eq('lead_id', leadId)
+  const { error: updateError } = await supabase.rpc('close_enrollment_lead', {
+    p_lead_id: leadId,
+    p_new_status: 'denied',
+    p_denial_message: message ?? null,
+  })
 
   if (updateError) {
     console.error('[deny-enrollment-lead] update error:', updateError)

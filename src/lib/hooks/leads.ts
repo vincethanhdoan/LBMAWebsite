@@ -4,6 +4,7 @@ import {
   updateLeadStatus,
   updateLeadAdminNotes,
   dismissLeadSilently,
+  closeLead,
   deleteEnrollmentLead,
 } from '../supabase/mutations';
 import { queryKeys } from '../queryKeys';
@@ -42,6 +43,16 @@ export function useDismissLead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (leadId: string) => dismissLeadSilently(leadId),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+    },
+  });
+}
+
+export function useCloseLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (leadId: string) => closeLead(leadId),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
     },

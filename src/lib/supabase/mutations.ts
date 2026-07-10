@@ -510,10 +510,18 @@ export async function updateLeadAdminNotes(leadId: string, notes: string): Promi
 }
 
 export async function dismissLeadSilently(leadId: string): Promise<void> {
-  const { error } = await supabase
-    .from('enrollment_leads')
-    .update({ status: 'denied', denied_at: new Date().toISOString() })
-    .eq('lead_id', leadId);
+  const { error } = await supabase.rpc('close_enrollment_lead', {
+    p_lead_id: leadId,
+    p_new_status: 'denied',
+  });
+  if (error) throw error;
+}
+
+export async function closeLead(leadId: string): Promise<void> {
+  const { error } = await supabase.rpc('close_enrollment_lead', {
+    p_lead_id: leadId,
+    p_new_status: 'closed',
+  });
   if (error) throw error;
 }
 
