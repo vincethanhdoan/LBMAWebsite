@@ -93,14 +93,15 @@ Deno.serve(async (req) => {
     return new Response('Appointment date does not match slot day', { status: 422, headers: CORS_HEADERS })
   }
 
-  const { data: override } = await supabase
-    .from('appointment_slot_overrides')
-    .select('override_id')
-    .eq('slot_id', slotId)
-    .eq('override_date', appointmentDate)
+  const { data: block } = await supabase
+    .from('blocked_dates')
+    .select('block_id')
+    .lte('start_date', appointmentDate)
+    .gte('end_date', appointmentDate)
+    .limit(1)
     .maybeSingle()
 
-  if (override) return new Response('This date is not available', { status: 422, headers: CORS_HEADERS })
+  if (block) return new Response('This date is not available', { status: 422, headers: CORS_HEADERS })
 
   const nowUtc = new Date()
   const todayUtc = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()))
