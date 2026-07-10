@@ -525,6 +525,28 @@ export async function deleteEnrollmentLead(leadId: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function upsertAppointmentSlot(input: {
+  slotId?: string;
+  dayOfWeek: number;
+  startTime: string;
+  durationMinutes: number;
+  label: string;
+  weekOfMonth: number | null;
+  programType: string;
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('upsert_appointment_slot', {
+    p_slot_id: input.slotId ?? null,
+    p_day_of_week: input.dayOfWeek,
+    p_start_time: input.startTime,
+    p_duration_minutes: input.durationMinutes,
+    p_label: input.label,
+    p_week_of_month: input.weekOfMonth,
+    p_program_type: input.programType,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
 // ============================================
 // FEEDBACK TESTS
 // ============================================

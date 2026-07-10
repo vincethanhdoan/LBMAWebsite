@@ -7,6 +7,7 @@ import { Loader2, Pencil, Trash2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase/client'
 import { getAppointmentSlots, getAdminNotificationSettings, getAdminEmails } from '../../lib/supabase/queries'
+import { upsertAppointmentSlot } from '../../lib/supabase/mutations'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog'
 import type { AppointmentSlot, BlockedDate, AdminNotificationSetting } from '../../lib/types'
 
@@ -114,22 +115,24 @@ export function AdminAvailabilitySettings() {
   async function saveSlot() {
     const freq = WEEK_OPTIONS.find(o => o.value === slotWeekOfMonth)?.label ?? 'Every'
     const autoLabel = `${freq} ${DAY_NAMES[parseInt(slotDay)]}`
-    const [h, m] = slotStart.split(':').map(Number)
-    const autoEnd = h >= 23 ? '23:59' : `${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    const durationMinutes = editSlotId
+      ? slots.find(s => s.slot_id === editSlotId)?.duration_minutes ?? 60
+      : 60
     setSlotSaving(true)
     try {
-      const { error } = await supabase.rpc('upsert_appointment_slot', {
-        p_slot_id: editSlotId ?? null,
-        p_day_of_week: parseInt(slotDay),
-        p_start_time: slotStart,
-        p_end_time: autoEnd,
-        p_label: autoLabel,
-        p_week_of_month: slotWeekOfMonth,
-        p_program_type: slotProgramType,
+      await upsertAppointmentSlot({
+        slotId: editSlotId ?? undefined,
+        dayOfWeek: parseInt(slotDay),
+        startTime: slotStart,
+        durationMinutes,
+        label: autoLabel,
+        weekOfMonth: slotWeekOfMonth,
+        programType: slotProgramType,
       })
-      if (error) { toast.error('Failed to save slot'); return }
       await loadSlots()
       resetSlotForm()
+    } catch {
+      toast.error('Failed to save slot')
     } finally {
       setSlotSaving(false)
     }
