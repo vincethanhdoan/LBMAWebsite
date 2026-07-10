@@ -73,6 +73,7 @@ const single: AppointmentInfo[] = [
     programLabel: 'Little Dragons',
     childNames: 'Emma',
     date: 'Monday, April 28, 2026',
+    appointmentDate: '2026-04-28',
     time: '4:00 PM',
     rebookingUrl: 'https://lbmaa.com/book/abc123',
     bookingToken: 'abc123',
@@ -84,6 +85,7 @@ const multi: AppointmentInfo[] = [
     programLabel: 'Little Dragons',
     childNames: 'Emma & Lily',
     date: 'Monday, April 28, 2026',
+    appointmentDate: '2026-04-28',
     time: '4:00 PM',
     rebookingUrl: 'https://lbmaa.com/book/abc123',
     bookingToken: 'abc123',
@@ -92,6 +94,7 @@ const multi: AppointmentInfo[] = [
     programLabel: 'Youth Program',
     childNames: 'Jake',
     date: 'Wednesday, April 30, 2026',
+    appointmentDate: '2026-04-30',
     time: '5:30 PM',
     rebookingUrl: 'https://lbmaa.com/book/def456',
     bookingToken: 'def456',
@@ -125,7 +128,8 @@ Deno.test('reminderEmailHtml — contains all appointments, confirm button, resc
   const html = reminderEmailHtml(
     'Eduardo Guerra',
     multi,
-    'https://lbmaa.com/confirm/abc123'
+    'https://lbmaa.com/confirm/abc123',
+    'in 2 days'
   )
   assertEquals(html.includes('Eduardo Guerra'), true)
   assertEquals(html.includes('Little Dragons'), true)
@@ -138,6 +142,17 @@ Deno.test('reminderEmailHtml — contains all appointments, confirm button, resc
   assertEquals(html.includes('Confirm My Attendance'), true)
   assertEquals(html.includes('https://lbmaa.com/book/abc123'), true)
   assertEquals(html.includes('https://lbmaa.com/book/def456'), true)
+})
+
+Deno.test('reminderEmailHtml — heading reflects the given when-phrase', () => {
+  assertStringIncludes(
+    reminderEmailHtml('Jane', single, 'https://lbmaa.com/confirm/abc123', 'tomorrow'),
+    'appointment is tomorrow'
+  )
+  assertStringIncludes(
+    reminderEmailHtml('Jane', multi, 'https://lbmaa.com/confirm/abc123', 'in 5 days'),
+    'appointments are in 5 days'
+  )
 })
 
 // ── enrollmentNotificationHtml: children ──────────────────────────────────

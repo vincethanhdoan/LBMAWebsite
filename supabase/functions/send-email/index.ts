@@ -6,7 +6,7 @@ import { enrollmentNotificationHtml, messagingNotificationHtml, approvalEmailHtm
 
 const RESEND_API_URL = 'https://api.resend.com/emails'
 const FROM = 'Los Banos Martial Arts Academy <no-reply@notifications.lbmartialarts.com>'
-const LOGO_URL = 'https://qfyeguikxxwwxpxleqrr.supabase.co/storage/v1/object/public/assets/logo.png'
+const LOGO_URL = 'https://qfyeguikxxwwxpxleqrr.supabase.co/storage/v1/object/public/assets/logo-96.png'
 
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   const res = await fetch(RESEND_API_URL, {
@@ -35,6 +35,19 @@ function getAppUrl(): string {
   const url = Deno.env.get('APP_URL')
   if (!url) throw new Error('APP_URL environment variable is not set')
   return url
+}
+
+// How far off the appointment is, phrased for the reminder subject/heading.
+// Measured in Pacific calendar days so it matches when the reminder cron fires
+// (6pm Pacific) and reads correctly for manual sends any number of days out.
+function daysUntilPhrase(appointmentDate: string): string {
+  const pacificToday = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })
+  const days = Math.round(
+    (Date.parse(appointmentDate + 'T00:00:00Z') - Date.parse(pacificToday + 'T00:00:00Z')) / 86_400_000
+  )
+  if (days <= 0) return 'today'
+  if (days === 1) return 'tomorrow'
+  return `in ${days} days`
 }
 
 async function getLeadAppointments(
@@ -76,6 +89,7 @@ async function getLeadAppointments(
         programLabel: PROGRAM_LABELS[b.program_type] ?? b.program_type,
         childNames,
         date,
+        appointmentDate: b.appointment_date,
         time,
         rebookingUrl: b.booking_token ? `${appUrl}/book/${b.booking_token}` : appUrl,
         bookingToken: b.booking_token,
@@ -84,8 +98,24 @@ async function getLeadAppointments(
   )
 }
 
-async function handleEnrollmentNotification(record: EnrollmentLeadNotificationRecord): Promise<void> {
+async function handleEnrollmentNotification(recordId: string): Promise<void> {
   const supabase = adminClient()
+
+  // Re-read the authoritative row from the DB. The webhook body is untrusted —
+  // this endpoint is reachable with the public anon key — so we never send based
+  // on request-supplied content. Only 'queued' rows are sent, which also makes
+  // delivery idempotent against duplicate or replayed webhook deliveries.
+  const { data: record } = await supabase
+    .from('enrollment_lead_notifications')
+    .select('notification_id, lead_id, recipient_email, type, status')
+    .eq('notification_id', recordId)
+    .single<EnrollmentLeadNotificationRecord>()
+
+  if (!record) {
+    console.warn('[send-email] enrollment notification not found:', recordId)
+    return
+  }
+  if (record.status !== 'queued') return
 
   const { data: lead, error } = await supabase
     .from('enrollment_leads')
@@ -186,10 +216,11 @@ async function handleEnrollmentNotification(record: EnrollmentLeadNotificationRe
       }
       const firstToken = appointments[0]?.bookingToken ?? lead.booking_token
       const reminderConfirmUrl = firstToken ? `${appUrl}/confirm/${firstToken}` : appUrl
+      const whenPhrase = daysUntilPhrase(appointments[0].appointmentDate)
       subject = appointments.length > 1
-        ? 'Reminder: your LBMAA appointments are in 2 days'
-        : 'Reminder: your LBMAA appointment is in 2 days'
-      html = reminderEmailHtml(lead.parent_name, appointments, reminderConfirmUrl, LOGO_URL)
+        ? `Reminder: your LBMAA appointments are ${whenPhrase}`
+        : `Reminder: your LBMAA appointment is ${whenPhrase}`
+      html = reminderEmailHtml(lead.parent_name, appointments, reminderConfirmUrl, whenPhrase, LOGO_URL)
       break
     }
     default:
@@ -205,8 +236,20 @@ async function handleEnrollmentNotification(record: EnrollmentLeadNotificationRe
     .eq('notification_id', record.notification_id)
 }
 
-async function handleMessageNotification(record: MessageRecord): Promise<void> {
+async function handleMessageNotification(recordId: string): Promise<void> {
   const supabase = adminClient()
+
+  // Re-read the authoritative message row; the webhook body is untrusted.
+  const { data: record } = await supabase
+    .from('messages')
+    .select('message_id, conversation_id, author_user_id, created_at')
+    .eq('message_id', recordId)
+    .single<MessageRecord>()
+
+  if (!record) {
+    console.warn('[send-email] message not found:', recordId)
+    return
+  }
 
   const { data: members } = await supabase
     .from('conversation_members')
@@ -262,8 +305,23 @@ async function handleMessageNotification(record: MessageRecord): Promise<void> {
   )
 }
 
-async function handlePortalNotification(record: PortalEmailQueueRecord): Promise<void> {
+async function handlePortalNotification(recordId: string): Promise<void> {
   const supabase = adminClient()
+
+  // Re-read the authoritative row; the webhook body is untrusted. Only 'queued'
+  // rows are sent, keeping delivery idempotent against replayed webhooks.
+  const { data: record } = await supabase
+    .from('portal_email_queue')
+    .select('queue_id, recipient_email, type, payload, status')
+    .eq('queue_id', recordId)
+    .single<PortalEmailQueueRecord>()
+
+  if (!record) {
+    console.warn('[send-email] portal notification not found:', recordId)
+    return
+  }
+  if (record.status !== 'queued') return
+
   const appUrl = getAppUrl()
   const tab = record.payload.tab ?? 'announcements'
   const tabUrl = `${appUrl}/dashboard?tab=${tab}`
@@ -361,13 +419,25 @@ Deno.serve(async (req) => {
     return new Response('OK', { status: 200 })
   }
 
+  // Take only the primary-key id from the (untrusted) webhook body; every handler
+  // re-reads the real row from the DB and sends based on that, never on this body.
+  const pkColumn = payload.table === 'messages'
+    ? 'message_id'
+    : payload.table === 'portal_email_queue'
+    ? 'queue_id'
+    : 'notification_id'
+  const recordId = (payload.record as Record<string, unknown>)?.[pkColumn]
+  if (typeof recordId !== 'string') {
+    return new Response('OK', { status: 200 })
+  }
+
   try {
     if (payload.table === 'enrollment_lead_notifications') {
-      await handleEnrollmentNotification(payload.record as EnrollmentLeadNotificationRecord)
+      await handleEnrollmentNotification(recordId)
     } else if (payload.table === 'messages') {
-      await handleMessageNotification(payload.record as MessageRecord)
+      await handleMessageNotification(recordId)
     } else if (payload.table === 'portal_email_queue') {
-      await handlePortalNotification(payload.record as PortalEmailQueueRecord)
+      await handlePortalNotification(recordId)
     }
     return new Response('OK', { status: 200 })
   } catch (err) {

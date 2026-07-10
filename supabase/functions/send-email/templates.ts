@@ -38,7 +38,7 @@ function makeHeader(logoUrl?: string, subtitle?: string): string {
 
 const FOOTER = `
   <p style="margin:0;font-size:12px;color:#595959;line-height:1.6;text-align:center;">
-    Questions? <a href="mailto:info@lbmaa.com" style="color:#A01F23;text-decoration:underline;">info@lbmaa.com</a>
+    Questions? <a href="mailto:westcoastlosbanos@gmail.com" style="color:#A01F23;text-decoration:underline;">westcoastlosbanos@gmail.com</a>
     or <a href="tel:+14086200252" style="color:#A01F23;text-decoration:underline;">(408) 620-0252</a><br />1209 South 6th St Suite E, Los Banos, CA
   </p>
 `
@@ -167,7 +167,7 @@ export function bookingConfirmationHtml(parentName: string, appointments: Appoin
   `, logoUrl, subtitle)
 }
 
-export function reminderEmailHtml(parentName: string, appointments: AppointmentInfo[], confirmUrl: string, logoUrl?: string, subtitle?: string): string {
+export function reminderEmailHtml(parentName: string, appointments: AppointmentInfo[], confirmUrl: string, whenPhrase: string, logoUrl?: string, subtitle?: string): string {
   const cards = appointments.map(a => `
     <div style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
@@ -182,8 +182,8 @@ export function reminderEmailHtml(parentName: string, appointments: AppointmentI
   `).join('')
 
   const heading = appointments.length > 1
-    ? 'Reminder: your LBMAA appointments are in 2 days'
-    : 'Reminder: your LBMAA appointment is in 2 days'
+    ? `Reminder: your LBMAA appointments are ${whenPhrase}`
+    : `Reminder: your LBMAA appointment is ${whenPhrase}`
   const intro = appointments.length > 1
     ? 'just a reminder — your intro appointments are coming up:'
     : 'just a reminder — your intro appointment is coming up:'
@@ -221,7 +221,7 @@ export function submissionConfirmationHtml(lead: EnrollmentLead, logoUrl?: strin
     </div>
     <p style="margin:0 0 18px;font-size:13px;color:#555;line-height:1.65;">
       We look forward to meeting your family. In the meantime, feel free to reach us at
-      <a href="mailto:info@lbmaa.com" style="color:#A01F23;text-decoration:none;">info@lbmaa.com</a>.
+      <a href="mailto:westcoastlosbanos@gmail.com" style="color:#A01F23;text-decoration:none;">westcoastlosbanos@gmail.com</a>.
     </p>
     <p style="margin:0;font-size:13px;color:#555;">— The LBMAA Team</p>
   `, logoUrl, subtitle)
