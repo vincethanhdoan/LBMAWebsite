@@ -24,6 +24,15 @@ function slotScheduleLabel(slot: AppointmentSlot): string {
   return new Date('1970-01-01T' + slot.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
+function slotFrequencyLabel(slot: AppointmentSlot): string {
+  return WEEK_OPTIONS.find(o => o.value === (slot.week_of_month ?? null))?.label ?? 'Every'
+}
+
+// Sort order within a day: Every, 1st–4th, Last.
+function weekSortIndex(week: number | null): number {
+  return week == null ? 0 : week === -1 ? 5 : week
+}
+
 function blockDateLabel(block: BlockedDate): string {
   const fmt = (d: string) =>
     new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -210,6 +219,16 @@ export function AdminAvailabilitySettings() {
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
 
+  const slotsByDay = DAY_NAMES
+    .map((name, day) => ({
+      day,
+      name,
+      slots: slots
+        .filter(s => s.day_of_week === day)
+        .sort((a, b) => a.start_time.localeCompare(b.start_time) || weekSortIndex(a.week_of_month) - weekSortIndex(b.week_of_month)),
+    }))
+    .filter(g => g.slots.length > 0)
+
   return (
     <div className="space-y-6">
       {/* Appointment Slots */}
@@ -220,18 +239,25 @@ export function AdminAvailabilitySettings() {
             <Plus className="w-4 h-4" />Add Slot
           </Button>
         </div>
-        <div className="space-y-2">
-          {slots.map(slot => (
-            <div key={slot.slot_id} className="flex items-center justify-between min-h-[44px] px-3 py-2 rounded border">
-              <div>
-                <span className="font-medium text-sm">{slot.label}</span>
-                <span className="text-xs text-muted-foreground ml-2">
-                  {slotScheduleLabel(slot)} · {slot.program_type === 'all' ? 'All programs' : slot.program_type === 'little_dragons' ? 'Little Dragons' : 'Youth Program'}
-                </span>
-              </div>
-              <div className="flex gap-1.5">
-                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditSlot(slot)}><Pencil className="w-3.5 h-3.5" /></Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteSlot(slot.slot_id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+        <div className="space-y-4">
+          {slotsByDay.map(group => (
+            <div key={group.day}>
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">{group.name}</h4>
+              <div className="space-y-2">
+                {group.slots.map(slot => (
+                  <div key={slot.slot_id} className="flex items-center justify-between min-h-[44px] px-3 py-2 rounded border">
+                    <div>
+                      <span className="font-medium text-sm">{slotScheduleLabel(slot)}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {slotFrequencyLabel(slot)} · {slot.program_type === 'all' ? 'All programs' : slot.program_type === 'little_dragons' ? 'Little Dragons' : 'Youth Program'}
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditSlot(slot)}><Pencil className="w-3.5 h-3.5" /></Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteSlot(slot.slot_id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
