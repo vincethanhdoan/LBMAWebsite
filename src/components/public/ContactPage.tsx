@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, X, Plus, MapPin } from 'lucide-react';
 import { Label } from '../ui/label';
@@ -38,6 +38,11 @@ export function ContactPage() {
   const [submitted,   setSubmitted]   = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const successRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (submitted) successRef.current?.focus();
+  }, [submitted]);
 
   function programLabel(age: string): { text: string; color: string } | null {
     const n = Number(age);
@@ -68,23 +73,36 @@ export function ContactPage() {
       return;
     }
 
+    const trimmedName = parentName.trim();
+    if (trimmedName.length < 2 || trimmedName.length > 100) {
+      setSubmitError(ct.errName);
+      return;
+    }
+
     if (!phone.trim()) {
       setSubmitError(ct.errPhone);
       return;
     }
 
-    if (!isValidUsPhone(phone)) {
+    if (phone.length > 20 || !isValidUsPhone(phone)) {
       setSubmitError(ct.errPhoneInvalid);
       return;
     }
 
-    if (!isValidEmail(parentEmail.trim())) {
+    const trimmedEmail = parentEmail.trim().toLowerCase();
+    if (trimmedEmail.length < 5 || trimmedEmail.length > 254 || !isValidEmail(trimmedEmail)) {
       setSubmitError(ct.errEmailInvalid);
       return;
     }
 
+    if (children.length < 1 || children.length > 6) {
+      setSubmitError(ct.errChildCount);
+      return;
+    }
+
     for (const c of children) {
-      if (!c.name.trim() || !c.age) {
+      const childName = c.name.trim();
+      if (!childName || childName.length > 60 || !c.age) {
         setSubmitError(ct.errChildFields);
         return;
       }
@@ -98,10 +116,10 @@ export function ContactPage() {
     setIsSubmitting(true);
     const { data, error } = await submitEnrollmentLeadWithTimeout(
       {
-        parentName,
-        parentEmail,
-        phone: phone || undefined,
-        message: message || undefined,
+        parentName: trimmedName,
+        parentEmail: trimmedEmail,
+        phone: phone.trim(),
+        message: message.trim() || undefined,
         sourcePage: 'contact',
         children: children.map(c => ({ name: c.name.trim(), age: Number(c.age) })),
       },
@@ -109,7 +127,7 @@ export function ContactPage() {
     );
 
     if (error || !data) {
-      setSubmitError(error?.code === 'P0429' ? ct.errRateLimit : error?.message || ct.errSubmit);
+      setSubmitError(error?.code === 'P0429' ? ct.errRateLimit : ct.errSubmit);
       setIsSubmitting(false);
       return;
     }
@@ -153,7 +171,13 @@ export function ContactPage() {
               </p>
 
               {submitted ? (
-                <div className="py-16 text-center rounded-xl" style={{ backgroundColor: V3.surface }}>
+                <div
+                  ref={successRef}
+                  role="status"
+                  tabIndex={-1}
+                  className="py-16 text-center rounded-xl"
+                  style={{ backgroundColor: V3.surface }}
+                >
                   <div
                     className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
                     style={{ backgroundColor: V3.primaryBg }}
