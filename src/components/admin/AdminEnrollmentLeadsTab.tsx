@@ -157,9 +157,18 @@ const TAB_EXPLANATIONS: Partial<Record<TabId, string>> = {
 
 type ClosedDeniedFilter = 'all' | 'denied' | 'closed';
 
-function tabCount(leads: EnrollmentLead[], tab: (typeof TABS)[number]): number {
+function hasPastAppointment(lead: EnrollmentLead, todayKey: string): boolean {
+  const date = getLeadPrimaryDate(lead);
+  return date !== null && date < todayKey;
+}
+
+function tabCount(leads: EnrollmentLead[], tab: (typeof TABS)[number], todayKey: string): number {
   if (!tab.statuses) return leads.length;
-  return leads.filter(l => tab.statuses!.includes(l.status)).length;
+  let matching = leads.filter(l => tab.statuses!.includes(l.status));
+  if (tab.id === 'appointment_scheduled' || tab.id === 'appointment_confirmed') {
+    matching = matching.filter(l => !hasPastAppointment(l, todayKey));
+  }
+  return matching.length;
 }
 
 function filterLeads(
@@ -488,9 +497,12 @@ export function AdminEnrollmentLeadsTab() {
   // ─── Derived data ──────────────────────────────────────────────────────────
 
   const visibleLeads = filterLeads(leads, activeTab, search, closedDeniedFilter);
+  const todayKey = toLocalDateKey(new Date());
   const newCount = leads.filter(l => l.status === 'new').length;
   const approvedCount = leads.filter(l => l.status === 'approved').length;
-  const scheduledCount = leads.filter(l => l.status === 'appointment_scheduled').length;
+  const scheduledCount = leads.filter(
+    l => l.status === 'appointment_scheduled' && !hasPastAppointment(l, todayKey)
+  ).length;
 
   const isCalendarTab = activeTab === 'appointment_scheduled' || activeTab === 'appointment_confirmed';
 
@@ -838,7 +850,7 @@ export function AdminEnrollmentLeadsTab() {
         <div className="flex gap-0 overflow-x-auto">
           {TABS.map(tab => {
             const isActive = activeTab === tab.id;
-            const count = tabCount(leads, tab);
+            const count = tabCount(leads, tab, todayKey);
             return (
               <button
                 key={tab.id}
