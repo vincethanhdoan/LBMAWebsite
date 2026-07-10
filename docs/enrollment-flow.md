@@ -155,15 +155,15 @@ Admins configure recurring time slots when appointments can be scheduled (e.g., 
 | `label` | TEXT | Human-readable name (e.g., "Wednesday 4–6pm") |
 | `is_active` | BOOLEAN | Whether this slot is currently available |
 
-#### `appointment_slot_overrides`
+#### `blocked_dates`
 
-A slot is recurring by default. An override says "skip this slot on this specific date." Example: Wednesday is normally open, but December 25th should be blocked.
+Slots are recurring by default. A blocked-date entry closes booking for **all** slots across a date range. A single day is a range where `start_date = end_date`. Example: block December 22–26 for the holidays. Blocks only prevent new bookings; existing appointments on those dates are untouched.
 
 | Column | Type | Purpose |
 |---|---|---|
-| `override_id` | UUID | Primary key |
-| `slot_id` | UUID | Which slot is blocked |
-| `override_date` | DATE | The specific date to block |
+| `block_id` | UUID | Primary key |
+| `start_date` | DATE | First blocked day |
+| `end_date` | DATE | Last blocked day (equals `start_date` for a single day) |
 | `reason` | TEXT | Optional reason (e.g., "Holiday") |
 
 #### `admin_notification_settings`
@@ -488,7 +488,7 @@ Key RLS policies for enrollment:
 | `enrollment_leads` | Admins only | Admins only (update); `submit_enrollment_lead` RPC inserts |
 | `enrollment_lead_notifications` | Admins only | `send-email` edge function (via service role) |
 | `appointment_slots` | Anyone (for booking page) | Admins only |
-| `appointment_slot_overrides` | Anyone (for booking page) | Admins only |
+| `blocked_dates` | Anyone (for booking page) | Admins only |
 
 ### The `is_admin()` helper
 
