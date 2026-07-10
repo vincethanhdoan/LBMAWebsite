@@ -91,7 +91,7 @@ export async function checkEmailHasAccountWithTimeout(
 export async function submitEnrollmentLeadWithTimeout(
   input: EnrollmentLeadInput,
   timeoutMs: number
-): Promise<{ data: string | null; error: { message: string } | null }> {
+): Promise<{ data: string | null; error: { message: string; code?: string } | null }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -117,13 +117,15 @@ export async function submitEnrollmentLeadWithTimeout(
     if (!res.ok) {
       const errBody = await res.text();
       let msg = res.statusText;
+      let code: string | undefined;
       try {
         const j = JSON.parse(errBody);
         if (j.message) msg = j.message;
+        if (j.code) code = j.code;
       } catch {
         // ignore parse failures
       }
-      return { data: null, error: { message: msg } };
+      return { data: null, error: { message: msg, code } };
     }
 
     const data = await res.json();

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, X, Plus, MapPin } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -15,6 +16,15 @@ const CONTACT_INFO = [
 
 type ChildRow = { name: string; age: string };
 
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidUsPhone(phone: string): boolean {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length === 10 || (digits.length === 11 && digits.startsWith('1'));
+}
+
 export function ContactPage() {
   const { t } = useLanguage();
   const ct = t.contact;
@@ -24,6 +34,7 @@ export function ContactPage() {
   const [phone,       setPhone]       = useState('');
   const [message,     setMessage]     = useState('');
   const [children,    setChildren]    = useState<ChildRow[]>([{ name: '', age: '' }]);
+  const [company,     setCompany]     = useState(''); // honeypot — humans never see or fill this
   const [submitted,   setSubmitted]   = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,8 +63,23 @@ export function ContactPage() {
     e.preventDefault();
     setSubmitError(null);
 
+    if (company) {
+      setSubmitted(true);
+      return;
+    }
+
     if (!phone.trim()) {
       setSubmitError(ct.errPhone);
+      return;
+    }
+
+    if (!isValidUsPhone(phone)) {
+      setSubmitError(ct.errPhoneInvalid);
+      return;
+    }
+
+    if (!isValidEmail(parentEmail.trim())) {
+      setSubmitError(ct.errEmailInvalid);
       return;
     }
 
@@ -83,7 +109,7 @@ export function ContactPage() {
     );
 
     if (error || !data) {
-      setSubmitError(error?.message || ct.errSubmit);
+      setSubmitError(error?.code === 'P0429' ? ct.errRateLimit : error?.message || ct.errSubmit);
       setIsSubmitting(false);
       return;
     }
@@ -143,6 +169,19 @@ export function ContactPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+
+                  <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}>
+                    <label htmlFor="company">Company</label>
+                    <input
+                      id="company"
+                      name="company"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={company}
+                      onChange={e => setCompany(e.target.value)}
+                    />
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
@@ -308,6 +347,15 @@ export function ContactPage() {
                     </button>
                     <p className="text-sm text-center" style={{ color: V3.muted }}>
                       {ct.required}
+                      <br />
+                      {ct.consentPre}
+                      <Link
+                        to="/privacy"
+                        style={{ color: V3.muted, textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                      >
+                        {ct.consentLink}
+                      </Link>
+                      {ct.consentPost}
                     </p>
                   </div>
 
