@@ -715,6 +715,14 @@ export async function markNotificationsRead(): Promise<void> {
   if (error) throw error;
 }
 
+export async function markNotificationRead(notificationId: string): Promise<void> {
+  const { error } = await supabase
+    .from('user_notifications')
+    .update({ is_read: true })
+    .eq('notification_id', notificationId);
+  if (error) throw error;
+}
+
 export async function upsertUserNotificationPreferences(
   prefs: Partial<Omit<UserNotificationPreferences, 'user_id' | 'updated_at'>>
 ): Promise<void> {

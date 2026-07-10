@@ -274,9 +274,9 @@ export type UserSectionLastSeen = {
 export type UserNotification = {
   notification_id: string;
   recipient_user_id: string;
-  type: 'comment_reply' | 'post_comment';
+  type: 'comment_reply' | 'post_comment' | 'new_lead' | 'appointment_booked' | 'appointment_confirmed';
   reference_id: string;
-  reference_type: 'announcement_comment' | 'blog_comment';
+  reference_type: 'announcement_comment' | 'blog_comment' | 'enrollment_lead';
   actor_display_name: string | null;
   is_read: boolean;
   created_at: string;
