@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Loader2, Mail, Phone, Calendar, Plus, Search, MoreVertical, Check, Pencil, ChevronLeft, ChevronRight, Clock, AlertCircle, Send } from 'lucide-react';
+import { Loader2, Mail, Phone, Calendar, Plus, Search, MoreVertical, Check, Pencil, ChevronLeft, ChevronRight, ChevronDown, Clock, AlertCircle, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { edgeFunctionUserAuthHeaders, supabase } from '../../lib/supabase/client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
@@ -377,6 +377,7 @@ export function AdminEnrollmentLeadsTab() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
   const [actionLeadId, setActionLeadId] = useState<string | null>(null);
+  const [showPastAppointments, setShowPastAppointments] = useState(false);
 
   useEffect(() => {
     setNotesDraft(d => {
@@ -582,13 +583,16 @@ export function AdminEnrollmentLeadsTab() {
     })
   })()
 
-  // Group visible leads by appointment date for calendar tabs
+  // Group visible leads by appointment date for calendar tabs. Past-appointment
+  // leads are pulled into a separate follow-up section rather than the week view.
   const dateGroups: Array<{ dateKey: string; leads: EnrollmentLead[] }> = [];
+  const pastDateGroups: Array<{ dateKey: string; leads: EnrollmentLead[] }> = [];
   if (isCalendarTab) {
     const weekDateSet = new Set(weekStripDays.map(d => d.dateKey))
+    const upcoming = visibleLeads.filter(l => !hasPastAppointment(l, todayKey))
     const toGroup = selectedWeekDate
-      ? visibleLeads.filter(l => getLeadPrimaryDate(l) === selectedWeekDate)
-      : visibleLeads.filter(l => {
+      ? upcoming.filter(l => getLeadPrimaryDate(l) === selectedWeekDate)
+      : upcoming.filter(l => {
           const date = getLeadPrimaryDate(l)
           return date !== null && weekDateSet.has(date)
         })
@@ -606,7 +610,17 @@ export function AdminEnrollmentLeadsTab() {
       .sort(([a], [b]) => a.localeCompare(b))
       .forEach(([dateKey, groupLeads]) => dateGroups.push({ dateKey, leads: groupLeads }));
     if (noDates.length) dateGroups.push({ dateKey: '', leads: noDates });
+
+    const pastGroups: Record<string, EnrollmentLead[]> = {};
+    for (const lead of visibleLeads.filter(l => hasPastAppointment(l, todayKey))) {
+      const date = getLeadPrimaryDate(lead) as string;
+      (pastGroups[date] = pastGroups[date] ?? []).push(lead);
+    }
+    Object.entries(pastGroups)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .forEach(([dateKey, groupLeads]) => pastDateGroups.push({ dateKey, leads: groupLeads }));
   }
+  const pastAppointmentCount = pastDateGroups.reduce((sum, g) => sum + g.leads.length, 0);
 
   // ─── Loading state ─────────────────────────────────────────────────────────
 
@@ -845,6 +859,28 @@ export function AdminEnrollmentLeadsTab() {
                   )}
                 </>
               )}
+              {(lead.status === 'appointment_confirmed' || hasPastAppointment(lead, todayKey)) && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-[#166534] border-[#BBF7D0] hover:bg-[#F0FDF4]"
+                    disabled={updatingId === lead.lead_id}
+                    onClick={() => handleStatusChange(lead.lead_id, 'enrolled')}
+                  >
+                    Mark enrolled
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-muted-foreground"
+                    disabled={updatingId === lead.lead_id}
+                    onClick={() => handleStatusChange(lead.lead_id, 'closed')}
+                  >
+                    Close lead
+                  </Button>
+                </>
+              )}
               {(lead.status === 'enrolled' || lead.status === 'closed') && (
                 <Select
                   value={lead.status}
@@ -863,6 +899,46 @@ export function AdminEnrollmentLeadsTab() {
             </div>
 
         </div>
+      </div>
+    );
+  }
+
+  function renderDateGroup({ dateKey, leads: groupLeads }: { dateKey: string; leads: EnrollmentLead[] }) {
+    if (!dateKey) {
+      return (
+        <div key="no-date">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground">No date set</span>
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground font-semibold">{groupLeads.length}</span>
+          </div>
+          <div className="space-y-2">{groupLeads.map(renderLeadCard)}</div>
+        </div>
+      );
+    }
+    const { label, isToday, isTomorrow } = formatGroupHeader(dateKey);
+    return (
+      <div key={dateKey}>
+        <div className="flex items-center gap-2 mb-3">
+          <span className={`text-sm font-bold tracking-wide uppercase ${isToday ? 'text-primary' : 'text-foreground/80'}`}>
+            {label}
+          </span>
+          {isToday && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground tracking-wide uppercase">
+              Today
+            </span>
+          )}
+          {isTomorrow && (
+            <span className="text-[10px] font-semibold text-muted-foreground tracking-wide uppercase">
+              Tomorrow
+            </span>
+          )}
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-xs text-muted-foreground font-semibold flex-shrink-0">
+            {groupLeads.length} {groupLeads.length === 1 ? 'appointment' : 'appointments'}
+          </span>
+        </div>
+        <div className="space-y-2">{groupLeads.map(renderLeadCard)}</div>
       </div>
     );
   }
@@ -1050,53 +1126,39 @@ export function AdminEnrollmentLeadsTab() {
         </div>
       ) : isCalendarTab ? (
         /* ── Date-grouped calendar view ── */
-        dateGroups.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            {selectedWeekDate ? 'No appointments on this date.' : 'No appointments this week.'}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {dateGroups.map(({ dateKey, leads: groupLeads }) => {
-              if (!dateKey) {
-                return (
-                  <div key="no-date">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground">No date set</span>
-                      <div className="flex-1 h-px bg-border" />
-                      <span className="text-xs text-muted-foreground font-semibold">{groupLeads.length}</span>
-                    </div>
-                    <div className="space-y-2">{groupLeads.map(renderLeadCard)}</div>
-                  </div>
-                );
-              }
-              const { label, isToday, isTomorrow } = formatGroupHeader(dateKey);
-              return (
-                <div key={dateKey}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className={`text-sm font-bold tracking-wide uppercase ${isToday ? 'text-primary' : 'text-foreground/80'}`}>
-                      {label}
-                    </span>
-                    {isToday && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground tracking-wide uppercase">
-                        Today
-                      </span>
-                    )}
-                    {isTomorrow && (
-                      <span className="text-[10px] font-semibold text-muted-foreground tracking-wide uppercase">
-                        Tomorrow
-                      </span>
-                    )}
-                    <div className="flex-1 h-px bg-border" />
-                    <span className="text-xs text-muted-foreground font-semibold flex-shrink-0">
-                      {groupLeads.length} {groupLeads.length === 1 ? 'appointment' : 'appointments'}
-                    </span>
-                  </div>
-                  <div className="space-y-2">{groupLeads.map(renderLeadCard)}</div>
+        <div className="space-y-6">
+          {dateGroups.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground text-sm">
+              {selectedWeekDate ? 'No appointments on this date.' : 'No appointments this week.'}
+            </div>
+          ) : (
+            dateGroups.map(renderDateGroup)
+          )}
+          {pastAppointmentCount > 0 && (
+            <div className="pt-2">
+              <button
+                onClick={() => setShowPastAppointments(s => !s)}
+                className="flex items-center gap-2 w-full text-left group"
+              >
+                <ChevronDown
+                  className={`w-4 h-4 text-muted-foreground transition-transform ${showPastAppointments ? '' : '-rotate-90'}`}
+                />
+                <span className="text-sm font-bold tracking-wide uppercase text-foreground/80">
+                  Past appointments — needs follow-up
+                </span>
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground font-semibold flex-shrink-0">
+                  {pastAppointmentCount}
+                </span>
+              </button>
+              {showPastAppointments && (
+                <div className="space-y-6 mt-4">
+                  {pastDateGroups.map(renderDateGroup)}
                 </div>
-              );
-            })}
-          </div>
-        )
+              )}
+            </div>
+          )}
+        </div>
       ) : (
         /* ── Flat list for all other tabs ── */
         <div className="space-y-3">
