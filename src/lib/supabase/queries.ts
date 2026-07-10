@@ -568,16 +568,20 @@ export async function getTerminalEnrollmentLeads(opts: {
 
   const term = opts.search?.trim();
   if (term) {
-    const safe = term.replaceAll('%', '\\%').replaceAll(',', ' ');
-    const { data: childMatches } = await supabase
+    // escape LIKE wildcards, then make the pattern safe inside a double-quoted
+    // PostgREST filter value (commas, parens, dots in the term stay literal)
+    const likeSafe = term.replace(/[\\%_]/g, (c) => `\\${c}`);
+    const quoted = likeSafe.replace(/"/g, '\\"');
+    const { data: childMatches, error: childError } = await supabase
       .from('enrollment_lead_children')
       .select('lead_id')
-      .ilike('name', `%${safe}%`);
+      .ilike('name', `%${likeSafe}%`);
+    if (childError) throw childError;
     const childLeadIds = [...new Set((childMatches ?? []).map((c) => c.lead_id))];
     const orParts = [
-      `parent_name.ilike.%${safe}%`,
-      `parent_email.ilike.%${safe}%`,
-      `student_name.ilike.%${safe}%`,
+      `parent_name.ilike."%${quoted}%"`,
+      `parent_email.ilike."%${quoted}%"`,
+      `student_name.ilike."%${quoted}%"`,
     ];
     if (childLeadIds.length > 0) orParts.push(`lead_id.in.(${childLeadIds.join(',')})`);
     query = query.or(orParts.join(','));
