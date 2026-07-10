@@ -567,6 +567,7 @@ export function AdminEnrollmentLeadsTab() {
     const tabObj = TABS.find(t => t.id === activeTab);
     for (const lead of leads) {
       if (!tabObj?.statuses?.includes(lead.status)) continue;
+      if (hasPastAppointment(lead, todayKey)) continue;
       const date = getLeadPrimaryDate(lead);
       if (date) appointmentCountsByDate[date] = (appointmentCountsByDate[date] ?? 0) + 1;
     }
