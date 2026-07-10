@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { FunctionsHttpError } from '@supabase/supabase-js'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -108,12 +109,17 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
     if (!fnHeaders) throw new Error('Session expired. Please sign in again.')
 
     let failedProgram: string | null = null
+    let slotTaken = false
     for (const b of bookings) {
       const { error: bookError } = await supabase.functions.invoke('admin-book-appointment', {
         body: { programBookingId: b.programBookingId, slotId: b.slotId, appointmentDate: b.appointmentDate },
         headers: fnHeaders,
       })
       if (bookError) {
+        if (bookError instanceof FunctionsHttpError) {
+          const body = await bookError.context.json().catch(() => null)
+          if (body?.code === 'slot_taken') { slotTaken = true; break }
+        }
         const programType = createdLead?.programBookings.find(pb => pb.booking_id === b.programBookingId)?.program_type
         failedProgram = programType ? PROGRAM_LABELS[programType] : 'This'
         break
@@ -123,6 +129,12 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
     if (!createdLead) return
     const updatedLead = await getEnrollmentLeadById(createdLead.lead_id)
     queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() })
+
+    if (slotTaken) {
+      toast.error('That time was just taken. Please pick another date.')
+      onSuccess(updatedLead)
+      return
+    }
 
     if (failedProgram) {
       setCreatedLead(updatedLead)

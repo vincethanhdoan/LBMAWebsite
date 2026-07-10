@@ -114,6 +114,23 @@ Deno.serve(async (req) => {
   if (blockError) return new Response('Unable to verify availability', { status: 500, headers: cors })
   if (block) return new Response('This date is not available', { status: 422, headers: cors })
 
+  const { data: conflict } = await supabase
+    .from('enrollment_lead_program_bookings')
+    .select('booking_id')
+    .eq('appointment_slot_id', slotId)
+    .eq('appointment_date', appointmentDate)
+    .in('status', ['scheduled', 'confirmed'])
+    .neq('lead_id', programBooking.lead_id)
+    .limit(1)
+    .maybeSingle()
+
+  if (conflict) {
+    return new Response(JSON.stringify({ code: 'slot_taken' }), {
+      status: 409,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    })
+  }
+
   const todayPacific = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date())
   const today = new Date(todayPacific + 'T12:00:00')
   const daysUntilAppt = Math.floor((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
@@ -133,7 +150,15 @@ Deno.serve(async (req) => {
     })
     .eq('booking_id', programBooking.booking_id)
 
-  if (updateError) return new Response('Booking failed', { status: 500, headers: cors })
+  if (updateError) {
+    if (updateError.code === '23P01' || updateError.message?.includes('slot_taken')) {
+      return new Response(JSON.stringify({ code: 'slot_taken' }), {
+        status: 409,
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+    return new Response('Booking failed', { status: 500, headers: cors })
+  }
 
   const allBooked = await recalculateLeadStatus(supabase, lead.lead_id)
 

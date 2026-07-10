@@ -3,6 +3,7 @@ import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Loader2, Mail, Phone, Calendar, Plus, Search, MoreVertical, Check, Pencil, ChevronLeft, ChevronRight, ChevronDown, Clock, AlertCircle, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { edgeFunctionUserAuthHeaders, supabase } from '../../lib/supabase/client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
@@ -448,12 +449,17 @@ export function AdminEnrollmentLeadsTab() {
     if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
 
     let failedProgram: string | null = null;
+    let slotTaken = false;
     for (const b of bookings) {
       const { data, error } = await supabase.functions.invoke('admin-book-appointment', {
         body: { programBookingId: b.programBookingId, slotId: b.slotId, appointmentDate: b.appointmentDate },
         headers: fnHeaders,
       });
       if (error || !data) {
+        if (error instanceof FunctionsHttpError) {
+          const body = await error.context.json().catch(() => null);
+          if (body?.code === 'slot_taken') { slotTaken = true; break; }
+        }
         const programType = pickDateTarget?.programBookings.find(pb => pb.booking_id === b.programBookingId)?.program_type;
         failedProgram = programType ? PROGRAM_LABELS[programType] : 'This';
         break;
@@ -461,6 +467,12 @@ export function AdminEnrollmentLeadsTab() {
     }
 
     queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+
+    if (slotTaken) {
+      toast.error('That time was just taken. Please pick another date.');
+      setPickDateTargetId(null);
+      return;
+    }
 
     if (failedProgram) {
       toast.error(`${failedProgram} appointment could not be booked — the other bookings were saved. Please try again.`);

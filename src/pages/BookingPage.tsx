@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
+import { FunctionsHttpError } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase/client'
 import { getProgramBookingByToken, getAppointmentSlots } from '../lib/supabase/queries'
 import { BookingCalendar } from '../components/shared/BookingCalendar'
@@ -30,6 +31,7 @@ export function BookingPage() {
   const [booked, setBooked] = useState<{ date: string; time: string } | null>(null)
   const [showReschedule, setShowReschedule] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [calendarKey, setCalendarKey] = useState(0)
 
   useEffect(() => {
     if (!token) { setError('Invalid link'); setLoading(false); return }
@@ -62,7 +64,15 @@ export function BookingPage() {
       setBooked({ date: data.appointment_date, time: data.appointment_time })
       setBooking(prev => prev ? { ...prev, status: data.status, appointment_date: data.appointment_date, appointment_time: data.appointment_time } : prev)
       setShowReschedule(false)
-    } catch {
+    } catch (err) {
+      if (err instanceof FunctionsHttpError) {
+        const body = await err.context.json().catch(() => null)
+        if (body?.code === 'slot_taken') {
+          setError('That time was just taken. Please pick another date.')
+          setCalendarKey(k => k + 1)
+          return
+        }
+      }
       setError('Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
@@ -126,6 +136,7 @@ export function BookingPage() {
               <button onClick={() => setShowReschedule(false)} className="text-sm text-muted-foreground hover:text-foreground">← Back</button>
             )}
             <BookingCalendar
+              key={calendarKey}
               slots={slots}
               onConfirm={handleBook}
               submitting={submitting}
