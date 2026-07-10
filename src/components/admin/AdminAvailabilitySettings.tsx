@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -7,6 +7,7 @@ import { Loader2, Pencil, Trash2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase/client'
 import { getAppointmentSlots, getAdminNotificationSettings, getAdminEmails } from '../../lib/supabase/queries'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog'
 import type { AppointmentSlot, BlockedDate, AdminNotificationSetting } from '../../lib/types'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -50,6 +51,7 @@ export function AdminAvailabilitySettings() {
   // Slot form state
   const [showSlotForm, setShowSlotForm] = useState(false)
   const [editSlotId, setEditSlotId] = useState<string | null>(null)
+  const [deleteSlotTarget, setDeleteSlotTarget] = useState<string | null>(null)
   const [slotDay, setSlotDay] = useState('1')
   const [slotWeekOfMonth, setSlotWeekOfMonth] = useState<number | null>(null)
   const [slotStart, setSlotStart] = useState('')
@@ -69,27 +71,27 @@ export function AdminAvailabilitySettings() {
   const [notifSaving, setNotifSaving] = useState(false)
   const [adminUsers, setAdminUsers] = useState<{ user_id: string; email: string; display_name: string }[]>([])
 
+  const loadSlots = useCallback(async () => {
+    setSlots(await getAppointmentSlots())
+  }, [])
+
+  const loadBlocks = useCallback(async () => {
+    const { data } = await supabase.from('blocked_dates').select('*').order('start_date')
+    setBlocks(data ?? [])
+  }, [])
+
+  const loadNotifs = useCallback(async () => {
+    setNotifSettings(await getAdminNotificationSettings())
+  }, [])
+
   useEffect(() => {
     async function load() {
-      const [slotsData, notifsData, adminsData] = await Promise.all([
-        getAppointmentSlots(),
-        getAdminNotificationSettings(),
-        getAdminEmails(),
-      ])
-      setSlots(slotsData)
-      setNotifSettings(notifsData)
-      setAdminUsers(adminsData)
-
-      // Load blocked dates
-      const { data: blockData } = await supabase
-        .from('blocked_dates')
-        .select('*')
-        .order('start_date')
-      setBlocks(blockData ?? [])
+      setAdminUsers(await getAdminEmails())
+      await Promise.all([loadSlots(), loadNotifs(), loadBlocks()])
       setLoading(false)
     }
     load()
-  }, [])
+  }, [loadSlots, loadNotifs, loadBlocks])
 
   function startEditSlot(slot: AppointmentSlot) {
     setEditSlotId(slot.slot_id)
@@ -113,37 +115,20 @@ export function AdminAvailabilitySettings() {
     const freq = WEEK_OPTIONS.find(o => o.value === slotWeekOfMonth)?.label ?? 'Every'
     const autoLabel = `${freq} ${DAY_NAMES[parseInt(slotDay)]}`
     const [h, m] = slotStart.split(':').map(Number)
-    const autoEnd = `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    const autoEnd = h >= 23 ? '23:59' : `${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`
     setSlotSaving(true)
     try {
-      const { data } = await supabase.rpc('upsert_appointment_slot', {
+      const { error } = await supabase.rpc('upsert_appointment_slot', {
         p_slot_id: editSlotId ?? null,
         p_day_of_week: parseInt(slotDay),
         p_start_time: slotStart,
         p_end_time: autoEnd,
         p_label: autoLabel,
         p_week_of_month: slotWeekOfMonth,
+        p_program_type: slotProgramType,
       })
-      const savedSlotId = editSlotId ?? (data as string)
-      await supabase.from('appointment_slots').update({ program_type: slotProgramType }).eq('slot_id', savedSlotId)
-      if (editSlotId) {
-        setSlots(prev => prev.map(s => s.slot_id === editSlotId
-          ? { ...s, day_of_week: parseInt(slotDay), week_of_month: slotWeekOfMonth, start_time: slotStart, end_time: autoEnd, label: autoLabel, program_type: slotProgramType }
-          : s))
-      } else {
-        const newSlot: AppointmentSlot = {
-          slot_id: savedSlotId,
-          day_of_week: parseInt(slotDay),
-          week_of_month: slotWeekOfMonth,
-          start_time: slotStart,
-          end_time: autoEnd,
-          label: autoLabel,
-          program_type: slotProgramType,
-          is_active: true,
-          created_at: new Date().toISOString(),
-        }
-        setSlots(prev => [...prev, newSlot])
-      }
+      if (error) { toast.error('Failed to save slot'); return }
+      await loadSlots()
       resetSlotForm()
     } finally {
       setSlotSaving(false)
@@ -151,8 +136,10 @@ export function AdminAvailabilitySettings() {
   }
 
   async function deleteSlot(slotId: string) {
-    await supabase.rpc('delete_appointment_slot', { p_slot_id: slotId })
-    setSlots(prev => prev.filter(s => s.slot_id !== slotId))
+    const { error } = await supabase.rpc('delete_appointment_slot', { p_slot_id: slotId })
+    if (error) { toast.error('Failed to delete slot') }
+    else { await loadSlots() }
+    setDeleteSlotTarget(null)
   }
 
   async function addBlock() {
@@ -164,14 +151,7 @@ export function AdminAvailabilitySettings() {
         p_reason: blockReason || null,
       })
       if (error || !data) { toast.error('Failed to block dates'); return }
-      const newBlock: BlockedDate = {
-        block_id: data as string,
-        start_date: blockStartDate,
-        end_date: blockEndDate || blockStartDate,
-        reason: blockReason || null,
-        created_at: new Date().toISOString(),
-      }
-      setBlocks(prev => [...prev, newBlock].sort((a, b) => a.start_date.localeCompare(b.start_date)))
+      await loadBlocks()
       setBlockStartDate('')
       setBlockEndDate('')
       setBlockReason('')
@@ -184,17 +164,18 @@ export function AdminAvailabilitySettings() {
   async function removeBlock(blockId: string) {
     const { error } = await supabase.rpc('remove_blocked_dates', { p_block_id: blockId })
     if (error) { toast.error('Failed to remove blocked dates'); return }
-    setBlocks(prev => prev.filter(b => b.block_id !== blockId))
+    await loadBlocks()
   }
 
   async function addNotifRecipient() {
     setNotifSaving(true)
     try {
-      await supabase.rpc('upsert_admin_notification_setting', {
+      const { error } = await supabase.rpc('upsert_admin_notification_setting', {
         p_email: notifEmail,
         p_notify_new_leads: true,
       })
-      await getAdminNotificationSettings().then(setNotifSettings)
+      if (error) { toast.error('Failed to add recipient'); return }
+      await loadNotifs()
       setNotifEmail('')
       setShowNotifForm(false)
     } finally {
@@ -203,18 +184,20 @@ export function AdminAvailabilitySettings() {
   }
 
   async function removeNotifRecipient(settingId: string) {
-    await supabase.rpc('delete_admin_notification_setting', { p_setting_id: settingId })
-    setNotifSettings(prev => prev.filter(n => n.setting_id !== settingId))
+    const { error } = await supabase.rpc('delete_admin_notification_setting', { p_setting_id: settingId })
+    if (error) { toast.error('Failed to remove recipient'); return }
+    await loadNotifs()
   }
 
   async function toggleNotifNewLeads(settingId: string, current: boolean) {
     const setting = notifSettings.find(n => n.setting_id === settingId)
     if (!setting) return
-    await supabase.rpc('upsert_admin_notification_setting', {
+    const { error } = await supabase.rpc('upsert_admin_notification_setting', {
       p_email: setting.email,
       p_notify_new_leads: !current,
     })
-    setNotifSettings(prev => prev.map(n => n.setting_id === settingId ? { ...n, notify_new_leads: !current } : n))
+    if (error) { toast.error('Failed to update recipient'); return }
+    await loadNotifs()
   }
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
@@ -254,7 +237,7 @@ export function AdminAvailabilitySettings() {
                     </div>
                     <div className="flex gap-1.5">
                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditSlot(slot)}><Pencil className="w-3.5 h-3.5" /></Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteSlot(slot.slot_id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteSlotTarget(slot.slot_id)}><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
                   </div>
                 ))}
@@ -417,6 +400,26 @@ export function AdminAvailabilitySettings() {
           )}
         </div>
       </div>
+
+      <AlertDialog open={deleteSlotTarget !== null} onOpenChange={open => { if (!open) setDeleteSlotTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this time slot?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Families will no longer be able to book it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (deleteSlotTarget) deleteSlot(deleteSlotTarget) }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
