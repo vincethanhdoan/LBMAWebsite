@@ -473,7 +473,7 @@ const ES: T = {
       { day: 'Fines de Semana', time: 'Cerrado' },
       { day: 'Días Festivos', time: 'Cerrado' },
     ],
-    errName: 'Por favor escriba el nombre completo del padre, madre o tutor.',
+    errName: 'Por favor escribe el nombre completo del padre, madre o tutor.',
     errPhone: 'Por favor proporciona un número de teléfono.',
     errPhoneInvalid: 'Por favor ingresa un número de teléfono de EE. UU. de 10 dígitos válido.',
     errEmailInvalid: 'Por favor ingresa una dirección de correo electrónico válida.',
