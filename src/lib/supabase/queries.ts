@@ -532,6 +532,102 @@ export async function getEnrollmentLeads(): Promise<EnrollmentLead[]> {
   return (data ?? []).map(mapEnrollmentLeadRow);
 }
 
+const ACTIVE_LEAD_STATUSES = ['new', 'approved', 'appointment_scheduled', 'appointment_confirmed'];
+const TERMINAL_LEAD_STATUSES = ['enrolled', 'closed', 'denied'];
+
+export async function getActiveEnrollmentLeads(): Promise<EnrollmentLead[]> {
+  const { data, error } = await supabase
+    .from('enrollment_leads')
+    .select(ENROLLMENT_LEAD_SELECT)
+    .in('status', ACTIVE_LEAD_STATUSES)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(mapEnrollmentLeadRow);
+}
+
+export type TerminalLeadFilter = 'enrolled' | 'closed' | 'denied' | 'archived' | 'all_terminal';
+
+export async function getTerminalEnrollmentLeads(opts: {
+  filter: TerminalLeadFilter;
+  search?: string;
+  page: number;
+  pageSize?: number;
+}): Promise<{ leads: EnrollmentLead[]; hasMore: boolean }> {
+  const pageSize = opts.pageSize ?? 50;
+  let query = supabase.from('enrollment_leads').select(ENROLLMENT_LEAD_SELECT);
+
+  if (opts.filter === 'archived') {
+    query = query.not('deleted_at', 'is', null);
+  } else {
+    query = query.is('deleted_at', null);
+    query = opts.filter === 'all_terminal'
+      ? query.in('status', TERMINAL_LEAD_STATUSES)
+      : query.eq('status', opts.filter);
+  }
+
+  const term = opts.search?.trim();
+  if (term) {
+    const safe = term.replaceAll('%', '\\%').replaceAll(',', ' ');
+    const { data: childMatches } = await supabase
+      .from('enrollment_lead_children')
+      .select('lead_id')
+      .ilike('name', `%${safe}%`);
+    const childLeadIds = [...new Set((childMatches ?? []).map((c) => c.lead_id))];
+    const orParts = [
+      `parent_name.ilike.%${safe}%`,
+      `parent_email.ilike.%${safe}%`,
+      `student_name.ilike.%${safe}%`,
+    ];
+    if (childLeadIds.length > 0) orParts.push(`lead_id.in.(${childLeadIds.join(',')})`);
+    query = query.or(orParts.join(','));
+  }
+
+  const from = opts.page * pageSize;
+  const { data, error } = await query
+    .order('created_at', { ascending: false })
+    .range(from, from + pageSize); // one extra row to detect hasMore
+  if (error) throw error;
+  const rows = data ?? [];
+  return {
+    leads: rows.slice(0, pageSize).map(mapEnrollmentLeadRow),
+    hasMore: rows.length > pageSize,
+  };
+}
+
+export async function getTerminalLeadCounts(): Promise<{
+  enrolled: number;
+  closed: number;
+  denied: number;
+  archived: number;
+}> {
+  const countFor = (status: string) =>
+    supabase
+      .from('enrollment_leads')
+      .select('lead_id', { count: 'exact', head: true })
+      .eq('status', status)
+      .is('deleted_at', null);
+
+  const [enrolled, closed, denied, archived] = await Promise.all([
+    countFor('enrolled'),
+    countFor('closed'),
+    countFor('denied'),
+    supabase
+      .from('enrollment_leads')
+      .select('lead_id', { count: 'exact', head: true })
+      .not('deleted_at', 'is', null),
+  ]);
+  for (const r of [enrolled, closed, denied, archived]) {
+    if (r.error) throw r.error;
+  }
+  return {
+    enrolled: enrolled.count ?? 0,
+    closed: closed.count ?? 0,
+    denied: denied.count ?? 0,
+    archived: archived.count ?? 0,
+  };
+}
+
 export async function getEnrollmentLeadById(leadId: string): Promise<EnrollmentLead> {
   const { data, error } = await supabase
     .from('enrollment_leads')
