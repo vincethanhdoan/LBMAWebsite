@@ -5,8 +5,11 @@ export function pacificTodayISO(): string {
 }
 
 export function daysUntilInPacific(date: Date): number {
-  const today = new Date(pacificTodayISO() + 'T12:00:00');
-  const target = new Date(date);
-  target.setHours(12, 0, 0, 0);
-  return Math.floor((target.getTime() - today.getTime()) / 86400000);
+  // Compare pure calendar dates via UTC midnights — immune to DST because
+  // UTC has no transitions. `date` carries the intended calendar date in
+  // browser-local fields (react-day-picker returns local midnight).
+  const [y, m, d] = pacificTodayISO().split('-').map(Number);
+  const todayUtc = Date.UTC(y, m - 1, d);
+  const targetUtc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  return Math.round((targetUtc - todayUtc) / 86400000);
 }
