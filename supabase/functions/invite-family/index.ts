@@ -2,9 +2,17 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': Deno.env.get('APP_URL') ?? 'https://lbmartialarts.com',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = new Set([
+  'https://lbmartialarts.com',
+  'https://www.lbmartialarts.com',
+])
+
+function corsHeaders(origin: string | null) {
+  const allowed = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.lbmartialarts.com'
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 function adminClient() {
@@ -16,11 +24,13 @@ function adminClient() {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  const cors = corsHeaders(req.headers.get('Origin'))
+
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
 
   const authHeader = req.headers.get('Authorization')
-  if (!authHeader) return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
+  if (!authHeader) return new Response('Unauthorized', { status: 401, headers: cors })
 
   const userClient = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -28,15 +38,15 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } }
   )
   const { data: { user }, error: userError } = await userClient.auth.getUser()
-  if (userError || !user) return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
+  if (userError || !user) return new Response('Unauthorized', { status: 401, headers: cors })
 
   const supabase = adminClient()
 
   const { data: isAdmin } = await supabase.rpc('is_admin', { user_uuid: user.id })
-  if (!isAdmin) return new Response('Forbidden', { status: 403, headers: CORS_HEADERS })
+  if (!isAdmin) return new Response('Forbidden', { status: 403, headers: cors })
 
   const { email } = await req.json()
-  if (!email || typeof email !== 'string') return new Response('Missing email', { status: 400, headers: CORS_HEADERS })
+  if (!email || typeof email !== 'string') return new Response('Missing email', { status: 400, headers: cors })
 
   const normalizedEmail = email.trim().toLowerCase()
 
@@ -51,7 +61,7 @@ Deno.serve(async (req) => {
     console.error('[invite-family] register email error:', regError)
     return new Response(JSON.stringify({ error: regError.message }), {
       status: 500,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
     })
   }
 
@@ -63,7 +73,7 @@ Deno.serve(async (req) => {
     console.error('[invite-family] inviteUserByEmail error:', JSON.stringify(inviteError))
     return new Response(JSON.stringify({ error: inviteError.message, code: (inviteError as any).code, status: (inviteError as any).status }), {
       status: 500,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
     })
   }
 
@@ -76,13 +86,13 @@ Deno.serve(async (req) => {
       console.error('[invite-family] email confirm error:', JSON.stringify(confirmError))
       return new Response(JSON.stringify({ error: confirmError.message }), {
         status: 500,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
   }
 
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    headers: { ...cors, 'Content-Type': 'application/json' },
   })
 })

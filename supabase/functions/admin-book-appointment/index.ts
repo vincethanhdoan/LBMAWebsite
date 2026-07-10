@@ -2,9 +2,17 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': Deno.env.get('APP_URL') ?? 'https://lbmartialarts.com',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = new Set([
+  'https://lbmartialarts.com',
+  'https://www.lbmartialarts.com',
+])
+
+function corsHeaders(origin: string | null) {
+  const allowed = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.lbmartialarts.com'
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 function adminClient() {
@@ -45,11 +53,13 @@ async function recalculateLeadStatus(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  const cors = corsHeaders(req.headers.get('Origin'))
+
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
 
   const authHeader = req.headers.get('Authorization')
-  if (!authHeader) return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
+  if (!authHeader) return new Response('Unauthorized', { status: 401, headers: cors })
 
   const userClient = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -57,16 +67,16 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } }
   )
   const { data: { user }, error: userError } = await userClient.auth.getUser()
-  if (userError || !user) return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
+  if (userError || !user) return new Response('Unauthorized', { status: 401, headers: cors })
 
   const supabase = adminClient()
 
   const { data: isAdmin } = await supabase.rpc('is_admin', { user_uuid: user.id })
-  if (!isAdmin) return new Response('Forbidden', { status: 403, headers: CORS_HEADERS })
+  if (!isAdmin) return new Response('Forbidden', { status: 403, headers: cors })
 
   const { programBookingId, slotId, appointmentDate } = await req.json()
   if (!programBookingId || !slotId || !appointmentDate) {
-    return new Response('Missing programBookingId, slotId, or appointmentDate', { status: 400, headers: CORS_HEADERS })
+    return new Response('Missing programBookingId, slotId, or appointmentDate', { status: 400, headers: cors })
   }
 
   // Resolve program booking
@@ -76,7 +86,7 @@ Deno.serve(async (req) => {
     .eq('booking_id', programBookingId)
     .single()
 
-  if (!programBooking) return new Response('Program booking not found', { status: 404, headers: CORS_HEADERS })
+  if (!programBooking) return new Response('Program booking not found', { status: 404, headers: cors })
 
   const { data: lead } = await supabase
     .from('enrollment_leads')
@@ -84,7 +94,7 @@ Deno.serve(async (req) => {
     .eq('lead_id', programBooking.lead_id)
     .single()
 
-  if (!lead) return new Response('Lead not found', { status: 404, headers: CORS_HEADERS })
+  if (!lead) return new Response('Lead not found', { status: 404, headers: cors })
 
   const { data: slot } = await supabase
     .from('appointment_slots')
@@ -93,11 +103,11 @@ Deno.serve(async (req) => {
     .eq('is_active', true)
     .single()
 
-  if (!slot) return new Response('Slot not found or inactive', { status: 404, headers: CORS_HEADERS })
+  if (!slot) return new Response('Slot not found or inactive', { status: 404, headers: cors })
 
   const targetDate = new Date(appointmentDate + 'T12:00:00')
   if (targetDate.getDay() !== slot.day_of_week) {
-    return new Response('Appointment date does not match slot day', { status: 422, headers: CORS_HEADERS })
+    return new Response('Appointment date does not match slot day', { status: 422, headers: cors })
   }
 
   const { data: block, error: blockError } = await supabase
@@ -108,14 +118,14 @@ Deno.serve(async (req) => {
     .limit(1)
     .maybeSingle()
 
-  if (blockError) return new Response('Unable to verify availability', { status: 500, headers: CORS_HEADERS })
-  if (block) return new Response('This date is blocked', { status: 422, headers: CORS_HEADERS })
+  if (blockError) return new Response('Unable to verify availability', { status: 500, headers: cors })
+  if (block) return new Response('This date is blocked', { status: 422, headers: cors })
 
   const nowUtc = new Date()
   const todayUtc = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()))
   const daysUntilAppt = Math.floor((targetDate.getTime() - todayUtc.getTime()) / (1000 * 60 * 60 * 24))
   if (daysUntilAppt < 0) {
-    return new Response('Appointment date is in the past', { status: 422, headers: CORS_HEADERS })
+    return new Response('Appointment date is in the past', { status: 422, headers: cors })
   }
   const newProgramStatus = daysUntilAppt < 2 ? 'confirmed' : 'scheduled'
 
@@ -129,7 +139,7 @@ Deno.serve(async (req) => {
     })
     .eq('booking_id', programBooking.booking_id)
 
-  if (updateError) return new Response('Booking failed', { status: 500, headers: CORS_HEADERS })
+  if (updateError) return new Response('Booking failed', { status: 500, headers: cors })
 
   const allBooked = await recalculateLeadStatus(supabase, lead.lead_id)
 
@@ -146,12 +156,12 @@ Deno.serve(async (req) => {
 
     if (notifError) {
       console.error('[admin-book-appointment] notification insert error:', notifError)
-      return new Response('Booking saved but notification failed', { status: 500, headers: CORS_HEADERS })
+      return new Response('Booking saved but notification failed', { status: 500, headers: cors })
     }
   }
 
   return new Response(
     JSON.stringify({ ok: true, status: newProgramStatus, appointment_date: appointmentDate, appointment_time: slot.start_time }),
-    { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+    { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
   )
 })

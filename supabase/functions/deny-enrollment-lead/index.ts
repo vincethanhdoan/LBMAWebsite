@@ -2,9 +2,17 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': Deno.env.get('APP_URL') ?? 'https://lbmartialarts.com',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = new Set([
+  'https://lbmartialarts.com',
+  'https://www.lbmartialarts.com',
+])
+
+function corsHeaders(origin: string | null) {
+  const allowed = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.lbmartialarts.com'
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 function adminClient() {
@@ -16,11 +24,13 @@ function adminClient() {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+  const cors = corsHeaders(req.headers.get('Origin'))
+
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
 
   const authHeader = req.headers.get('Authorization')
-  if (!authHeader) return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
+  if (!authHeader) return new Response('Unauthorized', { status: 401, headers: cors })
 
   const userClient = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -28,15 +38,15 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } }
   )
   const { data: { user }, error: userError } = await userClient.auth.getUser()
-  if (userError || !user) return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
+  if (userError || !user) return new Response('Unauthorized', { status: 401, headers: cors })
 
   const supabase = adminClient()
 
   const { data: isAdmin } = await supabase.rpc('is_admin', { user_uuid: user.id })
-  if (!isAdmin) return new Response('Forbidden', { status: 403, headers: CORS_HEADERS })
+  if (!isAdmin) return new Response('Forbidden', { status: 403, headers: cors })
 
   const { leadId, message } = await req.json()
-  if (!leadId) return new Response('Missing leadId', { status: 400, headers: CORS_HEADERS })
+  if (!leadId) return new Response('Missing leadId', { status: 400, headers: cors })
 
   const { data: lead } = await supabase
     .from('enrollment_leads')
@@ -44,7 +54,7 @@ Deno.serve(async (req) => {
     .eq('lead_id', leadId)
     .single()
 
-  if (!lead) return new Response('Lead not found', { status: 404, headers: CORS_HEADERS })
+  if (!lead) return new Response('Lead not found', { status: 404, headers: cors })
 
   const { error: updateError } = await supabase
     .from('enrollment_leads')
@@ -57,7 +67,7 @@ Deno.serve(async (req) => {
 
   if (updateError) {
     console.error('[deny-enrollment-lead] update error:', updateError)
-    return new Response('Update failed', { status: 500, headers: CORS_HEADERS })
+    return new Response('Update failed', { status: 500, headers: cors })
   }
 
   const { error: notifError } = await supabase
@@ -72,11 +82,11 @@ Deno.serve(async (req) => {
 
   if (notifError) {
     console.error('[deny-enrollment-lead] notification insert error:', notifError)
-    return new Response('Notification failed', { status: 500, headers: CORS_HEADERS })
+    return new Response('Notification failed', { status: 500, headers: cors })
   }
 
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    headers: { ...cors, 'Content-Type': 'application/json' },
   })
 })
