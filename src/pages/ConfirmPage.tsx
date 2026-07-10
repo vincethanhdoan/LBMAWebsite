@@ -99,7 +99,7 @@ export function ConfirmPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="max-w-sm w-full text-center space-y-6">
-        <img src="/logo.png" alt="Los Banos Martial Arts Academy" className="mx-auto h-20 w-auto" />
+        <img src="/logo.png" alt="Los Banos Martial Arts Academy" className="mx-auto h-32 w-auto" />
         <CheckCircle2 className="w-14 h-14 text-green-600 mx-auto" />
         <h1 className="text-3xl font-bold" style={{ fontFamily: 'Lexend, sans-serif' }}>You're confirmed!</h1>
         {apptDate && (
