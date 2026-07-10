@@ -5,6 +5,7 @@ import './booking-calendar.css'
 import { Loader2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { getUpcomingBookableDates } from '../../lib/supabase/queries'
+import { daysUntilInPacific } from '../../lib/pacificTime'
 import type { AppointmentSlot } from '../../lib/types'
 
 interface DateOption {
@@ -33,12 +34,6 @@ function formatTime(timeStr: string): string {
     hour: 'numeric',
     minute: '2-digit',
   })
-}
-
-function isWithin2Days(date: Date): boolean {
-  const now = new Date()
-  const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-  return Math.floor((date.getTime() - todayUtc.getTime()) / (1000 * 60 * 60 * 24)) < 2
 }
 
 export function BookingCalendar({
@@ -166,7 +161,7 @@ export function BookingCalendar({
                     </div>
                   )}
                 </div>
-                {showAutoConfirmBadge && isChosen && isWithin2Days(selected) && (
+                {showAutoConfirmBadge && isChosen && daysUntilInPacific(selected) < 2 && (
                   <span className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded bg-amber-100 text-amber-800 border border-amber-200">
                     Will be auto-confirmed
                   </span>
