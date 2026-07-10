@@ -98,6 +98,17 @@ async function getLeadAppointments(
   )
 }
 
+async function markEnrollmentFailed(
+  supabase: ReturnType<typeof adminClient>,
+  notificationId: string,
+  message: string
+): Promise<void> {
+  await supabase
+    .from('enrollment_lead_notifications')
+    .update({ status: 'failed', error_message: message.slice(0, 500) })
+    .eq('notification_id', notificationId)
+}
+
 async function handleEnrollmentNotification(recordId: string): Promise<void> {
   const supabase = adminClient()
 
@@ -153,7 +164,16 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         : [record.recipient_email]
       subject = `New enrollment inquiry — ${lead.parent_name}`
       html = enrollmentNotificationHtml(enrichedLead, adminUrl, LOGO_URL)
-      await Promise.all(recipients.map((to: string) => sendEmail(to, subject, html)))
+      const results = await Promise.allSettled(recipients.map((to: string) => sendEmail(to, subject, html)))
+      const failures = results
+        .map((r, i) => (r.status === 'rejected'
+          ? `${recipients[i]}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`
+          : null))
+        .filter((m): m is string => m !== null)
+      if (failures.length > 0) {
+        await markEnrollmentFailed(supabase, record.notification_id, `Failed recipients — ${failures.join('; ')}`)
+        throw new Error(`new_lead fan-out failed for ${failures.length} of ${recipients.length} recipients`)
+      }
       await supabase
         .from('enrollment_lead_notifications')
         .update({ status: 'sent' })
@@ -228,7 +248,12 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
       return
   }
 
-  await sendEmail(record.recipient_email, subject, html)
+  try {
+    await sendEmail(record.recipient_email, subject, html)
+  } catch (err) {
+    await markEnrollmentFailed(supabase, record.notification_id, err instanceof Error ? err.message : String(err))
+    throw err
+  }
 
   await supabase
     .from('enrollment_lead_notifications')
@@ -371,7 +396,15 @@ async function handlePortalNotification(recordId: string): Promise<void> {
       return
   }
 
-  await sendEmail(record.recipient_email, subject, html)
+  try {
+    await sendEmail(record.recipient_email, subject, html)
+  } catch (err) {
+    await supabase
+      .from('portal_email_queue')
+      .update({ status: 'failed', error_message: (err instanceof Error ? err.message : String(err)).slice(0, 500) })
+      .eq('queue_id', record.queue_id)
+    throw err
+  }
 
   await supabase
     .from('portal_email_queue')
