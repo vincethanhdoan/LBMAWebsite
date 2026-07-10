@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import { Loader2, CheckCircle2, CalendarX2 } from 'lucide-react'
-import { supabase } from '../lib/supabase/client'
+import { Loader2, CheckCircle2, CalendarX2, AlertTriangle } from 'lucide-react'
 
 interface ConfirmResult {
   ok: boolean
@@ -11,27 +10,65 @@ interface ConfirmResult {
   appointment_time: string | null
 }
 
+const CONFIRM_TIMEOUT_MS = 12000
+
+type ConfirmOutcome =
+  | { state: 'confirmed' | 'already' | 'past'; date: string | null; time: string | null }
+  | { state: 'invalid' | 'error' }
+
 export function ConfirmPage() {
   const { token } = useParams<{ token: string }>()
-  const [state, setState] = useState<'loading' | 'confirmed' | 'already' | 'past' | 'invalid'>(
+  const [state, setState] = useState<'loading' | 'confirmed' | 'already' | 'past' | 'invalid' | 'error'>(
     token ? 'loading' : 'invalid'
   )
   const [apptDate, setApptDate] = useState<string | null>(null)
   const [apptTime, setApptTime] = useState<string | null>(null)
   const hasFired = useRef(false)
 
+  const runConfirm = useCallback(async (): Promise<ConfirmOutcome> => {
+    if (!token) return { state: 'invalid' }
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), CONFIRM_TIMEOUT_MS)
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-appointment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ token }),
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+
+      if (res.status === 404 || res.status === 422) return { state: 'invalid' }
+      if (!res.ok) return { state: 'error' }
+
+      const result = (await res.json()) as ConfirmResult
+      const date = result.appointment_date
+      const time = result.appointment_time
+      if (result.past) return { state: 'past', date, time }
+      return { state: result.already_confirmed ? 'already' : 'confirmed', date, time }
+    } catch {
+      clearTimeout(timeoutId)
+      return { state: 'error' }
+    }
+  }, [token])
+
+  const applyOutcome = useCallback((outcome: ConfirmOutcome) => {
+    if ('date' in outcome) {
+      setApptDate(outcome.date)
+      setApptTime(outcome.time)
+    }
+    setState(outcome.state)
+  }, [])
+
   useEffect(() => {
     if (!token || hasFired.current) return
     hasFired.current = true
-    supabase.functions.invoke('confirm-appointment', { body: { token } }).then(({ data, error }) => {
-      if (error || !data?.ok) { setState('invalid'); return }
-      const result = data as ConfirmResult
-      setApptDate(result.appointment_date)
-      setApptTime(result.appointment_time)
-      if (result.past) { setState('past'); return }
-      setState(result.already_confirmed ? 'already' : 'confirmed')
-    })
-  }, [token])
+    runConfirm().then(applyOutcome)
+  }, [token, runConfirm, applyOutcome])
 
   function formatDate(d: string | null) {
     if (!d) return ''
@@ -47,6 +84,32 @@ export function ConfirmPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (state === 'error') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-sm w-full text-center space-y-4">
+          <img src="/logo.png" alt="Los Banos Martial Arts Academy" className="mx-auto h-16 w-auto" />
+          <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto" />
+          <h1 className="text-xl font-bold" style={{ fontFamily: 'Lexend, sans-serif' }}>Something went wrong</h1>
+          <p className="text-muted-foreground text-sm">
+            We couldn't reach our system just now. Don't worry — your appointment hasn't been affected. Please try again in a moment.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setState('loading')
+              runConfirm().then(applyOutcome)
+            }}
+            className="inline-block w-full bg-[#A01F23] text-white font-bold py-3 px-6 rounded text-sm"
+          >
+            Try again
+          </button>
+          <p className="text-xs text-muted-foreground">— LBMAA Team</p>
+        </div>
       </div>
     )
   }
