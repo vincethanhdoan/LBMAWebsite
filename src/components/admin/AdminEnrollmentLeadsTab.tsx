@@ -68,18 +68,15 @@ function ReminderStatusBadge({ notification }: { notification: EnrollmentLeadNot
 
 // The family gets one confirmation email, queued either automatically on booking
 // (`booking_confirmation`) or by an admin pressing Send (`reminder`). Both count as
-// the same outbound email, so the UI treats a queued/sent one of either kind as
-// already handled — preferring a live (queued/sent) notification over a failed one,
-// and the most recent within each group.
+// the same outbound email, so the UI reflects the single most recent notification by
+// created_at, regardless of status. Strict recency means a newer failed attempt is
+// surfaced (failed treatment + Retry) instead of being masked by an older sent one.
 function effectiveConfirmationNotification(lead: EnrollmentLead): EnrollmentLeadNotification | null {
   const present = [lead.confirmationNotification, lead.reminderNotification].filter(
     (n): n is EnrollmentLeadNotification => n !== null,
   )
   if (present.length === 0) return null
-  const byRecency = (a: EnrollmentLeadNotification, b: EnrollmentLeadNotification) =>
-    b.created_at.localeCompare(a.created_at)
-  const live = present.filter(n => n.status !== 'failed').sort(byRecency)
-  return live[0] ?? present.sort(byRecency)[0]
+  return present.sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
 }
 
 function ChildrenSection({ lead }: { lead: EnrollmentLead }) {
