@@ -176,6 +176,7 @@ export type EnrollmentLead = {
   denial_message: string | null;
   admin_notes: string | null;
   created_at: string;
+  deleted_at: string | null;
   children: EnrollmentLeadChild[];
   programBookings: EnrollmentLeadProgramBooking[];
   reminderNotification: EnrollmentLeadNotification | null;

@@ -8,7 +8,7 @@ import { edgeFunctionUserAuthHeaders, supabase } from '../../lib/supabase/client
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import type { EnrollmentLead, EnrollmentLeadNotification } from '../../lib/types';
-import { useEnrollmentLeads, useUpdateLeadStatus, useUpdateLeadNotes, useDismissLead, useCloseLead, useDeleteLead } from '../../lib/hooks/leads';
+import { useEnrollmentLeads, useUpdateLeadStatus, useUpdateLeadNotes, useDismissLead, useCloseLead, useArchiveLead, useRestoreLead } from '../../lib/hooks/leads';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { DenyModal } from './DenyModal';
@@ -357,7 +357,8 @@ export function AdminEnrollmentLeadsTab() {
   const updateNotes = useUpdateLeadNotes();
   const dismissLead = useDismissLead();
   const closeLead = useCloseLead();
-  const deleteLead = useDeleteLead();
+  const archiveLead = useArchiveLead();
+  const restoreLead = useRestoreLead();
   const [now] = useState(Date.now);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('new');
@@ -368,7 +369,7 @@ export function AdminEnrollmentLeadsTab() {
   const [pickDateTargetId, setPickDateTargetId] = useState<string | null>(null);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
   const [closedDeniedFilter, setClosedDeniedFilter] = useState<ClosedDeniedFilter>('all');
-  const [pendingAction, setPendingAction] = useState<{ type: 'dismiss' | 'delete'; lead: EnrollmentLead } | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ type: 'dismiss' | 'archive'; lead: EnrollmentLead } | null>(null);
   const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({});
   const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({});
   const [messageExpanded, setMessageExpanded] = useState<Record<string, boolean>>({});
@@ -556,14 +557,19 @@ export function AdminEnrollmentLeadsTab() {
     }
   }
 
-  async function handleDeleteLead(lead: EnrollmentLead) {
+  async function handleArchiveLead(lead: EnrollmentLead) {
     if (actionLeadId) return;
     setActionLeadId(lead.lead_id);
     try {
-      await deleteLead.mutateAsync(lead.lead_id);
-      toast.success('Lead deleted');
+      await archiveLead.mutateAsync(lead.lead_id);
+      toast('Lead archived', {
+        action: {
+          label: 'Undo',
+          onClick: () => { restoreLead.mutate(lead.lead_id); },
+        },
+      });
     } catch {
-      toast.error('Failed to delete lead');
+      toast.error('Failed to archive lead');
     } finally {
       setActionLeadId(null);
       setPendingAction(null);
@@ -715,9 +721,9 @@ export function AdminEnrollmentLeadsTab() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                    onSelect={() => setPendingAction({ type: 'delete', lead })}
+                    onSelect={() => setPendingAction({ type: 'archive', lead })}
                   >
-                    Delete
+                    Archive
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1206,12 +1212,12 @@ export function AdminEnrollmentLeadsTab() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {pendingAction.type === 'dismiss' ? 'Dismiss lead?' : 'Delete lead?'}
+                {pendingAction.type === 'dismiss' ? 'Dismiss lead?' : 'Archive this lead?'}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {pendingAction.type === 'dismiss'
                   ? 'No email will be sent. Any booked appointment is cancelled.'
-                  : `This will permanently delete ${pendingAction.lead.parent_name}'s lead. This cannot be undone.`}
+                  : 'The lead is hidden from all views. You can restore it later.'}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1222,10 +1228,10 @@ export function AdminEnrollmentLeadsTab() {
                 onClick={() =>
                   pendingAction.type === 'dismiss'
                     ? handleDismissSilently(pendingAction.lead)
-                    : handleDeleteLead(pendingAction.lead)
+                    : handleArchiveLead(pendingAction.lead)
                 }
               >
-                {pendingAction.type === 'dismiss' ? 'Dismiss' : 'Delete'}
+                {pendingAction.type === 'dismiss' ? 'Dismiss' : 'Archive'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

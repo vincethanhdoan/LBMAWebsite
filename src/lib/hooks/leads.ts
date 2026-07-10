@@ -5,7 +5,8 @@ import {
   updateLeadAdminNotes,
   dismissLeadSilently,
   closeLead,
-  deleteEnrollmentLead,
+  archiveEnrollmentLead,
+  restoreEnrollmentLead,
 } from '../supabase/mutations';
 import { queryKeys } from '../queryKeys';
 import type { EnrollmentLead } from '../types';
@@ -59,10 +60,20 @@ export function useCloseLead() {
   });
 }
 
-export function useDeleteLead() {
+export function useArchiveLead() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (leadId: string) => deleteEnrollmentLead(leadId),
+    mutationFn: (leadId: string) => archiveEnrollmentLead(leadId),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+    },
+  });
+}
+
+export function useRestoreLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (leadId: string) => restoreEnrollmentLead(leadId),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
     },

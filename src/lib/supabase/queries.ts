@@ -525,6 +525,7 @@ export async function getEnrollmentLeads(): Promise<EnrollmentLead[]> {
   const { data, error } = await supabase
     .from('enrollment_leads')
     .select(ENROLLMENT_LEAD_SELECT)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
