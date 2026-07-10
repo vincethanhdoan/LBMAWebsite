@@ -914,7 +914,11 @@ export function AdminEnrollmentLeadsTab() {
               {(lead.status === 'enrolled' || lead.status === 'closed') && (
                 <Select
                   value={lead.status}
-                  onValueChange={val => handleStatusChange(lead.lead_id, val as EnrollmentLead['status'])}
+                  onValueChange={val =>
+                    val === 'closed'
+                      ? handleCloseLead(lead.lead_id)
+                      : handleStatusChange(lead.lead_id, val as EnrollmentLead['status'])
+                  }
                   disabled={updatingId === lead.lead_id}
                 >
                   <SelectTrigger className="w-40 h-9 text-sm">
