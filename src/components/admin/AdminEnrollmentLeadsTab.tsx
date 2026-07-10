@@ -366,7 +366,7 @@ export function AdminEnrollmentLeadsTab() {
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [denyTarget, setDenyTarget] = useState<EnrollmentLead | null>(null);
-  const [pickDateTarget, setPickDateTarget] = useState<EnrollmentLead | null>(null);
+  const [pickDateTargetId, setPickDateTargetId] = useState<string | null>(null);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
   const [closedDeniedFilter, setClosedDeniedFilter] = useState<ClosedDeniedFilter>('all');
   const [pendingAction, setPendingAction] = useState<{ type: 'dismiss' | 'delete'; lead: EnrollmentLead } | null>(null);
@@ -389,6 +389,12 @@ export function AdminEnrollmentLeadsTab() {
       return next;
     });
   }, [leads, notesExpanded]);
+
+  // Derived from the live query so the pick-date modal reflects booking status
+  // after a refetch (e.g. a partial multi-program booking failure).
+  const pickDateTarget = pickDateTargetId
+    ? leads.find(l => l.lead_id === pickDateTargetId) ?? null
+    : null;
 
   async function handleApprove(lead: EnrollmentLead) {
     if (actionLeadId) return;
@@ -443,16 +449,27 @@ export function AdminEnrollmentLeadsTab() {
     const fnHeaders = await edgeFunctionUserAuthHeaders();
     if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
 
+    let failedProgram: string | null = null;
     for (const b of bookings) {
       const { data, error } = await supabase.functions.invoke('admin-book-appointment', {
         body: { programBookingId: b.programBookingId, slotId: b.slotId, appointmentDate: b.appointmentDate },
         headers: fnHeaders,
       });
-      if (error || !data) { toast.error('Failed to book appointment'); return; }
+      if (error || !data) {
+        const programType = pickDateTarget?.programBookings.find(pb => pb.booking_id === b.programBookingId)?.program_type;
+        failedProgram = programType ? PROGRAM_LABELS[programType] : 'This';
+        break;
+      }
     }
 
     queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
-    setPickDateTarget(null);
+
+    if (failedProgram) {
+      toast.error(`${failedProgram} appointment could not be booked — the other bookings were saved. Please try again.`);
+      return;
+    }
+
+    setPickDateTargetId(null);
     toast.success('Appointment(s) booked');
   }
 
@@ -788,7 +805,7 @@ export function AdminEnrollmentLeadsTab() {
                   <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)} disabled={actionLeadId === lead.lead_id}>
                     Resend Invites
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
+                  <Button size="sm" variant="outline" onClick={() => setPickDateTargetId(lead.lead_id)}>
                     Pick Date for Them
                   </Button>
                   <Button
@@ -806,7 +823,7 @@ export function AdminEnrollmentLeadsTab() {
                   <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)} disabled={actionLeadId === lead.lead_id}>
                     Resend Invites
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
+                  <Button size="sm" variant="outline" onClick={() => setPickDateTargetId(lead.lead_id)}>
                     Pick New Date
                   </Button>
                   {(!confirmationEmail || confirmationEmail.status === 'failed') && (
@@ -1121,7 +1138,7 @@ export function AdminEnrollmentLeadsTab() {
         <DenyModal lead={denyTarget} onConfirm={handleDenyConfirm} onCancel={() => setDenyTarget(null)} />
       )}
       {pickDateTarget && (
-        <PickDateModal lead={pickDateTarget} onConfirm={handleBookingConfirm} onCancel={() => setPickDateTarget(null)} />
+        <PickDateModal lead={pickDateTarget} onConfirm={handleBookingConfirm} onCancel={() => setPickDateTargetId(null)} />
       )}
       {showNewLeadModal && (
         <NewLeadModal

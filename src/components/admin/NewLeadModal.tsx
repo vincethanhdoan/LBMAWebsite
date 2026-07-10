@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
@@ -9,8 +10,14 @@ import { Loader2, X, Plus } from 'lucide-react'
 import { createEnrollmentLead } from '../../lib/supabase/mutations'
 import { getEnrollmentLeadById } from '../../lib/supabase/queries'
 import { edgeFunctionUserAuthHeaders, supabase } from '../../lib/supabase/client'
+import { queryKeys } from '../../lib/queryKeys'
 import type { EnrollmentLead } from '../../lib/types'
 import { PickDateModal } from './PickDateModal'
+
+const PROGRAM_LABELS: Record<string, string> = {
+  little_dragons: 'Little Dragons',
+  youth: 'Youth Program',
+}
 
 type PostAction = 'send_link' | 'pick_date' | 'create_only'
 
@@ -20,6 +27,7 @@ interface NewLeadModalProps {
 }
 
 export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
+  const queryClient = useQueryClient()
   const [parentName, setParentName] = useState('')
   const [parentEmail, setParentEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -98,15 +106,30 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
   async function handlePickDateConfirm(bookings: Array<{ programBookingId: string; slotId: string; appointmentDate: string }>) {
     const fnHeaders = await edgeFunctionUserAuthHeaders()
     if (!fnHeaders) throw new Error('Session expired. Please sign in again.')
+
+    let failedProgram: string | null = null
     for (const b of bookings) {
       const { error: bookError } = await supabase.functions.invoke('admin-book-appointment', {
         body: { programBookingId: b.programBookingId, slotId: b.slotId, appointmentDate: b.appointmentDate },
         headers: fnHeaders,
       })
-      if (bookError) throw bookError
+      if (bookError) {
+        const programType = createdLead?.programBookings.find(pb => pb.booking_id === b.programBookingId)?.program_type
+        failedProgram = programType ? PROGRAM_LABELS[programType] : 'This'
+        break
+      }
     }
+
     if (!createdLead) return
     const updatedLead = await getEnrollmentLeadById(createdLead.lead_id)
+    queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() })
+
+    if (failedProgram) {
+      setCreatedLead(updatedLead)
+      toast.error(`${failedProgram} appointment could not be booked — the other bookings were saved. Please try again.`)
+      return
+    }
+
     onSuccess(updatedLead)
   }
 

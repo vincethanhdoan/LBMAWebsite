@@ -25,6 +25,10 @@ type ProgramSlotMap = Record<string, AppointmentSlot[]>
 
 type Selection = Record<string, { slotId: string; date: string } | null>
 
+function isBooked(booking: EnrollmentLeadProgramBooking): boolean {
+  return booking.status === 'scheduled' || booking.status === 'confirmed'
+}
+
 interface PickDateModalProps {
   lead: EnrollmentLead
   onConfirm: (bookings: Array<{ programBookingId: string; slotId: string; appointmentDate: string }>) => Promise<void>
@@ -62,7 +66,7 @@ export function PickDateModal({ lead, onConfirm, onCancel }: PickDateModalProps)
 
   async function handleConfirm() {
     const picked = programBookings
-      .filter(b => selection[b.booking_id])
+      .filter(b => !isBooked(b) && selection[b.booking_id])
       .map(b => ({
         programBookingId: b.booking_id,
         slotId: selection[b.booking_id]!.slotId,
@@ -79,7 +83,8 @@ export function PickDateModal({ lead, onConfirm, onCancel }: PickDateModalProps)
     }
   }
 
-  const anyPicked = programBookings.some(b => !!selection[b.booking_id])
+  const pickedCount = programBookings.filter(b => !isBooked(b) && selection[b.booking_id]).length
+  const anyPicked = pickedCount > 0
 
   // Legacy lead fallback — no program bookings
   if (!fetching && programBookings.length === 0) {
@@ -121,19 +126,27 @@ export function PickDateModal({ lead, onConfirm, onCancel }: PickDateModalProps)
                       .join(' & ')}
                   </span>
                 </div>
-                <BookingCalendar
-                  slots={slotMap[booking.program_type] ?? []}
-                  onConfirm={async (slotId, date) => {
-                    setSelection(prev => ({ ...prev, [booking.booking_id]: { slotId, date } }))
-                  }}
-                  submitting={false}
-                  confirmLabel="Select this date"
-                  showAutoConfirmBadge={false}
-                />
-                {selection[booking.booking_id] && (
-                  <p className="text-xs text-green-600 font-medium mt-2">
-                    ✓ Selected: {new Date(selection[booking.booking_id]!.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                {isBooked(booking) ? (
+                  <p className="text-xs text-green-600 font-medium">
+                    ✓ Already booked{booking.appointment_date ? ` · ${new Date(booking.appointment_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}` : ''}
                   </p>
+                ) : (
+                  <>
+                    <BookingCalendar
+                      slots={slotMap[booking.program_type] ?? []}
+                      onConfirm={async (slotId, date) => {
+                        setSelection(prev => ({ ...prev, [booking.booking_id]: { slotId, date } }))
+                      }}
+                      submitting={false}
+                      confirmLabel="Select this date"
+                      showAutoConfirmBadge={false}
+                    />
+                    {selection[booking.booking_id] && (
+                      <p className="text-xs text-green-600 font-medium mt-2">
+                        ✓ Selected: {new Date(selection[booking.booking_id]!.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             ))
@@ -146,7 +159,7 @@ export function PickDateModal({ lead, onConfirm, onCancel }: PickDateModalProps)
           <Button variant="ghost" onClick={onCancel} disabled={loading}>Cancel</Button>
           <Button onClick={handleConfirm} disabled={!anyPicked || loading}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Confirm {Object.values(selection).filter(Boolean).length > 1 ? 'All' : 'Selection'}
+            Confirm {pickedCount > 1 ? 'All' : 'Selection'}
           </Button>
         </DialogFooter>
       </DialogContent>
