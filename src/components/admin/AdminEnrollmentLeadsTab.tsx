@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { edgeFunctionUserAuthHeaders, supabase } from '../../lib/supabase/client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
-import type { EnrollmentLead, EnrollmentLeadReminderNotification } from '../../lib/types';
+import type { EnrollmentLead, EnrollmentLeadNotification } from '../../lib/types';
 import { useEnrollmentLeads, useUpdateLeadStatus, useUpdateLeadNotes, useDismissLead, useDeleteLead } from '../../lib/hooks/leads';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
@@ -41,7 +41,7 @@ function formatProgramBookingStatus(booking: { status: string; appointment_date:
 }
 
 
-function ReminderStatusBadge({ notification }: { notification: EnrollmentLeadReminderNotification }) {
+function ReminderStatusBadge({ notification }: { notification: EnrollmentLeadNotification }) {
   if (notification.status === 'sent') {
     return (
       <div className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#14532D] border border-[#86EFAC]">
@@ -64,6 +64,22 @@ function ReminderStatusBadge({ notification }: { notification: EnrollmentLeadRem
       <span>Confirmation email failed</span>
     </div>
   )
+}
+
+// The family gets one confirmation email, queued either automatically on booking
+// (`booking_confirmation`) or by an admin pressing Send (`reminder`). Both count as
+// the same outbound email, so the UI treats a queued/sent one of either kind as
+// already handled — preferring a live (queued/sent) notification over a failed one,
+// and the most recent within each group.
+function effectiveConfirmationNotification(lead: EnrollmentLead): EnrollmentLeadNotification | null {
+  const present = [lead.confirmationNotification, lead.reminderNotification].filter(
+    (n): n is EnrollmentLeadNotification => n !== null,
+  )
+  if (present.length === 0) return null
+  const byRecency = (a: EnrollmentLeadNotification, b: EnrollmentLeadNotification) =>
+    b.created_at.localeCompare(a.created_at)
+  const live = present.filter(n => n.status !== 'failed').sort(byRecency)
+  return live[0] ?? present.sort(byRecency)[0]
 }
 
 function ChildrenSection({ lead }: { lead: EnrollmentLead }) {
@@ -590,6 +606,7 @@ export function AdminEnrollmentLeadsTab() {
 
   function renderLeadCard(lead: EnrollmentLead) {
     const primaryTime = getLeadPrimaryTime(lead);
+    const confirmationEmail = effectiveConfirmationNotification(lead);
 
     return (
       <div
@@ -681,8 +698,8 @@ export function AdminEnrollmentLeadsTab() {
           )}
 
           {/* Confirmation email status */}
-          {(lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && lead.reminderNotification && lead.reminderNotification.status !== 'failed' && (
-            <ReminderStatusBadge notification={lead.reminderNotification} />
+          {(lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && confirmationEmail && confirmationEmail.status !== 'failed' && (
+            <ReminderStatusBadge notification={confirmationEmail} />
           )}
 
           {/* Appointment date — shown on non-calendar tabs only */}
@@ -792,7 +809,7 @@ export function AdminEnrollmentLeadsTab() {
                   <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
                     Pick New Date
                   </Button>
-                  {(!lead.reminderNotification || lead.reminderNotification.status === 'failed') && (
+                  {(!confirmationEmail || confirmationEmail.status === 'failed') && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -802,7 +819,7 @@ export function AdminEnrollmentLeadsTab() {
                     >
                       {sendingReminderId === lead.lead_id ? (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" />Sending…</>
-                      ) : lead.reminderNotification?.status === 'failed' ? (
+                      ) : confirmationEmail?.status === 'failed' ? (
                         <><AlertCircle className="w-3.5 h-3.5 text-[#A01F23]" />Retry Confirmation</>
                       ) : (
                         <><Send className="w-3.5 h-3.5" />Send Confirmation</>

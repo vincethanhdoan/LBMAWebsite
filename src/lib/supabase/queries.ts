@@ -509,12 +509,15 @@ const ENROLLMENT_LEAD_SELECT = `
 
 function mapEnrollmentLeadRow(row: Record<string, unknown>): EnrollmentLead {
   const notifications = (row.notifications ?? []) as Array<{ notification_id: string; type: string; status: string; created_at: string }>;
-  const reminder = notifications.find(n => n.type === 'reminder') ?? null;
+  const byRecency = [...notifications].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const reminder = byRecency.find(n => n.type === 'reminder') ?? null;
+  const confirmation = byRecency.find(n => n.type === 'booking_confirmation') ?? null;
   return {
     ...row,
     children: (row.children ?? []) as EnrollmentLeadChild[],
     programBookings: (row.programBookings ?? []) as EnrollmentLeadProgramBooking[],
     reminderNotification: reminder as EnrollmentLead['reminderNotification'],
+    confirmationNotification: confirmation as EnrollmentLead['confirmationNotification'],
   } as EnrollmentLead;
 }
 
