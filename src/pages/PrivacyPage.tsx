@@ -43,7 +43,7 @@ export function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="text-sm text-muted-foreground mb-10">
-          Last updated May 28, 2026
+          Last updated July 10, 2026
         </p>
 
         <div className="space-y-10 text-sm leading-relaxed">
@@ -164,7 +164,7 @@ export function PrivacyPage() {
               <em>In Short: Some information — such as your Internet Protocol (IP) address and/or browser and device characteristics — is collected automatically when you visit our Services.</em>
             </p>
             <p className="text-muted-foreground mb-3">
-              We automatically collect certain information when you visit, use, or navigate the Services. This information does not reveal your specific identity (like your name or contact information) but may include device and usage information, such as your IP address, browser and device characteristics, operating system, language preferences, referring URLs, device name, country, location, information about how and when you use our Services, and other technical information. This information is primarily needed to maintain the security and operation of our Services, and for our internal analytics and reporting purposes.
+              We automatically collect certain information when you visit, use, or navigate the Services. This information does not reveal your specific identity (like your name or contact information) but may include device and usage information, such as your IP address, browser and device characteristics, operating system, language preferences, referring URLs, device name, country, information about how and when you use our Services, and other technical information. This information is primarily needed to maintain the security and operation of our Services, and for our internal analytics and reporting purposes.
             </p>
             <p className="text-muted-foreground mb-3">
               Like many businesses, we also collect information through cookies and similar technologies.
@@ -175,10 +175,7 @@ export function PrivacyPage() {
                 <strong>Log and Usage Data.</strong> Log and usage data is service-related, diagnostic, usage, and performance information our servers automatically collect when you access or use our Services and which we record in log files. Depending on how you interact with us, this log data may include your IP address, device information, browser type, and settings and information about your activity in the Services (such as the date/time stamps associated with your usage, pages and files viewed, searches, and other actions you take such as which features you use), device event information (such as system activity, error reports (sometimes called "crash dumps"), and hardware settings).
               </li>
               <li>
-                <strong>Device Data.</strong> We collect device data such as information about your computer, phone, tablet, or other device you use to access the Services. Depending on the device used, this device data may include information such as your IP address (or proxy server), device and application identification numbers, location, browser type, hardware model, Internet service provider and/or mobile carrier, operating system, and system configuration information.
-              </li>
-              <li>
-                <strong>Location Data.</strong> We collect location data such as information about your device's location, which can be either precise or imprecise. How much information we collect depends on the type and settings of the device you use to access the Services. For example, we may use GPS and other technologies to collect geolocation data that tells us your current location (based on your IP address). You can opt out of allowing us to collect this information either by refusing access to the information or by disabling your Location setting on your device. However, if you choose to opt out, you may not be able to use certain aspects of the Services.
+                <strong>Device Data.</strong> We collect device data such as information about your computer, phone, tablet, or other device you use to access the Services. Depending on the device used, this device data may include information such as your IP address (or proxy server), device and application identification numbers, browser type, hardware model, Internet service provider and/or mobile carrier, operating system, and system configuration information.
               </li>
             </ul>
           </section>
@@ -201,8 +198,6 @@ export function PrivacyPage() {
               <li><strong>To send administrative information to you.</strong> We may process your information to send you details about our products and services, changes to our terms and policies, and other similar information.</li>
               <li><strong>To enable user-to-user communications.</strong> We may process your information if you choose to use any of our offerings that allow for communication with another user.</li>
               <li><strong>To request feedback.</strong> We may process your information when necessary to request feedback and to contact you about your use of our Services.</li>
-              <li><strong>To send you marketing and promotional communications.</strong> We may process the personal information you send to us for our marketing purposes, if this is in accordance with your marketing preferences. You can opt out of our marketing emails at any time.</li>
-              <li><strong>To post testimonials.</strong> We post testimonials on our Services that may contain personal information.</li>
               <li><strong>To protect our Services.</strong> We may process your information as part of our efforts to keep our Services safe and secure, including fraud monitoring and prevention.</li>
               <li><strong>To evaluate and improve our Services, products, marketing, and your experience.</strong> We may process your information when we believe it is necessary to identify usage trends, determine the effectiveness of our promotional campaigns, and to evaluate and improve our Services, products, marketing, and your experience.</li>
               <li><strong>To identify usage trends.</strong> We may process information about how you use our Services to better understand how they are being used so we can improve them.</li>
@@ -232,22 +227,13 @@ export function PrivacyPage() {
               4. Do We Use Cookies and Other Tracking Technologies?
             </h2>
             <p className="text-muted-foreground mb-3">
-              <em>In Short: We may use cookies and other tracking technologies to collect and store your information.</em>
+              <em>In Short: We use only the cookies and similar technologies necessary for our Services to function.</em>
             </p>
             <p className="text-muted-foreground mb-3">
-              We may use cookies and similar tracking technologies (like web beacons and pixels) to gather information when you interact with our Services. Some online tracking technologies help us maintain the security of our Services and your account, prevent crashes, fix bugs, save your preferences, and assist with basic site functions.
-            </p>
-            <p className="text-muted-foreground mb-3">
-              We also permit third parties and service providers to use online tracking technologies on our Services for analytics and advertising, including to help manage and display advertisements, to tailor advertisements to your interests, or to send abandoned shopping cart reminders (depending on your communication preferences). The third parties and service providers use their technology to provide advertising about products and services tailored to your interests which may appear either on our Services or on other websites.
-            </p>
-            <p className="text-muted-foreground mb-3">
-              To the extent these online tracking technologies are deemed to be a "sale"/"sharing" (which includes targeted advertising, as defined under the applicable laws) under applicable US state laws, you can opt out of these online tracking technologies by submitting a request as described below under section{' '}
-              <a href="#uslaws" className="text-foreground underline underline-offset-2 hover:text-primary transition-colors">
-                Do United States Residents Have Specific Privacy Rights?
-              </a>
+              We use cookies and similar technologies (such as browser local storage) only for essential site functions — for example, keeping you signed in to the family portal, maintaining the security of your session, and saving your preferences such as language selection.
             </p>
             <p className="text-muted-foreground">
-              Specific information about how we use such technologies and how you can refuse certain cookies is set out in our Cookie Notice.
+              We do not use advertising cookies, and we do not permit third parties to use tracking technologies on our Services for advertising purposes. Most browsers allow you to refuse or delete cookies through their settings; however, if you disable essential cookies, some parts of the Services (such as signing in to the portal) may not work.
             </p>
           </section>
 
@@ -470,7 +456,7 @@ export function PrivacyPage() {
               </a>, by emailing us at{' '}
               <a href="mailto:westcoastlosbanos@gmail.com" className="text-foreground underline underline-offset-2 hover:text-primary transition-colors">
                 westcoastlosbanos@gmail.com
-              </a>, by calling toll-free at{' '}
+              </a>, by calling us at{' '}
               <a href="tel:+14086200252" className="text-foreground underline underline-offset-2 hover:text-primary transition-colors">
                 (408) 620-0252
               </a>, or by referring to the contact details at the bottom of this document.
