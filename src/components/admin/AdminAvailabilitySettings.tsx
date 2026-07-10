@@ -4,6 +4,7 @@ import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Switch } from '../ui/switch'
 import { Loader2, Pencil, Trash2, Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase/client'
 import { getAppointmentSlots, getAdminNotificationSettings, getAdminEmails } from '../../lib/supabase/queries'
 import type { AppointmentSlot, BlockedDate, AdminNotificationSetting } from '../../lib/types'
@@ -148,11 +149,12 @@ export function AdminAvailabilitySettings() {
   async function addBlock() {
     setBlockSaving(true)
     try {
-      const { data } = await supabase.rpc('add_blocked_dates', {
+      const { data, error } = await supabase.rpc('add_blocked_dates', {
         p_start_date: blockStartDate,
         p_end_date: blockEndDate || null,
         p_reason: blockReason || null,
       })
+      if (error || !data) { toast.error('Failed to block dates'); return }
       const newBlock: BlockedDate = {
         block_id: data as string,
         start_date: blockStartDate,
@@ -171,7 +173,8 @@ export function AdminAvailabilitySettings() {
   }
 
   async function removeBlock(blockId: string) {
-    await supabase.rpc('remove_blocked_dates', { p_block_id: blockId })
+    const { error } = await supabase.rpc('remove_blocked_dates', { p_block_id: blockId })
+    if (error) { toast.error('Failed to remove blocked dates'); return }
     setBlocks(prev => prev.filter(b => b.block_id !== blockId))
   }
 

@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     return new Response('Appointment date does not match slot day', { status: 422, headers: CORS_HEADERS })
   }
 
-  const { data: block } = await supabase
+  const { data: block, error: blockError } = await supabase
     .from('blocked_dates')
     .select('block_id')
     .lte('start_date', appointmentDate)
@@ -101,6 +101,7 @@ Deno.serve(async (req) => {
     .limit(1)
     .maybeSingle()
 
+  if (blockError) return new Response('Unable to verify availability', { status: 500, headers: CORS_HEADERS })
   if (block) return new Response('This date is not available', { status: 422, headers: CORS_HEADERS })
 
   const nowUtc = new Date()
