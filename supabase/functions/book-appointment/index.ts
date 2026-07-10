@@ -114,9 +114,9 @@ Deno.serve(async (req) => {
   if (blockError) return new Response('Unable to verify availability', { status: 500, headers: cors })
   if (block) return new Response('This date is not available', { status: 422, headers: cors })
 
-  const nowUtc = new Date()
-  const todayUtc = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()))
-  const daysUntilAppt = Math.floor((targetDate.getTime() - todayUtc.getTime()) / (1000 * 60 * 60 * 24))
+  const todayPacific = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date())
+  const today = new Date(todayPacific + 'T12:00:00')
+  const daysUntilAppt = Math.floor((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
   if (daysUntilAppt < 0) {
     return new Response('Appointment date is in the past', { status: 422, headers: cors })
   }

@@ -24,21 +24,21 @@ function adminClient() {
 async function recalculateLeadStatus(
   supabase: ReturnType<typeof adminClient>,
   leadId: string
-): Promise<void> {
+): Promise<boolean> {
   const { data: bookings } = await supabase
     .from('enrollment_lead_program_bookings')
     .select('status')
     .eq('lead_id', leadId)
 
-  if (!bookings || bookings.length === 0) return
+  if (!bookings || bookings.length === 0) return false
 
   const statuses = bookings.map((b: { status: string }) => b.status)
-  const hasScheduledOrConfirmed = statuses.some((s: string) => s === 'scheduled' || s === 'confirmed')
+  const allScheduledOrConfirmed = statuses.every((s: string) => s === 'scheduled' || s === 'confirmed')
   const allConfirmed = statuses.every((s: string) => s === 'confirmed')
 
   const leadStatus = allConfirmed
     ? 'appointment_confirmed'
-    : hasScheduledOrConfirmed
+    : allScheduledOrConfirmed
     ? 'appointment_scheduled'
     : 'approved'
 
@@ -46,6 +46,8 @@ async function recalculateLeadStatus(
     .from('enrollment_leads')
     .update({ status: leadStatus })
     .eq('lead_id', leadId)
+
+  return allScheduledOrConfirmed
 }
 
 Deno.serve(async (req) => {
