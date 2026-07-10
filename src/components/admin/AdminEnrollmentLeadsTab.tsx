@@ -522,23 +522,31 @@ export function AdminEnrollmentLeadsTab() {
   }
 
   async function handleDismissSilently(lead: EnrollmentLead) {
+    if (actionLeadId) return;
+    setActionLeadId(lead.lead_id);
     try {
       await dismissLead.mutateAsync(lead.lead_id);
       toast.success('Lead dismissed');
     } catch {
       toast.error('Failed to dismiss lead');
+    } finally {
+      setActionLeadId(null);
+      setPendingAction(null);
     }
-    setPendingAction(null);
   }
 
   async function handleDeleteLead(lead: EnrollmentLead) {
+    if (actionLeadId) return;
+    setActionLeadId(lead.lead_id);
     try {
       await deleteLead.mutateAsync(lead.lead_id);
       toast.success('Lead deleted');
     } catch {
       toast.error('Failed to delete lead');
+    } finally {
+      setActionLeadId(null);
+      setPendingAction(null);
     }
-    setPendingAction(null);
   }
 
   // ─── Derived data ──────────────────────────────────────────────────────────
@@ -1184,6 +1192,7 @@ export function AdminEnrollmentLeadsTab() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={actionLeadId === pendingAction.lead.lead_id}
                 onClick={() =>
                   pendingAction.type === 'dismiss'
                     ? handleDismissSilently(pendingAction.lead)
