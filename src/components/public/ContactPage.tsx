@@ -192,7 +192,7 @@ export function ContactPage() {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
 
                   <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}>
                     <label htmlFor="company">Company</label>
