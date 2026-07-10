@@ -6,7 +6,7 @@ import { Switch } from '../ui/switch'
 import { Loader2, Pencil, Trash2, Plus } from 'lucide-react'
 import { supabase } from '../../lib/supabase/client'
 import { getAppointmentSlots, getAdminNotificationSettings, getAdminEmails } from '../../lib/supabase/queries'
-import type { AppointmentSlot, AppointmentSlotOverride, AdminNotificationSetting } from '../../lib/types'
+import type { AppointmentSlot, BlockedDate, AdminNotificationSetting } from '../../lib/types'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -23,9 +23,17 @@ function slotScheduleLabel(slot: AppointmentSlot): string {
   return new Date('1970-01-01T' + slot.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
+function blockDateLabel(block: BlockedDate): string {
+  const fmt = (d: string) =>
+    new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return block.start_date === block.end_date
+    ? fmt(block.start_date)
+    : `${fmt(block.start_date)} – ${fmt(block.end_date)}`
+}
+
 export function AdminAvailabilitySettings() {
   const [slots, setSlots] = useState<AppointmentSlot[]>([])
-  const [overrides, setOverrides] = useState<AppointmentSlotOverride[]>([])
+  const [blocks, setBlocks] = useState<BlockedDate[]>([])
   const [notifSettings, setNotifSettings] = useState<AdminNotificationSetting[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -38,12 +46,12 @@ export function AdminAvailabilitySettings() {
   const [slotProgramType, setSlotProgramType] = useState<'little_dragons' | 'youth' | 'all'>('all')
   const [slotSaving, setSlotSaving] = useState(false)
 
-  // Override form state
-  const [showOverrideForm, setShowOverrideForm] = useState(false)
-  const [overrideSlotId, setOverrideSlotId] = useState('')
-  const [overrideDate, setOverrideDate] = useState('')
-  const [overrideReason, setOverrideReason] = useState('')
-  const [overrideSaving, setOverrideSaving] = useState(false)
+  // Block form state
+  const [showBlockForm, setShowBlockForm] = useState(false)
+  const [blockStartDate, setBlockStartDate] = useState('')
+  const [blockEndDate, setBlockEndDate] = useState('')
+  const [blockReason, setBlockReason] = useState('')
+  const [blockSaving, setBlockSaving] = useState(false)
 
   // Notification recipient form
   const [showNotifForm, setShowNotifForm] = useState(false)
@@ -62,12 +70,12 @@ export function AdminAvailabilitySettings() {
       setNotifSettings(notifsData)
       setAdminUsers(adminsData)
 
-      // Load overrides
-      const { data: ovData } = await supabase
-        .from('appointment_slot_overrides')
+      // Load blocked dates
+      const { data: blockData } = await supabase
+        .from('blocked_dates')
         .select('*')
-        .order('override_date')
-      setOverrides(ovData ?? [])
+        .order('start_date')
+      setBlocks(blockData ?? [])
       setLoading(false)
     }
     load()
@@ -137,33 +145,34 @@ export function AdminAvailabilitySettings() {
     setSlots(prev => prev.filter(s => s.slot_id !== slotId))
   }
 
-  async function addOverride() {
-    setOverrideSaving(true)
+  async function addBlock() {
+    setBlockSaving(true)
     try {
-      const { data } = await supabase.rpc('add_slot_override', {
-        p_slot_id: overrideSlotId || slots[0]?.slot_id,
-        p_override_date: overrideDate,
-        p_reason: overrideReason || null,
+      const { data } = await supabase.rpc('add_blocked_dates', {
+        p_start_date: blockStartDate,
+        p_end_date: blockEndDate || null,
+        p_reason: blockReason || null,
       })
-      const newOverride: AppointmentSlotOverride = {
-        override_id: data as string,
-        slot_id: overrideSlotId || slots[0]?.slot_id,
-        override_date: overrideDate,
-        reason: overrideReason || null,
+      const newBlock: BlockedDate = {
+        block_id: data as string,
+        start_date: blockStartDate,
+        end_date: blockEndDate || blockStartDate,
+        reason: blockReason || null,
         created_at: new Date().toISOString(),
       }
-      setOverrides(prev => [...prev, newOverride].sort((a, b) => a.override_date.localeCompare(b.override_date)))
-      setOverrideDate('')
-      setOverrideReason('')
-      setShowOverrideForm(false)
+      setBlocks(prev => [...prev, newBlock].sort((a, b) => a.start_date.localeCompare(b.start_date)))
+      setBlockStartDate('')
+      setBlockEndDate('')
+      setBlockReason('')
+      setShowBlockForm(false)
     } finally {
-      setOverrideSaving(false)
+      setBlockSaving(false)
     }
   }
 
-  async function removeOverride(overrideId: string) {
-    await supabase.rpc('remove_slot_override', { p_override_id: overrideId })
-    setOverrides(prev => prev.filter(o => o.override_id !== overrideId))
+  async function removeBlock(blockId: string) {
+    await supabase.rpc('remove_blocked_dates', { p_block_id: blockId })
+    setBlocks(prev => prev.filter(b => b.block_id !== blockId))
   }
 
   async function addNotifRecipient() {
@@ -285,47 +294,42 @@ export function AdminAvailabilitySettings() {
       <div className="rounded-lg border p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-base">Blocked Dates</h3>
-          <Button size="sm" variant="outline" onClick={() => setShowOverrideForm(true)} className="gap-1.5">
-            <Plus className="w-4 h-4" />Block Date
+          <Button size="sm" variant="outline" onClick={() => setShowBlockForm(true)} className="gap-1.5">
+            <Plus className="w-4 h-4" />Block Dates
           </Button>
         </div>
         <div className="space-y-1.5">
-          {overrides.map(o => (
-            <div key={o.override_id} className="flex items-center justify-between min-h-[44px] px-3 py-2 rounded border text-sm">
+          {blocks.map(b => (
+            <div key={b.block_id} className="flex items-center justify-between min-h-[44px] px-3 py-2 rounded border text-sm">
               <div>
-                <span className="font-medium">{o.override_date}</span>
-                {o.reason && <span className="text-muted-foreground ml-2">— {o.reason}</span>}
-                <span className="text-xs text-muted-foreground ml-2">({slots.find(s => s.slot_id === o.slot_id)?.label ?? 'Unknown slot'})</span>
+                <span className="font-medium">{blockDateLabel(b)}</span>
+                {b.reason && <span className="text-muted-foreground ml-2">— {b.reason}</span>}
               </div>
-              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeOverride(o.override_id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeBlock(b.block_id)}><Trash2 className="w-3.5 h-3.5" /></Button>
             </div>
           ))}
-          {overrides.length === 0 && <p className="text-sm text-muted-foreground">No blocked dates.</p>}
+          {blocks.length === 0 && <p className="text-sm text-muted-foreground">No blocked dates.</p>}
         </div>
-        {showOverrideForm && (
+        {showBlockForm && (
           <div className="mt-3 p-4 rounded border bg-muted/30 space-y-3">
-            {slots.length > 1 && (
-              <div>
-                <Label>Slot</Label>
-                <select value={overrideSlotId} onChange={e => setOverrideSlotId(e.target.value)} className="mt-1 w-full rounded border px-3 py-2 text-sm bg-background">
-                  {slots.map(s => <option key={s.slot_id} value={s.slot_id}>{s.label}</option>)}
-                </select>
-              </div>
-            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Date to block</Label>
-                <Input type="date" value={overrideDate} onChange={e => setOverrideDate(e.target.value)} className="mt-1" />
+                <Label>From</Label>
+                <Input type="date" value={blockStartDate} onChange={e => setBlockStartDate(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <Label>Reason (optional)</Label>
-                <Input value={overrideReason} onChange={e => setOverrideReason(e.target.value)} className="mt-1" placeholder="Holiday, closed, etc." />
+                <Label>To (optional)</Label>
+                <Input type="date" value={blockEndDate} onChange={e => setBlockEndDate(e.target.value)} min={blockStartDate || undefined} className="mt-1" />
               </div>
             </div>
+            <div>
+              <Label>Reason (optional)</Label>
+              <Input value={blockReason} onChange={e => setBlockReason(e.target.value)} className="mt-1" placeholder="Holiday, closed, etc." />
+            </div>
             <div className="flex gap-2 justify-end">
-              <Button size="sm" variant="ghost" onClick={() => setShowOverrideForm(false)}>Cancel</Button>
-              <Button size="sm" onClick={addOverride} disabled={overrideSaving || !overrideDate || (slots.length > 1 && !overrideSlotId)}>
-                {overrideSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
+              <Button size="sm" variant="ghost" onClick={() => { setShowBlockForm(false); setBlockStartDate(''); setBlockEndDate(''); setBlockReason('') }}>Cancel</Button>
+              <Button size="sm" onClick={addBlock} disabled={blockSaving || !blockStartDate || (!!blockEndDate && blockEndDate < blockStartDate)}>
+                {blockSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
               </Button>
             </div>
           </div>

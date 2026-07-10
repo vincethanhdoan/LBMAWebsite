@@ -214,10 +214,10 @@ export type AppointmentSlot = {
   created_at: string;
 };
 
-export type AppointmentSlotOverride = {
-  override_id: string;
-  slot_id: string;
-  override_date: string; // "YYYY-MM-DD"
+export type BlockedDate = {
+  block_id: string;
+  start_date: string; // "YYYY-MM-DD"
+  end_date: string;   // "YYYY-MM-DD"; equals start_date for a single day
   reason: string | null;
   created_at: string;
 };
