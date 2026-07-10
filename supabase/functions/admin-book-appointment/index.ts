@@ -112,6 +112,9 @@ Deno.serve(async (req) => {
   const nowUtc = new Date()
   const todayUtc = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()))
   const daysUntilAppt = Math.floor((targetDate.getTime() - todayUtc.getTime()) / (1000 * 60 * 60 * 24))
+  if (daysUntilAppt < 0) {
+    return new Response('Appointment date is in the past', { status: 422, headers: CORS_HEADERS })
+  }
   const newProgramStatus = daysUntilAppt < 2 ? 'confirmed' : 'scheduled'
 
   const { error: updateError } = await supabase
