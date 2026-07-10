@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     })
   }
 
-  const appUrl = Deno.env.get('APP_URL')
+  const appUrl = Deno.env.get('APP_URL')?.replace(/\/+$/, '')
   const inviteOptions: { redirectTo?: string; data?: Record<string, string> } = {}
   if (appUrl) inviteOptions.redirectTo = `${appUrl}/admin`
   if (name && typeof name === 'string') inviteOptions.data = { display_name: name.trim() }

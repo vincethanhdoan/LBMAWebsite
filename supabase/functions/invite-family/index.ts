@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     })
   }
 
-  const appUrl = Deno.env.get('APP_URL')
+  const appUrl = Deno.env.get('APP_URL')?.replace(/\/+$/, '')
   const inviteOptions = appUrl ? { redirectTo: `${appUrl}/dashboard` } : {}
   const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(normalizedEmail, inviteOptions)
 

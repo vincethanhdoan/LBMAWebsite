@@ -34,7 +34,7 @@ function adminClient() {
 function getAppUrl(): string {
   const url = Deno.env.get('APP_URL')
   if (!url) throw new Error('APP_URL environment variable is not set')
-  return url
+  return url.replace(/\/+$/, '')
 }
 
 // How far off the appointment is, phrased for the reminder subject/heading.
