@@ -983,6 +983,7 @@ export async function getNotificationSummary(userId: string): Promise<{
         .from('user_notifications')
         .select('*')
         .eq('is_read', false)
+        .in('type', ['comment_reply', 'post_comment'])
         .order('created_at', { ascending: false })
         .limit(5),
     ]);

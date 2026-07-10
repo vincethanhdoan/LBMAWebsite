@@ -565,7 +565,7 @@ export function AdminEnrollmentLeadsTab() {
       toast('Lead archived', {
         action: {
           label: 'Undo',
-          onClick: () => { restoreLead.mutate(lead.lead_id); },
+          onClick: () => { restoreLead.mutate(lead.lead_id, { onError: () => toast.error('Failed to restore lead') }); },
         },
       });
     } catch {
@@ -1223,7 +1223,7 @@ export function AdminEnrollmentLeadsTab() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className={pendingAction.type === 'dismiss' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
                 disabled={actionLeadId === pendingAction.lead.lead_id}
                 onClick={() =>
                   pendingAction.type === 'dismiss'
