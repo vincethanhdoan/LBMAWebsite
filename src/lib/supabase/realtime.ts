@@ -300,6 +300,36 @@ export function subscribeToEnrollmentLeads(
         });
       }
     )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'enrollment_lead_program_bookings',
+      },
+      (payload) => {
+        callback({
+          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+          new: payload.new,
+          old: payload.old,
+        });
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'enrollment_lead_notifications',
+      },
+      (payload) => {
+        callback({
+          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+          new: payload.new,
+          old: payload.old,
+        });
+      }
+    )
     .subscribe();
 
   return channel;
