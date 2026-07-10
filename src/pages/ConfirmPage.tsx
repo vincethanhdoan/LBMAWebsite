@@ -66,8 +66,8 @@ export function ConfirmPage() {
   if (state === 'already') {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="max-w-2xl w-full text-center space-y-4">
-          <img src="/logo.png" alt="Los Banos Martial Arts Academy" className="mx-auto h-[28rem] w-auto max-w-full" />
+        <div className="max-w-md w-full text-center space-y-4">
+          <img src="/logo.png" alt="Los Banos Martial Arts Academy" className="mx-auto h-40 w-auto max-w-full" />
           <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto" />
           <h1 className="text-xl font-bold" style={{ fontFamily: 'Lexend, sans-serif' }}>Already confirmed</h1>
           <p className="text-muted-foreground text-sm">You've already confirmed your attendance — see you on {formatDate(apptDate)}!</p>
