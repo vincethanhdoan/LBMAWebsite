@@ -7,6 +7,7 @@ import { Textarea } from '../ui/textarea'
 import { Label } from '../ui/label'
 import { Loader2, X, Plus } from 'lucide-react'
 import { createEnrollmentLead } from '../../lib/supabase/mutations'
+import { getEnrollmentLeadById } from '../../lib/supabase/queries'
 import { edgeFunctionUserAuthHeaders, supabase } from '../../lib/supabase/client'
 import type { EnrollmentLead } from '../../lib/types'
 import { PickDateModal } from './PickDateModal'
@@ -65,17 +66,7 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
         children: children.map(c => ({ name: c.name.trim(), age: Number(c.age) })),
       })
 
-      const { data: leadData } = await supabase
-        .from('enrollment_leads')
-        .select('*')
-        .eq('lead_id', leadId)
-        .single()
-
-      if (!leadData) {
-        toast.error('Lead created but could not be fetched')
-        setLoading(false)
-        return
-      }
+      const leadData = await getEnrollmentLeadById(leadId)
 
       if (postAction === 'send_link') {
         const fnHeaders = await edgeFunctionUserAuthHeaders()
@@ -90,11 +81,11 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
             toast.error('Lead created but booking link failed to send')
           }
         }
-        onSuccess(leadData as EnrollmentLead)
+        onSuccess(leadData)
       } else if (postAction === 'create_only') {
-        onSuccess(leadData as EnrollmentLead)
+        onSuccess(leadData)
       } else if (postAction === 'pick_date') {
-        setCreatedLead(leadData as EnrollmentLead)
+        setCreatedLead(leadData)
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Something went wrong'
@@ -115,13 +106,8 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
       if (bookError) throw bookError
     }
     if (!createdLead) return
-    const { data: updatedLead } = await supabase
-      .from('enrollment_leads')
-      .select('*')
-      .eq('lead_id', createdLead.lead_id)
-      .single()
-    if (!updatedLead) throw new Error('Lead not found after booking')
-    onSuccess(updatedLead as EnrollmentLead)
+    const updatedLead = await getEnrollmentLeadById(createdLead.lead_id)
+    onSuccess(updatedLead)
   }
 
   const ctaLabel = loading

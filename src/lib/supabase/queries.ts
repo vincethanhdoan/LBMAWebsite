@@ -500,28 +500,43 @@ export async function getCommunicationCounts(): Promise<{
 // ENROLLMENT LEADS
 // ============================================
 
+const ENROLLMENT_LEAD_SELECT = `
+  ${ENROLLMENT_LEAD_COLUMNS},
+  children:enrollment_lead_children(child_id, lead_id, name, age, program_type, created_at),
+  programBookings:enrollment_lead_program_bookings(booking_id, lead_id, program_type, booking_token, appointment_slot_id, appointment_date, appointment_time, status, created_at),
+  notifications:enrollment_lead_notifications(notification_id, type, status, created_at)
+`;
+
+function mapEnrollmentLeadRow(row: Record<string, unknown>): EnrollmentLead {
+  const notifications = (row.notifications ?? []) as Array<{ notification_id: string; type: string; status: string; created_at: string }>;
+  const reminder = notifications.find(n => n.type === 'reminder') ?? null;
+  return {
+    ...row,
+    children: (row.children ?? []) as EnrollmentLeadChild[],
+    programBookings: (row.programBookings ?? []) as EnrollmentLeadProgramBooking[],
+    reminderNotification: reminder as EnrollmentLead['reminderNotification'],
+  } as EnrollmentLead;
+}
+
 export async function getEnrollmentLeads(): Promise<EnrollmentLead[]> {
   const { data, error } = await supabase
     .from('enrollment_leads')
-    .select(`
-      ${ENROLLMENT_LEAD_COLUMNS},
-      children:enrollment_lead_children(child_id, lead_id, name, age, program_type, created_at),
-      programBookings:enrollment_lead_program_bookings(booking_id, lead_id, program_type, booking_token, appointment_slot_id, appointment_date, appointment_time, status, created_at),
-      notifications:enrollment_lead_notifications(notification_id, type, status, created_at)
-    `)
+    .select(ENROLLMENT_LEAD_SELECT)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data ?? []).map(row => {
-    const r = row as typeof row & { notifications?: Array<{ notification_id: string; type: string; status: string; created_at: string }> };
-    const reminder = (r.notifications ?? []).find(n => n.type === 'reminder') ?? null;
-    return {
-      ...row,
-      children: (row.children ?? []) as EnrollmentLeadChild[],
-      programBookings: (row.programBookings ?? []) as EnrollmentLeadProgramBooking[],
-      reminderNotification: reminder as EnrollmentLead['reminderNotification'],
-    };
-  }) as EnrollmentLead[];
+  return (data ?? []).map(mapEnrollmentLeadRow);
+}
+
+export async function getEnrollmentLeadById(leadId: string): Promise<EnrollmentLead> {
+  const { data, error } = await supabase
+    .from('enrollment_leads')
+    .select(ENROLLMENT_LEAD_SELECT)
+    .eq('lead_id', leadId)
+    .single();
+
+  if (error) throw error;
+  return mapEnrollmentLeadRow(data);
 }
 
 // ============================================

@@ -360,6 +360,7 @@ export function AdminEnrollmentLeadsTab() {
   const [selectedWeekDate, setSelectedWeekDate] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
   const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
+  const [actionLeadId, setActionLeadId] = useState<string | null>(null);
 
   useEffect(() => {
     setNotesDraft(d => {
@@ -374,26 +375,38 @@ export function AdminEnrollmentLeadsTab() {
   }, [leads, notesExpanded]);
 
   async function handleApprove(lead: EnrollmentLead) {
-    const fnHeaders = await edgeFunctionUserAuthHeaders();
-    if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
-    const { error } = await supabase.functions.invoke('approve-enrollment-lead', {
-      body: { leadId: lead.lead_id },
-      headers: fnHeaders,
-    });
-    if (error) { toast.error('Failed to send approval'); return; }
-    queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
-    toast.success('Approval sent');
+    if (actionLeadId) return;
+    setActionLeadId(lead.lead_id);
+    try {
+      const fnHeaders = await edgeFunctionUserAuthHeaders();
+      if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
+      const { error } = await supabase.functions.invoke('approve-enrollment-lead', {
+        body: { leadId: lead.lead_id },
+        headers: fnHeaders,
+      });
+      if (error) { toast.error('Failed to send approval'); return; }
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+      toast.success('Approval sent');
+    } finally {
+      setActionLeadId(null);
+    }
   }
 
   async function handleResendBookingLink(lead: EnrollmentLead) {
-    const fnHeaders = await edgeFunctionUserAuthHeaders();
-    if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
-    const { error } = await supabase.functions.invoke('resend-booking-link', {
-      body: { leadId: lead.lead_id },
-      headers: fnHeaders,
-    });
-    if (error) { toast.error('Failed to resend booking link'); return; }
-    toast.success('Booking link resent');
+    if (actionLeadId) return;
+    setActionLeadId(lead.lead_id);
+    try {
+      const fnHeaders = await edgeFunctionUserAuthHeaders();
+      if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
+      const { error } = await supabase.functions.invoke('resend-booking-link', {
+        body: { leadId: lead.lead_id },
+        headers: fnHeaders,
+      });
+      if (error) { toast.error('Failed to resend booking link'); return; }
+      toast.success('Booking link resent');
+    } finally {
+      setActionLeadId(null);
+    }
   }
 
   async function handleDenyConfirm(leadId: string, message: string) {
@@ -740,7 +753,7 @@ export function AdminEnrollmentLeadsTab() {
           <div className="flex flex-wrap gap-2">
               {lead.status === 'new' && (
                 <>
-                  <Button size="sm" onClick={() => handleApprove(lead)}>
+                  <Button size="sm" onClick={() => handleApprove(lead)} disabled={actionLeadId === lead.lead_id}>
                     Approve &amp; Send Invites
                   </Button>
                   <Button
@@ -755,7 +768,7 @@ export function AdminEnrollmentLeadsTab() {
               )}
               {lead.status === 'approved' && (
                 <>
-                  <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)}>
+                  <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)} disabled={actionLeadId === lead.lead_id}>
                     Resend Invites
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
@@ -773,7 +786,7 @@ export function AdminEnrollmentLeadsTab() {
               )}
               {(lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && (
                 <>
-                  <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)}>
+                  <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)} disabled={actionLeadId === lead.lead_id}>
                     Resend Invites
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setPickDateTarget(lead)}>
