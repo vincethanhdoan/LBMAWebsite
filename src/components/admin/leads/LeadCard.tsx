@@ -122,10 +122,11 @@ interface LeadCardProps {
   now: number;
   activeTab: TabId;
   actions: ReturnType<typeof useLeadActions>;
-  updatingId: string | null;
+  updatingIds: Set<string>;
   isPossibleDuplicate: boolean;
   onDuplicateClick: () => void;
   onDeny: (lead: EnrollmentLead) => void;
+  onResendBookingLink: (lead: EnrollmentLead) => void;
   onPickDate: (lead: EnrollmentLead) => void;
   onEdit: (lead: EnrollmentLead) => void;
   onDismiss: (lead: EnrollmentLead) => void;
@@ -136,6 +137,7 @@ interface LeadCardProps {
     draft: string;
     expanded: boolean;
     saved: boolean;
+    error: boolean;
     onDraftChange: (value: string) => void;
     onToggle: () => void;
     onSave: () => void;
@@ -151,10 +153,11 @@ export function LeadCard({
   now,
   activeTab,
   actions,
-  updatingId,
+  updatingIds,
   isPossibleDuplicate,
   onDuplicateClick,
   onDeny,
+  onResendBookingLink,
   onPickDate,
   onEdit,
   onDismiss,
@@ -221,6 +224,11 @@ export function LeadCard({
                 <DropdownMenuItem onSelect={() => onEdit(lead)}>
                   Edit details
                 </DropdownMenuItem>
+                {(lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && (
+                  <DropdownMenuItem onSelect={() => onResendBookingLink(lead)}>
+                    Resend booking link
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive focus:bg-destructive/10"
                   disabled={lead.status === 'denied'}
@@ -308,15 +316,20 @@ export function LeadCard({
 
         {/* Admin notes */}
         {notes.expanded ? (
-          <textarea
-            autoFocus
-            value={notes.draft}
-            onChange={e => notes.onDraftChange(e.target.value)}
-            onBlur={notes.onSave}
-            rows={2}
-            placeholder="Internal notes (only visible to admins)…"
-            className="w-full text-sm px-3 py-2 border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/60"
-          />
+          <div className="space-y-1">
+            <textarea
+              autoFocus
+              value={notes.draft}
+              onChange={e => notes.onDraftChange(e.target.value)}
+              onBlur={notes.onSave}
+              rows={2}
+              placeholder="Internal notes (only visible to admins)…"
+              className="w-full text-sm px-3 py-2 border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/60"
+            />
+            {notes.error && (
+              <p className="text-xs text-destructive">{"Couldn't save — try again"}</p>
+            )}
+          </div>
         ) : notes.draft?.trim() ? (
           <div className="flex items-start gap-2 group">
             <p className="flex-1 text-sm text-muted-foreground bg-muted/40 rounded-md px-3 py-2 leading-relaxed border border-border/50">
@@ -346,7 +359,7 @@ export function LeadCard({
         <div className="flex flex-wrap gap-2">
             {lead.status === 'new' && (
               <>
-                <Button size="sm" onClick={() => actions.approve(lead)} disabled={actions.busyLeadId === lead.lead_id}>
+                <Button size="sm" onClick={() => actions.approve(lead)} disabled={actions.busyLeadIds.has(lead.lead_id)}>
                   Approve &amp; Send Invites
                 </Button>
                 <Button
@@ -361,7 +374,7 @@ export function LeadCard({
             )}
             {lead.status === 'approved' && (
               <>
-                <Button size="sm" variant="outline" onClick={() => actions.resendBookingLink(lead)} disabled={actions.busyLeadId === lead.lead_id}>
+                <Button size="sm" variant="outline" onClick={() => actions.resendBookingLink(lead)} disabled={actions.busyLeadIds.has(lead.lead_id)}>
                   Resend Invites
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => onPickDate(lead)}>
@@ -379,9 +392,6 @@ export function LeadCard({
             )}
             {(lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && (
               <>
-                <Button size="sm" variant="outline" onClick={() => actions.resendBookingLink(lead)} disabled={actions.busyLeadId === lead.lead_id}>
-                  Resend Invites
-                </Button>
                 <Button size="sm" variant="outline" onClick={() => onPickDate(lead)}>
                   Pick New Date
                 </Button>
@@ -410,7 +420,7 @@ export function LeadCard({
                   size="sm"
                   variant="outline"
                   className="text-[#166534] border-[#BBF7D0] hover:bg-[#F0FDF4]"
-                  disabled={updatingId === lead.lead_id}
+                  disabled={updatingIds.has(lead.lead_id)}
                   onClick={() => onStatusChange(lead.lead_id, 'enrolled')}
                 >
                   Mark enrolled
@@ -419,7 +429,7 @@ export function LeadCard({
                   size="sm"
                   variant="outline"
                   className="text-muted-foreground"
-                  disabled={updatingId === lead.lead_id}
+                  disabled={updatingIds.has(lead.lead_id)}
                   onClick={() => onCloseLead(lead.lead_id)}
                 >
                   Close lead
@@ -434,7 +444,7 @@ export function LeadCard({
                     ? onCloseLead(lead.lead_id)
                     : onStatusChange(lead.lead_id, val as EnrollmentLead['status'])
                 }
-                disabled={updatingId === lead.lead_id}
+                disabled={updatingIds.has(lead.lead_id)}
               >
                 <SelectTrigger className="w-40 h-9 text-sm">
                   <SelectValue />

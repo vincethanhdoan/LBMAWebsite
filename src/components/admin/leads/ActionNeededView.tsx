@@ -151,7 +151,7 @@ function ActionRow({
             <Button
               size="sm"
               className="min-h-[44px]"
-              disabled={actions.busyLeadId === lead.lead_id}
+              disabled={actions.busyLeadIds.has(lead.lead_id)}
               onClick={() => actions.approve(lead)}
             >
               Approve &amp; Send Invites

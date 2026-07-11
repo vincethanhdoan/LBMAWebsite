@@ -92,7 +92,7 @@ export function PickDateModal({ lead, onConfirm, onCancel }: PickDateModalProps)
       <Dialog open onOpenChange={open => { if (!open) onCancel() }}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Pick appointment date — {lead.parent_name}</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">This lead has no program bookings. Use the legacy flow or re-submit.</p>
+          <p className="text-sm text-muted-foreground">This lead was created before program bookings existed, so dates can't be booked here. Create a new lead for this family to book an appointment.</p>
           <DialogFooter><Button variant="ghost" onClick={onCancel}>Close</Button></DialogFooter>
         </DialogContent>
       </Dialog>

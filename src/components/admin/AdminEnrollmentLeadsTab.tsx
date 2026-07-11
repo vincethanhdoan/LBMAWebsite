@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '../ui/button';
-import { Loader2, Plus, Search } from 'lucide-react';
+import { Loader2, Plus, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import type { EnrollmentLead } from '../../lib/types';
@@ -56,6 +56,18 @@ function historyBadgeCount(counts: TerminalCounts | undefined, filter: HistoryFi
   }
 }
 
+function withId(set: Set<string>, id: string): Set<string> {
+  const next = new Set(set);
+  next.add(id);
+  return next;
+}
+
+function withoutId(set: Set<string>, id: string): Set<string> {
+  const next = new Set(set);
+  next.delete(id);
+  return next;
+}
+
 function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -82,24 +94,31 @@ export function AdminEnrollmentLeadsTab() {
   const archiveLead = useArchiveLead();
   const restoreLead = useRestoreLead();
   const actions = useLeadActions({ onError: msg => toast.error(msg) });
-  const [now] = useState(Date.now);
+  const [now, setNow] = useState(() => Date.now());
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('action_needed');
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
   const [denyTarget, setDenyTarget] = useState<EnrollmentLead | null>(null);
+  const [resendTarget, setResendTarget] = useState<EnrollmentLead | null>(null);
   const [pickDateTargetId, setPickDateTargetId] = useState<string | null>(null);
   const [editTargetId, setEditTargetId] = useState<string | null>(null);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: 'dismiss' | 'archive'; lead: EnrollmentLead } | null>(null);
   const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({});
   const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({});
+  const [notesError, setNotesError] = useState<Record<string, boolean>>({});
   const [messageExpanded, setMessageExpanded] = useState<Record<string, boolean>>({});
   const [historyExpanded, setHistoryExpanded] = useState<Record<string, boolean>>({});
   const [selectedWeekDate, setSelectedWeekDate] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [actionLeadId, setActionLeadId] = useState<string | null>(null);
+  const [actingIds, setActingIds] = useState<Set<string>>(new Set());
   const [showPastAppointments, setShowPastAppointments] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const terminalLeads = useMemo(
     () => (terminalQuery.data?.pages ?? []).flatMap(p => p.leads),
@@ -149,55 +168,57 @@ export function AdminEnrollmentLeadsTab() {
     : null;
 
   async function handleStatusChange(leadId: string, status: EnrollmentLead['status']) {
-    setUpdatingId(leadId);
+    setUpdatingIds(s => withId(s, leadId));
     try {
       await updateStatus.mutateAsync({ leadId, status });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update status');
     } finally {
-      setUpdatingId(null);
+      setUpdatingIds(s => withoutId(s, leadId));
     }
   }
 
   async function handleCloseLead(leadId: string) {
-    setUpdatingId(leadId);
+    setUpdatingIds(s => withId(s, leadId));
     try {
       await closeLead.mutateAsync(leadId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update status');
     } finally {
-      setUpdatingId(null);
+      setUpdatingIds(s => withoutId(s, leadId));
     }
   }
 
   async function handleNotesSave(leadId: string) {
     try {
       await updateNotes.mutateAsync({ leadId, notes: notesDraft[leadId] ?? '' });
+      setNotesError(e => ({ ...e, [leadId]: false }));
+      setNotesExpanded(e => ({ ...e, [leadId]: false }));
       setNotesSaved(s => ({ ...s, [leadId]: true }));
       setTimeout(() => setNotesSaved(s => ({ ...s, [leadId]: false })), 2000);
     } catch {
-      // silent — notes are best-effort
+      // Keep the draft and the editor open so the note isn't silently lost.
+      setNotesError(e => ({ ...e, [leadId]: true }));
     }
-    setNotesExpanded(e => ({ ...e, [leadId]: false }));
   }
 
   async function handleDismissSilently(lead: EnrollmentLead) {
-    if (actionLeadId) return;
-    setActionLeadId(lead.lead_id);
+    if (actingIds.has(lead.lead_id)) return;
+    setActingIds(s => withId(s, lead.lead_id));
     try {
       await dismissLead.mutateAsync(lead.lead_id);
       toast.success('Lead dismissed');
     } catch {
       toast.error('Failed to dismiss lead');
     } finally {
-      setActionLeadId(null);
+      setActingIds(s => withoutId(s, lead.lead_id));
       setPendingAction(null);
     }
   }
 
   async function handleArchiveLead(lead: EnrollmentLead) {
-    if (actionLeadId) return;
-    setActionLeadId(lead.lead_id);
+    if (actingIds.has(lead.lead_id)) return;
+    setActingIds(s => withId(s, lead.lead_id));
     try {
       await archiveLead.mutateAsync(lead.lead_id);
       toast('Lead archived', {
@@ -209,21 +230,21 @@ export function AdminEnrollmentLeadsTab() {
     } catch {
       toast.error('Failed to archive lead');
     } finally {
-      setActionLeadId(null);
+      setActingIds(s => withoutId(s, lead.lead_id));
       setPendingAction(null);
     }
   }
 
   async function handleRestoreLead(lead: EnrollmentLead) {
-    if (actionLeadId) return;
-    setActionLeadId(lead.lead_id);
+    if (actingIds.has(lead.lead_id)) return;
+    setActingIds(s => withId(s, lead.lead_id));
     try {
       await restoreLead.mutateAsync(lead.lead_id);
       toast.success('Lead restored');
     } catch {
       toast.error('Failed to restore lead');
     } finally {
-      setActionLeadId(null);
+      setActingIds(s => withoutId(s, lead.lead_id));
     }
   }
 
@@ -234,10 +255,11 @@ export function AdminEnrollmentLeadsTab() {
       now={now}
       activeTab={activeTab}
       actions={actions}
-      updatingId={updatingId}
+      updatingIds={updatingIds}
       isPossibleDuplicate={duplicateLeadIds.has(lead.lead_id)}
       onDuplicateClick={() => setSearch(lead.parent_email)}
       onDeny={setDenyTarget}
+      onResendBookingLink={setResendTarget}
       onPickDate={l => setPickDateTargetId(l.lead_id)}
       onEdit={l => setEditTargetId(l.lead_id)}
       onDismiss={l => setPendingAction({ type: 'dismiss', lead: l })}
@@ -248,6 +270,7 @@ export function AdminEnrollmentLeadsTab() {
         draft: notesDraft[lead.lead_id] ?? '',
         expanded: notesExpanded[lead.lead_id] ?? false,
         saved: notesSaved[lead.lead_id] ?? false,
+        error: notesError[lead.lead_id] ?? false,
         onDraftChange: v => setNotesDraft(d => ({ ...d, [lead.lead_id]: v })),
         onToggle: () => setNotesExpanded(e => ({ ...e, [lead.lead_id]: true })),
         onSave: () => handleNotesSave(lead.lead_id),
@@ -275,7 +298,7 @@ export function AdminEnrollmentLeadsTab() {
         size="sm"
         variant="outline"
         className="flex-shrink-0"
-        disabled={actionLeadId === lead.lead_id}
+        disabled={actingIds.has(lead.lead_id)}
         onClick={() => handleRestoreLead(lead)}
       >
         Restore
@@ -487,7 +510,6 @@ export function AdminEnrollmentLeadsTab() {
                 key={tab.id}
                 onClick={() => {
                   setActiveTab(tab.id);
-                  setSearch('');
                   setHistoryFilter('all_terminal');
                   setSelectedWeekDate(null);
                   if (tab.id === 'appointment_scheduled' || tab.id === 'appointment_confirmed') {
@@ -534,8 +556,18 @@ export function AdminEnrollmentLeadsTab() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by name, email, or student…"
-          className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full pl-9 pr-10 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
         />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            aria-label="Clear search"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Sub-filter for History tab */}
@@ -629,7 +661,7 @@ export function AdminEnrollmentLeadsTab() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 className={pendingAction.type === 'dismiss' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
-                disabled={actionLeadId === pendingAction.lead.lead_id}
+                disabled={actingIds.has(pendingAction.lead.lead_id)}
                 onClick={() =>
                   pendingAction.type === 'dismiss'
                     ? handleDismissSilently(pendingAction.lead)
@@ -637,6 +669,27 @@ export function AdminEnrollmentLeadsTab() {
                 }
               >
                 {pendingAction.type === 'dismiss' ? 'Dismiss' : 'Archive'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      {resendTarget && (
+        <AlertDialog open onOpenChange={open => { if (!open) setResendTarget(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Resend booking link?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This re-sends the booking link and lets the family rebook. Their current appointment stays until they pick a new date.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={actions.busyLeadIds.has(resendTarget.lead_id)}
+                onClick={async () => { await actions.resendBookingLink(resendTarget); setResendTarget(null); }}
+              >
+                Resend booking link
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
