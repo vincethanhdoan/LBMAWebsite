@@ -56,6 +56,25 @@ function historyBadgeCount(counts: TerminalCounts | undefined, filter: HistoryFi
   }
 }
 
+// Guiding empty-state copy per tab. A non-empty search always wins so the
+// message reflects that the filter, not the pipeline, is empty.
+function emptyStateMessage(tab: TabId, searching: boolean): string {
+  if (searching) return 'No leads match your search.';
+  switch (tab) {
+    case 'new':
+      return 'No new leads. New inquiries from the website appear here.';
+    case 'approved':
+      return 'No approved leads waiting to book.';
+    case 'appointment_scheduled':
+    case 'appointment_confirmed':
+      return 'No upcoming appointments. Approve a lead and send a booking link to get started.';
+    case 'history':
+      return 'Nothing here yet.';
+    default:
+      return 'No leads in this status.';
+  }
+}
+
 function withId(set: Set<string>, id: string): Set<string> {
   const next = new Set(set);
   next.add(id);
@@ -318,7 +337,7 @@ export function AdminEnrollmentLeadsTab() {
     if (terminalLeads.length === 0) {
       return (
         <div className="text-center py-12 text-muted-foreground text-sm">
-          {debouncedSearch.trim() ? 'No leads match your search.' : 'No leads in this status.'}
+          {emptyStateMessage(activeTab, debouncedSearch.trim() !== '')}
         </div>
       );
     }
@@ -615,7 +634,7 @@ export function AdminEnrollmentLeadsTab() {
           renderCard={renderCard}
           emptyMessage={
             visibleActiveLeads.length === 0
-              ? (search.trim() ? 'No leads match your search.' : 'No leads in this status.')
+              ? emptyStateMessage(activeTab, search.trim() !== '')
               : null
           }
         />
@@ -635,7 +654,7 @@ export function AdminEnrollmentLeadsTab() {
         </div>
       ) : visibleActiveLeads.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
-          {search.trim() ? 'No leads match your search.' : 'No leads in this status.'}
+          {emptyStateMessage(activeTab, search.trim() !== '')}
         </div>
       ) : (
         <div className="space-y-3">

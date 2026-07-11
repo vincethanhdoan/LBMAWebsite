@@ -3,6 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu';
 import { Loader2, Mail, Phone, Calendar, Plus, MoreVertical, Check, Pencil, Clock, AlertCircle, Send, ChevronDown } from 'lucide-react';
 import type { EnrollmentLead, EnrollmentLeadNotification } from '../../../lib/types';
+import { formatPhone, relativeDayLabel } from '../../../lib/format';
+import { CopyButton } from '../../shared/CopyButton';
 import { LeadTimeline } from './LeadTimeline';
 import {
   PROGRAM_LABELS,
@@ -174,6 +176,7 @@ export function LeadCard({
   const todayKey = toLocalDateKey(new Date());
   const primaryTime = getLeadPrimaryTime(lead);
   const confirmationEmail = effectiveConfirmationNotification(lead);
+  const appointmentRelative = lead.appointment_date ? relativeDayLabel(lead.appointment_date) : null;
 
   return (
     <div
@@ -249,21 +252,27 @@ export function LeadCard({
 
         {/* Row 2: contact info */}
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          <a
-            href={`mailto:${lead.parent_email}`}
-            className="flex items-center gap-1.5 text-primary hover:underline"
-          >
-            <Mail className="w-3.5 h-3.5" />
-            {lead.parent_email}
-          </a>
-          {lead.phone && (
+          <span className="flex items-center gap-1">
             <a
-              href={`tel:${lead.phone}`}
-              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+              href={`mailto:${lead.parent_email}`}
+              className="flex items-center gap-1.5 text-primary hover:underline"
             >
-              <Phone className="w-3.5 h-3.5" />
-              {lead.phone}
+              <Mail className="w-3.5 h-3.5" />
+              {lead.parent_email}
             </a>
+            <CopyButton value={lead.parent_email} label="Copy email" />
+          </span>
+          {lead.phone && (
+            <span className="flex items-center gap-1">
+              <a
+                href={`tel:${lead.phone}`}
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                {formatPhone(lead.phone)}
+              </a>
+              <CopyButton value={lead.phone} label="Copy phone" />
+            </span>
           )}
         </div>
 
@@ -294,6 +303,7 @@ export function LeadCard({
               weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
             })}
             {lead.appointment_time && ` at ${new Date('1970-01-01T' + lead.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
+            {appointmentRelative && ` · ${appointmentRelative}`}
           </div>
         )}
 

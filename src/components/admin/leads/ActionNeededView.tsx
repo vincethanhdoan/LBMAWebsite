@@ -1,6 +1,7 @@
 import { Button } from '../../ui/button';
 import { Loader2, Mail, Phone, AlertCircle, Send, CheckCircle2 } from 'lucide-react';
 import type { EnrollmentLead } from '../../../lib/types';
+import { formatPhone, relativeDayLabel } from '../../../lib/format';
 import { effectiveConfirmationNotification, getLeadPrimaryDate, formatDate } from './leadDisplay';
 import { AgingIndicator } from './LeadCard';
 import type { ActionNeededItem } from './actionNeeded';
@@ -118,7 +119,7 @@ function ActionRow({
             }
           >
             <Phone className="w-3.5 h-3.5" />
-            {lead.phone}
+            {formatPhone(lead.phone)}
           </a>
         )}
       </div>
@@ -188,9 +189,10 @@ function ActionRow({
 
 function ConfirmByChip({ dateKey }: { dateKey: string | null }) {
   if (!dateKey) return null;
+  const relative = relativeDayLabel(dateKey);
   return (
     <span className="flex-shrink-0 text-xs font-medium px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
-      Confirm by {formatDate(dateKey + 'T12:00:00')}
+      Confirm by {formatDate(dateKey + 'T12:00:00')}{relative && ` · ${relative}`}
     </span>
   );
 }

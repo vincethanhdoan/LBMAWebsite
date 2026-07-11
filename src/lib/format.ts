@@ -2,6 +2,8 @@
  * Shared formatting utilities used across dashboard and admin components.
  */
 
+import { daysUntilInPacific } from './pacificTime';
+
 export function getInitials(name: string): string {
   return name
     .split(' ')
@@ -57,6 +59,33 @@ export function formatTime(timeString: string): string {
   const d = new Date();
   d.setHours(h, m);
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+/**
+ * Format a raw phone number for display. US 10-digit and 1-prefixed 11-digit
+ * numbers become "(555) 123-4567"; anything else is returned unchanged.
+ */
+export function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  return raw;
+}
+
+/**
+ * Relative-day phrase for a DATE-only key ("YYYY-MM-DD") in Pacific time:
+ * "today" / "tomorrow" / "in N days". Returns null for past dates.
+ */
+export function relativeDayLabel(dateKey: string): string | null {
+  const days = daysUntilInPacific(new Date(dateKey + 'T12:00:00'));
+  if (days < 0) return null;
+  if (days === 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  return `in ${days} days`;
 }
 
 /**
