@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -142,6 +143,9 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
   const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
+  const processedPostParam = useRef<string | null>(null);
 
   const { data: rawAnnouncements = [], isLoading: loading } = useAnnouncements();
   const createAnn = useCreateAnnouncement();
@@ -158,6 +162,39 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
     imageUrl: a.image_url || undefined,
     isPinned: a.is_pinned || false,
   }));
+
+  // Deep link: `?post=<id>` scrolls to a specific announcement and flashes a
+  // highlight, then strips the param. Runs once per param value (guarded by a
+  // ref) and waits for the list to load so a present post isn't missed.
+  const deepLinkPostId = searchParams.get('post');
+  useEffect(() => {
+    if (!deepLinkPostId || loading) return;
+
+    const stripPostParam = () => {
+      const next = new URLSearchParams(searchParams);
+      next.delete('post');
+      setSearchParams(next, { replace: true });
+    };
+
+    if (processedPostParam.current === deepLinkPostId) {
+      stripPostParam();
+      return;
+    }
+    processedPostParam.current = deepLinkPostId;
+
+    if (announcements.some(a => a.id === deepLinkPostId)) {
+      setHighlightedPostId(deepLinkPostId);
+    }
+
+    stripPostParam();
+  }, [deepLinkPostId, loading, announcements, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!highlightedPostId) return;
+    document.getElementById('post-' + highlightedPostId)?.scrollIntoView({ block: 'center' });
+    const timer = setTimeout(() => setHighlightedPostId(null), 2000);
+    return () => clearTimeout(timer);
+  }, [highlightedPostId]);
 
   const toggleComments = (announcementId: string) => {
     setExpandedComments({ ...expandedComments, [announcementId]: !expandedComments[announcementId] });
@@ -478,7 +515,11 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       {/* Announcements List */}
       <div className="space-y-4">
         {sortedAnnouncements.map((announcement) => (
-          <Card key={announcement.id}>
+          <Card
+            key={announcement.id}
+            id={`post-${announcement.id}`}
+            className={`transition-shadow duration-700 ${highlightedPostId === announcement.id ? 'ring-2 ring-primary' : ''}`}
+          >
             <CardHeader className={announcement.isPinned ? 'bg-secondary/50 border-l-4 border-l-primary' : ''}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">

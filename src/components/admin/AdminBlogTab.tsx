@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -176,6 +177,9 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [confirmState, setConfirmState] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
+  const processedPostParam = useRef<string | null>(null);
 
   const { data: rawPosts = [], isLoading: loading } = useBlogPosts();
   const updatePost = useUpdateBlogPost();
@@ -200,6 +204,40 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
   const sortedPosts = [...filteredPosts].sort((a, b) =>
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
+
+  // Deep link: `?post=<id>` clears any active search, scrolls to the post and
+  // flashes a highlight, then strips the param. Runs once per param value
+  // (guarded by a ref) and waits for the list to load.
+  const deepLinkPostId = searchParams.get('post');
+  useEffect(() => {
+    if (!deepLinkPostId || loading) return;
+
+    const stripPostParam = () => {
+      const next = new URLSearchParams(searchParams);
+      next.delete('post');
+      setSearchParams(next, { replace: true });
+    };
+
+    if (processedPostParam.current === deepLinkPostId) {
+      stripPostParam();
+      return;
+    }
+    processedPostParam.current = deepLinkPostId;
+
+    setSearchTerm('');
+    if (posts.some(p => p.id === deepLinkPostId)) {
+      setHighlightedPostId(deepLinkPostId);
+    }
+
+    stripPostParam();
+  }, [deepLinkPostId, loading, posts, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!highlightedPostId) return;
+    document.getElementById('post-' + highlightedPostId)?.scrollIntoView({ block: 'center' });
+    const timer = setTimeout(() => setHighlightedPostId(null), 2000);
+    return () => clearTimeout(timer);
+  }, [highlightedPostId]);
 
   const handleUpdate = async () => {
     if (!editingPost || !editTitle.trim() || !editBody.trim()) return;
@@ -361,7 +399,11 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
           </Card>
         ) : (
           sortedPosts.map((post) => (
-          <Card key={post.id}>
+          <Card
+            key={post.id}
+            id={`post-${post.id}`}
+            className={`transition-shadow duration-700 ${highlightedPostId === post.id ? 'ring-2 ring-primary' : ''}`}
+          >
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">

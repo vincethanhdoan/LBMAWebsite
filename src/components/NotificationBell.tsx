@@ -3,6 +3,7 @@ import { Bell, CheckCheck } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Skeleton } from './ui/skeleton';
 import { markSectionSeen, markNotificationsRead, markNotificationRead } from '../lib/supabase/mutations';
+import { getCommentPostRef } from '../lib/supabase/queries';
 import { useNotificationSummary } from '../lib/hooks/notifications';
 import { notificationTitle, isLeadNotification } from '../lib/notificationDisplay';
 import type { UserNotification } from '../lib/types';
@@ -12,9 +13,10 @@ type NotificationBellProps = {
   onNavigate: (tab: string) => void;
   viewAllTab?: string;
   onOpenLead?: (leadId: string) => void;
+  onOpenPost?: (tab: 'announcements' | 'blog', postId: string) => void;
 };
 
-export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead }: NotificationBellProps) {
+export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, onOpenPost }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const { data: summary, isLoading: loading, refetch: loadSummary } = useNotificationSummary(userId);
 
@@ -53,7 +55,18 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead }:
         onNavigate('leads');
       }
     } else {
-      onNavigate(notif.reference_type === 'announcement_comment' ? 'announcements' : 'blog');
+      const referenceType = notif.reference_type === 'announcement_comment' ? 'announcement_comment' : 'blog_comment';
+      const tab = referenceType === 'announcement_comment' ? 'announcements' : 'blog';
+      if (onOpenPost) {
+        const ref = await getCommentPostRef(referenceType, notif.reference_id).catch(() => null);
+        if (ref) {
+          onOpenPost(ref.tab, ref.postId);
+        } else {
+          onNavigate(tab);
+        }
+      } else {
+        onNavigate(tab);
+      }
     }
     setOpen(false);
   }

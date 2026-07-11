@@ -8,6 +8,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useNotificationFeed, useSidebarCounts } from '../../lib/hooks/notifications';
 import type { NotificationFeedFilter } from '../../lib/hooks/notifications';
 import { markNotificationRead, markNotificationsRead, markSectionSeen } from '../../lib/supabase/mutations';
+import { getCommentPostRef } from '../../lib/supabase/queries';
 import { notificationTitle, isLeadNotification } from '../../lib/notificationDisplay';
 import { queryKeys } from '../../lib/queryKeys';
 import { formatShortDate } from '../../lib/format';
@@ -67,10 +68,14 @@ export function AdminNotificationsTab({ userId }: AdminNotificationsTabProps) {
     if (isLeadNotification(notif)) {
       setSearchParams({ tab: 'leads', lead: notif.reference_id }, { replace: true });
     } else {
-      setSearchParams(
-        { tab: notif.reference_type === 'announcement_comment' ? 'announcements' : 'blog' },
-        { replace: true },
-      );
+      const referenceType = notif.reference_type === 'announcement_comment' ? 'announcement_comment' : 'blog_comment';
+      const tab = referenceType === 'announcement_comment' ? 'announcements' : 'blog';
+      const ref = await getCommentPostRef(referenceType, notif.reference_id).catch(() => null);
+      if (ref) {
+        setSearchParams({ tab: ref.tab, post: ref.postId }, { replace: true });
+      } else {
+        setSearchParams({ tab }, { replace: true });
+      }
     }
   }
 

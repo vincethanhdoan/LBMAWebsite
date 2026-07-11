@@ -139,6 +139,7 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
                 onNavigate={(tab) => setActiveTab(tab as AdminTabId)}
                 viewAllTab="notifications"
                 onOpenLead={(id) => setSearchParams({ tab: 'leads', lead: id }, { replace: true })}
+                onOpenPost={(tab, postId) => setSearchParams({ tab, post: postId }, { replace: true })}
               />
             </div>
           </div>

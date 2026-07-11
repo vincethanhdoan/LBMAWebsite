@@ -317,6 +317,32 @@ export async function getBlogComments(postId: string): Promise<BlogCommentWithAu
 }
 
 /**
+ * Resolve a comment notification to the post it belongs to, so admins can deep
+ * link to the post. Returns null when the comment no longer exists (deleted).
+ */
+export async function getCommentPostRef(
+  referenceType: 'announcement_comment' | 'blog_comment',
+  commentId: string
+): Promise<{ tab: 'announcements' | 'blog'; postId: string } | null> {
+  if (referenceType === 'announcement_comment') {
+    const { data, error } = await supabase
+      .from('announcement_comments')
+      .select('announcement_id')
+      .eq('comment_id', commentId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? { tab: 'announcements', postId: data.announcement_id } : null;
+  }
+  const { data, error } = await supabase
+    .from('blog_comments')
+    .select('post_id')
+    .eq('comment_id', commentId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? { tab: 'blog', postId: data.post_id } : null;
+}
+
+/**
  * Fetch comments for multiple posts in a single query.
  * Returns a map of post_id → comment array.
  */
