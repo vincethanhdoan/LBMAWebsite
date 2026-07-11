@@ -67,6 +67,13 @@ function buildEntries(lead: EnrollmentLead): TimelineEntry[] {
   if (lead.denied_at) {
     entries.push({ key: 'milestone-denied', label: 'Denied', timestamp: lead.denied_at });
   }
+  if (lead.attendance_status && lead.attendance_recorded_at) {
+    entries.push({
+      key: 'milestone-attendance',
+      label: lead.attendance_status === 'attended' ? 'Marked attended' : 'Marked no-show',
+      timestamp: lead.attendance_recorded_at,
+    });
+  }
 
   for (const n of lead.notificationHistory) {
     entries.push({
