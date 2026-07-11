@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '../ui/button';
 import { Loader2, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import type { EnrollmentLead } from '../../lib/types';
-import { useEnrollmentLeads, useUpdateLeadStatus, useUpdateLeadNotes, useDismissLead, useCloseLead, useArchiveLead, useRestoreLead } from '../../lib/hooks/leads';
+import { useActiveLeads, useTerminalLeads, useTerminalLeadCounts, useUpdateLeadStatus, useUpdateLeadNotes, useDismissLead, useCloseLead, useArchiveLead, useRestoreLead } from '../../lib/hooks/leads';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { DenyModal } from './DenyModal';
@@ -21,10 +21,12 @@ import {
   getMondayOfWeek,
   formatWeekRange,
   findNearestWeekOffset,
+  formatDate,
   TABS,
   TAB_EXPLANATIONS,
+  HISTORY_FILTERS,
   type TabId,
-  type ClosedDeniedFilter,
+  type HistoryFilter,
 } from './leads/leadDisplay';
 
 function tabCount(leads: EnrollmentLead[], tab: (typeof TABS)[number], todayKey: string): number {
@@ -36,11 +38,39 @@ function tabCount(leads: EnrollmentLead[], tab: (typeof TABS)[number], todayKey:
   return matching.length;
 }
 
+type TerminalCounts = { enrolled: number; closed: number; denied: number; archived: number };
+
+function historyBadgeCount(counts: TerminalCounts | undefined, filter: HistoryFilter): number {
+  if (!counts) return 0;
+  const terminalTotal = counts.enrolled + counts.closed + counts.denied;
+  switch (filter) {
+    case 'enrolled': return counts.enrolled;
+    case 'closed':   return counts.closed;
+    case 'denied':   return counts.denied;
+    case 'archived': return terminalTotal + counts.archived;
+    default:         return terminalTotal;
+  }
+}
+
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(id);
+  }, [value, delayMs]);
+  return debounced;
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────
 
 export function AdminEnrollmentLeadsTab() {
   const queryClient = useQueryClient();
-  const { data: leads = [], isLoading: loading } = useEnrollmentLeads();
+  const { data: activeLeads = [], isLoading: loading } = useActiveLeads();
+  const [search, setSearch] = useState('');
+  const [historyFilter, setHistoryFilter] = useState<HistoryFilter>('all_terminal');
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const terminalQuery = useTerminalLeads(historyFilter, debouncedSearch);
+  const { data: terminalCounts } = useTerminalLeadCounts();
   const updateStatus = useUpdateLeadStatus();
   const updateNotes = useUpdateLeadNotes();
   const dismissLead = useDismissLead();
@@ -51,13 +81,11 @@ export function AdminEnrollmentLeadsTab() {
   const [now] = useState(Date.now);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('new');
-  const [search, setSearch] = useState('');
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [denyTarget, setDenyTarget] = useState<EnrollmentLead | null>(null);
   const [pickDateTargetId, setPickDateTargetId] = useState<string | null>(null);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
-  const [closedDeniedFilter, setClosedDeniedFilter] = useState<ClosedDeniedFilter>('all');
   const [pendingAction, setPendingAction] = useState<{ type: 'dismiss' | 'archive'; lead: EnrollmentLead } | null>(null);
   const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({});
   const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({});
@@ -67,22 +95,31 @@ export function AdminEnrollmentLeadsTab() {
   const [actionLeadId, setActionLeadId] = useState<string | null>(null);
   const [showPastAppointments, setShowPastAppointments] = useState(false);
 
+  const terminalLeads = useMemo(
+    () => (terminalQuery.data?.pages ?? []).flatMap(p => p.leads),
+    [terminalQuery.data],
+  );
+  const allLoadedLeads = useMemo(
+    () => [...activeLeads, ...terminalLeads],
+    [activeLeads, terminalLeads],
+  );
+
   useEffect(() => {
     setNotesDraft(d => {
       const next: Record<string, string> = {};
-      for (const l of leads) {
+      for (const l of allLoadedLeads) {
         next[l.lead_id] = notesExpanded[l.lead_id] && l.lead_id in d
           ? d[l.lead_id]
           : (l.admin_notes ?? '');
       }
       return next;
     });
-  }, [leads, notesExpanded]);
+  }, [allLoadedLeads, notesExpanded]);
 
   // Derived from the live query so the pick-date modal reflects booking status
   // after a refetch (e.g. a partial multi-program booking failure).
   const pickDateTarget = pickDateTargetId
-    ? leads.find(l => l.lead_id === pickDateTargetId) ?? null
+    ? activeLeads.find(l => l.lead_id === pickDateTargetId) ?? null
     : null;
 
   async function handleStatusChange(leadId: string, status: EnrollmentLead['status']) {
@@ -151,6 +188,19 @@ export function AdminEnrollmentLeadsTab() {
     }
   }
 
+  async function handleRestoreLead(lead: EnrollmentLead) {
+    if (actionLeadId) return;
+    setActionLeadId(lead.lead_id);
+    try {
+      await restoreLead.mutateAsync(lead.lead_id);
+      toast.success('Lead restored');
+    } catch {
+      toast.error('Failed to restore lead');
+    } finally {
+      setActionLeadId(null);
+    }
+  }
+
   const renderCard = (lead: EnrollmentLead) => (
     <LeadCard
       key={lead.lead_id}
@@ -178,15 +228,83 @@ export function AdminEnrollmentLeadsTab() {
     />
   );
 
+  const renderArchivedCard = (lead: EnrollmentLead) => (
+    <div
+      key={lead.lead_id}
+      className="bg-muted/30 rounded-lg border border-border/50 p-4 flex items-center justify-between gap-3 opacity-75"
+    >
+      <div className="min-w-0">
+        <div className="font-medium text-sm truncate">{lead.parent_name}</div>
+        <div className="text-xs text-muted-foreground truncate">{lead.parent_email}</div>
+        {lead.deleted_at && (
+          <div className="text-xs text-muted-foreground mt-0.5">Archived {formatDate(lead.deleted_at)}</div>
+        )}
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        className="flex-shrink-0"
+        disabled={actionLeadId === lead.lead_id}
+        onClick={() => handleRestoreLead(lead)}
+      >
+        Restore
+      </Button>
+    </div>
+  );
+
+  const renderTerminalList = () => {
+    if (terminalQuery.isLoading) {
+      return (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin mr-3" />
+          Loading leads…
+        </div>
+      );
+    }
+    if (terminalLeads.length === 0) {
+      return (
+        <div className="text-center py-12 text-muted-foreground text-sm">
+          {debouncedSearch.trim() ? 'No leads match your search.' : 'No leads in this status.'}
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-3">
+        {terminalLeads.map(lead => (lead.deleted_at ? renderArchivedCard(lead) : renderCard(lead)))}
+        {terminalQuery.hasNextPage && (
+          <div className="flex justify-center pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={terminalQuery.isFetchingNextPage}
+              onClick={() => terminalQuery.fetchNextPage()}
+              className="gap-2"
+            >
+              {terminalQuery.isFetchingNextPage ? (
+                <><Loader2 className="w-4 h-4 animate-spin" />Loading…</>
+              ) : (
+                'Load more'
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ─── Derived data ──────────────────────────────────────────────────────────
 
-  const visibleLeads = filterLeads(leads, activeTab, search, closedDeniedFilter);
+  const visibleActiveLeads = filterLeads(activeLeads, activeTab, search);
   const todayKey = toLocalDateKey(new Date());
-  const newCount = leads.filter(l => l.status === 'new').length;
-  const approvedCount = leads.filter(l => l.status === 'approved').length;
-  const scheduledCount = leads.filter(
+  const newCount = activeLeads.filter(l => l.status === 'new').length;
+  const approvedCount = activeLeads.filter(l => l.status === 'approved').length;
+  const scheduledCount = activeLeads.filter(
     l => l.status === 'appointment_scheduled' && !hasPastAppointment(l, todayKey)
   ).length;
+  const terminalTotal = terminalCounts
+    ? terminalCounts.enrolled + terminalCounts.closed + terminalCounts.denied
+    : 0;
+  const totalLeads = activeLeads.length + terminalTotal;
 
   const isCalendarTab = activeTab === 'appointment_scheduled' || activeTab === 'appointment_confirmed';
 
@@ -194,7 +312,7 @@ export function AdminEnrollmentLeadsTab() {
   const appointmentCountsByDate: Record<string, number> = {};
   if (isCalendarTab) {
     const tabObj = TABS.find(t => t.id === activeTab);
-    for (const lead of leads) {
+    for (const lead of activeLeads) {
       if (!tabObj?.statuses?.includes(lead.status)) continue;
       if (hasPastAppointment(lead, todayKey)) continue;
       const date = getLeadPrimaryDate(lead);
@@ -227,7 +345,7 @@ export function AdminEnrollmentLeadsTab() {
   const pastDateGroups: Array<{ dateKey: string; leads: EnrollmentLead[] }> = [];
   if (isCalendarTab) {
     const weekDateSet = new Set(weekStripDays.map(d => d.dateKey))
-    const upcoming = visibleLeads.filter(l => !hasPastAppointment(l, todayKey))
+    const upcoming = visibleActiveLeads.filter(l => !hasPastAppointment(l, todayKey))
     const toGroup = selectedWeekDate
       ? upcoming.filter(l => getLeadPrimaryDate(l) === selectedWeekDate)
       : upcoming.filter(l => {
@@ -250,7 +368,7 @@ export function AdminEnrollmentLeadsTab() {
     if (noDates.length) dateGroups.push({ dateKey: '', leads: noDates });
 
     const pastGroups: Record<string, EnrollmentLead[]> = {};
-    for (const lead of visibleLeads.filter(l => hasPastAppointment(l, todayKey))) {
+    for (const lead of visibleActiveLeads.filter(l => hasPastAppointment(l, todayKey))) {
       const date = getLeadPrimaryDate(lead) as string;
       (pastGroups[date] = pastGroups[date] ?? []).push(lead);
     }
@@ -283,7 +401,7 @@ export function AdminEnrollmentLeadsTab() {
             {newCount > 0 && <span className="text-primary font-medium">{newCount} new · </span>}
             {approvedCount > 0 && <span>{approvedCount} approved · </span>}
             {scheduledCount > 0 && <span>{scheduledCount} scheduled · </span>}
-            <span>{leads.length} total</span>
+            <span>{totalLeads} total</span>
           </p>
         </div>
         <Button onClick={() => setShowNewLeadModal(true)} variant="outline" size="sm" className="gap-2">
@@ -301,18 +419,20 @@ export function AdminEnrollmentLeadsTab() {
         <div className="flex gap-0 overflow-x-auto">
           {TABS.map(tab => {
             const isActive = activeTab === tab.id;
-            const count = tabCount(leads, tab, todayKey);
+            const count = tab.id === 'history'
+              ? historyBadgeCount(terminalCounts, historyFilter)
+              : tabCount(activeLeads, tab, todayKey);
             return (
               <button
                 key={tab.id}
                 onClick={() => {
                   setActiveTab(tab.id);
                   setSearch('');
-                  setClosedDeniedFilter('all');
+                  setHistoryFilter('all_terminal');
                   setSelectedWeekDate(null);
                   if (tab.id === 'appointment_scheduled' || tab.id === 'appointment_confirmed') {
                     const tabStatuses = TABS.find(t => t.id === tab.id)!.statuses!;
-                    const apptDates = leads
+                    const apptDates = activeLeads
                       .filter(l => tabStatuses.includes(l.status))
                       .map(l => getLeadPrimaryDate(l))
                       .filter((d): d is string => d !== null);
@@ -358,20 +478,20 @@ export function AdminEnrollmentLeadsTab() {
         />
       </div>
 
-      {/* Sub-filter for Closed / Denied tab */}
-      {activeTab === 'denied_closed' && (
+      {/* Sub-filter for History tab */}
+      {activeTab === 'history' && (
         <div className="flex gap-1.5">
-          {(['all', 'denied', 'closed'] as ClosedDeniedFilter[]).map(f => (
+          {HISTORY_FILTERS.map(f => (
             <button
-              key={f}
-              onClick={() => setClosedDeniedFilter(f)}
-              className={`px-3 py-1 text-xs rounded-full font-medium transition-colors capitalize ${
-                closedDeniedFilter === f
+              key={f.id}
+              onClick={() => setHistoryFilter(f.id)}
+              className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
+                historyFilter === f.id
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >
-              {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+              {f.label}
             </button>
           ))}
         </div>
@@ -394,18 +514,32 @@ export function AdminEnrollmentLeadsTab() {
           appointmentCountsByDate={appointmentCountsByDate}
           renderCard={renderCard}
           emptyMessage={
-            visibleLeads.length === 0
+            visibleActiveLeads.length === 0
               ? (search.trim() ? 'No leads match your search.' : 'No leads in this status.')
               : null
           }
         />
-      ) : visibleLeads.length === 0 ? (
+      ) : activeTab === 'history' ? (
+        renderTerminalList()
+      ) : activeTab === 'all' ? (
+        <div className="space-y-6">
+          {visibleActiveLeads.length > 0 && (
+            <div className="space-y-3">
+              {visibleActiveLeads.map(renderCard)}
+            </div>
+          )}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground">History</h3>
+            {renderTerminalList()}
+          </div>
+        </div>
+      ) : visibleActiveLeads.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
           {search.trim() ? 'No leads match your search.' : 'No leads in this status.'}
         </div>
       ) : (
         <div className="space-y-3">
-          {visibleLeads.map(renderCard)}
+          {visibleActiveLeads.map(renderCard)}
         </div>
       )}
 

@@ -1,5 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getEnrollmentLeads } from '../supabase/queries';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  getActiveEnrollmentLeads,
+  getTerminalEnrollmentLeads,
+  getTerminalLeadCounts,
+  type TerminalLeadFilter,
+} from '../supabase/queries';
 import {
   updateLeadStatus,
   updateLeadAdminNotes,
@@ -11,10 +16,27 @@ import {
 import { queryKeys } from '../queryKeys';
 import type { EnrollmentLead } from '../types';
 
-export function useEnrollmentLeads() {
+export function useActiveLeads() {
   return useQuery({
-    queryKey: queryKeys.enrollmentLeads(),
-    queryFn: getEnrollmentLeads,
+    queryKey: queryKeys.enrollmentLeadsActive(),
+    queryFn: getActiveEnrollmentLeads,
+  });
+}
+
+export function useTerminalLeads(filter: TerminalLeadFilter, search: string) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.enrollmentLeadsTerminal(filter, search),
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      getTerminalEnrollmentLeads({ filter, search: search || undefined, page: pageParam }),
+    getNextPageParam: (last, all) => (last.hasMore ? all.length : undefined),
+  });
+}
+
+export function useTerminalLeadCounts() {
+  return useQuery({
+    queryKey: queryKeys.enrollmentLeadsTerminalCounts(),
+    queryFn: getTerminalLeadCounts,
   });
 }
 

@@ -521,17 +521,6 @@ function mapEnrollmentLeadRow(row: Record<string, unknown>): EnrollmentLead {
   } as EnrollmentLead;
 }
 
-export async function getEnrollmentLeads(): Promise<EnrollmentLead[]> {
-  const { data, error } = await supabase
-    .from('enrollment_leads')
-    .select(ENROLLMENT_LEAD_SELECT)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return (data ?? []).map(mapEnrollmentLeadRow);
-}
-
 const ACTIVE_LEAD_STATUSES = ['new', 'approved', 'appointment_scheduled', 'appointment_confirmed'];
 const TERMINAL_LEAD_STATUSES = ['enrolled', 'closed', 'denied'];
 

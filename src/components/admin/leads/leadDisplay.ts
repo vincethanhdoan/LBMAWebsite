@@ -1,4 +1,5 @@
 import type { EnrollmentLead, EnrollmentLeadNotification } from '../../../lib/types';
+import type { TerminalLeadFilter } from '../../../lib/supabase/queries';
 
 // ─── Program booking helpers ───────────────────────────────────────────────
 
@@ -46,15 +47,15 @@ export type TabId =
   | 'approved'
   | 'appointment_scheduled'
   | 'appointment_confirmed'
-  | 'denied_closed'
+  | 'history'
   | 'all';
 
 export const TABS: { id: TabId; label: string; statuses?: EnrollmentLead['status'][] }[] = [
-  { id: 'new',                   label: 'New',             statuses: ['new'] },
-  { id: 'approved',              label: 'Approved',        statuses: ['approved'] },
-  { id: 'appointment_scheduled', label: 'Scheduled',       statuses: ['appointment_scheduled'] },
-  { id: 'appointment_confirmed', label: 'Confirmed',       statuses: ['appointment_confirmed'] },
-  { id: 'denied_closed',         label: 'Closed / Denied', statuses: ['denied', 'closed'] },
+  { id: 'new',                   label: 'New',       statuses: ['new'] },
+  { id: 'approved',              label: 'Approved',  statuses: ['approved'] },
+  { id: 'appointment_scheduled', label: 'Scheduled', statuses: ['appointment_scheduled'] },
+  { id: 'appointment_confirmed', label: 'Confirmed', statuses: ['appointment_confirmed'] },
+  { id: 'history',               label: 'History' },
   { id: 'all',                   label: 'All' },
 ];
 
@@ -63,10 +64,18 @@ export const TAB_EXPLANATIONS: Partial<Record<TabId, string>> = {
   approved:              'Booking link sent — waiting for the family to pick a date.',
   appointment_scheduled: 'Date selected — waiting for the appointment day.',
   appointment_confirmed: 'Appointment confirmed — family is coming in.',
-  denied_closed:         'Leads that were denied or closed.',
+  history:               'Enrolled, closed, denied, and archived leads.',
 };
 
-export type ClosedDeniedFilter = 'all' | 'denied' | 'closed';
+export type HistoryFilter = TerminalLeadFilter;
+
+export const HISTORY_FILTERS: { id: HistoryFilter; label: string }[] = [
+  { id: 'all_terminal', label: 'All' },
+  { id: 'enrolled',     label: 'Enrolled' },
+  { id: 'closed',       label: 'Closed' },
+  { id: 'denied',       label: 'Denied' },
+  { id: 'archived',     label: 'Archived' },
+];
 
 export function hasPastAppointment(lead: EnrollmentLead, todayKey: string): boolean {
   const date = getLeadPrimaryDate(lead);
@@ -76,28 +85,12 @@ export function hasPastAppointment(lead: EnrollmentLead, todayKey: string): bool
 export function filterLeads(
   leads: EnrollmentLead[],
   tabId: TabId,
-  search: string,
-  closedDeniedFilter: ClosedDeniedFilter
+  search: string
 ): EnrollmentLead[] {
-  let result: EnrollmentLead[];
-
-  if (tabId === 'denied_closed') {
-    switch (closedDeniedFilter) {
-      case 'denied':
-        result = leads.filter(l => l.status === 'denied');
-        break;
-      case 'closed':
-        result = leads.filter(l => l.status === 'closed');
-        break;
-      default:
-        result = leads.filter(l => l.status === 'denied' || l.status === 'closed');
-    }
-  } else {
-    const tab = TABS.find(t => t.id === tabId)!;
-    result = tab.statuses
-      ? leads.filter(l => tab.statuses!.includes(l.status))
-      : leads;
-  }
+  const tab = TABS.find(t => t.id === tabId)!;
+  let result = tab.statuses
+    ? leads.filter(l => tab.statuses!.includes(l.status))
+    : leads;
 
   if (search.trim()) {
     const q = search.toLowerCase();
