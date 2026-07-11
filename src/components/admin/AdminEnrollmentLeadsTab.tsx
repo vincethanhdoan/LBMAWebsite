@@ -110,6 +110,23 @@ export function AdminEnrollmentLeadsTab() {
     [activeLeads, terminalLeads],
   );
 
+  // A loaded lead is a possible duplicate when its email matches an
+  // earlier-created loaded lead — the first occurrence of each email is never flagged.
+  const duplicateLeadIds = useMemo(() => {
+    const earliestByEmail = new Map<string, string>();
+    for (const l of allLoadedLeads) {
+      const email = l.parent_email.trim().toLowerCase();
+      const earliest = earliestByEmail.get(email);
+      if (!earliest || l.created_at < earliest) earliestByEmail.set(email, l.created_at);
+    }
+    const ids = new Set<string>();
+    for (const l of allLoadedLeads) {
+      const email = l.parent_email.trim().toLowerCase();
+      if (l.created_at > earliestByEmail.get(email)!) ids.add(l.lead_id);
+    }
+    return ids;
+  }, [allLoadedLeads]);
+
   useEffect(() => {
     setNotesDraft(d => {
       const next: Record<string, string> = {};
@@ -218,6 +235,8 @@ export function AdminEnrollmentLeadsTab() {
       activeTab={activeTab}
       actions={actions}
       updatingId={updatingId}
+      isPossibleDuplicate={duplicateLeadIds.has(lead.lead_id)}
+      onDuplicateClick={() => setSearch(lead.parent_email)}
       onDeny={setDenyTarget}
       onPickDate={l => setPickDateTargetId(l.lead_id)}
       onEdit={l => setEditTargetId(l.lead_id)}

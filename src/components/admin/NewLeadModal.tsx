@@ -9,11 +9,15 @@ import { Textarea } from '../ui/textarea'
 import { Label } from '../ui/label'
 import { Loader2, X, Plus } from 'lucide-react'
 import { createEnrollmentLead } from '../../lib/supabase/mutations'
-import { getEnrollmentLeadById } from '../../lib/supabase/queries'
+import { getEnrollmentLeadById, findLeadsByEmail } from '../../lib/supabase/queries'
 import { edgeFunctionUserAuthHeaders, supabase } from '../../lib/supabase/client'
 import { queryKeys } from '../../lib/queryKeys'
+import { formatShortDate } from '../../lib/format'
 import type { EnrollmentLead } from '../../lib/types'
+import { STATUS_LABELS } from './leads/leadDisplay'
 import { PickDateModal } from './PickDateModal'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const PROGRAM_LABELS: Record<string, string> = {
   little_dragons: 'Little Dragons',
@@ -37,6 +41,7 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
   const [postAction, setPostAction] = useState<PostAction>('send_link')
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<{ parentName?: string; parentEmail?: string; children?: string }>({})
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
   const [createdLead, setCreatedLead] = useState<EnrollmentLead | null>(null)
 
   function addChild() {
@@ -53,7 +58,7 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
     const errs: { parentName?: string; parentEmail?: string; children?: string } = {}
     if (!parentName.trim()) errs.parentName = 'Required'
     if (!parentEmail.trim()) errs.parentEmail = 'Required'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail)) errs.parentEmail = 'Invalid email'
+    else if (!EMAIL_REGEX.test(parentEmail)) errs.parentEmail = 'Invalid email'
     for (const c of children) {
       const age = Number(c.age)
       if (!c.name.trim() || !c.age) { errs.children = 'Each child requires a name and age.'; break }
@@ -61,6 +66,28 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
     }
     setErrors(errs)
     return Object.keys(errs).length === 0
+  }
+
+  async function handleEmailBlur() {
+    validate()
+    const email = parentEmail.trim()
+    if (!EMAIL_REGEX.test(email)) {
+      setDuplicateWarning(null)
+      return
+    }
+    try {
+      const matches = await findLeadsByEmail(email)
+      if (matches.length > 0) {
+        const [newest] = matches
+        setDuplicateWarning(
+          `A lead already exists for this email: ${newest.parent_name} (${STATUS_LABELS[newest.status]}, ${formatShortDate(newest.created_at)}).`,
+        )
+      } else {
+        setDuplicateWarning(null)
+      }
+    } catch {
+      // Advisory only — a failed check never blocks creation.
+    }
   }
 
   async function handleSubmit() {
@@ -176,8 +203,9 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
             </div>
             <div>
               <Label htmlFor="nl-email">Email *</Label>
-              <Input id="nl-email" type="email" value={parentEmail} onChange={e => setParentEmail(e.target.value)} onBlur={validate} className="mt-1" />
+              <Input id="nl-email" type="email" value={parentEmail} onChange={e => { setParentEmail(e.target.value); setDuplicateWarning(null) }} onBlur={handleEmailBlur} className="mt-1" />
               {errors.parentEmail && <p className="text-xs text-destructive mt-1">{errors.parentEmail}</p>}
+              {duplicateWarning && <p className="text-xs text-amber-700 mt-1">{duplicateWarning}</p>}
             </div>
           </div>
           <div>

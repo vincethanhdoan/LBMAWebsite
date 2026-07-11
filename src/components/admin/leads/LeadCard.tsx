@@ -123,6 +123,8 @@ interface LeadCardProps {
   activeTab: TabId;
   actions: ReturnType<typeof useLeadActions>;
   updatingId: string | null;
+  isPossibleDuplicate: boolean;
+  onDuplicateClick: () => void;
   onDeny: (lead: EnrollmentLead) => void;
   onPickDate: (lead: EnrollmentLead) => void;
   onEdit: (lead: EnrollmentLead) => void;
@@ -150,6 +152,8 @@ export function LeadCard({
   activeTab,
   actions,
   updatingId,
+  isPossibleDuplicate,
+  onDuplicateClick,
   onDeny,
   onPickDate,
   onEdit,
@@ -181,6 +185,15 @@ export function LeadCard({
         <div className="flex items-start justify-between gap-3">
           <span className="font-semibold text-base leading-tight">{lead.parent_name}</span>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {isPossibleDuplicate && (
+              <button
+                type="button"
+                onClick={onDuplicateClick}
+                className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border hover:bg-muted/70 transition-colors"
+              >
+                Possible duplicate
+              </button>
+            )}
             {isCalendarTab && primaryTime ? (
               <div className="text-right">
                 <div className="text-base font-bold text-primary leading-tight tabular-nums">

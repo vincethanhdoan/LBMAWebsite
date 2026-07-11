@@ -634,6 +634,17 @@ export async function getEnrollmentLeadById(leadId: string): Promise<EnrollmentL
   return mapEnrollmentLeadRow(data);
 }
 
+export async function findLeadsByEmail(email: string): Promise<Array<{ lead_id: string; parent_name: string; status: EnrollmentLead['status']; created_at: string }>> {
+  const { data, error } = await supabase
+    .from('enrollment_leads')
+    .select('lead_id, parent_name, status, created_at')
+    .ilike('parent_email', email.trim())
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
 // ============================================
 // FEEDBACK TESTS
 // ============================================
