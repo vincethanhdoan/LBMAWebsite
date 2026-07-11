@@ -563,6 +563,22 @@ export async function upsertAppointmentSlot(input: {
   return data as string;
 }
 
+export async function recordLeadAttendance(
+  leadId: string,
+  attendance: 'attended' | 'no_show'
+): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from('enrollment_leads')
+    .update({
+      attendance_status: attendance,
+      attendance_recorded_at: new Date().toISOString(),
+      attendance_recorded_by: user?.id ?? null,
+    })
+    .eq('lead_id', leadId);
+  if (error) throw error;
+}
+
 // ============================================
 // FEEDBACK TESTS
 // ============================================

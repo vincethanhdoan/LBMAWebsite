@@ -14,6 +14,7 @@ import {
   closeLead,
   archiveEnrollmentLead,
   restoreEnrollmentLead,
+  recordLeadAttendance,
 } from '../supabase/mutations';
 import { queryKeys } from '../queryKeys';
 import type { EnrollmentLead } from '../types';
@@ -128,6 +129,17 @@ export function useRestoreLead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (leadId: string) => restoreEnrollmentLead(leadId),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+    },
+  });
+}
+
+export function useRecordAttendance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ leadId, attendance }: { leadId: string; attendance: 'attended' | 'no_show' }) =>
+      recordLeadAttendance(leadId, attendance),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
     },
