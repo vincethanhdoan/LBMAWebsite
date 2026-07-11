@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   subscribeToAnnouncements,
@@ -14,8 +14,13 @@ import {
 } from '../supabase/realtime';
 import { queryKeys } from '../queryKeys';
 
-export function useRealtimeInvalidation(userId: string) {
+export function useRealtimeInvalidation(userId: string, onSelfProfileChange?: () => void) {
   const queryClient = useQueryClient();
+
+  const selfProfileChangeRef = useRef(onSelfProfileChange);
+  useEffect(() => {
+    selfProfileChangeRef.current = onSelfProfileChange;
+  });
 
   useEffect(() => {
     if (!userId) return;
@@ -72,9 +77,11 @@ export function useRealtimeInvalidation(userId: string) {
         queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
       }),
 
-      subscribeToAdminProfiles(() => {
+      subscribeToAdminProfiles(({ new: n, old: o }) => {
         queryClient.invalidateQueries({ queryKey: queryKeys.admins() });
         queryClient.invalidateQueries({ queryKey: queryKeys.adminEmails() });
+        const changedId = (n as any)?.user_id ?? (o as any)?.user_id;
+        if (changedId === userId) selfProfileChangeRef.current?.();
       }),
 
       subscribeToUserNotifications(userId, () => {

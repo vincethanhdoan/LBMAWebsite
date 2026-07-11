@@ -127,7 +127,7 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
     }
   }, [activeTab, isOwner, setSearchParams]);
 
-  useRealtimeInvalidation(user.id);
+  useRealtimeInvalidation(user.id, onRefreshUser);
 
   return (
     <SidebarProvider>
