@@ -1,8 +1,9 @@
 import { Button } from '../../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu';
-import { Loader2, Mail, Phone, Calendar, Plus, MoreVertical, Check, Pencil, Clock, AlertCircle, Send } from 'lucide-react';
+import { Loader2, Mail, Phone, Calendar, Plus, MoreVertical, Check, Pencil, Clock, AlertCircle, Send, ChevronDown } from 'lucide-react';
 import type { EnrollmentLead, EnrollmentLeadNotification } from '../../../lib/types';
+import { LeadTimeline } from './LeadTimeline';
 import {
   PROGRAM_LABELS,
   PROGRAM_BADGE_STYLES,
@@ -139,6 +140,8 @@ interface LeadCardProps {
   };
   messageExpanded: boolean;
   onToggleMessage: () => void;
+  historyExpanded: boolean;
+  onToggleHistory: () => void;
 }
 
 export function LeadCard({
@@ -157,6 +160,8 @@ export function LeadCard({
   notes,
   messageExpanded,
   onToggleMessage,
+  historyExpanded,
+  onToggleHistory,
 }: LeadCardProps) {
   const isCalendarTab = activeTab === 'appointment_scheduled' || activeTab === 'appointment_confirmed';
   const todayKey = toLocalDateKey(new Date());
@@ -428,6 +433,22 @@ export function LeadCard({
               </Select>
             )}
           </div>
+
+        {/* Activity history */}
+        <div className="border-t border-border/50 pt-3">
+          <button
+            onClick={onToggleHistory}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${historyExpanded ? '' : '-rotate-90'}`} />
+            History
+          </button>
+          {historyExpanded && (
+            <div className="mt-3">
+              <LeadTimeline lead={lead} />
+            </div>
+          )}
+        </div>
 
       </div>
     </div>

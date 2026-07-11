@@ -95,6 +95,7 @@ export function AdminEnrollmentLeadsTab() {
   const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({});
   const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({});
   const [messageExpanded, setMessageExpanded] = useState<Record<string, boolean>>({});
+  const [historyExpanded, setHistoryExpanded] = useState<Record<string, boolean>>({});
   const [selectedWeekDate, setSelectedWeekDate] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
   const [actionLeadId, setActionLeadId] = useState<string | null>(null);
@@ -234,6 +235,8 @@ export function AdminEnrollmentLeadsTab() {
       }}
       messageExpanded={messageExpanded[lead.lead_id] ?? false}
       onToggleMessage={() => setMessageExpanded(e => ({ ...e, [lead.lead_id]: !e[lead.lead_id] }))}
+      historyExpanded={historyExpanded[lead.lead_id] ?? false}
+      onToggleHistory={() => setHistoryExpanded(e => ({ ...e, [lead.lead_id]: !e[lead.lead_id] }))}
     />
   );
 

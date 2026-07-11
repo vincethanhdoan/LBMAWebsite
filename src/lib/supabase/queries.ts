@@ -14,6 +14,7 @@ import type {
   MessageAttachment,
   EnrollmentLead,
   EnrollmentLeadChild,
+  EnrollmentLeadNotification,
   EnrollmentLeadProgramBooking,
   StudentFeedback,
   FeedbackTest,
@@ -504,11 +505,11 @@ const ENROLLMENT_LEAD_SELECT = `
   ${ENROLLMENT_LEAD_COLUMNS},
   children:enrollment_lead_children(child_id, lead_id, name, age, program_type, created_at),
   programBookings:enrollment_lead_program_bookings(booking_id, lead_id, program_type, booking_token, appointment_slot_id, appointment_date, appointment_time, status, created_at),
-  notifications:enrollment_lead_notifications(notification_id, type, status, created_at)
+  notifications:enrollment_lead_notifications(notification_id, type, status, recipient_email, created_at)
 `;
 
 function mapEnrollmentLeadRow(row: Record<string, unknown>): EnrollmentLead {
-  const notifications = (row.notifications ?? []) as Array<{ notification_id: string; type: string; status: string; created_at: string }>;
+  const notifications = (row.notifications ?? []) as EnrollmentLeadNotification[];
   const byRecency = [...notifications].sort((a, b) => b.created_at.localeCompare(a.created_at));
   const reminder = byRecency.find(n => n.type === 'reminder') ?? null;
   const confirmation = byRecency.find(n => n.type === 'booking_confirmation') ?? null;
@@ -516,8 +517,9 @@ function mapEnrollmentLeadRow(row: Record<string, unknown>): EnrollmentLead {
     ...row,
     children: (row.children ?? []) as EnrollmentLeadChild[],
     programBookings: (row.programBookings ?? []) as EnrollmentLeadProgramBooking[],
-    reminderNotification: reminder as EnrollmentLead['reminderNotification'],
-    confirmationNotification: confirmation as EnrollmentLead['confirmationNotification'],
+    reminderNotification: reminder,
+    confirmationNotification: confirmation,
+    notificationHistory: byRecency,
   } as EnrollmentLead;
 }
 
