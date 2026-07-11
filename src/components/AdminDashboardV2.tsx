@@ -73,7 +73,7 @@ type AdminTabId =
 
 const navGroups: {
   label: string;
-  items: { id: AdminTabId; label: string; icon: React.ElementType }[];
+  items: { id: AdminTabId; label: string; icon: React.ElementType; ownerOnly?: boolean }[];
 }[] = [
   {
     label: 'Communications',
@@ -89,6 +89,7 @@ const navGroups: {
     items: [
       { id: 'families', label: 'Families', icon: Users },
       { id: 'feedback', label: 'Student Feedback', icon: Award },
+      { id: 'team', label: 'Team', icon: ShieldCheck, ownerOnly: true },
     ],
   },
   {
@@ -101,7 +102,6 @@ const navGroups: {
 ];
 
 function getTabLabel(id: AdminTabId): string {
-  if (id === 'team') return 'Team';
   if (id === 'settings') return 'Settings';
   for (const group of navGroups) {
     const item = group.items.find((i) => i.id === id);
@@ -113,7 +113,7 @@ function getTabLabel(id: AdminTabId): string {
 export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: AdminDashboardV2Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
-  const activeTab: AdminTabId = rawTab === 'profile' ? 'settings' : ((rawTab as AdminTabId) ?? 'announcements');
+  const activeTab: AdminTabId = rawTab === 'profile' ? 'settings' : ((rawTab as AdminTabId) ?? 'notifications');
   const queryClient = useQueryClient();
   const setActiveTab = (tab: AdminTabId) => setSearchParams({ tab }, { replace: true });
   const { data: counts } = useSidebarCounts(user.id);
@@ -154,7 +154,9 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
               <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {group.items.map(({ id, label, icon: Icon }) => (
+                  {group.items
+                    .filter((item) => !item.ownerOnly || isOwner)
+                    .map(({ id, label, icon: Icon }) => (
                     <SidebarMenuItem key={id}>
                       <SidebarMenuButton
                         isActive={activeTab === id}
@@ -206,24 +208,6 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
                       )}
                     </SidebarMenuItem>
                   ))}
-                  {group.label === 'Management' && isOwner && (
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        isActive={activeTab === 'team'}
-                        onClick={() => setActiveTab('team')}
-                        tooltip="Team"
-                        size="lg"
-                        className={
-                          activeTab === 'team'
-                            ? 'border-l-[3px] border-sidebar-primary rounded-tl-none rounded-bl-none pl-[calc(0.5rem-3px)]'
-                            : ''
-                        }
-                      >
-                        <ShieldCheck />
-                        <span>Team</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
