@@ -122,7 +122,8 @@ export function AdminTeamTab({
 
   const handleInvite = async () => {
     if (isInviting) return;
-    if (!isValidEmail(inviteEmail)) {
+    const email = inviteEmail.trim();
+    if (!isValidEmail(email)) {
       toast.error('Enter a valid email address');
       return;
     }
@@ -130,10 +131,10 @@ export function AdminTeamTab({
     try {
       await invokeEdgeFunction('invite-admin', {
         action: 'invite',
-        email: inviteEmail,
+        email,
         name: inviteName.trim() || undefined,
       });
-      toast.success(`Invite sent to ${inviteEmail}`);
+      toast.success(`Invite sent to ${email}`);
       setInviteEmail('');
       setInviteName('');
       setIsInviteOpen(false);
