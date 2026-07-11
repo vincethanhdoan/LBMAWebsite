@@ -106,7 +106,7 @@ function ChildrenSection({ lead }: { lead: EnrollmentLead }) {
   )
 }
 
-function AgingIndicator({ createdAt, now }: { createdAt: string; now: number }) {
+export function AgingIndicator({ createdAt, now }: { createdAt: string; now: number }) {
   const days = Math.floor((now - new Date(createdAt).getTime()) / 86_400_000);
   const label = days === 0 ? 'today' : days === 1 ? '1d ago' : `${days}d ago`;
   return (

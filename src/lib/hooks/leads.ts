@@ -15,12 +15,18 @@ import {
 } from '../supabase/mutations';
 import { queryKeys } from '../queryKeys';
 import type { EnrollmentLead } from '../types';
+import { deriveActionNeeded } from '../../components/admin/leads/actionNeeded';
 
 export function useActiveLeads() {
   return useQuery({
     queryKey: queryKeys.enrollmentLeadsActive(),
     queryFn: getActiveEnrollmentLeads,
   });
+}
+
+export function useActionNeededCount(): number {
+  const { data } = useActiveLeads();
+  return deriveActionNeeded(data ?? []).length;
 }
 
 export function useTerminalLeads(filter: TerminalLeadFilter, search: string) {

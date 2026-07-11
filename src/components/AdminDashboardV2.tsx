@@ -29,6 +29,7 @@ import { AdminAvailabilitySettings } from './admin/AdminAvailabilitySettings';
 import { AdminProfileTab } from './admin/AdminProfileTab';
 import { AdminTeamTab } from './admin/AdminTeamTab';
 import { useSidebarCounts } from '../lib/hooks/notifications';
+import { useActionNeededCount } from '../lib/hooks/leads';
 import { useRealtimeInvalidation } from '../lib/hooks/useRealtimeInvalidation';
 import { markSectionSeen } from '../lib/supabase/mutations';
 import { queryKeys } from '../lib/queryKeys';
@@ -112,6 +113,7 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
   const unreadMessages = counts?.unreadMessages ?? 0;
   const unreadAnnouncements = counts?.unreadAnnouncements ?? 0;
   const unreadBlog = counts?.unreadBlog ?? 0;
+  const actionNeededCount = useActionNeededCount();
 
   useRealtimeInvalidation(user.id);
 
@@ -182,6 +184,11 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
                       {id === 'blog' && unreadBlog > 0 && (
                         <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
                           {unreadBlog > 9 ? '9+' : unreadBlog}
+                        </SidebarMenuBadge>
+                      )}
+                      {id === 'leads' && actionNeededCount > 0 && (
+                        <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
+                          {actionNeededCount > 9 ? '9+' : actionNeededCount}
                         </SidebarMenuBadge>
                       )}
                     </SidebarMenuItem>

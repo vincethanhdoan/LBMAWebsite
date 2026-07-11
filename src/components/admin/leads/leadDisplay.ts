@@ -43,6 +43,7 @@ export function effectiveConfirmationNotification(lead: EnrollmentLead): Enrollm
 // ─── Tab config ────────────────────────────────────────────────────────────
 
 export type TabId =
+  | 'action_needed'
   | 'new'
   | 'approved'
   | 'appointment_scheduled'
@@ -51,6 +52,7 @@ export type TabId =
   | 'all';
 
 export const TABS: { id: TabId; label: string; statuses?: EnrollmentLead['status'][] }[] = [
+  { id: 'action_needed',         label: 'Action Needed' },
   { id: 'new',                   label: 'New',       statuses: ['new'] },
   { id: 'approved',              label: 'Approved',  statuses: ['approved'] },
   { id: 'appointment_scheduled', label: 'Scheduled', statuses: ['appointment_scheduled'] },
@@ -60,6 +62,7 @@ export const TABS: { id: TabId; label: string; statuses?: EnrollmentLead['status
 ];
 
 export const TAB_EXPLANATIONS: Partial<Record<TabId, string>> = {
+  action_needed:         'Everything that needs a decision or a nudge.',
   new:                   'Fresh inquiries — approve to send a booking invite, or deny.',
   approved:              'Booking link sent — waiting for the family to pick a date.',
   appointment_scheduled: 'Date selected — waiting for the appointment day.',
@@ -82,26 +85,28 @@ export function hasPastAppointment(lead: EnrollmentLead, todayKey: string): bool
   return date !== null && date < todayKey;
 }
 
+export function leadMatchesSearch(lead: EnrollmentLead, search: string): boolean {
+  const q = search.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    lead.parent_name.toLowerCase().includes(q) ||
+    lead.parent_email.toLowerCase().includes(q) ||
+    (lead.student_name?.toLowerCase().includes(q) ?? false) ||
+    (lead.children?.some(c => c.name.toLowerCase().includes(q)) ?? false)
+  );
+}
+
 export function filterLeads(
   leads: EnrollmentLead[],
   tabId: TabId,
   search: string
 ): EnrollmentLead[] {
   const tab = TABS.find(t => t.id === tabId)!;
-  let result = tab.statuses
+  const result = tab.statuses
     ? leads.filter(l => tab.statuses!.includes(l.status))
     : leads;
 
-  if (search.trim()) {
-    const q = search.toLowerCase();
-    result = result.filter(l =>
-      l.parent_name.toLowerCase().includes(q) ||
-      l.parent_email.toLowerCase().includes(q) ||
-      (l.student_name?.toLowerCase().includes(q) ?? false) ||
-      (l.children?.some(c => c.name.toLowerCase().includes(q)) ?? false)
-    );
-  }
-  return result;
+  return result.filter(l => leadMatchesSearch(l, search));
 }
 
 // ─── Status display ────────────────────────────────────────────────────────

@@ -12,9 +12,12 @@ import { PickDateModal } from './PickDateModal';
 import { NewLeadModal } from './NewLeadModal';
 import { LeadCard } from './leads/LeadCard';
 import { LeadCalendarView } from './leads/LeadCalendarView';
+import { ActionNeededView } from './leads/ActionNeededView';
 import { useLeadActions } from './leads/useLeadActions';
+import { deriveActionNeeded } from './leads/actionNeeded';
 import {
   filterLeads,
+  leadMatchesSearch,
   hasPastAppointment,
   toLocalDateKey,
   getLeadPrimaryDate,
@@ -80,7 +83,7 @@ export function AdminEnrollmentLeadsTab() {
   const actions = useLeadActions({ onError: msg => toast.error(msg) });
   const [now] = useState(Date.now);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>('new');
+  const [activeTab, setActiveTab] = useState<TabId>('action_needed');
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [denyTarget, setDenyTarget] = useState<EnrollmentLead | null>(null);
@@ -295,6 +298,8 @@ export function AdminEnrollmentLeadsTab() {
   // ─── Derived data ──────────────────────────────────────────────────────────
 
   const visibleActiveLeads = filterLeads(activeLeads, activeTab, search);
+  const actionNeededItems = deriveActionNeeded(activeLeads);
+  const visibleActionNeededItems = actionNeededItems.filter(i => leadMatchesSearch(i.lead, search));
   const todayKey = toLocalDateKey(new Date());
   const newCount = activeLeads.filter(l => l.status === 'new').length;
   const approvedCount = activeLeads.filter(l => l.status === 'approved').length;
@@ -419,9 +424,11 @@ export function AdminEnrollmentLeadsTab() {
         <div className="flex gap-0 overflow-x-auto">
           {TABS.map(tab => {
             const isActive = activeTab === tab.id;
-            const count = tab.id === 'history'
-              ? historyBadgeCount(terminalCounts, historyFilter)
-              : tabCount(activeLeads, tab, todayKey);
+            const count = tab.id === 'action_needed'
+              ? actionNeededItems.length
+              : tab.id === 'history'
+                ? historyBadgeCount(terminalCounts, historyFilter)
+                : tabCount(activeLeads, tab, todayKey);
             return (
               <button
                 key={tab.id}
@@ -498,7 +505,15 @@ export function AdminEnrollmentLeadsTab() {
       )}
 
       {/* Lead list */}
-      {isCalendarTab ? (
+      {activeTab === 'action_needed' ? (
+        <ActionNeededView
+          items={visibleActionNeededItems}
+          now={now}
+          actions={actions}
+          onPickDate={l => setPickDateTargetId(l.lead_id)}
+          onDeny={setDenyTarget}
+        />
+      ) : isCalendarTab ? (
         <LeadCalendarView
           dateGroups={dateGroups}
           pastDateGroups={pastDateGroups}
