@@ -635,10 +635,12 @@ export async function getEnrollmentLeadById(leadId: string): Promise<EnrollmentL
 }
 
 export async function findLeadsByEmail(email: string): Promise<Array<{ lead_id: string; parent_name: string; status: EnrollmentLead['status']; created_at: string }>> {
+  // Escape ILIKE wildcards so emails containing `_` or `%` match literally.
+  const pattern = email.trim().replace(/[\\%_]/g, (c) => `\\${c}`);
   const { data, error } = await supabase
     .from('enrollment_leads')
     .select('lead_id, parent_name, status, created_at')
-    .ilike('parent_email', email.trim())
+    .ilike('parent_email', pattern)
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
   if (error) throw error;

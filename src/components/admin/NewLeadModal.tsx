@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { FunctionsHttpError } from '@supabase/supabase-js'
@@ -42,6 +42,8 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<{ parentName?: string; parentEmail?: string; children?: string }>({})
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
+  // Mirrors parentEmail so an in-flight duplicate check can detect the field changed.
+  const parentEmailRef = useRef(parentEmail)
   const [createdLead, setCreatedLead] = useState<EnrollmentLead | null>(null)
 
   function addChild() {
@@ -77,6 +79,7 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
     }
     try {
       const matches = await findLeadsByEmail(email)
+      if (parentEmailRef.current.trim() !== email) return // field changed while checking
       if (matches.length > 0) {
         const [newest] = matches
         setDuplicateWarning(
@@ -203,7 +206,7 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
             </div>
             <div>
               <Label htmlFor="nl-email">Email *</Label>
-              <Input id="nl-email" type="email" value={parentEmail} onChange={e => { setParentEmail(e.target.value); setDuplicateWarning(null) }} onBlur={handleEmailBlur} className="mt-1" />
+              <Input id="nl-email" type="email" value={parentEmail} onChange={e => { setParentEmail(e.target.value); parentEmailRef.current = e.target.value; setDuplicateWarning(null) }} onBlur={handleEmailBlur} className="mt-1" />
               {errors.parentEmail && <p className="text-xs text-destructive mt-1">{errors.parentEmail}</p>}
               {duplicateWarning && <p className="text-xs text-amber-700 mt-1">{duplicateWarning}</p>}
             </div>
