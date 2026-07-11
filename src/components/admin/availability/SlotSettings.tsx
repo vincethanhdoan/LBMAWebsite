@@ -21,8 +21,20 @@ const WEEK_OPTIONS: { value: number | null; label: string }[] = [
   { value: -1,   label: 'Last' },
 ]
 
+const DURATION_OPTIONS = Array.from({ length: 16 }, (_, i) => (i + 1) * 15)
+
+function durationLabel(minutes: number): string {
+  return minutes % 60 === 0 ? `${minutes / 60} hour${minutes / 60 > 1 ? 's' : ''}` : `${minutes} min`
+}
+
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+}
+
 function slotScheduleLabel(slot: AppointmentSlot): string {
-  return new Date('1970-01-01T' + slot.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  const start = new Date('1970-01-01T' + slot.start_time)
+  const end = new Date(start.getTime() + slot.duration_minutes * 60000)
+  return `${formatTime(start)} – ${formatTime(end)}`
 }
 
 function slotFrequencyLabel(slot: AppointmentSlot): string {
@@ -45,6 +57,8 @@ export function SlotSettings() {
   const [slotWeekOfMonth, setSlotWeekOfMonth] = useState<number | null>(null)
   const [slotStart, setSlotStart] = useState('')
   const [slotProgramType, setSlotProgramType] = useState<'little_dragons' | 'youth' | 'all'>('all')
+  const [slotDuration, setSlotDuration] = useState(60)
+  const [slotError, setSlotError] = useState<string | null>(null)
   const [slotSaving, setSlotSaving] = useState(false)
 
   const loadSlots = useCallback(async () => {
@@ -65,6 +79,8 @@ export function SlotSettings() {
     setSlotWeekOfMonth(slot.week_of_month ?? null)
     setSlotStart(slot.start_time.slice(0, 5))
     setSlotProgramType((slot.program_type ?? 'all') as 'little_dragons' | 'youth' | 'all')
+    setSlotDuration(slot.duration_minutes)
+    setSlotError(null)
     setShowSlotForm(true)
   }
 
@@ -74,30 +90,50 @@ export function SlotSettings() {
     setSlotWeekOfMonth(null)
     setSlotStart('')
     setSlotProgramType('all')
+    setSlotDuration(60)
+    setSlotError(null)
     setShowSlotForm(false)
   }
 
   async function saveSlot() {
+    setSlotError(null)
+    const dayOfWeek = parseInt(slotDay)
+    const startNorm = slotStart.slice(0, 5)
+    const duplicate = slots.some(s =>
+      s.slot_id !== editSlotId &&
+      s.is_active &&
+      s.day_of_week === dayOfWeek &&
+      s.start_time.slice(0, 5) === startNorm &&
+      (s.week_of_month ?? null) === slotWeekOfMonth &&
+      (s.program_type === 'all' || slotProgramType === 'all' || s.program_type === slotProgramType)
+    )
+    if (duplicate) {
+      setSlotError('A slot with this day, time, and program already exists.')
+      return
+    }
     const freq = WEEK_OPTIONS.find(o => o.value === slotWeekOfMonth)?.label ?? 'Every'
-    const autoLabel = `${freq} ${DAY_NAMES[parseInt(slotDay)]}`
-    const durationMinutes = editSlotId
-      ? slots.find(s => s.slot_id === editSlotId)?.duration_minutes ?? 60
-      : 60
+    const autoLabel = `${freq} ${DAY_NAMES[dayOfWeek]}`
     setSlotSaving(true)
     try {
       await upsertAppointmentSlot({
         slotId: editSlotId ?? undefined,
-        dayOfWeek: parseInt(slotDay),
+        dayOfWeek,
         startTime: slotStart,
-        durationMinutes,
+        durationMinutes: slotDuration,
         label: autoLabel,
         weekOfMonth: slotWeekOfMonth,
         programType: slotProgramType,
       })
       await loadSlots()
       resetSlotForm()
-    } catch {
-      toast.error('Failed to save slot')
+      toast.success('Slot saved')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ''
+      if (/midnight|duration_minutes|program_type/.test(message)) {
+        toast.error(message)
+      } else {
+        toast.error('Failed to save slot')
+      }
     } finally {
       setSlotSaving(false)
     }
@@ -106,7 +142,7 @@ export function SlotSettings() {
   async function deleteSlot(slotId: string) {
     const { error } = await supabase.rpc('delete_appointment_slot', { p_slot_id: slotId })
     if (error) { toast.error('Failed to delete slot') }
-    else { await loadSlots() }
+    else { await loadSlots(); toast.success('Slot removed') }
     setDeleteSlotTarget(null)
   }
 
@@ -140,7 +176,7 @@ export function SlotSettings() {
                   <div>
                     <span className="font-medium text-sm">{slotScheduleLabel(slot)}</span>
                     <span className="text-xs text-muted-foreground ml-2">
-                      {slotFrequencyLabel(slot)} · {slot.program_type === 'all' ? 'All programs' : slot.program_type === 'little_dragons' ? 'Little Dragons' : 'Youth Program'}
+                      {durationLabel(slot.duration_minutes)} · {slotFrequencyLabel(slot)} · {slot.program_type === 'all' ? 'All programs' : slot.program_type === 'little_dragons' ? 'Little Dragons' : 'Youth Program'}
                     </span>
                   </div>
                   <div className="flex gap-1.5">
@@ -199,6 +235,13 @@ export function SlotSettings() {
             <Label>Start time</Label>
             <Input type="time" value={slotStart} onChange={e => setSlotStart(e.target.value)} className="mt-1" />
           </div>
+          <div>
+            <Label>Length</Label>
+            <select value={slotDuration} onChange={e => setSlotDuration(parseInt(e.target.value))} className="mt-1 w-full rounded border px-3 py-2 text-sm bg-background">
+              {DURATION_OPTIONS.map(m => <option key={m} value={m}>{durationLabel(m)}</option>)}
+            </select>
+          </div>
+          {slotError && <p className="text-sm text-destructive">{slotError}</p>}
           <div className="flex gap-2 justify-end">
             <Button size="sm" variant="ghost" onClick={resetSlotForm}>Cancel</Button>
             <Button size="sm" onClick={saveSlot} disabled={slotSaving || !slotStart}>
@@ -213,7 +256,7 @@ export function SlotSettings() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this time slot?</AlertDialogTitle>
             <AlertDialogDescription>
-              Families will no longer be able to book it.
+              Families can no longer book this slot. Existing appointments are unaffected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
