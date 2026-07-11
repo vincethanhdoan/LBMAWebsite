@@ -79,6 +79,11 @@ export function AdminEnrollmentLeadsTab() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [detailLeadId, setDetailLeadId] = useState<string | null>(null);
+  // Snapshot passed by a view whose lead may be absent from the shell's loaded
+  // pages (AllLeadsView under a typed search, a status filter, or deeper
+  // pagination). Used only when the live lookup misses, so fresher query data
+  // always wins.
+  const [fallbackLead, setFallbackLead] = useState<EnrollmentLead | null>(null);
   const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(null);
   const [allInitialFilter, setAllInitialFilter] = useState<AllLeadsFilter | undefined>(undefined);
 
@@ -115,6 +120,16 @@ export function AdminEnrollmentLeadsTab() {
 
   function goToView(next: LeadView) {
     setSearchParams({ tab: 'leads', view: next }, { replace: true });
+  }
+
+  function openLead(leadId: string, lead?: EnrollmentLead) {
+    setDetailLeadId(leadId);
+    setFallbackLead(lead ?? null);
+  }
+
+  function closeDetail() {
+    setDetailLeadId(null);
+    setFallbackLead(null);
   }
 
   // Overview day taps and the "open calendar" link route to the appointments
@@ -181,10 +196,15 @@ export function AdminEnrollmentLeadsTab() {
   }, [highlightedLeadId]);
 
   // Modal + panel targets resolve live from query data so their contents track
-  // mutations; if a lead leaves every dataset, drop the reference.
-  const detailLead = detailLeadId
+  // mutations. The detail panel falls back to the snapshot the opening view
+  // passed when the lead isn't in the loaded pages; a fallback-resolved lead is
+  // exempt from close-on-disappear since it will never appear in those pages.
+  const liveDetailLead = detailLeadId
     ? allLoadedLeads.find(l => l.lead_id === detailLeadId) ?? null
     : null;
+  const detailLead =
+    liveDetailLead ??
+    (fallbackLead && fallbackLead.lead_id === detailLeadId ? fallbackLead : null);
   const pickDateTarget = pickDateTargetId
     ? activeLeads.find(l => l.lead_id === pickDateTargetId) ?? null
     : null;
@@ -288,7 +308,7 @@ export function AdminEnrollmentLeadsTab() {
           blocks={blocks}
           now={now}
           actions={actions}
-          onOpenLead={setDetailLeadId}
+          onOpenLead={openLead}
           onDeny={setDenyTarget}
           onGoToAppointments={goToAppointments}
           onGoToPipeline={() => goToView('pipeline')}
@@ -301,7 +321,7 @@ export function AdminEnrollmentLeadsTab() {
           leads={activeLeads}
           now={now}
           actions={actions}
-          onOpenLead={setDetailLeadId}
+          onOpenLead={openLead}
           onDeny={setDenyTarget}
           onNewLead={() => setShowNewLeadModal(true)}
           highlightedLeadId={highlightedLeadId}
@@ -313,7 +333,7 @@ export function AdminEnrollmentLeadsTab() {
           leads={activeLeads}
           blocks={blocks}
           actions={actions}
-          onOpenLead={setDetailLeadId}
+          onOpenLead={openLead}
           onManageAvailability={() => setSearchParams({ tab: 'availability' })}
           initialSelectedDate={dateParam}
           highlightedLeadId={highlightedLeadId}
@@ -323,7 +343,7 @@ export function AdminEnrollmentLeadsTab() {
       {view === 'all' && (
         <AllLeadsView
           activeLeads={activeLeads}
-          onOpenLead={setDetailLeadId}
+          onOpenLead={openLead}
           highlightedLeadId={highlightedLeadId}
           initialFilter={allInitialFilter}
         />
@@ -332,7 +352,7 @@ export function AdminEnrollmentLeadsTab() {
       {detailLead && (
         <LeadDetailPanel
           lead={detailLead}
-          onClose={() => setDetailLeadId(null)}
+          onClose={closeDetail}
           actions={actions}
           onEdit={l => setEditTargetId(l.lead_id)}
           onDeny={setDenyTarget}

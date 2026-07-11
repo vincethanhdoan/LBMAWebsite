@@ -68,7 +68,10 @@ export function AllLeadsView({
   initialFilter,
 }: {
   activeLeads: EnrollmentLead[];
-  onOpenLead: (leadId: string) => void;
+  // The lead rides along with its id because rows here can come from filtered
+  // or searched terminal queries the shell doesn't load; the shell keeps it as
+  // a fallback for the detail panel when its own lookup misses.
+  onOpenLead: (leadId: string, lead?: EnrollmentLead) => void;
   highlightedLeadId: string | null;
   initialFilter?: AllLeadsFilter;
 }): JSX.Element {
@@ -148,7 +151,7 @@ export function AllLeadsView({
         titleMeta={titleMeta(lead)}
         line2={line2}
         badge={kind ? <StatusBadge kind={kind} /> : undefined}
-        onOpen={() => onOpenLead(lead.lead_id)}
+        onOpen={() => onOpenLead(lead.lead_id, lead)}
       />
     );
   }
@@ -178,7 +181,7 @@ export function AllLeadsView({
               Restore
             </Button>
           }
-          onOpen={() => onOpenLead(lead.lead_id)}
+          onOpen={() => onOpenLead(lead.lead_id, lead)}
         />
       );
     }
@@ -194,7 +197,7 @@ export function AllLeadsView({
         titleMeta={titleMeta(lead)}
         line2={line2}
         badge={kind ? <StatusBadge kind={kind} /> : undefined}
-        onOpen={() => onOpenLead(lead.lead_id)}
+        onOpen={() => onOpenLead(lead.lead_id, lead)}
       />
     );
   }
