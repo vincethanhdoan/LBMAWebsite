@@ -208,13 +208,17 @@ export function AdminEnrollmentLeadsTab() {
   const pickDateTarget = pickDateTargetId
     ? activeLeads.find(l => l.lead_id === pickDateTargetId) ?? null
     : null;
-  const editTarget = editTargetId
+  const liveEditTarget = editTargetId
     ? allLoadedLeads.find(l => l.lead_id === editTargetId) ?? null
     : null;
+  const editTarget =
+    liveEditTarget ??
+    (fallbackLead && fallbackLead.lead_id === editTargetId ? fallbackLead : null);
 
   useEffect(() => {
     if (detailLeadId && !detailLead && !activeLoading && !terminalLoading) {
       setDetailLeadId(null);
+      setFallbackLead(null);
     }
   }, [detailLeadId, detailLead, activeLoading, terminalLoading]);
 
