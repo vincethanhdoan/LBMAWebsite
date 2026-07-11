@@ -89,6 +89,24 @@ export function relativeDayLabel(dateKey: string): string | null {
 }
 
 /**
+ * Format a timestamp as a compact relative time.
+ * e.g. "just now", "5m ago", "3h ago", "2d ago"; falls back to a short date
+ * past 30 days. Returns "" for an unparseable input.
+ */
+export function formatRelativeTime(dateString: string): string {
+  const then = new Date(dateString).getTime();
+  if (Number.isNaN(then)) return '';
+  const minutes = Math.floor((Date.now() - then) / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return formatShortDate(dateString);
+}
+
+/**
  * Calculate age in whole years from a date-of-birth string.
  */
 export function calculateAge(dateOfBirth: string | null): number {

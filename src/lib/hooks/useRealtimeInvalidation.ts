@@ -8,6 +8,7 @@ import {
   subscribeToConversations,
   subscribeToAllMessages,
   subscribeToEnrollmentLeads,
+  subscribeToAdminProfiles,
   subscribeToUserNotifications,
   unsubscribe,
 } from '../supabase/realtime';
@@ -69,6 +70,11 @@ export function useRealtimeInvalidation(userId: string) {
 
       subscribeToEnrollmentLeads(() => {
         queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+      }),
+
+      subscribeToAdminProfiles(() => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.admins() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.adminEmails() });
       }),
 
       subscribeToUserNotifications(userId, () => {

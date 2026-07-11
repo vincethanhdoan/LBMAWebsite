@@ -336,6 +336,35 @@ export function subscribeToEnrollmentLeads(
 }
 
 // ============================================
+// ADMIN PROFILES
+// ============================================
+
+export function subscribeToAdminProfiles(
+  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
+): RealtimeChannel {
+  const channel = supabase
+    .channel('admin-profiles-changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'profiles',
+      },
+      (payload) => {
+        callback({
+          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+          new: payload.new,
+          old: payload.old,
+        });
+      }
+    )
+    .subscribe();
+
+  return channel;
+}
+
+// ============================================
 // USER NOTIFICATIONS
 // ============================================
 

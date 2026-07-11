@@ -914,7 +914,9 @@ export async function getAdminNotificationSettings(): Promise<AdminNotificationS
   return data ?? []
 }
 
-export async function getAdminEmails(): Promise<{ user_id: string; email: string; display_name: string }[]> {
+export async function getAdminEmails(): Promise<
+  { user_id: string; email: string; display_name: string; last_sign_in_at: string | null; invited_at: string | null }[]
+> {
   const { data, error } = await supabase.rpc('get_admin_emails')
   if (error) throw error
   return data ?? []
