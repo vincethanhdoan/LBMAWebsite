@@ -8,6 +8,8 @@ import { supabase } from '../../../lib/supabase/client'
 import { getAppointmentSlots } from '../../../lib/supabase/queries'
 import { upsertAppointmentSlot } from '../../../lib/supabase/mutations'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../ui/alert-dialog'
+import { SectionHeader, Surface } from '../leads/ui'
+import { PROGRAM_LABELS } from '../leads/leadDisplay'
 import type { AppointmentSlot } from '../../../lib/types'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -146,50 +148,45 @@ export function SlotSettings() {
     setDeleteSlotTarget(null)
   }
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-
-  const slotsByDay = DAY_NAMES
-    .map((name, day) => ({
-      day,
-      name,
-      slots: slots
-        .filter(s => s.day_of_week === day)
-        .sort((a, b) => a.start_time.localeCompare(b.start_time) || weekSortIndex(a.week_of_month) - weekSortIndex(b.week_of_month)),
-    }))
-    .filter(g => g.slots.length > 0)
+  const sortedSlots = [...slots].sort((a, b) =>
+    a.day_of_week - b.day_of_week ||
+    a.start_time.localeCompare(b.start_time) ||
+    weekSortIndex(a.week_of_month) - weekSortIndex(b.week_of_month)
+  )
 
   return (
-    <div className="rounded-lg border p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-base">Appointment Availability</h3>
-        <Button size="sm" variant="outline" onClick={() => { resetSlotForm(); setShowSlotForm(true) }} className="gap-1.5">
-          <Plus className="w-4 h-4" />Add Slot
-        </Button>
-      </div>
-      <div className="space-y-4">
-        {slotsByDay.map(group => (
-          <div key={group.day}>
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">{group.name}</h4>
-            <div className="space-y-2">
-              {group.slots.map(slot => (
-                <div key={slot.slot_id} className="flex items-center justify-between min-h-[44px] px-3 py-2 rounded border">
-                  <div>
-                    <span className="font-medium text-sm">{slotScheduleLabel(slot)}</span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      {durationLabel(slot.duration_minutes)} · {slotFrequencyLabel(slot)} · {slot.program_type === 'all' ? 'All programs' : slot.program_type === 'little_dragons' ? 'Little Dragons' : 'Youth Program'}
-                    </span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditSlot(slot)}><Pencil className="w-3.5 h-3.5" /></Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteSlotTarget(slot.slot_id)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                  </div>
-                </div>
-              ))}
+    <section>
+      <SectionHeader
+        title="Weekly slots"
+        action={
+          <Button size="sm" variant="outline" onClick={() => { resetSlotForm(); setShowSlotForm(true) }} className="gap-1.5">
+            <Plus className="w-4 h-4" />Add slot
+          </Button>
+        }
+      />
+      <p className="text-[13px] text-muted-foreground mb-3">Families pick from these times when they book.</p>
+      <Surface>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+        ) : sortedSlots.length === 0 ? (
+          <p className="text-[13px] text-muted-foreground px-4 py-3">No appointment slots configured.</p>
+        ) : (
+          sortedSlots.map(slot => (
+            <div key={slot.slot_id} className="flex items-center gap-3 px-4 py-3 border-t border-border first:border-t-0">
+              <span className="text-[13px] font-semibold w-24 flex-shrink-0">
+                {slotFrequencyLabel(slot)} {DAY_NAMES[slot.day_of_week].slice(0, 3)}
+              </span>
+              <span className="flex-1 min-w-0 text-[13px] truncate">
+                {slotScheduleLabel(slot)} · {durationLabel(slot.duration_minutes)} · {slot.program_type === 'all' ? 'Both programs' : PROGRAM_LABELS[slot.program_type]}
+              </span>
+              <div className="flex gap-1.5 flex-shrink-0">
+                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditSlot(slot)}><Pencil className="w-3.5 h-3.5" /></Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteSlotTarget(slot.slot_id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+              </div>
             </div>
-          </div>
-        ))}
-        {slots.length === 0 && <p className="text-sm text-muted-foreground">No appointment slots configured.</p>}
-      </div>
+          ))
+        )}
+      </Surface>
 
       {showSlotForm && (
         <div className="mt-4 p-4 rounded border bg-muted/30 space-y-3">
@@ -270,6 +267,6 @@ export function SlotSettings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </section>
   )
 }

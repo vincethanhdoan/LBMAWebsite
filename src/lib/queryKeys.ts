@@ -5,7 +5,6 @@ export const queryKeys = {
   enrollmentLeadsActive: () => ['enrollment-leads', 'active'] as const,
   enrollmentLeadsTerminal: (filter: string, search: string) => ['enrollment-leads', 'terminal', filter, search] as const,
   enrollmentLeadsTerminalCounts: () => ['enrollment-leads', 'terminal-counts'] as const,
-  upcomingBookings: () => ['enrollment-leads', 'upcoming-bookings'] as const,
   announcements: () => ['announcements'] as const,
   announcementComments: (announcementId: string) => ['announcement-comments', announcementId] as const,
   blogPosts: () => ['blog-posts'] as const,

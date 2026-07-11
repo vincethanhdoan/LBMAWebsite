@@ -26,7 +26,6 @@ import type {
   UserNotificationPreferences,
   AdminNotificationPreferences,
 } from '../types';
-import { pacificTodayISO } from '../pacificTime';
 import {
   ANNOUNCEMENT_COLUMNS,
   ANNOUNCEMENT_COMMENT_COLUMNS,
@@ -874,35 +873,6 @@ export async function getBlockedDates(): Promise<BlockedDate[]> {
     .order('start_date');
   if (error) throw error;
   return (data ?? []) as BlockedDate[];
-}
-
-// ============================================
-// UPCOMING BOOKINGS AGENDA
-// ============================================
-
-export type UpcomingBooking = {
-  booking_id: string;
-  program_type: 'little_dragons' | 'youth';
-  appointment_date: string;
-  appointment_time: string | null;
-  status: 'scheduled' | 'confirmed';
-  lead: { lead_id: string; parent_name: string; deleted_at: string | null } | null;
-};
-
-export async function getUpcomingBookings(): Promise<UpcomingBooking[]> {
-  const today = pacificTodayISO();
-  const horizon = new Date(today + 'T12:00:00');
-  horizon.setDate(horizon.getDate() + 56);
-  const { data, error } = await supabase
-    .from('enrollment_lead_program_bookings')
-    .select('booking_id, program_type, appointment_date, appointment_time, status, lead:enrollment_leads(lead_id, parent_name, deleted_at)')
-    .in('status', ['scheduled', 'confirmed'])
-    .gte('appointment_date', today)
-    .lte('appointment_date', horizon.toISOString().slice(0, 10))
-    .order('appointment_date')
-    .order('appointment_time');
-  if (error) throw error;
-  return ((data ?? []) as unknown as UpcomingBooking[]).filter((b) => b.lead && b.lead.deleted_at === null);
 }
 
 // ============================================

@@ -6,6 +6,7 @@ import { Loader2, Trash2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase/client'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../ui/alert-dialog'
+import { SectionHeader, Surface } from '../leads/ui'
 import type { BlockedDate } from '../../../lib/types'
 import { blockDateLabel } from './blockDisplay'
 
@@ -62,28 +63,32 @@ export function BlockedDates({ blocks, loading, onRefetch }: BlockedDatesProps) 
     setRemoveBlockTarget(null)
   }
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-
   return (
-    <div className="rounded-lg border p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-base">Blocked Dates</h3>
-        <Button size="sm" variant="outline" onClick={() => setShowBlockForm(true)} className="gap-1.5">
-          <Plus className="w-4 h-4" />Block Dates
-        </Button>
-      </div>
-      <div className="space-y-1.5">
-        {blocks.map(b => (
-          <div key={b.block_id} className="flex items-center justify-between min-h-[44px] px-3 py-2 rounded border text-sm">
-            <div>
-              <span className="font-medium">{blockDateLabel(b)}</span>
-              {b.reason && <span className="text-muted-foreground ml-2">— {b.reason}</span>}
+    <section>
+      <SectionHeader
+        title="Blocked dates"
+        action={
+          <Button size="sm" variant="outline" onClick={() => setShowBlockForm(true)} className="gap-1.5">
+            <Plus className="w-4 h-4" />Block dates
+          </Button>
+        }
+      />
+      <p className="text-[13px] text-muted-foreground mb-3">No bookings on these days. Existing appointments are not cancelled.</p>
+      <Surface>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+        ) : blocks.length === 0 ? (
+          <p className="text-[13px] text-muted-foreground px-4 py-3">No blocked dates.</p>
+        ) : (
+          blocks.map(b => (
+            <div key={b.block_id} className="flex items-center gap-3 px-4 py-3 border-t border-border first:border-t-0">
+              <span className="text-[13px] font-semibold flex-shrink-0">{blockDateLabel(b)}</span>
+              <span className="flex-1 min-w-0 text-[13px] text-muted-foreground truncate">{b.reason || 'No bookings'}</span>
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive flex-shrink-0" onClick={() => setRemoveBlockTarget(b.block_id)}><Trash2 className="w-3.5 h-3.5" /></Button>
             </div>
-            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setRemoveBlockTarget(b.block_id)}><Trash2 className="w-3.5 h-3.5" /></Button>
-          </div>
-        ))}
-        {blocks.length === 0 && <p className="text-sm text-muted-foreground">No blocked dates.</p>}
-      </div>
+          ))
+        )}
+      </Surface>
       {showBlockForm && (
         <div className="mt-3 p-4 rounded border bg-muted/30 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -131,6 +136,6 @@ export function BlockedDates({ blocks, loading, onRefetch }: BlockedDatesProps) 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </section>
   )
 }

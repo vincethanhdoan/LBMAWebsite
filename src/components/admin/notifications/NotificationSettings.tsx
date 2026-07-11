@@ -5,7 +5,6 @@ import { Switch } from '../../ui/switch';
 import { Skeleton } from '../../ui/skeleton';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase/client';
-import { NotificationRecipients } from './NotificationRecipients';
 
 type NotificationSettingsProps = {
   userEmail: string;
@@ -70,7 +69,6 @@ export function NotificationSettings({ userEmail }: NotificationSettingsProps) {
             />
           </div>
         )}
-        <NotificationRecipients />
       </CardContent>
     </Card>
   );

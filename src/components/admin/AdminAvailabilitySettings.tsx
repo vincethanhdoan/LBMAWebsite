@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { SlotSettings } from './availability/SlotSettings'
 import { BlockedDates } from './availability/BlockedDates'
-import { UpcomingBookings } from './availability/UpcomingBookings'
+import { NotificationRecipients } from './availability/NotificationRecipients'
 import { getBlockedDates } from '../../lib/supabase/queries'
 import type { BlockedDate } from '../../lib/types'
 
@@ -28,10 +28,14 @@ export function AdminAvailabilitySettings() {
   }, [loadBlocks])
 
   return (
-    <div className="space-y-6">
-      <UpcomingBookings blocks={blocks} loadingBlocks={loadingBlocks} />
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-xl font-semibold">Availability</h2>
+        <p className="text-[13px] text-muted-foreground mt-1">When families can book tour appointments, and who hears about new inquiries.</p>
+      </div>
       <SlotSettings />
       <BlockedDates blocks={blocks} loading={loadingBlocks} onRefetch={loadBlocks} />
+      <NotificationRecipients />
     </div>
   )
 }
