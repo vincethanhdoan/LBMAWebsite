@@ -18,7 +18,8 @@ import {
 } from '../supabase/mutations';
 import { queryKeys } from '../queryKeys';
 import type { EnrollmentLead } from '../types';
-import { deriveActionNeeded } from '../../components/admin/leads/actionNeeded';
+import { deriveAttentionItems } from '../../components/admin/leads/leadViews';
+import { toLocalDateKey } from '../../components/admin/leads/leadDisplay';
 
 export function useActiveLeads() {
   return useQuery({
@@ -27,9 +28,11 @@ export function useActiveLeads() {
   });
 }
 
-export function useActionNeededCount(): number {
+export function useAttentionCount(): number {
   const { data } = useActiveLeads();
-  return deriveActionNeeded(data ?? []).length;
+  // Reading the clock each render is intentional: the count reflects current time.
+  // eslint-disable-next-line react-hooks/purity
+  return deriveAttentionItems(data ?? [], toLocalDateKey(new Date()), Date.now()).length;
 }
 
 export function useTerminalLeads(filter: TerminalLeadFilter, search: string) {

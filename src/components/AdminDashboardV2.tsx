@@ -31,7 +31,7 @@ import { AdminAvailabilitySettings } from './admin/AdminAvailabilitySettings';
 import { AdminProfileTab } from './admin/AdminProfileTab';
 import { AdminTeamTab } from './admin/AdminTeamTab';
 import { useSidebarCounts } from '../lib/hooks/notifications';
-import { useActionNeededCount } from '../lib/hooks/leads';
+import { useAttentionCount } from '../lib/hooks/leads';
 import { useRealtimeInvalidation } from '../lib/hooks/useRealtimeInvalidation';
 import { markSectionSeen } from '../lib/supabase/mutations';
 import { queryKeys } from '../lib/queryKeys';
@@ -119,7 +119,7 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
   const unreadNotifications = counts?.unreadNotifications ?? 0;
   const unreadAnnouncements = counts?.unreadAnnouncements ?? 0;
   const unreadBlog = counts?.unreadBlog ?? 0;
-  const actionNeededCount = useActionNeededCount();
+  const actionNeededCount = useAttentionCount();
 
   useEffect(() => {
     if (activeTab === 'team' && !isOwner) {
