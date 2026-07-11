@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Pencil, Check, MoreVertical, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import {
@@ -87,14 +87,32 @@ export function LeadDetailPanel({
   const closeLead = useCloseLead();
   const updateNotes = useUpdateLeadNotes();
 
+  const leadIdRef = useRef(lead.lead_id);
+  useEffect(() => {
+    leadIdRef.current = lead.lead_id;
+  }, [lead.lead_id]);
+
   const [notesDraft, setNotesDraft] = useState(lead.admin_notes ?? '');
   const [notesEditing, setNotesEditing] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
   const [notesError, setNotesError] = useState(false);
 
+  // Re-seed notes state when the shell swaps the displayed lead on a mounted
+  // panel, so one lead's draft can never be shown for or saved onto another.
+  const [notesLeadId, setNotesLeadId] = useState(lead.lead_id);
+  if (notesLeadId !== lead.lead_id) {
+    setNotesLeadId(lead.lead_id);
+    setNotesDraft(lead.admin_notes ?? '');
+    setNotesEditing(false);
+    setNotesSaved(false);
+    setNotesError(false);
+  }
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      // Radix dialogs stacked above the panel prevent default on the Esc that
+      // closed them; only an unclaimed Esc closes the panel itself.
+      if (e.key === 'Escape' && !e.defaultPrevented) onClose();
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -117,15 +135,24 @@ export function LeadDetailPanel({
   }
 
   function saveNotes() {
+    const savedLeadId = lead.lead_id;
+    const trimmed = notesDraft.trim();
     setNotesError(false);
     updateNotes.mutate(
-      { leadId: lead.lead_id, notes: notesDraft.trim() },
+      { leadId: savedLeadId, notes: trimmed },
       {
+        // If the shell swapped the displayed lead while the save was in
+        // flight, leave the freshly seeded state for the new lead untouched.
         onSuccess: () => {
+          if (leadIdRef.current !== savedLeadId) return;
+          setNotesDraft(trimmed);
           setNotesEditing(false);
           setNotesSaved(true);
         },
-        onError: () => setNotesError(true),
+        onError: () => {
+          if (leadIdRef.current !== savedLeadId) return;
+          setNotesError(true);
+        },
       },
     );
   }
