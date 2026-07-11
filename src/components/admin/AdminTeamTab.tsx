@@ -41,6 +41,13 @@ function rowSortKey(a: AdminRow): number {
   return 3;
 }
 
+type TeamView = 'active' | 'former';
+
+const TEAM_VIEWS: { id: TeamView; label: string }[] = [
+  { id: 'active', label: 'Active' },
+  { id: 'former', label: 'Former' },
+];
+
 export function AdminTeamTab({
   user,
   onRefreshUser,
@@ -54,6 +61,7 @@ export function AdminTeamTab({
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [teamView, setTeamView] = useState<TeamView>('active');
   const [confirmState, setConfirmState] = useState<{
     title: string;
     description: string;
@@ -100,6 +108,10 @@ export function AdminTeamTab({
   const otherActiveOwnerExists = admins.some(
     (a) => a.is_owner && a.is_active && a.user_id !== user.id
   );
+
+  const activeAdmins = admins.filter((a) => a.is_active);
+  const formerAdmins = admins.filter((a) => !a.is_active);
+  const visibleAdmins = teamView === 'active' ? activeAdmins : formerAdmins;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.admins() });
@@ -253,7 +265,24 @@ export function AdminTeamTab({
 
       <Card>
         <CardHeader>
-          <CardTitle>All Admins</CardTitle>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <CardTitle>Admins</CardTitle>
+            <div className="flex gap-1.5">
+              {TEAM_VIEWS.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setTeamView(v.id)}
+                  className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
+                    teamView === v.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {v.label} ({v.id === 'active' ? activeAdmins.length : formerAdmins.length})
+                </button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading && (
@@ -291,7 +320,7 @@ export function AdminTeamTab({
 
           {!isLoading && !isError && (
             <div className="divide-y">
-              {admins.map((admin) => {
+              {visibleAdmins.map((admin) => {
                 const isYou = admin.user_id === user.id;
                 const isBusy = busyId === admin.user_id;
                 const showMenu = !isYou || (admin.is_owner && otherActiveOwnerExists);
@@ -411,8 +440,10 @@ export function AdminTeamTab({
                 );
               })}
 
-              {admins.length === 0 && (
-                <div className="px-6 py-10 text-center text-sm text-muted-foreground">No admins found.</div>
+              {visibleAdmins.length === 0 && (
+                <div className="px-6 py-10 text-center text-sm text-muted-foreground">
+                  {teamView === 'active' ? 'No admins found.' : 'No former admins.'}
+                </div>
               )}
             </div>
           )}
