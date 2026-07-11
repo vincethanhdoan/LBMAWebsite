@@ -114,7 +114,7 @@ export function filterLeads(
 export const STATUS_LABELS: Record<EnrollmentLead['status'], string> = {
   new:                   'New',
   approved:              'Approved',
-  appointment_scheduled: 'Scheduled',
+  appointment_scheduled: 'Awaiting confirmation',
   appointment_confirmed: 'Confirmed',
   denied:                'Denied',
   enrolled:              'Enrolled',
@@ -124,8 +124,8 @@ export const STATUS_LABELS: Record<EnrollmentLead['status'], string> = {
 export const BADGE_STYLES: Record<EnrollmentLead['status'], string> = {
   new:                   'bg-[#FFF0F0] text-[#A01F23] border border-[rgba(160,31,35,0.2)]',
   approved:              'bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]',
-  appointment_scheduled: 'bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0]',
-  appointment_confirmed: 'bg-[#DCFCE7] text-[#14532D] border border-[#86EFAC]',
+  appointment_scheduled: 'bg-amber-100 text-amber-800 border border-amber-200',
+  appointment_confirmed: 'bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0]',
   denied:                'bg-[#F1F0EF] text-[#6B6866] border border-[#E8E6E3]',
   enrolled:              'bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0]',
   closed:                'bg-[#F1F0EF] text-[#6B6866] border border-[#E8E6E3]',
@@ -187,25 +187,23 @@ export function formatGroupHeader(dateKey: string) {
   }
 }
 
-export function getMondayOfWeek(offset: number): Date {
+export function getWeekStart(offset: number): Date {
   const today = new Date()
-  const day = today.getDay() // 0=Sun … 6=Sat
-  const diffToMonday = day === 0 ? -6 : 1 - day
-  const monday = new Date(today)
-  monday.setDate(today.getDate() + diffToMonday + offset * 7)
-  monday.setHours(0, 0, 0, 0)
-  return monday
+  const start = new Date(today)
+  start.setDate(today.getDate() - today.getDay() + offset * 7) // getDay(): 0=Sun … 6=Sat
+  start.setHours(0, 0, 0, 0)
+  return start
 }
 
-export function formatWeekRange(monday: Date): string {
-  const friday = new Date(monday)
-  friday.setDate(monday.getDate() + 4)
-  const monLabel = monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  const friLabel =
-    monday.getMonth() === friday.getMonth()
-      ? String(friday.getDate())
-      : friday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  return `${monLabel} – ${friLabel}`
+export function formatWeekRange(weekStart: Date): string {
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 6)
+  const startLabel = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const endLabel =
+    weekStart.getMonth() === weekEnd.getMonth()
+      ? String(weekEnd.getDate())
+      : weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return `${startLabel} – ${endLabel}`
 }
 
 export function findNearestWeekOffset(appointmentDates: string[]): number | null {
@@ -214,10 +212,10 @@ export function findNearestWeekOffset(appointmentDates: string[]): number | null
   // Prefer upcoming weeks first (current through +7), then fall back to recent past (-1 through -4)
   const offsets = [0, 1, 2, 3, 4, 5, 6, 7, -1, -2, -3, -4]
   for (const i of offsets) {
-    const monday = getMondayOfWeek(i)
-    for (let d = 0; d < 5; d++) {
-      const day = new Date(monday)
-      day.setDate(monday.getDate() + d)
+    const weekStart = getWeekStart(i)
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(weekStart)
+      day.setDate(weekStart.getDate() + d)
       if (dateSet.has(toLocalDateKey(day))) return i
     }
   }

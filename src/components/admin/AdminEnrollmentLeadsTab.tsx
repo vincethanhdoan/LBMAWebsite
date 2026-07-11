@@ -21,7 +21,7 @@ import {
   hasPastAppointment,
   toLocalDateKey,
   getLeadPrimaryDate,
-  getMondayOfWeek,
+  getWeekStart,
   formatWeekRange,
   findNearestWeekOffset,
   formatDate,
@@ -313,35 +313,60 @@ export function AdminEnrollmentLeadsTab() {
 
   const isCalendarTab = activeTab === 'appointment_scheduled' || activeTab === 'appointment_confirmed';
 
-  // Count appointments per date (unfiltered by search, for the week strip)
-  const appointmentCountsByDate: Record<string, number> = {};
+  // Count appointments per date, split by status (unfiltered by search, for the
+  // week strip and summary). Both calendar statuses count on both calendar tabs so
+  // the strip shows amber (awaiting) and green (confirmed) dots side by side.
+  const appointmentCountsByDate: Record<string, { scheduled: number; confirmed: number }> = {};
   if (isCalendarTab) {
-    const tabObj = TABS.find(t => t.id === activeTab);
     for (const lead of activeLeads) {
-      if (!tabObj?.statuses?.includes(lead.status)) continue;
+      if (lead.status !== 'appointment_scheduled' && lead.status !== 'appointment_confirmed') continue;
       if (hasPastAppointment(lead, todayKey)) continue;
       const date = getLeadPrimaryDate(lead);
-      if (date) appointmentCountsByDate[date] = (appointmentCountsByDate[date] ?? 0) + 1;
+      if (!date) continue;
+      const entry = appointmentCountsByDate[date] ?? { scheduled: 0, confirmed: 0 };
+      if (lead.status === 'appointment_scheduled') entry.scheduled += 1;
+      else entry.confirmed += 1;
+      appointmentCountsByDate[date] = entry;
     }
   }
 
-  // 5-day Mon–Fri strip for the current weekOffset
+  // 7-day Sun–Sat strip for the current weekOffset
   const weekStripDays = (() => {
-    const monday = getMondayOfWeek(weekOffset)
+    const weekStart = getWeekStart(weekOffset)
     const todayKey = toLocalDateKey(new Date())
-    return Array.from({ length: 5 }, (_, i) => {
-      const d = new Date(monday)
-      d.setDate(monday.getDate() + i)
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart)
+      d.setDate(weekStart.getDate() + i)
       const dateKey = toLocalDateKey(d)
+      const counts = appointmentCountsByDate[dateKey] ?? { scheduled: 0, confirmed: 0 }
       return {
         dateKey,
         dayName: d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase().slice(0, 3),
         dayNum: d.getDate(),
-        monthShort: d.toLocaleDateString('en-US', { month: 'short' }),
-        count: appointmentCountsByDate[dateKey] ?? 0,
+        scheduled: counts.scheduled,
+        confirmed: counts.confirmed,
         isToday: dateKey === todayKey,
       }
     })
+  })()
+
+  // This-week / next-week totals for the summary strip, derived from the same
+  // per-date counts across all loaded active leads (not just the visible week).
+  const weekSummary = (() => {
+    if (!isCalendarTab) return null
+    const summarize = (offset: number) => {
+      const weekStart = getWeekStart(offset)
+      let scheduled = 0
+      let confirmed = 0
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(weekStart)
+        d.setDate(weekStart.getDate() + i)
+        const counts = appointmentCountsByDate[toLocalDateKey(d)]
+        if (counts) { scheduled += counts.scheduled; confirmed += counts.confirmed }
+      }
+      return { total: scheduled + confirmed, confirmed, scheduled }
+    }
+    return { thisWeek: summarize(0), nextWeek: summarize(1) }
   })()
 
   // Group visible leads by appointment date for calendar tabs. Past-appointment
@@ -525,8 +550,8 @@ export function AdminEnrollmentLeadsTab() {
           onWeekOffsetChange={setWeekOffset}
           selectedWeekDate={selectedWeekDate}
           onSelectWeekDate={setSelectedWeekDate}
-          weekRangeLabel={formatWeekRange(getMondayOfWeek(weekOffset))}
-          appointmentCountsByDate={appointmentCountsByDate}
+          weekRangeLabel={formatWeekRange(getWeekStart(weekOffset))}
+          weekSummary={weekSummary}
           renderCard={renderCard}
           emptyMessage={
             visibleActiveLeads.length === 0

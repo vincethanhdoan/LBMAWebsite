@@ -7,14 +7,20 @@ interface WeekStripDay {
   dateKey: string;
   dayName: string;
   dayNum: number;
-  monthShort: string;
-  count: number;
+  scheduled: number;
+  confirmed: number;
   isToday: boolean;
 }
 
 interface DateGroup {
   dateKey: string;
   leads: EnrollmentLead[];
+}
+
+interface WeekTotals {
+  total: number;
+  confirmed: number;
+  scheduled: number;
 }
 
 interface LeadCalendarViewProps {
@@ -29,7 +35,7 @@ interface LeadCalendarViewProps {
   selectedWeekDate: string | null;
   onSelectWeekDate: (dateKey: string | null) => void;
   weekRangeLabel: string;
-  appointmentCountsByDate: Record<string, number>;
+  weekSummary: { thisWeek: WeekTotals; nextWeek: WeekTotals } | null;
   renderCard: (lead: EnrollmentLead) => ReactNode;
   emptyMessage?: string | null;
 }
@@ -46,6 +52,7 @@ export function LeadCalendarView({
   selectedWeekDate,
   onSelectWeekDate,
   weekRangeLabel,
+  weekSummary,
   renderCard,
   emptyMessage,
 }: LeadCalendarViewProps) {
@@ -63,22 +70,13 @@ export function LeadCalendarView({
       );
     }
     const { label, isToday, isTomorrow } = formatGroupHeader(dateKey);
+    const headerLabel = isToday ? `Today · ${label}` : isTomorrow ? `Tomorrow · ${label}` : label;
     return (
       <div key={dateKey}>
         <div className="flex items-center gap-2 mb-3">
           <span className={`text-sm font-bold tracking-wide uppercase ${isToday ? 'text-primary' : 'text-foreground/80'}`}>
-            {label}
+            {headerLabel}
           </span>
-          {isToday && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground tracking-wide uppercase">
-              Today
-            </span>
-          )}
-          {isTomorrow && (
-            <span className="text-[10px] font-semibold text-muted-foreground tracking-wide uppercase">
-              Tomorrow
-            </span>
-          )}
           <div className="flex-1 h-px bg-border" />
           <span className="text-xs text-muted-foreground font-semibold flex-shrink-0">
             {groupLeads.length} {groupLeads.length === 1 ? 'appointment' : 'appointments'}
@@ -91,6 +89,32 @@ export function LeadCalendarView({
 
   return (
     <>
+      {/* Week-at-a-glance summary */}
+      {weekSummary && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => { onWeekOffsetChange(0); onSelectWeekDate(null); }}
+            className={`text-left text-xs sm:text-sm rounded-lg border px-3 py-1.5 transition-colors ${
+              weekOffset === 0
+                ? 'border-primary bg-primary/5 text-foreground font-medium'
+                : 'border-border text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            This week: {weekSummary.thisWeek.total} appointments · {weekSummary.thisWeek.confirmed} confirmed · {weekSummary.thisWeek.scheduled} awaiting confirmation
+          </button>
+          <button
+            onClick={() => { onWeekOffsetChange(1); onSelectWeekDate(null); }}
+            className={`text-xs sm:text-sm rounded-lg border px-3 py-1.5 transition-colors ${
+              weekOffset === 1
+                ? 'border-primary bg-primary/5 text-foreground font-medium'
+                : 'border-border text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            Next week: {weekSummary.nextWeek.total}
+          </button>
+        </div>
+      )}
+
       {/* Week strip */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -115,16 +139,16 @@ export function LeadCalendarView({
         <div className="flex gap-1">
           {weekStripDays.map(day => {
             const isSelected = selectedWeekDate === day.dateKey;
-            const hasApts = day.count > 0;
+            const hasApts = day.scheduled > 0 || day.confirmed > 0;
             return (
               <button
                 key={day.dateKey}
                 onClick={() => onSelectWeekDate(isSelected ? null : day.dateKey)}
-                className={`flex flex-col items-center px-3 py-2 rounded-lg flex-1 min-w-0 transition-colors border ${
+                className={`flex flex-col items-center px-2 py-2 rounded-lg flex-1 min-w-0 transition-colors border ${
                   isSelected
                     ? 'bg-primary text-primary-foreground border-primary'
                     : day.isToday
-                    ? 'border-primary/30 bg-primary/5 hover:bg-primary/10'
+                    ? 'border-primary/40 bg-primary/5 ring-1 ring-primary/30 hover:bg-primary/10'
                     : 'border-transparent hover:bg-muted'
                 }`}
               >
@@ -138,21 +162,31 @@ export function LeadCalendarView({
                 }`}>
                   {day.dayNum}
                 </span>
-                <div className="flex gap-0.5 mt-1 min-h-[6px] items-center">
-                  {Array.from({ length: Math.min(day.count, 3) }, (_, i) => (
-                    <span
-                      key={i}
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        isSelected ? 'bg-primary-foreground/60' : 'bg-primary'
-                      }`}
-                    />
-                  ))}
+                <div className="flex gap-1 mt-1 min-h-[16px] items-center">
+                  {day.scheduled > 0 && (
+                    <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${
+                      isSelected ? 'text-primary-foreground' : 'text-amber-700'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-primary-foreground/70' : 'bg-amber-500'}`} />
+                      {day.scheduled}
+                    </span>
+                  )}
+                  {day.confirmed > 0 && (
+                    <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${
+                      isSelected ? 'text-primary-foreground' : 'text-green-700'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-primary-foreground/70' : 'bg-green-600'}`} />
+                      {day.confirmed}
+                    </span>
+                  )}
+                  {!hasApts && (
+                    <span className={`text-[10px] font-semibold ${
+                      isSelected ? 'text-primary-foreground/50' : 'text-muted-foreground/35'
+                    }`}>
+                      ·
+                    </span>
+                  )}
                 </div>
-                <span className={`text-[10px] font-semibold mt-0.5 ${
-                  isSelected ? 'text-primary-foreground/75' : hasApts ? 'text-primary' : 'text-muted-foreground/35'
-                }`}>
-                  {hasApts ? day.count : '·'}
-                </span>
               </button>
             );
           })}
