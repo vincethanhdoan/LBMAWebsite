@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -119,6 +120,12 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
   const unreadAnnouncements = counts?.unreadAnnouncements ?? 0;
   const unreadBlog = counts?.unreadBlog ?? 0;
   const actionNeededCount = useActionNeededCount();
+
+  useEffect(() => {
+    if (activeTab === 'team' && !isOwner) {
+      setSearchParams({ tab: 'announcements' }, { replace: true });
+    }
+  }, [activeTab, isOwner, setSearchParams]);
 
   useRealtimeInvalidation(user.id);
 
@@ -329,7 +336,7 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
           {activeTab === 'profile' && (
             <AdminProfileTab user={user} onClose={() => setActiveTab('announcements')} onRefreshUser={onRefreshUser} />
           )}
-          {activeTab === 'team' && isOwner && <AdminTeamTab user={user} />}
+          {activeTab === 'team' && isOwner && <AdminTeamTab user={user} onRefreshUser={onRefreshUser} />}
         </main>
       </SidebarInset>
     </SidebarProvider>
