@@ -28,7 +28,7 @@ import { AdminUsersTab } from './admin/AdminUsersTab';
 import { FeedbackTab as AdminFeedbackTab } from './admin/FeedbackTab';
 import { AdminEnrollmentLeadsTab } from './admin/AdminEnrollmentLeadsTab';
 import { AdminAvailabilitySettings } from './admin/AdminAvailabilitySettings';
-import { AdminProfileTab } from './admin/AdminProfileTab';
+import { AdminSettingsTab } from './admin/settings/AdminSettingsTab';
 import { AdminTeamTab } from './admin/AdminTeamTab';
 import { useSidebarCounts } from '../lib/hooks/notifications';
 import { useAttentionCount } from '../lib/hooks/leads';
@@ -47,8 +47,8 @@ import {
   LogOut,
   Megaphone,
   MessageSquare,
+  Settings,
   ShieldCheck,
-  UserCircle,
   Users,
 } from 'lucide-react';
 
@@ -68,7 +68,7 @@ type AdminTabId =
   | 'feedback'
   | 'leads'
   | 'availability'
-  | 'profile'
+  | 'settings'
   | 'team';
 
 const navGroups: {
@@ -102,16 +102,18 @@ const navGroups: {
 
 function getTabLabel(id: AdminTabId): string {
   if (id === 'team') return 'Team';
+  if (id === 'settings') return 'Settings';
   for (const group of navGroups) {
     const item = group.items.find((i) => i.id === id);
     if (item) return item.label;
   }
-  return 'Profile';
+  return 'Settings';
 }
 
 export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: AdminDashboardV2Props) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = (searchParams.get('tab') as AdminTabId) ?? 'announcements';
+  const rawTab = searchParams.get('tab');
+  const activeTab: AdminTabId = rawTab === 'profile' ? 'settings' : ((rawTab as AdminTabId) ?? 'announcements');
   const queryClient = useQueryClient();
   const setActiveTab = (tab: AdminTabId) => setSearchParams({ tab }, { replace: true });
   const { data: counts } = useSidebarCounts(user.id);
@@ -262,10 +264,10 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
                 variant="ghost"
                 size="sm"
                 className="flex-1 justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                onClick={() => setActiveTab('profile')}
+                onClick={() => setActiveTab('settings')}
               >
-                <UserCircle className="mr-1.5 h-4 w-4" />
-                Profile
+                <Settings className="mr-1.5 h-4 w-4" />
+                Settings
               </Button>
               <Button
                 variant="ghost"
@@ -282,9 +284,9 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
           {/* Collapsed state: icon-only */}
           <div className="hidden flex-col items-center gap-1 group-data-[collapsible=icon]:flex">
             <button
-              onClick={() => setActiveTab('profile')}
+              onClick={() => setActiveTab('settings')}
               className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-              aria-label="Profile"
+              aria-label="Settings"
             >
               <Avatar className="h-8 w-8">
                 {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
@@ -333,9 +335,7 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
           {activeTab === 'feedback' && <AdminFeedbackTab />}
           {activeTab === 'leads' && <AdminEnrollmentLeadsTab />}
           {activeTab === 'availability' && <AdminAvailabilitySettings />}
-          {activeTab === 'profile' && (
-            <AdminProfileTab user={user} onClose={() => setActiveTab('announcements')} onRefreshUser={onRefreshUser} />
-          )}
+          {activeTab === 'settings' && <AdminSettingsTab user={user} onRefreshUser={onRefreshUser} />}
           {activeTab === 'team' && isOwner && <AdminTeamTab user={user} onRefreshUser={onRefreshUser} />}
         </main>
       </SidebarInset>
