@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Skeleton } from './ui/skeleton';
 import { markSectionSeen, markNotificationsRead, markNotificationRead } from '../lib/supabase/mutations';
 import { getCommentPostRef } from '../lib/supabase/queries';
-import { useNotificationSummary } from '../lib/hooks/notifications';
+import { invalidateNotificationCaches, useNotificationSummary } from '../lib/hooks/notifications';
 import { notificationTitle, isLeadNotification } from '../lib/notificationDisplay';
 import type { UserNotification } from '../lib/types';
 
@@ -18,6 +19,7 @@ type NotificationBellProps = {
 
 export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, onOpenPost }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
   const { data: summary, isLoading: loading, refetch: loadSummary } = useNotificationSummary(userId);
 
   const totalUnread = summary
@@ -33,7 +35,7 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, o
       markSectionSeen('blog'),
       markNotificationsRead(),
     ]);
-    await loadSummary();
+    invalidateNotificationCaches(queryClient, userId);
   }
 
   async function handleNavigate(tab: string, section?: 'announcements' | 'blog') {
@@ -47,7 +49,7 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, o
 
   async function handleNotificationClick(notif: UserNotification) {
     await markNotificationRead(notif.notification_id).catch(console.error);
-    await loadSummary();
+    invalidateNotificationCaches(queryClient, userId);
     if (isLeadNotification(notif)) {
       if (onOpenLead) {
         onOpenLead(notif.reference_id);

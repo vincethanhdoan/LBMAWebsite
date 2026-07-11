@@ -10,6 +10,7 @@ export const queryKeys = {
   announcementComments: (announcementId: string) => ['announcement-comments', announcementId] as const,
   blogPosts: () => ['blog-posts'] as const,
   blogComments: (postId: string) => ['blog-comments', postId] as const,
+  notificationHistory: () => ['notification-history'] as const,
   notificationSummary: (userId: string) => ['notification-summary', userId] as const,
   sidebarCounts: (userId: string) => ['sidebar-counts', userId] as const,
   homeCounts: (userId: string) => ['home-counts', userId] as const,

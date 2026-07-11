@@ -5,12 +5,11 @@ import { toast } from 'sonner';
 import { CheckCheck, MessageSquare } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
-import { useNotificationFeed, useSidebarCounts } from '../../lib/hooks/notifications';
+import { invalidateNotificationCaches, useNotificationFeed, useSidebarCounts } from '../../lib/hooks/notifications';
 import type { NotificationFeedFilter } from '../../lib/hooks/notifications';
 import { markNotificationRead, markNotificationsRead, markSectionSeen } from '../../lib/supabase/mutations';
 import { getCommentPostRef } from '../../lib/supabase/queries';
 import { notificationTitle, isLeadNotification } from '../../lib/notificationDisplay';
-import { queryKeys } from '../../lib/queryKeys';
 import { formatShortDate } from '../../lib/format';
 import { NotificationSettings } from './notifications/NotificationSettings';
 import type { UserNotification } from '../../lib/types';
@@ -62,10 +61,7 @@ export function AdminNotificationsTab({ userId, userEmail }: AdminNotificationsT
   async function handleNotificationClick(notif: UserNotification) {
     if (!notif.is_read) {
       await markNotificationRead(notif.notification_id).catch(console.error);
-      queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(userId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(userId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(userId) });
-      queryClient.invalidateQueries({ queryKey: ['notification-history'] });
+      invalidateNotificationCaches(queryClient, userId);
     }
     if (isLeadNotification(notif)) {
       setSearchParams({ tab: 'leads', lead: notif.reference_id }, { replace: true });
@@ -82,16 +78,17 @@ export function AdminNotificationsTab({ userId, userEmail }: AdminNotificationsT
   }
 
   async function handleMarkAllRead() {
-    await Promise.all([
-      markNotificationsRead(),
-      markSectionSeen('announcements'),
-      markSectionSeen('blog'),
-    ]).catch(console.error);
-    queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(userId) });
-    queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(userId) });
-    queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(userId) });
-    queryClient.invalidateQueries({ queryKey: ['notification-history'] });
-    toast.success('All caught up');
+    try {
+      await Promise.all([
+        markNotificationsRead(),
+        markSectionSeen('announcements'),
+        markSectionSeen('blog'),
+      ]);
+      invalidateNotificationCaches(queryClient, userId);
+      toast.success('All caught up');
+    } catch {
+      toast.error('Failed to mark notifications read');
+    }
   }
 
   return (

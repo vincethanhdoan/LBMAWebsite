@@ -1,4 +1,4 @@
-import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQuery, type QueryClient } from '@tanstack/react-query';
 import {
   getNotificationHistory,
   getNotificationSummary,
@@ -11,9 +11,16 @@ import { queryKeys } from '../queryKeys';
 
 export type NotificationFeedFilter = 'all' | 'leads' | 'comments';
 
+export function invalidateNotificationCaches(queryClient: QueryClient, userId: string): void {
+  queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(userId) });
+  queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(userId) });
+  queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(userId) });
+  queryClient.invalidateQueries({ queryKey: queryKeys.notificationHistory() });
+}
+
 export function useNotificationFeed(filter: NotificationFeedFilter) {
   return useInfiniteQuery({
-    queryKey: ['notification-history', filter],
+    queryKey: [...queryKeys.notificationHistory(), filter],
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       getNotificationHistory(pageParam, 20, filter === 'all' ? undefined : filter),
