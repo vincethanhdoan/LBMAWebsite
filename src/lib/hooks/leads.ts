@@ -3,6 +3,7 @@ import {
   getActiveEnrollmentLeads,
   getTerminalEnrollmentLeads,
   getTerminalLeadCounts,
+  getUpcomingBookings,
   type TerminalLeadFilter,
 } from '../supabase/queries';
 import {
@@ -45,6 +46,13 @@ export function useTerminalLeadCounts() {
   return useQuery({
     queryKey: queryKeys.enrollmentLeadsTerminalCounts(),
     queryFn: getTerminalLeadCounts,
+  });
+}
+
+export function useUpcomingBookings() {
+  return useQuery({
+    queryKey: queryKeys.upcomingBookings(),
+    queryFn: getUpcomingBookings,
   });
 }
 

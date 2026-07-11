@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
 import { Loader2, Trash2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase/client'
-import { getBlockedDates } from '../../../lib/supabase/queries'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../ui/alert-dialog'
 import type { BlockedDate } from '../../../lib/types'
 
@@ -17,28 +16,19 @@ function blockDateLabel(block: BlockedDate): string {
     : `${fmt(block.start_date)} – ${fmt(block.end_date)}`
 }
 
-export function BlockedDates() {
-  const [blocks, setBlocks] = useState<BlockedDate[]>([])
-  const [loading, setLoading] = useState(true)
+interface BlockedDatesProps {
+  blocks: BlockedDate[]
+  loading: boolean
+  onRefetch: () => Promise<void>
+}
 
+export function BlockedDates({ blocks, loading, onRefetch }: BlockedDatesProps) {
   const [showBlockForm, setShowBlockForm] = useState(false)
   const [blockStartDate, setBlockStartDate] = useState('')
   const [blockEndDate, setBlockEndDate] = useState('')
   const [blockReason, setBlockReason] = useState('')
   const [blockSaving, setBlockSaving] = useState(false)
   const [removeBlockTarget, setRemoveBlockTarget] = useState<string | null>(null)
-
-  const loadBlocks = useCallback(async () => {
-    setBlocks(await getBlockedDates())
-  }, [])
-
-  useEffect(() => {
-    async function load() {
-      await loadBlocks()
-      setLoading(false)
-    }
-    load()
-  }, [loadBlocks])
 
   async function addBlock() {
     setBlockSaving(true)
@@ -49,7 +39,7 @@ export function BlockedDates() {
         p_reason: blockReason || null,
       })
       if (error || !data) { toast.error('Failed to block dates'); return }
-      await loadBlocks()
+      await onRefetch()
       setBlockStartDate('')
       setBlockEndDate('')
       setBlockReason('')
@@ -63,7 +53,7 @@ export function BlockedDates() {
   async function removeBlock(blockId: string) {
     const { error } = await supabase.rpc('remove_blocked_dates', { p_block_id: blockId })
     if (error) { toast.error('Failed to remove blocked dates') }
-    else { await loadBlocks(); toast.success('Block removed') }
+    else { await onRefetch(); toast.success('Block removed') }
     setRemoveBlockTarget(null)
   }
 

@@ -126,6 +126,7 @@ interface LeadCardProps {
   actions: ReturnType<typeof useLeadActions>;
   updatingIds: Set<string>;
   isPossibleDuplicate: boolean;
+  highlighted: boolean;
   onDuplicateClick: () => void;
   onDeny: (lead: EnrollmentLead) => void;
   onResendBookingLink: (lead: EnrollmentLead) => void;
@@ -157,6 +158,7 @@ export function LeadCard({
   actions,
   updatingIds,
   isPossibleDuplicate,
+  highlighted,
   onDuplicateClick,
   onDeny,
   onResendBookingLink,
@@ -180,9 +182,10 @@ export function LeadCard({
 
   return (
     <div
-      className={`bg-card rounded-lg border overflow-hidden ${
+      id={`lead-${lead.lead_id}`}
+      className={`bg-card rounded-lg border overflow-hidden transition-shadow duration-700 ${
         lead.status === 'new' ? 'border-primary/25' : 'border-border'
-      }`}
+      } ${highlighted ? 'ring-2 ring-primary' : ''}`}
     >
       <div className="p-4 space-y-3">
 

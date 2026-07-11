@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Loader2, Plus, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -133,6 +134,9 @@ export function AdminEnrollmentLeadsTab() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [actingIds, setActingIds] = useState<Set<string>>(new Set());
   const [showPastAppointments, setShowPastAppointments] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(null);
+  const processedLeadParam = useRef<string | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60_000);
@@ -147,6 +151,59 @@ export function AdminEnrollmentLeadsTab() {
     () => [...activeLeads, ...terminalLeads],
     [activeLeads, terminalLeads],
   );
+
+  // Deep link: `?lead=<id>` jumps to a specific lead — switch to its tab, scroll
+  // to its card, flash a highlight, then strip the param. Runs once per param
+  // value (guarded by a ref) so refetches don't re-trigger the jump.
+  const deepLinkLeadId = searchParams.get('lead');
+  useEffect(() => {
+    if (!deepLinkLeadId || loading) return;
+    if (processedLeadParam.current === deepLinkLeadId) return;
+    processedLeadParam.current = deepLinkLeadId;
+
+    const lead = allLoadedLeads.find(l => l.lead_id === deepLinkLeadId);
+    setSelectedWeekDate(null);
+    setWeekOffset(0);
+    setSearch('');
+    if (!lead) {
+      setActiveTab('all');
+      setHistoryFilter('all_terminal');
+    } else if (lead.deleted_at) {
+      setActiveTab('history');
+      setHistoryFilter('archived');
+      setHighlightedLeadId(lead.lead_id);
+    } else {
+      if (
+        lead.status === 'new' ||
+        lead.status === 'approved' ||
+        lead.status === 'appointment_scheduled' ||
+        lead.status === 'appointment_confirmed'
+      ) {
+        setActiveTab(lead.status);
+        if (lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') {
+          const date = getLeadPrimaryDate(lead);
+          setWeekOffset(date ? findNearestWeekOffset([date]) ?? 0 : 0);
+        }
+      } else {
+        setActiveTab('history');
+        setHistoryFilter('all_terminal');
+      }
+      setHighlightedLeadId(lead.lead_id);
+    }
+
+    const next = new URLSearchParams(searchParams);
+    next.delete('lead');
+    setSearchParams(next, { replace: true });
+  }, [deepLinkLeadId, loading, allLoadedLeads, searchParams, setSearchParams]);
+
+  // Scroll the deep-linked card into view once it renders, then clear the
+  // highlight after ~2s so the ring fades away.
+  useEffect(() => {
+    if (!highlightedLeadId) return;
+    document.getElementById('lead-' + highlightedLeadId)?.scrollIntoView({ block: 'center' });
+    const timer = setTimeout(() => setHighlightedLeadId(null), 2000);
+    return () => clearTimeout(timer);
+  }, [highlightedLeadId]);
 
   // A loaded lead is a possible duplicate when its email matches an
   // earlier-created loaded lead — the first occurrence of each email is never flagged.
@@ -276,6 +333,7 @@ export function AdminEnrollmentLeadsTab() {
       actions={actions}
       updatingIds={updatingIds}
       isPossibleDuplicate={duplicateLeadIds.has(lead.lead_id)}
+      highlighted={highlightedLeadId === lead.lead_id}
       onDuplicateClick={() => {
         setActiveTab('all');
         setHistoryFilter('all_terminal');
@@ -310,7 +368,10 @@ export function AdminEnrollmentLeadsTab() {
   const renderArchivedCard = (lead: EnrollmentLead) => (
     <div
       key={lead.lead_id}
-      className="bg-muted/30 rounded-lg border border-border/50 p-4 flex items-center justify-between gap-3 opacity-75"
+      id={`lead-${lead.lead_id}`}
+      className={`bg-muted/30 rounded-lg border p-4 flex items-center justify-between gap-3 opacity-75 transition-shadow duration-700 ${
+        highlightedLeadId === lead.lead_id ? 'ring-2 ring-primary border-border/50' : 'border-border/50'
+      }`}
     >
       <div className="min-w-0">
         <div className="font-medium text-sm truncate">{lead.parent_name}</div>
