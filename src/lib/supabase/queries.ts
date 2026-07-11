@@ -601,6 +601,7 @@ export async function getTerminalEnrollmentLeads(opts: {
       `parent_name.ilike."%${quoted}%"`,
       `parent_email.ilike."%${quoted}%"`,
       `student_name.ilike."%${quoted}%"`,
+      `phone.ilike."%${quoted}%"`,
     ];
     if (childLeadIds.length > 0) orParts.push(`lead_id.in.(${childLeadIds.join(',')})`);
     query = query.or(orParts.join(','));

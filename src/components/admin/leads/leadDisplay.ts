@@ -88,7 +88,10 @@ export function hasPastAppointment(lead: EnrollmentLead, todayKey: string): bool
 export function leadMatchesSearch(lead: EnrollmentLead, search: string): boolean {
   const q = search.trim().toLowerCase();
   if (!q) return true;
+  const digits = q.replace(/\D/g, '');
+  const phoneMatch = digits.length >= 4 && (lead.phone?.replace(/\D/g, '').includes(digits) ?? false);
   return (
+    phoneMatch ||
     lead.parent_name.toLowerCase().includes(q) ||
     lead.parent_email.toLowerCase().includes(q) ||
     (lead.student_name?.toLowerCase().includes(q) ?? false) ||
