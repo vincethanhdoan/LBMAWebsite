@@ -84,7 +84,7 @@ export function LeadRow({
         </div>
         {line2 && <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{line2}</div>}
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
+      <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
         {badge}
         {action}
       </div>
