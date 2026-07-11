@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { CheckCheck, MessageSquare } from 'lucide-react';
+import { CheckCheck, MessageSquare, Settings } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { invalidateNotificationCaches, useNotificationFeed, useSidebarCounts } from '../../lib/hooks/notifications';
@@ -98,12 +98,22 @@ export function AdminNotificationsTab({ userId, userEmail }: AdminNotificationsT
           <h2 className="text-lg font-semibold text-foreground">Notifications</h2>
           <p className="mt-1 text-sm text-muted-foreground">Everything that happened, newest first.</p>
         </div>
-        {unreadNotifications > 0 && (
-          <Button variant="outline" size="sm" onClick={handleMarkAllRead} className="shrink-0">
-            <CheckCheck className="mr-1.5 h-4 w-4" />
-            Mark all read
+        <div className="flex shrink-0 items-center gap-1">
+          {unreadNotifications > 0 && (
+            <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
+              <CheckCheck className="mr-1.5 h-4 w-4" />
+              Mark all read
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSearchParams({ tab: 'settings', section: 'notifications' }, { replace: true })}
+            aria-label="Notification settings"
+          >
+            <Settings className="h-4 w-4" />
           </Button>
-        )}
+        </div>
       </div>
 
       {unreadMessages > 0 && (
