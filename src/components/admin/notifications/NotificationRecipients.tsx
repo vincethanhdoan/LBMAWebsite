@@ -15,7 +15,7 @@ export function NotificationRecipients() {
   const [showNotifForm, setShowNotifForm] = useState(false)
   const [notifEmail, setNotifEmail] = useState('')
   const [notifSaving, setNotifSaving] = useState(false)
-  const [adminUsers, setAdminUsers] = useState<{ user_id: string; email: string; display_name: string }[]>([])
+  const [adminUsers, setAdminUsers] = useState<{ user_id: string; email: string; display_name: string; is_active: boolean; last_sign_in_at: string | null }[]>([])
 
   const loadNotifs = useCallback(async () => {
     setNotifSettings(await getAdminNotificationSettings())
@@ -102,7 +102,7 @@ export function NotificationRecipients() {
             >
               <option value="">Select admin…</option>
               {adminUsers
-                .filter(u => !notifSettings.some(n => n.email === u.email))
+                .filter(u => u.is_active && u.last_sign_in_at !== null && !notifSettings.some(n => n.email === u.email))
                 .map(u => (
                   <option key={u.user_id} value={u.email}>
                     {u.display_name} ({u.email})
