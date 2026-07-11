@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { SlotSettings } from './availability/SlotSettings'
 import { BlockedDates } from './availability/BlockedDates'
 import { NotificationRecipients } from './availability/NotificationRecipients'
@@ -16,15 +17,20 @@ export function AdminAvailabilitySettings() {
 
   useEffect(() => {
     async function load() {
-      await loadBlocks()
-      setLoadingBlocks(false)
+      try {
+        await loadBlocks()
+      } catch {
+        toast.error('Failed to load blocked dates')
+      } finally {
+        setLoadingBlocks(false)
+      }
     }
     load()
   }, [loadBlocks])
 
   return (
     <div className="space-y-6">
-      <UpcomingBookings blocks={blocks} />
+      <UpcomingBookings blocks={blocks} loadingBlocks={loadingBlocks} />
       <SlotSettings />
       <BlockedDates blocks={blocks} loading={loadingBlocks} onRefetch={loadBlocks} />
       <NotificationRecipients />

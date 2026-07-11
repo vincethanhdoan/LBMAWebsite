@@ -157,8 +157,21 @@ export function AdminEnrollmentLeadsTab() {
   // value (guarded by a ref) so refetches don't re-trigger the jump.
   const deepLinkLeadId = searchParams.get('lead');
   useEffect(() => {
-    if (!deepLinkLeadId || loading) return;
-    if (processedLeadParam.current === deepLinkLeadId) return;
+    // Wait for both the active and terminal queries so a terminal lead isn't
+    // wrongly treated as not-found while its query is still loading.
+    if (!deepLinkLeadId || loading || terminalQuery.isLoading) return;
+
+    const stripLeadParam = () => {
+      const next = new URLSearchParams(searchParams);
+      next.delete('lead');
+      setSearchParams(next, { replace: true });
+    };
+
+    // Already handled this id while mounted — still strip the stale param.
+    if (processedLeadParam.current === deepLinkLeadId) {
+      stripLeadParam();
+      return;
+    }
     processedLeadParam.current = deepLinkLeadId;
 
     const lead = allLoadedLeads.find(l => l.lead_id === deepLinkLeadId);
@@ -191,10 +204,8 @@ export function AdminEnrollmentLeadsTab() {
       setHighlightedLeadId(lead.lead_id);
     }
 
-    const next = new URLSearchParams(searchParams);
-    next.delete('lead');
-    setSearchParams(next, { replace: true });
-  }, [deepLinkLeadId, loading, allLoadedLeads, searchParams, setSearchParams]);
+    stripLeadParam();
+  }, [deepLinkLeadId, loading, terminalQuery.isLoading, allLoadedLeads, searchParams, setSearchParams]);
 
   // Scroll the deep-linked card into view once it renders, then clear the
   // highlight after ~2s so the ring fades away.

@@ -6,9 +6,11 @@ import type { UpcomingBooking } from '../../../lib/supabase/queries'
 import { useUpcomingBookings } from '../../../lib/hooks/leads'
 import { pacificTodayISO } from '../../../lib/pacificTime'
 import { PROGRAM_LABELS, formatGroupHeader, formatTimeShort } from '../leads/leadDisplay'
+import { blockDateLabel } from './blockDisplay'
 
 interface UpcomingBookingsProps {
   blocks: BlockedDate[]
+  loadingBlocks: boolean
 }
 
 interface DayGroup {
@@ -17,7 +19,7 @@ interface DayGroup {
   blocks: BlockedDate[]
 }
 
-export function UpcomingBookings({ blocks }: UpcomingBookingsProps) {
+export function UpcomingBookings({ blocks, loadingBlocks }: UpcomingBookingsProps) {
   const navigate = useNavigate()
   const { data: bookings, isLoading, isError } = useUpcomingBookings()
 
@@ -40,14 +42,17 @@ export function UpcomingBookings({ blocks }: UpcomingBookingsProps) {
     for (const booking of bookings ?? []) {
       ensure(booking.appointment_date).bookings.push(booking)
     }
-    for (const block of blocks) {
-      if (block.end_date < today || block.start_date > horizonKey) continue
-      // An in-progress block starts before today; surface it at today's position.
-      ensure(block.start_date < today ? today : block.start_date).blocks.push(block)
+    // Fold blocks in only once loaded so partial block data never pops in.
+    if (!loadingBlocks) {
+      for (const block of blocks) {
+        if (block.end_date < today || block.start_date > horizonKey) continue
+        // An in-progress block starts before today; surface it at today's position.
+        ensure(block.start_date < today ? today : block.start_date).blocks.push(block)
+      }
     }
 
     return [...map.values()].sort((a, b) => a.dateKey.localeCompare(b.dateKey))
-  }, [bookings, blocks])
+  }, [bookings, blocks, loadingBlocks])
 
   return (
     <div className="rounded-lg border p-5">
@@ -95,14 +100,17 @@ export function UpcomingBookings({ blocks }: UpcomingBookingsProps) {
                       </span>
                     </button>
                   ))}
-                  {group.blocks.map(block => (
-                    <div
-                      key={block.block_id}
-                      className="flex items-center min-h-[44px] px-3 py-2 rounded border border-dashed bg-muted/30 text-sm text-muted-foreground"
-                    >
-                      Blocked · {block.reason || 'No bookings'}
-                    </div>
-                  ))}
+                  {group.blocks.map(block => {
+                    const isMultiDay = block.start_date !== block.end_date
+                    return (
+                      <div
+                        key={block.block_id}
+                        className="flex items-center min-h-[44px] px-3 py-2 rounded border border-dashed bg-muted/30 text-sm text-muted-foreground"
+                      >
+                        Blocked{isMultiDay ? ` ${blockDateLabel(block)}` : ''} · {block.reason || 'No bookings'}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )

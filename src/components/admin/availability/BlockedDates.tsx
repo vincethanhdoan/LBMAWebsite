@@ -7,14 +7,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase/client'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../ui/alert-dialog'
 import type { BlockedDate } from '../../../lib/types'
-
-function blockDateLabel(block: BlockedDate): string {
-  const fmt = (d: string) =>
-    new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  return block.start_date === block.end_date
-    ? fmt(block.start_date)
-    : `${fmt(block.start_date)} – ${fmt(block.end_date)}`
-}
+import { blockDateLabel } from './blockDisplay'
 
 interface BlockedDatesProps {
   blocks: BlockedDate[]
@@ -39,7 +32,11 @@ export function BlockedDates({ blocks, loading, onRefetch }: BlockedDatesProps) 
         p_reason: blockReason || null,
       })
       if (error || !data) { toast.error('Failed to block dates'); return }
-      await onRefetch()
+      try {
+        await onRefetch()
+      } catch {
+        toast.error('Saved, but the list failed to refresh')
+      }
       setBlockStartDate('')
       setBlockEndDate('')
       setBlockReason('')
@@ -52,8 +49,16 @@ export function BlockedDates({ blocks, loading, onRefetch }: BlockedDatesProps) 
 
   async function removeBlock(blockId: string) {
     const { error } = await supabase.rpc('remove_blocked_dates', { p_block_id: blockId })
-    if (error) { toast.error('Failed to remove blocked dates') }
-    else { await onRefetch(); toast.success('Block removed') }
+    if (error) {
+      toast.error('Failed to remove blocked dates')
+    } else {
+      try {
+        await onRefetch()
+      } catch {
+        toast.error('Saved, but the list failed to refresh')
+      }
+      toast.success('Block removed')
+    }
     setRemoveBlockTarget(null)
   }
 
