@@ -276,7 +276,13 @@ export function AdminEnrollmentLeadsTab() {
       actions={actions}
       updatingIds={updatingIds}
       isPossibleDuplicate={duplicateLeadIds.has(lead.lead_id)}
-      onDuplicateClick={() => setSearch(lead.parent_email)}
+      onDuplicateClick={() => {
+        setActiveTab('all');
+        setHistoryFilter('all_terminal');
+        setSelectedWeekDate(null);
+        setWeekOffset(0);
+        setSearch(lead.parent_email);
+      }}
       onDeny={setDenyTarget}
       onResendBookingLink={setResendTarget}
       onPickDate={l => setPickDateTargetId(l.lead_id)}
@@ -337,7 +343,7 @@ export function AdminEnrollmentLeadsTab() {
     if (terminalLeads.length === 0) {
       return (
         <div className="text-center py-12 text-muted-foreground text-sm">
-          {emptyStateMessage(activeTab, debouncedSearch.trim() !== '')}
+          {emptyStateMessage('history', debouncedSearch.trim() !== '')}
         </div>
       );
     }

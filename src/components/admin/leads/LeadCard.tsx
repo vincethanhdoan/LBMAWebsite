@@ -180,7 +180,6 @@ export function LeadCard({
 
   return (
     <div
-      key={lead.lead_id}
       className={`bg-card rounded-lg border overflow-hidden ${
         lead.status === 'new' ? 'border-primary/25' : 'border-border'
       }`}

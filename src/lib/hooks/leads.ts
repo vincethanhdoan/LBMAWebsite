@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getActiveEnrollmentLeads,
   getTerminalEnrollmentLeads,
@@ -37,6 +37,7 @@ export function useTerminalLeads(filter: TerminalLeadFilter, search: string) {
     queryFn: ({ pageParam }) =>
       getTerminalEnrollmentLeads({ filter, search: search || undefined, page: pageParam }),
     getNextPageParam: (last, all) => (last.hasMore ? all.length : undefined),
+    placeholderData: keepPreviousData,
   });
 }
 
