@@ -1,180 +1,31 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Loader2, Mail, Phone, Calendar, Plus, Search, MoreVertical, Check, Pencil, ChevronLeft, ChevronRight, ChevronDown, Clock, AlertCircle, Send } from 'lucide-react';
+import { Loader2, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
-import { FunctionsHttpError } from '@supabase/supabase-js';
-import { edgeFunctionUserAuthHeaders, supabase } from '../../lib/supabase/client';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
-import type { EnrollmentLead, EnrollmentLeadNotification } from '../../lib/types';
+import type { EnrollmentLead } from '../../lib/types';
 import { useEnrollmentLeads, useUpdateLeadStatus, useUpdateLeadNotes, useDismissLead, useCloseLead, useArchiveLead, useRestoreLead } from '../../lib/hooks/leads';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { DenyModal } from './DenyModal';
 import { PickDateModal } from './PickDateModal';
 import { NewLeadModal } from './NewLeadModal';
-
-// ─── Program booking helpers ───────────────────────────────────────────────
-
-const PROGRAM_LABELS: Record<string, string> = {
-  little_dragons: 'Little Dragons',
-  youth: 'Youth Program',
-}
-
-const PROGRAM_BADGE_STYLES: Record<string, string> = {
-  little_dragons: 'bg-amber-50 text-amber-700 border border-amber-200',
-  youth: 'bg-teal-50 text-teal-700 border border-teal-200',
-}
-
-function formatProgramBookingStatus(booking: { status: string; appointment_date: string | null; appointment_time: string | null }): string {
-  if (booking.status === 'pending') return 'awaiting approval'
-  if (booking.status === 'link_sent') return 'link sent · not booked yet'
-  if ((booking.status === 'scheduled' || booking.status === 'confirmed') && booking.appointment_date) {
-    const date = new Date(booking.appointment_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-    const time = booking.appointment_time
-      ? new Date('1970-01-01T' + booking.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-      : ''
-    const icon = booking.status === 'confirmed' ? '✓' : '📅'
-    return `${icon} ${date}${time ? ' · ' + time : ''}`
-  }
-  return booking.status
-}
-
-
-function ReminderStatusBadge({ notification }: { notification: EnrollmentLeadNotification }) {
-  if (notification.status === 'sent') {
-    return (
-      <div className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#14532D] border border-[#86EFAC]">
-        <Check className="w-3 h-3 flex-shrink-0" />
-        <span>Confirmation sent · {formatDate(notification.created_at)}</span>
-      </div>
-    )
-  }
-  if (notification.status === 'queued') {
-    return (
-      <div className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
-        <Clock className="w-3 h-3 flex-shrink-0" />
-        <span>Confirmation queued</span>
-      </div>
-    )
-  }
-  return (
-    <div className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-[#FFF0F0] text-[#A01F23] border border-[rgba(160,31,35,0.2)]">
-      <AlertCircle className="w-3 h-3 flex-shrink-0" />
-      <span>Confirmation email failed</span>
-    </div>
-  )
-}
-
-// The family gets one confirmation email, queued either automatically on booking
-// (`booking_confirmation`) or by an admin pressing Send (`reminder`). Both count as
-// the same outbound email, so the UI reflects the single most recent notification by
-// created_at, regardless of status. Strict recency means a newer failed attempt is
-// surfaced (failed treatment + Retry) instead of being masked by an older sent one.
-function effectiveConfirmationNotification(lead: EnrollmentLead): EnrollmentLeadNotification | null {
-  const present = [lead.confirmationNotification, lead.reminderNotification].filter(
-    (n): n is EnrollmentLeadNotification => n !== null,
-  )
-  if (present.length === 0) return null
-  return present.sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
-}
-
-function ChildrenSection({ lead }: { lead: EnrollmentLead }) {
-  const hasChildren = lead.children && lead.children.length > 0
-  const hasBookings = lead.programBookings && lead.programBookings.length > 0
-
-  if (!hasChildren && !lead.student_name) return null
-
-  if (!hasChildren) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        [legacy] {lead.student_name}{lead.student_age ? `, age ${lead.student_age}` : ''}
-      </p>
-    )
-  }
-
-  if (!hasBookings) {
-    return (
-      <div className="flex flex-col gap-1">
-        {lead.children.map(c => (
-          <div key={c.child_id} className="flex items-center gap-2 text-sm">
-            <span>{c.name}</span>
-            <span className="text-muted-foreground">age {c.age}</span>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PROGRAM_BADGE_STYLES[c.program_type]}`}>
-              {PROGRAM_LABELS[c.program_type]}
-            </span>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      {lead.programBookings.map(booking => {
-        const groupChildren = lead.children.filter(c => c.program_type === booking.program_type)
-        return (
-          <div key={booking.booking_id}>
-            <div className="flex items-center justify-between gap-2">
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PROGRAM_BADGE_STYLES[booking.program_type]}`}>
-                {PROGRAM_LABELS[booking.program_type]}
-              </span>
-              <span className={`text-xs ${
-                booking.status === 'confirmed' ? 'text-green-600 font-medium'
-                : booking.status === 'scheduled' ? 'text-green-600'
-                : 'text-muted-foreground'
-              }`}>
-                {formatProgramBookingStatus(booking)}
-              </span>
-            </div>
-            <div className="pl-2 mt-1 flex flex-col gap-0.5">
-              {groupChildren.map(c => (
-                <span key={c.child_id} className="text-sm text-muted-foreground">
-                  {c.name} · age {c.age}
-                </span>
-              ))}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// ─── Tab config ────────────────────────────────────────────────────────────
-
-type TabId =
-  | 'new'
-  | 'approved'
-  | 'appointment_scheduled'
-  | 'appointment_confirmed'
-  | 'denied_closed'
-  | 'all';
-
-const TABS: { id: TabId; label: string; statuses?: EnrollmentLead['status'][] }[] = [
-  { id: 'new',                   label: 'New',             statuses: ['new'] },
-  { id: 'approved',              label: 'Approved',        statuses: ['approved'] },
-  { id: 'appointment_scheduled', label: 'Scheduled',       statuses: ['appointment_scheduled'] },
-  { id: 'appointment_confirmed', label: 'Confirmed',       statuses: ['appointment_confirmed'] },
-  { id: 'denied_closed',         label: 'Closed / Denied', statuses: ['denied', 'closed'] },
-  { id: 'all',                   label: 'All' },
-];
-
-const TAB_EXPLANATIONS: Partial<Record<TabId, string>> = {
-  new:                   'Fresh inquiries — approve to send a booking invite, or deny.',
-  approved:              'Booking link sent — waiting for the family to pick a date.',
-  appointment_scheduled: 'Date selected — waiting for the appointment day.',
-  appointment_confirmed: 'Appointment confirmed — family is coming in.',
-  denied_closed:         'Leads that were denied or closed.',
-};
-
-type ClosedDeniedFilter = 'all' | 'denied' | 'closed';
-
-function hasPastAppointment(lead: EnrollmentLead, todayKey: string): boolean {
-  const date = getLeadPrimaryDate(lead);
-  return date !== null && date < todayKey;
-}
+import { LeadCard } from './leads/LeadCard';
+import { LeadCalendarView } from './leads/LeadCalendarView';
+import { useLeadActions } from './leads/useLeadActions';
+import {
+  filterLeads,
+  hasPastAppointment,
+  toLocalDateKey,
+  getLeadPrimaryDate,
+  getMondayOfWeek,
+  formatWeekRange,
+  findNearestWeekOffset,
+  TABS,
+  TAB_EXPLANATIONS,
+  type TabId,
+  type ClosedDeniedFilter,
+} from './leads/leadDisplay';
 
 function tabCount(leads: EnrollmentLead[], tab: (typeof TABS)[number], todayKey: string): number {
   if (!tab.statuses) return leads.length;
@@ -183,169 +34,6 @@ function tabCount(leads: EnrollmentLead[], tab: (typeof TABS)[number], todayKey:
     matching = matching.filter(l => !hasPastAppointment(l, todayKey));
   }
   return matching.length;
-}
-
-function filterLeads(
-  leads: EnrollmentLead[],
-  tabId: TabId,
-  search: string,
-  closedDeniedFilter: ClosedDeniedFilter
-): EnrollmentLead[] {
-  let result: EnrollmentLead[];
-
-  if (tabId === 'denied_closed') {
-    switch (closedDeniedFilter) {
-      case 'denied':
-        result = leads.filter(l => l.status === 'denied');
-        break;
-      case 'closed':
-        result = leads.filter(l => l.status === 'closed');
-        break;
-      default:
-        result = leads.filter(l => l.status === 'denied' || l.status === 'closed');
-    }
-  } else {
-    const tab = TABS.find(t => t.id === tabId)!;
-    result = tab.statuses
-      ? leads.filter(l => tab.statuses!.includes(l.status))
-      : leads;
-  }
-
-  if (search.trim()) {
-    const q = search.toLowerCase();
-    result = result.filter(l =>
-      l.parent_name.toLowerCase().includes(q) ||
-      l.parent_email.toLowerCase().includes(q) ||
-      (l.student_name?.toLowerCase().includes(q) ?? false) ||
-      (l.children?.some(c => c.name.toLowerCase().includes(q)) ?? false)
-    );
-  }
-  return result;
-}
-
-// ─── Status display ────────────────────────────────────────────────────────
-
-const STATUS_LABELS: Record<EnrollmentLead['status'], string> = {
-  new:                   'New',
-  approved:              'Approved',
-  appointment_scheduled: 'Scheduled',
-  appointment_confirmed: 'Confirmed',
-  denied:                'Denied',
-  enrolled:              'Enrolled',
-  closed:                'Closed',
-};
-
-const BADGE_STYLES: Record<EnrollmentLead['status'], string> = {
-  new:                   'bg-[#FFF0F0] text-[#A01F23] border border-[rgba(160,31,35,0.2)]',
-  approved:              'bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]',
-  appointment_scheduled: 'bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0]',
-  appointment_confirmed: 'bg-[#DCFCE7] text-[#14532D] border border-[#86EFAC]',
-  denied:                'bg-[#F1F0EF] text-[#6B6866] border border-[#E8E6E3]',
-  enrolled:              'bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0]',
-  closed:                'bg-[#F1F0EF] text-[#6B6866] border border-[#E8E6E3]',
-};
-
-function AgingIndicator({ createdAt, now }: { createdAt: string; now: number }) {
-  const days = Math.floor((now - new Date(createdAt).getTime()) / 86_400_000);
-  const label = days === 0 ? 'today' : days === 1 ? '1d ago' : `${days}d ago`;
-  return (
-    <span className={`text-xs ${days >= 7 ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
-      {label}
-    </span>
-  );
-}
-
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  });
-}
-
-// ─── Calendar view helpers ─────────────────────────────────────────────────
-
-function toLocalDateKey(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function getLeadPrimaryDate(lead: EnrollmentLead): string | null {
-  const programDates = lead.programBookings
-    ?.filter(b => b.appointment_date)
-    .map(b => b.appointment_date as string)
-    .sort() ?? []
-  return programDates[0] ?? lead.appointment_date ?? null
-}
-
-function getLeadPrimaryTime(lead: EnrollmentLead): string | null {
-  if (lead.programBookings?.length) {
-    const withTime = lead.programBookings.filter(b => b.appointment_date && b.appointment_time)
-    if (withTime.length) {
-      const sorted = [...withTime].sort((a, b) =>
-        (a.appointment_date! + a.appointment_time!).localeCompare(b.appointment_date! + b.appointment_time!)
-      )
-      return sorted[0].appointment_time
-    }
-  }
-  return lead.appointment_time ?? null
-}
-
-function formatTimeShort(timeStr: string): string {
-  return new Date('1970-01-01T' + timeStr).toLocaleTimeString('en-US', {
-    hour: 'numeric', minute: '2-digit',
-  })
-}
-
-function formatGroupHeader(dateKey: string) {
-  const today = new Date()
-  const todayKey = toLocalDateKey(today)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(today.getDate() + 1)
-  const tomorrowKey = toLocalDateKey(tomorrow)
-  const d = new Date(dateKey + 'T12:00:00')
-  return {
-    label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-    isToday: dateKey === todayKey,
-    isTomorrow: dateKey === tomorrowKey,
-  }
-}
-
-function getMondayOfWeek(offset: number): Date {
-  const today = new Date()
-  const day = today.getDay() // 0=Sun … 6=Sat
-  const diffToMonday = day === 0 ? -6 : 1 - day
-  const monday = new Date(today)
-  monday.setDate(today.getDate() + diffToMonday + offset * 7)
-  monday.setHours(0, 0, 0, 0)
-  return monday
-}
-
-function formatWeekRange(monday: Date): string {
-  const friday = new Date(monday)
-  friday.setDate(monday.getDate() + 4)
-  const monLabel = monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  const friLabel =
-    monday.getMonth() === friday.getMonth()
-      ? String(friday.getDate())
-      : friday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  return `${monLabel} – ${friLabel}`
-}
-
-function findNearestWeekOffset(appointmentDates: string[]): number | null {
-  if (!appointmentDates.length) return null
-  const dateSet = new Set(appointmentDates)
-  // Prefer upcoming weeks first (current through +7), then fall back to recent past (-1 through -4)
-  const offsets = [0, 1, 2, 3, 4, 5, 6, 7, -1, -2, -3, -4]
-  for (const i of offsets) {
-    const monday = getMondayOfWeek(i)
-    for (let d = 0; d < 5; d++) {
-      const day = new Date(monday)
-      day.setDate(monday.getDate() + d)
-      if (dateSet.has(toLocalDateKey(day))) return i
-    }
-  }
-  return null
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────
@@ -359,6 +47,7 @@ export function AdminEnrollmentLeadsTab() {
   const closeLead = useCloseLead();
   const archiveLead = useArchiveLead();
   const restoreLead = useRestoreLead();
+  const actions = useLeadActions({ onError: msg => toast.error(msg) });
   const [now] = useState(Date.now);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('new');
@@ -375,7 +64,6 @@ export function AdminEnrollmentLeadsTab() {
   const [messageExpanded, setMessageExpanded] = useState<Record<string, boolean>>({});
   const [selectedWeekDate, setSelectedWeekDate] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
   const [actionLeadId, setActionLeadId] = useState<string | null>(null);
   const [showPastAppointments, setShowPastAppointments] = useState(false);
 
@@ -396,119 +84,6 @@ export function AdminEnrollmentLeadsTab() {
   const pickDateTarget = pickDateTargetId
     ? leads.find(l => l.lead_id === pickDateTargetId) ?? null
     : null;
-
-  async function handleApprove(lead: EnrollmentLead) {
-    if (actionLeadId) return;
-    setActionLeadId(lead.lead_id);
-    try {
-      const fnHeaders = await edgeFunctionUserAuthHeaders();
-      if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
-      const { error } = await supabase.functions.invoke('approve-enrollment-lead', {
-        body: { leadId: lead.lead_id },
-        headers: fnHeaders,
-      });
-      if (error) { toast.error('Failed to send approval'); return; }
-      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
-      toast.success('Approval sent');
-    } finally {
-      setActionLeadId(null);
-    }
-  }
-
-  async function handleResendBookingLink(lead: EnrollmentLead) {
-    if (actionLeadId) return;
-    setActionLeadId(lead.lead_id);
-    try {
-      const fnHeaders = await edgeFunctionUserAuthHeaders();
-      if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
-      const { error } = await supabase.functions.invoke('resend-booking-link', {
-        body: { leadId: lead.lead_id },
-        headers: fnHeaders,
-      });
-      if (error) { toast.error('Failed to resend booking link'); return; }
-      toast.success('Booking link resent');
-    } finally {
-      setActionLeadId(null);
-    }
-  }
-
-  async function handleDenyConfirm(leadId: string, message: string) {
-    const fnHeaders = await edgeFunctionUserAuthHeaders();
-    if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
-    const { error } = await supabase.functions.invoke('deny-enrollment-lead', {
-      body: { leadId, message },
-      headers: fnHeaders,
-    });
-    if (error) { toast.error('Failed to send denial'); return; }
-    queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
-    setDenyTarget(null);
-  }
-
-  async function handleBookingConfirm(
-    bookings: Array<{ programBookingId: string; slotId: string; appointmentDate: string }>
-  ) {
-    const fnHeaders = await edgeFunctionUserAuthHeaders();
-    if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
-
-    let failedProgram: string | null = null;
-    let slotTaken = false;
-    for (const b of bookings) {
-      const { data, error } = await supabase.functions.invoke('admin-book-appointment', {
-        body: { programBookingId: b.programBookingId, slotId: b.slotId, appointmentDate: b.appointmentDate },
-        headers: fnHeaders,
-      });
-      if (error || !data) {
-        if (error instanceof FunctionsHttpError) {
-          const body = await error.context.json().catch(() => null);
-          if (body?.code === 'slot_taken') { slotTaken = true; break; }
-        }
-        const programType = pickDateTarget?.programBookings.find(pb => pb.booking_id === b.programBookingId)?.program_type;
-        failedProgram = programType ? PROGRAM_LABELS[programType] : 'This';
-        break;
-      }
-    }
-
-    queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
-
-    if (slotTaken) {
-      toast.error('That time was just taken. Please pick another date.');
-      setPickDateTargetId(null);
-      return;
-    }
-
-    if (failedProgram) {
-      toast.error(`${failedProgram} appointment could not be booked — the other bookings were saved. Please try again.`);
-      return;
-    }
-
-    setPickDateTargetId(null);
-    toast.success('Appointment(s) booked');
-  }
-
-  async function handleSendReminder(lead: EnrollmentLead) {
-    setSendingReminderId(lead.lead_id);
-    try {
-      const fnHeaders = await edgeFunctionUserAuthHeaders();
-      if (!fnHeaders) { toast.error('Session expired. Please sign in again.'); return; }
-      const { error } = await supabase.functions.invoke('send-appointment-reminder', {
-        body: { leadId: lead.lead_id },
-        headers: fnHeaders,
-      });
-      if (error) {
-        const status = (error as { context?: { status?: number } }).context?.status;
-        if (status === 409) {
-          toast.error('Confirmation email already sent or queued');
-        } else {
-          toast.error('Failed to send confirmation email');
-        }
-        return;
-      }
-      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
-      toast.success('Confirmation email sent');
-    } finally {
-      setSendingReminderId(null);
-    }
-  }
 
   async function handleStatusChange(leadId: string, status: EnrollmentLead['status']) {
     setUpdatingId(leadId);
@@ -575,6 +150,33 @@ export function AdminEnrollmentLeadsTab() {
       setPendingAction(null);
     }
   }
+
+  const renderCard = (lead: EnrollmentLead) => (
+    <LeadCard
+      key={lead.lead_id}
+      lead={lead}
+      now={now}
+      activeTab={activeTab}
+      actions={actions}
+      updatingId={updatingId}
+      onDeny={setDenyTarget}
+      onPickDate={l => setPickDateTargetId(l.lead_id)}
+      onDismiss={l => setPendingAction({ type: 'dismiss', lead: l })}
+      onArchive={l => setPendingAction({ type: 'archive', lead: l })}
+      onStatusChange={handleStatusChange}
+      onCloseLead={handleCloseLead}
+      notes={{
+        draft: notesDraft[lead.lead_id] ?? '',
+        expanded: notesExpanded[lead.lead_id] ?? false,
+        saved: notesSaved[lead.lead_id] ?? false,
+        onDraftChange: v => setNotesDraft(d => ({ ...d, [lead.lead_id]: v })),
+        onToggle: () => setNotesExpanded(e => ({ ...e, [lead.lead_id]: true })),
+        onSave: () => handleNotesSave(lead.lead_id),
+      }}
+      messageExpanded={messageExpanded[lead.lead_id] ?? false}
+      onToggleMessage={() => setMessageExpanded(e => ({ ...e, [lead.lead_id]: !e[lead.lead_id] }))}
+    />
+  );
 
   // ─── Derived data ──────────────────────────────────────────────────────────
 
@@ -665,320 +267,6 @@ export function AdminEnrollmentLeadsTab() {
       <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-3" />
         Loading leads…
-      </div>
-    );
-  }
-
-  // ─── Lead card renderer ────────────────────────────────────────────────────
-
-  function renderLeadCard(lead: EnrollmentLead) {
-    const primaryTime = getLeadPrimaryTime(lead);
-    const confirmationEmail = effectiveConfirmationNotification(lead);
-
-    return (
-      <div
-        key={lead.lead_id}
-        className={`bg-card rounded-lg border overflow-hidden ${
-          lead.status === 'new' ? 'border-primary/25' : 'border-border'
-        }`}
-      >
-        <div className="p-4 space-y-3">
-
-          {/* Row 1: name + time (for calendar tabs) or aging + badge + kebab */}
-          <div className="flex items-start justify-between gap-3">
-            <span className="font-semibold text-base leading-tight">{lead.parent_name}</span>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {isCalendarTab && primaryTime ? (
-                <div className="text-right">
-                  <div className="text-base font-bold text-primary leading-tight tabular-nums">
-                    {formatTimeShort(primaryTime)}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold mt-0.5">
-                    {STATUS_LABELS[lead.status]}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {activeTab === 'new' && <AgingIndicator createdAt={lead.created_at} now={now} />}
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${BADGE_STYLES[lead.status]}`}>
-                    {STATUS_LABELS[lead.status]}
-                  </span>
-                </>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                    disabled={lead.status === 'denied'}
-                    onSelect={() => setPendingAction({ type: 'dismiss', lead })}
-                  >
-                    Dismiss silently
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                    onSelect={() => setPendingAction({ type: 'archive', lead })}
-                  >
-                    Archive
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
-          {/* Row 2: contact info */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            <a
-              href={`mailto:${lead.parent_email}`}
-              className="flex items-center gap-1.5 text-primary hover:underline"
-            >
-              <Mail className="w-3.5 h-3.5" />
-              {lead.parent_email}
-            </a>
-            {lead.phone && (
-              <a
-                href={`tel:${lead.phone}`}
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                {lead.phone}
-              </a>
-            )}
-          </div>
-
-          {/* Children / program bookings */}
-          {(lead.children?.length > 0 || lead.student_name) && (
-            <div className="border-t border-border/50 pt-3">
-              <ChildrenSection lead={lead} />
-            </div>
-          )}
-
-          {/* Approval timestamp — hidden for calendar tabs since date is shown in the group header */}
-          {!isCalendarTab && lead.approval_email_sent_at && (
-            <div className="text-xs text-muted-foreground">
-              Invite sent {formatDate(lead.approval_email_sent_at)}
-            </div>
-          )}
-
-          {/* Confirmation email status */}
-          {(lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && confirmationEmail && confirmationEmail.status !== 'failed' && (
-            <ReminderStatusBadge notification={confirmationEmail} />
-          )}
-
-          {/* Appointment date — shown on non-calendar tabs only */}
-          {!isCalendarTab && (lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && lead.appointment_date && (
-            <div className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {new Date(lead.appointment_date + 'T12:00:00').toLocaleDateString('en-US', {
-                weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-              })}
-              {lead.appointment_time && ` at ${new Date('1970-01-01T' + lead.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
-            </div>
-          )}
-
-          {/* Message */}
-          {lead.message && (
-            <div>
-              <div className={`text-sm text-muted-foreground bg-muted/40 rounded-md px-3 py-2 leading-relaxed border border-border/50 ${!messageExpanded[lead.lead_id] && lead.message.length > 150 ? 'line-clamp-3' : ''}`}>
-                {lead.message}
-              </div>
-              {lead.message.length > 150 && (
-                <button
-                  onClick={() => setMessageExpanded(e => ({ ...e, [lead.lead_id]: !e[lead.lead_id] }))}
-                  className="text-xs text-muted-foreground hover:text-foreground mt-1 px-1 transition-colors"
-                >
-                  {messageExpanded[lead.lead_id] ? 'Show less' : 'Show more'}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Admin notes */}
-          {notesExpanded[lead.lead_id] ? (
-            <textarea
-              autoFocus
-              value={notesDraft[lead.lead_id] ?? ''}
-              onChange={e => setNotesDraft(d => ({ ...d, [lead.lead_id]: e.target.value }))}
-              onBlur={() => handleNotesSave(lead.lead_id)}
-              rows={2}
-              placeholder="Internal notes (only visible to admins)…"
-              className="w-full text-sm px-3 py-2 border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/60"
-            />
-          ) : notesDraft[lead.lead_id]?.trim() ? (
-            <div className="flex items-start gap-2 group">
-              <p className="flex-1 text-sm text-muted-foreground bg-muted/40 rounded-md px-3 py-2 leading-relaxed border border-border/50">
-                {notesDraft[lead.lead_id]}
-              </p>
-              <div className="flex items-center gap-0.5 flex-shrink-0 pt-1.5">
-                {notesSaved[lead.lead_id] && <Check className="w-3.5 h-3.5 text-green-600" />}
-                <button
-                  onClick={() => setNotesExpanded(e => ({ ...e, [lead.lead_id]: true }))}
-                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setNotesExpanded(e => ({ ...e, [lead.lead_id]: true }))}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors py-0.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add note
-            </button>
-          )}
-
-          {/* Actions */}
-          <div className="flex flex-wrap gap-2">
-              {lead.status === 'new' && (
-                <>
-                  <Button size="sm" onClick={() => handleApprove(lead)} disabled={actionLeadId === lead.lead_id}>
-                    Approve &amp; Send Invites
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-destructive border-destructive/40 hover:bg-destructive/5"
-                    onClick={() => setDenyTarget(lead)}
-                  >
-                    Deny
-                  </Button>
-                </>
-              )}
-              {lead.status === 'approved' && (
-                <>
-                  <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)} disabled={actionLeadId === lead.lead_id}>
-                    Resend Invites
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setPickDateTargetId(lead.lead_id)}>
-                    Pick Date for Them
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-destructive border-destructive/40 hover:bg-destructive/5"
-                    onClick={() => setDenyTarget(lead)}
-                  >
-                    Deny
-                  </Button>
-                </>
-              )}
-              {(lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && (
-                <>
-                  <Button size="sm" variant="outline" onClick={() => handleResendBookingLink(lead)} disabled={actionLeadId === lead.lead_id}>
-                    Resend Invites
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setPickDateTargetId(lead.lead_id)}>
-                    Pick New Date
-                  </Button>
-                  {(!confirmationEmail || confirmationEmail.status === 'failed') && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={sendingReminderId === lead.lead_id}
-                      onClick={() => handleSendReminder(lead)}
-                      className="gap-1.5"
-                    >
-                      {sendingReminderId === lead.lead_id ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" />Sending…</>
-                      ) : confirmationEmail?.status === 'failed' ? (
-                        <><AlertCircle className="w-3.5 h-3.5 text-[#A01F23]" />Retry Confirmation</>
-                      ) : (
-                        <><Send className="w-3.5 h-3.5" />Send Confirmation</>
-                      )}
-                    </Button>
-                  )}
-                </>
-              )}
-              {(lead.status === 'appointment_confirmed' || hasPastAppointment(lead, todayKey)) && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-[#166534] border-[#BBF7D0] hover:bg-[#F0FDF4]"
-                    disabled={updatingId === lead.lead_id}
-                    onClick={() => handleStatusChange(lead.lead_id, 'enrolled')}
-                  >
-                    Mark enrolled
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-muted-foreground"
-                    disabled={updatingId === lead.lead_id}
-                    onClick={() => handleCloseLead(lead.lead_id)}
-                  >
-                    Close lead
-                  </Button>
-                </>
-              )}
-              {(lead.status === 'enrolled' || lead.status === 'closed') && (
-                <Select
-                  value={lead.status}
-                  onValueChange={val =>
-                    val === 'closed'
-                      ? handleCloseLead(lead.lead_id)
-                      : handleStatusChange(lead.lead_id, val as EnrollmentLead['status'])
-                  }
-                  disabled={updatingId === lead.lead_id}
-                >
-                  <SelectTrigger className="w-40 h-9 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="enrolled">Enrolled</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-        </div>
-      </div>
-    );
-  }
-
-  function renderDateGroup({ dateKey, leads: groupLeads }: { dateKey: string; leads: EnrollmentLead[] }) {
-    if (!dateKey) {
-      return (
-        <div key="no-date">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground">No date set</span>
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground font-semibold">{groupLeads.length}</span>
-          </div>
-          <div className="space-y-2">{groupLeads.map(renderLeadCard)}</div>
-        </div>
-      );
-    }
-    const { label, isToday, isTomorrow } = formatGroupHeader(dateKey);
-    return (
-      <div key={dateKey}>
-        <div className="flex items-center gap-2 mb-3">
-          <span className={`text-sm font-bold tracking-wide uppercase ${isToday ? 'text-primary' : 'text-foreground/80'}`}>
-            {label}
-          </span>
-          {isToday && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground tracking-wide uppercase">
-              Today
-            </span>
-          )}
-          {isTomorrow && (
-            <span className="text-[10px] font-semibold text-muted-foreground tracking-wide uppercase">
-              Tomorrow
-            </span>
-          )}
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-muted-foreground font-semibold flex-shrink-0">
-            {groupLeads.length} {groupLeads.length === 1 ? 'appointment' : 'appointments'}
-          </span>
-        </div>
-        <div className="space-y-2">{groupLeads.map(renderLeadCard)}</div>
       </div>
     );
   }
@@ -1089,120 +377,35 @@ export function AdminEnrollmentLeadsTab() {
         </div>
       )}
 
-      {/* Week strip — calendar tabs only */}
-      {isCalendarTab && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => { setWeekOffset(w => w - 1); setSelectedWeekDate(null); }}
-              aria-label="Previous week"
-              className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-sm font-semibold text-foreground/80">
-              {formatWeekRange(getMondayOfWeek(weekOffset))}
-            </span>
-            <button
-              onClick={() => { setWeekOffset(w => w + 1); setSelectedWeekDate(null); }}
-              aria-label="Next week"
-              className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex gap-1">
-            {weekStripDays.map(day => {
-              const isSelected = selectedWeekDate === day.dateKey;
-              const hasApts = day.count > 0;
-              return (
-                <button
-                  key={day.dateKey}
-                  onClick={() => setSelectedWeekDate(isSelected ? null : day.dateKey)}
-                  className={`flex flex-col items-center px-3 py-2 rounded-lg flex-1 min-w-0 transition-colors border ${
-                    isSelected
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : day.isToday
-                      ? 'border-primary/30 bg-primary/5 hover:bg-primary/10'
-                      : 'border-transparent hover:bg-muted'
-                  }`}
-                >
-                  <span className={`text-[10px] font-bold tracking-widest ${
-                    isSelected ? 'text-primary-foreground/75' : 'text-muted-foreground'
-                  }`}>
-                    {day.dayName}
-                  </span>
-                  <span className={`text-lg font-bold leading-tight ${
-                    isSelected ? 'text-primary-foreground' : day.isToday ? 'text-primary' : 'text-foreground'
-                  }`}>
-                    {day.dayNum}
-                  </span>
-                  <div className="flex gap-0.5 mt-1 min-h-[6px] items-center">
-                    {Array.from({ length: Math.min(day.count, 3) }, (_, i) => (
-                      <span
-                        key={i}
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          isSelected ? 'bg-primary-foreground/60' : 'bg-primary'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className={`text-[10px] font-semibold mt-0.5 ${
-                    isSelected ? 'text-primary-foreground/75' : hasApts ? 'text-primary' : 'text-muted-foreground/35'
-                  }`}>
-                    {hasApts ? day.count : '·'}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Lead list */}
-      {visibleLeads.length === 0 ? (
+      {isCalendarTab ? (
+        <LeadCalendarView
+          dateGroups={dateGroups}
+          pastDateGroups={pastDateGroups}
+          pastAppointmentCount={pastAppointmentCount}
+          showPastAppointments={showPastAppointments}
+          onToggleShowPast={() => setShowPastAppointments(s => !s)}
+          weekStripDays={weekStripDays}
+          weekOffset={weekOffset}
+          onWeekOffsetChange={setWeekOffset}
+          selectedWeekDate={selectedWeekDate}
+          onSelectWeekDate={setSelectedWeekDate}
+          weekRangeLabel={formatWeekRange(getMondayOfWeek(weekOffset))}
+          appointmentCountsByDate={appointmentCountsByDate}
+          renderCard={renderCard}
+          emptyMessage={
+            visibleLeads.length === 0
+              ? (search.trim() ? 'No leads match your search.' : 'No leads in this status.')
+              : null
+          }
+        />
+      ) : visibleLeads.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
           {search.trim() ? 'No leads match your search.' : 'No leads in this status.'}
         </div>
-      ) : isCalendarTab ? (
-        /* ── Date-grouped calendar view ── */
-        <div className="space-y-6">
-          {dateGroups.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">
-              {selectedWeekDate ? 'No appointments on this date.' : 'No appointments this week.'}
-            </div>
-          ) : (
-            dateGroups.map(renderDateGroup)
-          )}
-          {pastAppointmentCount > 0 && (
-            <div className="pt-2">
-              <button
-                onClick={() => setShowPastAppointments(s => !s)}
-                className="flex items-center gap-2 w-full text-left group"
-              >
-                <ChevronDown
-                  className={`w-4 h-4 text-muted-foreground transition-transform ${showPastAppointments ? '' : '-rotate-90'}`}
-                />
-                <span className="text-sm font-bold tracking-wide uppercase text-foreground/80">
-                  Past appointments — needs follow-up
-                </span>
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted-foreground font-semibold flex-shrink-0">
-                  {pastAppointmentCount}
-                </span>
-              </button>
-              {showPastAppointments && (
-                <div className="space-y-6 mt-4">
-                  {pastDateGroups.map(renderDateGroup)}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       ) : (
-        /* ── Flat list for all other tabs ── */
         <div className="space-y-3">
-          {visibleLeads.map(renderLeadCard)}
+          {visibleLeads.map(renderCard)}
         </div>
       )}
 
@@ -1238,10 +441,18 @@ export function AdminEnrollmentLeadsTab() {
         </AlertDialog>
       )}
       {denyTarget && (
-        <DenyModal lead={denyTarget} onConfirm={handleDenyConfirm} onCancel={() => setDenyTarget(null)} />
+        <DenyModal
+          lead={denyTarget}
+          onConfirm={async (leadId, message) => { if (await actions.deny(leadId, message)) setDenyTarget(null); }}
+          onCancel={() => setDenyTarget(null)}
+        />
       )}
       {pickDateTarget && (
-        <PickDateModal lead={pickDateTarget} onConfirm={handleBookingConfirm} onCancel={() => setPickDateTargetId(null)} />
+        <PickDateModal
+          lead={pickDateTarget}
+          onConfirm={async bookings => { if (await actions.bookAppointments(pickDateTarget, bookings)) setPickDateTargetId(null); }}
+          onCancel={() => setPickDateTargetId(null)}
+        />
       )}
       {showNewLeadModal && (
         <NewLeadModal
