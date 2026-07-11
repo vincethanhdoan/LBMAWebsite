@@ -153,6 +153,7 @@ Deno.serve(async (req) => {
       appointment_date: appointmentDate,
       appointment_time: slot.start_time,
       status: newProgramStatus,
+      updated_by: user.id,
     })
     .eq('booking_id', programBooking.booking_id)
 

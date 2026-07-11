@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
   const { error } = await supabase
     .from('enrollment_lead_program_bookings')
-    .update({ status: 'confirmed' })
+    .update({ status: 'confirmed', updated_by: null })
     .eq('booking_id', programBooking.booking_id)
 
   if (error) return new Response('Confirmation failed', { status: 500, headers: cors })
