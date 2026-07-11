@@ -8,6 +8,7 @@ import {
 import {
   updateLeadStatus,
   updateLeadAdminNotes,
+  updateEnrollmentLead,
   dismissLeadSilently,
   closeLead,
   archiveEnrollmentLead,
@@ -62,6 +63,22 @@ export function useUpdateLeadNotes() {
   return useMutation({
     mutationFn: ({ leadId, notes }: { leadId: string; notes: string }) =>
       updateLeadAdminNotes(leadId, notes),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+    },
+  });
+}
+
+export function useUpdateLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      leadId: string;
+      parentName: string;
+      parentEmail: string;
+      phone: string | null;
+      children: Array<{ childId: string | null; name: string; age: number }>;
+    }) => updateEnrollmentLead(input),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
     },

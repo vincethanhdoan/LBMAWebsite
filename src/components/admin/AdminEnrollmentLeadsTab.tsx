@@ -10,6 +10,7 @@ import { queryKeys } from '../../lib/queryKeys';
 import { DenyModal } from './DenyModal';
 import { PickDateModal } from './PickDateModal';
 import { NewLeadModal } from './NewLeadModal';
+import { EditLeadModal } from './leads/EditLeadModal';
 import { LeadCard } from './leads/LeadCard';
 import { LeadCalendarView } from './leads/LeadCalendarView';
 import { ActionNeededView } from './leads/ActionNeededView';
@@ -88,6 +89,7 @@ export function AdminEnrollmentLeadsTab() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [denyTarget, setDenyTarget] = useState<EnrollmentLead | null>(null);
   const [pickDateTargetId, setPickDateTargetId] = useState<string | null>(null);
+  const [editTargetId, setEditTargetId] = useState<string | null>(null);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: 'dismiss' | 'archive'; lead: EnrollmentLead } | null>(null);
   const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({});
@@ -123,6 +125,9 @@ export function AdminEnrollmentLeadsTab() {
   // after a refetch (e.g. a partial multi-program booking failure).
   const pickDateTarget = pickDateTargetId
     ? activeLeads.find(l => l.lead_id === pickDateTargetId) ?? null
+    : null;
+  const editTarget = editTargetId
+    ? allLoadedLeads.find(l => l.lead_id === editTargetId) ?? null
     : null;
 
   async function handleStatusChange(leadId: string, status: EnrollmentLead['status']) {
@@ -214,6 +219,7 @@ export function AdminEnrollmentLeadsTab() {
       updatingId={updatingId}
       onDeny={setDenyTarget}
       onPickDate={l => setPickDateTargetId(l.lead_id)}
+      onEdit={l => setEditTargetId(l.lead_id)}
       onDismiss={l => setPendingAction({ type: 'dismiss', lead: l })}
       onArchive={l => setPendingAction({ type: 'archive', lead: l })}
       onStatusChange={handleStatusChange}
@@ -626,6 +632,13 @@ export function AdminEnrollmentLeadsTab() {
           lead={pickDateTarget}
           onConfirm={async bookings => { if (await actions.bookAppointments(pickDateTarget, bookings)) setPickDateTargetId(null); }}
           onCancel={() => setPickDateTargetId(null)}
+        />
+      )}
+      {editTarget && (
+        <EditLeadModal
+          lead={editTarget}
+          onSuccess={() => setEditTargetId(null)}
+          onCancel={() => setEditTargetId(null)}
         />
       )}
       {showNewLeadModal && (

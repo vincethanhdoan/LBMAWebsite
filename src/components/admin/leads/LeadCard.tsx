@@ -124,6 +124,7 @@ interface LeadCardProps {
   updatingId: string | null;
   onDeny: (lead: EnrollmentLead) => void;
   onPickDate: (lead: EnrollmentLead) => void;
+  onEdit: (lead: EnrollmentLead) => void;
   onDismiss: (lead: EnrollmentLead) => void;
   onArchive: (lead: EnrollmentLead) => void;
   onStatusChange: (leadId: string, status: EnrollmentLead['status']) => void;
@@ -148,6 +149,7 @@ export function LeadCard({
   updatingId,
   onDeny,
   onPickDate,
+  onEdit,
   onDismiss,
   onArchive,
   onStatusChange,
@@ -198,6 +200,9 @@ export function LeadCard({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => onEdit(lead)}>
+                  Edit details
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive focus:bg-destructive/10"
                   disabled={lead.status === 'denied'}

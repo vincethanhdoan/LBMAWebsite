@@ -772,3 +772,20 @@ export async function createEnrollmentLead(fields: {
   if (error) throw error
   return data as string
 }
+
+export async function updateEnrollmentLead(input: {
+  leadId: string
+  parentName: string
+  parentEmail: string
+  phone: string | null
+  children: Array<{ childId: string | null; name: string; age: number }>
+}): Promise<void> {
+  const { error } = await supabase.rpc('update_enrollment_lead', {
+    p_lead_id: input.leadId,
+    p_parent_name: input.parentName,
+    p_parent_email: input.parentEmail,
+    p_phone: input.phone,
+    p_children: input.children.map(c => ({ child_id: c.childId, name: c.name, age: c.age })),
+  })
+  if (error) throw error
+}
