@@ -128,6 +128,39 @@ export function useLeadActions({ onError }: { onError: (msg: string) => void }) 
     }
   }
 
+  async function markConfirmed(lead: EnrollmentLead): Promise<boolean> {
+    if (busyLeadIds.has(lead.lead_id)) return false;
+    markBusy(lead.lead_id);
+    try {
+      const fnHeaders = await edgeFunctionUserAuthHeaders();
+      if (!fnHeaders) { onError('Session expired. Please sign in again.'); return false; }
+      const { error } = await supabase.functions.invoke('admin-confirm-appointment', {
+        body: { leadId: lead.lead_id },
+        headers: fnHeaders,
+      });
+      if (error) { onError('Failed to confirm appointment'); return false; }
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+      toast('Appointment confirmed', {
+        action: { label: 'Undo', onClick: () => { unconfirm(lead); } },
+      });
+      return true;
+    } finally {
+      clearBusy(lead.lead_id);
+    }
+  }
+
+  async function unconfirm(lead: EnrollmentLead): Promise<boolean> {
+    const fnHeaders = await edgeFunctionUserAuthHeaders();
+    if (!fnHeaders) { onError('Session expired. Please sign in again.'); return false; }
+    const { error } = await supabase.functions.invoke('admin-confirm-appointment', {
+      body: { leadId: lead.lead_id, action: 'unconfirm' },
+      headers: fnHeaders,
+    });
+    if (error) { onError('Failed to undo'); return false; }
+    queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+    return true;
+  }
+
   async function sendReminder(lead: EnrollmentLead) {
     setSendingReminderId(lead.lead_id);
     try {
@@ -153,5 +186,5 @@ export function useLeadActions({ onError }: { onError: (msg: string) => void }) 
     }
   }
 
-  return { approve, resendBookingLink, deny, bookAppointments, sendReminder, busyLeadIds, sendingReminderId };
+  return { approve, resendBookingLink, deny, bookAppointments, markConfirmed, unconfirm, sendReminder, busyLeadIds, sendingReminderId };
 }
