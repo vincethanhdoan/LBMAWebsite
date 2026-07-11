@@ -15,9 +15,10 @@ type NotificationBellProps = {
   viewAllTab?: string;
   onOpenLead?: (leadId: string) => void;
   onOpenPost?: (tab: 'announcements' | 'blog', postId: string) => void;
+  variant?: 'sidebar' | 'header';
 };
 
-export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, onOpenPost }: NotificationBellProps) {
+export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, onOpenPost, variant = 'sidebar' }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: summary, isLoading: loading, refetch: loadSummary } = useNotificationSummary(userId);
@@ -77,13 +78,21 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, o
     <Popover open={open} onOpenChange={(val) => { setOpen(val); if (val) loadSummary(); }}>
       <PopoverTrigger asChild>
         <button
-          className="relative p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
+          className={`relative p-1.5 rounded-md transition-colors ${
+            variant === 'header'
+              ? 'hover:bg-accent text-muted-foreground hover:text-foreground'
+              : 'hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground'
+          }`}
           aria-label={totalUnread > 0 ? `${totalUnread} unread notifications` : 'Notifications'}
         >
           <Bell className="h-4 w-4" />
           {totalUnread > 0 && (
             <span
-              className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-sidebar-primary px-1 text-[10px] font-medium text-sidebar-primary-foreground"
+              className={`absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium ${
+                variant === 'header'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-sidebar-primary text-sidebar-primary-foreground'
+              }`}
               aria-hidden="true"
             >
               {totalUnread > 9 ? '9+' : totalUnread}
@@ -91,7 +100,11 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, o
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" side="right" className="w-72 p-0">
+      <PopoverContent
+        align={variant === 'header' ? 'end' : 'start'}
+        side={variant === 'header' ? 'bottom' : 'right'}
+        className="w-72 p-0"
+      >
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <span className="font-semibold text-sm">Notifications</span>
           {totalUnread > 0 && (

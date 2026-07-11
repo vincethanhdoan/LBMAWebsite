@@ -142,15 +142,6 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
               <span className="text-sm font-semibold leading-none text-sidebar-foreground">LBMAA</span>
               <span className="mt-0.5 text-xs text-sidebar-foreground/60">Admin Portal</span>
             </div>
-            <div className="group-data-[collapsible=icon]:hidden">
-              <NotificationBell
-                userId={user.id}
-                onNavigate={(tab) => setActiveTab(tab as AdminTabId)}
-                viewAllTab="notifications"
-                onOpenLead={(id) => setSearchParams({ tab: 'leads', lead: id }, { replace: true })}
-                onOpenPost={(tab, postId) => setSearchParams({ tab, post: postId }, { replace: true })}
-              />
-            </div>
           </div>
         </SidebarHeader>
 
@@ -321,6 +312,14 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
           <span className="hidden text-sm text-muted-foreground md:block">
             {user.displayName}
           </span>
+          <NotificationBell
+            userId={user.id}
+            onNavigate={(tab) => setActiveTab(tab as AdminTabId)}
+            viewAllTab="notifications"
+            onOpenLead={(id) => setSearchParams({ tab: 'leads', lead: id }, { replace: true })}
+            onOpenPost={(tab, postId) => setSearchParams({ tab, post: postId }, { replace: true })}
+            variant="header"
+          />
         </header>
 
         {/* Scrollable page content */}
