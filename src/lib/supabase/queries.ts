@@ -20,6 +20,7 @@ import type {
   FeedbackTest,
   Review,
   AppointmentSlot,
+  BlockedDate,
   AdminNotificationSetting,
   UserNotification,
   UserNotificationPreferences,
@@ -832,6 +833,19 @@ export async function getProgramBookingByToken(token: string): Promise<{
   const { data, error } = await supabase.rpc('get_program_booking_by_token', { p_token: token });
   if (error) throw error;
   return data?.[0] ?? null;
+}
+
+// ============================================
+// BLOCKED DATES
+// ============================================
+
+export async function getBlockedDates(): Promise<BlockedDate[]> {
+  const { data, error } = await supabase
+    .from('blocked_dates')
+    .select('*')
+    .order('start_date');
+  if (error) throw error;
+  return (data ?? []) as BlockedDate[];
 }
 
 // ============================================

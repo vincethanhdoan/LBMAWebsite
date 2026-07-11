@@ -90,7 +90,7 @@ const navGroups: {
     label: 'Enrollment',
     items: [
       { id: 'leads', label: 'Enrollment Leads', icon: ClipboardList },
-      { id: 'availability', label: 'Availability & Notifications', icon: CalendarCog },
+      { id: 'availability', label: 'Availability', icon: CalendarCog },
     ],
   },
 ];
