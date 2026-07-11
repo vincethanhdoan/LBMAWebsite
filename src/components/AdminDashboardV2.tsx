@@ -125,7 +125,7 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
 
   useEffect(() => {
     if (activeTab === 'team' && !isOwner) {
-      setSearchParams({ tab: 'announcements' }, { replace: true });
+      setSearchParams({ tab: 'notifications' }, { replace: true });
     }
   }, [activeTab, isOwner, setSearchParams]);
 
