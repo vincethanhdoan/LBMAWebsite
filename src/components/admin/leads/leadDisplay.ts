@@ -1,5 +1,4 @@
 import type { EnrollmentLead, EnrollmentLeadNotification } from '../../../lib/types';
-import type { TerminalLeadFilter } from '../../../lib/supabase/queries';
 
 // ─── Program booking helpers ───────────────────────────────────────────────
 
@@ -40,50 +39,7 @@ export function effectiveConfirmationNotification(lead: EnrollmentLead): Enrollm
   return present.sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
 }
 
-// ─── Tab config ────────────────────────────────────────────────────────────
-
-export type TabId =
-  | 'action_needed'
-  | 'new'
-  | 'approved'
-  | 'appointment_scheduled'
-  | 'appointment_confirmed'
-  | 'history'
-  | 'all';
-
-export const TABS: { id: TabId; label: string; statuses?: EnrollmentLead['status'][] }[] = [
-  { id: 'action_needed',         label: 'Action Needed' },
-  { id: 'new',                   label: 'New',       statuses: ['new'] },
-  { id: 'approved',              label: 'Approved',  statuses: ['approved'] },
-  { id: 'appointment_scheduled', label: 'Scheduled', statuses: ['appointment_scheduled'] },
-  { id: 'appointment_confirmed', label: 'Confirmed', statuses: ['appointment_confirmed'] },
-  { id: 'history',               label: 'History' },
-  { id: 'all',                   label: 'All' },
-];
-
-export const TAB_EXPLANATIONS: Partial<Record<TabId, string>> = {
-  action_needed:         'Everything that needs a decision or a nudge.',
-  new:                   'Fresh inquiries — approve to send a booking invite, or deny.',
-  approved:              'Booking link sent — waiting for the family to pick a date.',
-  appointment_scheduled: 'Date selected — waiting for the appointment day.',
-  appointment_confirmed: 'Appointment confirmed — family is coming in.',
-  history:               'Enrolled, closed, denied, and archived leads.',
-};
-
-export type HistoryFilter = TerminalLeadFilter;
-
-export const HISTORY_FILTERS: { id: HistoryFilter; label: string }[] = [
-  { id: 'all_terminal', label: 'All' },
-  { id: 'enrolled',     label: 'Enrolled' },
-  { id: 'closed',       label: 'Closed' },
-  { id: 'denied',       label: 'Denied' },
-  { id: 'archived',     label: 'Archived' },
-];
-
-export function hasPastAppointment(lead: EnrollmentLead, todayKey: string): boolean {
-  const date = getLeadPrimaryDate(lead);
-  return date !== null && date < todayKey;
-}
+// ─── Search ────────────────────────────────────────────────────────────────
 
 export function leadMatchesSearch(lead: EnrollmentLead, search: string): boolean {
   const q = search.trim().toLowerCase();
@@ -97,19 +53,6 @@ export function leadMatchesSearch(lead: EnrollmentLead, search: string): boolean
     (lead.student_name?.toLowerCase().includes(q) ?? false) ||
     (lead.children?.some(c => c.name.toLowerCase().includes(q)) ?? false)
   );
-}
-
-export function filterLeads(
-  leads: EnrollmentLead[],
-  tabId: TabId,
-  search: string
-): EnrollmentLead[] {
-  const tab = TABS.find(t => t.id === tabId)!;
-  const result = tab.statuses
-    ? leads.filter(l => tab.statuses!.includes(l.status))
-    : leads;
-
-  return result.filter(l => leadMatchesSearch(l, search));
 }
 
 // ─── Status display ────────────────────────────────────────────────────────
@@ -207,20 +150,4 @@ export function formatWeekRange(weekStart: Date): string {
       ? String(weekEnd.getDate())
       : weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   return `${startLabel} – ${endLabel}`
-}
-
-export function findNearestWeekOffset(appointmentDates: string[]): number | null {
-  if (!appointmentDates.length) return null
-  const dateSet = new Set(appointmentDates)
-  // Prefer upcoming weeks first (current through +7), then fall back to recent past (-1 through -4)
-  const offsets = [0, 1, 2, 3, 4, 5, 6, 7, -1, -2, -3, -4]
-  for (const i of offsets) {
-    const weekStart = getWeekStart(i)
-    for (let d = 0; d < 7; d++) {
-      const day = new Date(weekStart)
-      day.setDate(weekStart.getDate() + d)
-      if (dateSet.has(toLocalDateKey(day))) return i
-    }
-  }
-  return null
 }

@@ -1,6 +1,7 @@
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getActiveEnrollmentLeads,
+  getBlockedDates,
   getTerminalEnrollmentLeads,
   getTerminalLeadCounts,
   getUpcomingBookings,
@@ -57,6 +58,13 @@ export function useUpcomingBookings() {
   return useQuery({
     queryKey: queryKeys.upcomingBookings(),
     queryFn: getUpcomingBookings,
+  });
+}
+
+export function useBlockedDates() {
+  return useQuery({
+    queryKey: ['blocked-dates'],
+    queryFn: getBlockedDates,
   });
 }
 
