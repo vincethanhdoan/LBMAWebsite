@@ -59,7 +59,13 @@ Deno.serve(async (req) => {
   const { data: isOwner } = await supabase.rpc('is_owner', { user_uuid: user.id })
   if (!isOwner) return jsonError('Owner access required', 403, cors)
 
-  const { action = 'invite', email, name } = await req.json()
+  let body: { action?: string; email?: string; name?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return jsonError('Invalid request body', 400, cors)
+  }
+  const { action = 'invite', email, name } = body
   if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return jsonError('Enter a valid email address', 400, cors)
   }
