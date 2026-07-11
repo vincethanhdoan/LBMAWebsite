@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { SlotSettings } from './availability/SlotSettings'
 import { BlockedDates } from './availability/BlockedDates'
-import { NotificationRecipients } from './availability/NotificationRecipients'
 import { UpcomingBookings } from './availability/UpcomingBookings'
 import { getBlockedDates } from '../../lib/supabase/queries'
 import type { BlockedDate } from '../../lib/types'
@@ -33,7 +32,6 @@ export function AdminAvailabilitySettings() {
       <UpcomingBookings blocks={blocks} loadingBlocks={loadingBlocks} />
       <SlotSettings />
       <BlockedDates blocks={blocks} loading={loadingBlocks} onRefetch={loadBlocks} />
-      <NotificationRecipients />
     </div>
   )
 }

@@ -12,10 +12,12 @@ import { getCommentPostRef } from '../../lib/supabase/queries';
 import { notificationTitle, isLeadNotification } from '../../lib/notificationDisplay';
 import { queryKeys } from '../../lib/queryKeys';
 import { formatShortDate } from '../../lib/format';
+import { NotificationSettings } from './notifications/NotificationSettings';
 import type { UserNotification } from '../../lib/types';
 
 type AdminNotificationsTabProps = {
   userId: string;
+  userEmail: string;
 };
 
 const FILTERS: { id: NotificationFeedFilter; label: string }[] = [
@@ -38,7 +40,7 @@ function formatTimestamp(dateString: string): string {
   return `${formatShortDate(dateString)} · ${time}`;
 }
 
-export function AdminNotificationsTab({ userId }: AdminNotificationsTabProps) {
+export function AdminNotificationsTab({ userId, userEmail }: AdminNotificationsTabProps) {
   const [, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<NotificationFeedFilter>('all');
@@ -190,6 +192,11 @@ export function AdminNotificationsTab({ userId }: AdminNotificationsTabProps) {
           )}
         </div>
       )}
+
+      <div className="space-y-4 pt-2">
+        <h2 className="text-lg font-semibold text-foreground">Settings</h2>
+        <NotificationSettings userEmail={userEmail} />
+      </div>
     </div>
   );
 }
