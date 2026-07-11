@@ -132,6 +132,8 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
               <NotificationBell
                 userId={user.id}
                 onNavigate={(tab) => setActiveTab(tab as AdminTabId)}
+                viewAllTab="notifications"
+                onOpenLead={(id) => setSearchParams({ tab: 'leads', lead: id }, { replace: true })}
               />
             </div>
           </div>

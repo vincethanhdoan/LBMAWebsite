@@ -19,11 +19,12 @@ export function useSidebarCounts(userId: string) {
   return useQuery({
     queryKey: queryKeys.sidebarCounts(userId),
     queryFn: async () => {
-      const [{ announcements, blog }, unreadMessages] = await Promise.all([
+      const [{ announcements, blog }, unreadMessages, unreadNotifications] = await Promise.all([
         getSectionUnreadCounts(userId),
         getUnreadMessageCount(),
+        getUnreadNotificationCount(),
       ]);
-      return { unreadMessages, unreadAnnouncements: announcements, unreadBlog: blog };
+      return { unreadMessages, unreadAnnouncements: announcements, unreadBlog: blog, unreadNotifications };
     },
   });
 }

@@ -969,14 +969,20 @@ export async function getUnreadNotificationCount(): Promise<number> {
 
 export async function getNotificationHistory(
   page: number,
-  pageSize = 20
+  pageSize = 20,
+  filter?: 'leads' | 'comments'
 ): Promise<{ notifications: UserNotification[]; hasMore: boolean }> {
   const from = page * pageSize;
-  const { data, error } = await supabase
+  let query = supabase
     .from('user_notifications')
     .select('*')
-    .order('created_at', { ascending: false })
-    .range(from, from + pageSize);
+    .order('created_at', { ascending: false });
+  if (filter === 'leads') {
+    query = query.eq('reference_type', 'enrollment_lead');
+  } else if (filter === 'comments') {
+    query = query.in('reference_type', ['announcement_comment', 'blog_comment']);
+  }
+  const { data, error } = await query.range(from, from + pageSize);
   if (error) throw error;
   const rows = (data ?? []) as UserNotification[];
   return { notifications: rows.slice(0, pageSize), hasMore: rows.length > pageSize };
@@ -986,7 +992,8 @@ export async function getNotificationSummary(userId: string): Promise<{
   unreadMessages: number;
   announcements: { count: number; latestTitle: string | null };
   blog: { count: number; latestTitle: string | null };
-  commentNotifications: UserNotification[];
+  notifications: UserNotification[];
+  unreadNotificationCount: number;
 }> {
   const { data: lastSeen } = await supabase
     .from('user_section_last_seen')
@@ -1000,7 +1007,7 @@ export async function getNotificationSummary(userId: string): Promise<{
     lastSeen?.find((r) => r.section === 'blog')?.last_seen_at ??
     '1970-01-01T00:00:00Z';
 
-  const [messagesCount, annCount, annLatest, blogCount, blogLatest, commentNotifsData] =
+  const [messagesCount, annCount, annLatest, blogCount, blogLatest, notifsData, notifCount] =
     await Promise.all([
       getUnreadMessageCount(),
       supabase
@@ -1031,16 +1038,20 @@ export async function getNotificationSummary(userId: string): Promise<{
         .from('user_notifications')
         .select('*')
         .eq('is_read', false)
-        .in('type', ['comment_reply', 'post_comment'])
         .order('created_at', { ascending: false })
         .limit(5),
+      supabase
+        .from('user_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_read', false),
     ]);
 
   if (annCount.error) throw annCount.error;
   if (annLatest.error) throw annLatest.error;
   if (blogCount.error) throw blogCount.error;
   if (blogLatest.error) throw blogLatest.error;
-  if (commentNotifsData.error) throw commentNotifsData.error;
+  if (notifsData.error) throw notifsData.error;
+  if (notifCount.error) throw notifCount.error;
 
   return {
     unreadMessages: messagesCount,
@@ -1052,7 +1063,8 @@ export async function getNotificationSummary(userId: string): Promise<{
       count: blogCount.count ?? 0,
       latestTitle: blogLatest.data?.[0]?.title ?? null,
     },
-    commentNotifications: (commentNotifsData.data ?? []) as UserNotification[],
+    notifications: (notifsData.data ?? []) as UserNotification[],
+    unreadNotificationCount: notifCount.count ?? 0,
   };
 }
 

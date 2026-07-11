@@ -2,16 +2,19 @@ import { useState } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Skeleton } from './ui/skeleton';
-import { markSectionSeen, markNotificationsRead } from '../lib/supabase/mutations';
+import { markSectionSeen, markNotificationsRead, markNotificationRead } from '../lib/supabase/mutations';
 import { useNotificationSummary } from '../lib/hooks/notifications';
+import { notificationTitle, isLeadNotification } from '../lib/notificationDisplay';
 import type { UserNotification } from '../lib/types';
 
 type NotificationBellProps = {
   userId: string;
   onNavigate: (tab: string) => void;
+  viewAllTab?: string;
+  onOpenLead?: (leadId: string) => void;
 };
 
-export function NotificationBell({ userId, onNavigate }: NotificationBellProps) {
+export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const { data: summary, isLoading: loading, refetch: loadSummary } = useNotificationSummary(userId);
 
@@ -19,7 +22,7 @@ export function NotificationBell({ userId, onNavigate }: NotificationBellProps) 
     ? summary.unreadMessages +
       summary.announcements.count +
       summary.blog.count +
-      summary.commentNotifications.length
+      summary.unreadNotificationCount
     : 0;
 
   async function handleMarkAllRead() {
@@ -40,12 +43,18 @@ export function NotificationBell({ userId, onNavigate }: NotificationBellProps) 
     setOpen(false);
   }
 
-  async function handleCommentNotifClick(notif: UserNotification) {
-    const tab =
-      notif.reference_type === 'announcement_comment' ? 'announcements' : 'blog';
-    await markNotificationsRead().catch(console.error);
+  async function handleNotificationClick(notif: UserNotification) {
+    await markNotificationRead(notif.notification_id).catch(console.error);
     await loadSummary();
-    onNavigate(tab);
+    if (isLeadNotification(notif)) {
+      if (onOpenLead) {
+        onOpenLead(notif.reference_id);
+      } else {
+        onNavigate('leads');
+      }
+    } else {
+      onNavigate(notif.reference_type === 'announcement_comment' ? 'announcements' : 'blog');
+    }
     setOpen(false);
   }
 
@@ -58,7 +67,12 @@ export function NotificationBell({ userId, onNavigate }: NotificationBellProps) 
         >
           <Bell className="h-4 w-4" />
           {totalUnread > 0 && (
-            <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-destructive" aria-hidden="true" />
+            <span
+              className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-sidebar-primary px-1 text-[10px] font-medium text-sidebar-primary-foreground"
+              aria-hidden="true"
+            >
+              {totalUnread > 9 ? '9+' : totalUnread}
+            </span>
           )}
         </button>
       </PopoverTrigger>
@@ -128,23 +142,32 @@ export function NotificationBell({ userId, onNavigate }: NotificationBellProps) 
                   </span>
                 </button>
               )}
-              {summary!.commentNotifications.map((notif) => (
+              {summary!.notifications.map((notif) => (
                 <button
                   key={notif.notification_id}
-                  onClick={() => handleCommentNotifClick(notif)}
+                  onClick={() => handleNotificationClick(notif)}
                   className="w-full flex items-start gap-3 px-4 py-3 hover:bg-accent text-left transition-colors"
                 >
                   <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                  <span className="text-sm text-muted-foreground">
-                    {notif.type === 'comment_reply'
-                      ? <><strong>{notif.actor_display_name ?? 'Someone'}</strong> replied to your comment</>
-                      : <><strong>{notif.actor_display_name ?? 'Someone'}</strong> commented on your post</>}
+                  <span className="text-sm text-muted-foreground line-clamp-2">
+                    {notificationTitle(notif)}
                   </span>
                 </button>
               ))}
             </div>
           )}
         </div>
+
+        {viewAllTab && (
+          <div className="border-t">
+            <button
+              onClick={() => handleNavigate(viewAllTab)}
+              className="w-full px-4 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              View all notifications
+            </button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
