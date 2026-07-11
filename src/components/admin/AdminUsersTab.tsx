@@ -25,12 +25,19 @@ import {
 
 const beltLevels = ['White Belt', 'Yellow Belt', 'Orange Belt', 'Purple Belt', 'Blue Belt', 'Green Belt', 'Brown Belt', 'Red Belt', 'Black Belt'];
 
+const FAMILY_VIEWS: { id: FamilyStatus; label: string }[] = [
+  { id: 'active', label: 'Active' },
+  { id: 'inactive', label: 'Inactive' },
+  { id: 'archived', label: 'Archived' },
+];
+
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [familyView, setFamilyView] = useState<FamilyStatus>('active');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [editingStudent, setEditingStudent] = useState<{ studentId: string; newBeltLevel: string; newStatus: StudentStatus } | null>(null);
@@ -42,6 +49,7 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
     [usersData],
   );
   const {
+    families,
     filteredFamilies,
     filteredStudents,
     selectedFamily,
@@ -54,6 +62,17 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
     saveGuardian,
     setPrimaryGuardian,
   } = useAdminFamilies(searchTerm);
+
+  const familyStatusCounts = useMemo(() => {
+    const counts: Record<FamilyStatus, number> = { active: 0, inactive: 0, archived: 0 };
+    for (const family of families) counts[family.status] += 1;
+    return counts;
+  }, [families]);
+
+  const visibleFamilies = useMemo(
+    () => filteredFamilies.filter(family => family.status === familyView),
+    [filteredFamilies, familyView],
+  );
 
   const handleViewDetails = async (familyId: string) => {
     try {
@@ -215,14 +234,31 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
 
       <Tabs defaultValue="families">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="families">Families ({filteredFamilies.length})</TabsTrigger>
+          <TabsTrigger value="families">Families ({visibleFamilies.length})</TabsTrigger>
           <TabsTrigger value="students">Students ({filteredStudents.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="families">
           <Card>
             <CardHeader>
-              <CardTitle>Families</CardTitle>
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <CardTitle>Families</CardTitle>
+                <div className="flex gap-1.5">
+                  {FAMILY_VIEWS.map(view => (
+                    <button
+                      key={view.id}
+                      onClick={() => setFamilyView(view.id)}
+                      className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
+                        familyView === view.id
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {view.label} ({familyStatusCounts[view.id]})
+                    </button>
+                  ))}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -242,12 +278,12 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
                     <TableRow>
                       <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">Loading families...</TableCell>
                     </TableRow>
-                  ) : filteredFamilies.length === 0 ? (
+                  ) : visibleFamilies.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">No families found.</TableCell>
+                      <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">{`No ${familyView} families found.`}</TableCell>
                     </TableRow>
                   ) : (
-                    filteredFamilies.map(family => {
+                    visibleFamilies.map(family => {
                       const familyAvatarUrl = profileAvatarMap.get(family.ownerUserId);
                       return (
                       <TableRow key={family.id}>
