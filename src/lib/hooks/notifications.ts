@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
+  getNotificationHistory,
   getNotificationSummary,
   getSectionUnreadCounts,
   getUnreadMessageCount,
@@ -7,6 +8,19 @@ import {
   getUnreadNotificationCount,
 } from '../supabase/queries';
 import { queryKeys } from '../queryKeys';
+
+export type NotificationFeedFilter = 'all' | 'leads' | 'comments';
+
+export function useNotificationFeed(filter: NotificationFeedFilter) {
+  return useInfiniteQuery({
+    queryKey: ['notification-history', filter],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      getNotificationHistory(pageParam, 20, filter === 'all' ? undefined : filter),
+    getNextPageParam: (last, all) => (last.hasMore ? all.length : undefined),
+    placeholderData: keepPreviousData,
+  });
+}
 
 export function useNotificationSummary(userId: string) {
   return useQuery({

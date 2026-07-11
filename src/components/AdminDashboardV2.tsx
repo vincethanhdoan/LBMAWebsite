@@ -20,6 +20,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { AdminAnnouncementsTab } from './admin/AdminAnnouncementsTab';
+import { AdminNotificationsTab } from './admin/AdminNotificationsTab';
 import { AdminBlogTab } from './admin/AdminBlogTab';
 import { AdminMessagesTab } from './admin/AdminMessagesTab';
 import { AdminUsersTab } from './admin/AdminUsersTab';
@@ -43,6 +44,7 @@ import {
   CalendarCog,
   ClipboardList,
   LogOut,
+  Megaphone,
   MessageSquare,
   ShieldCheck,
   UserCircle,
@@ -57,6 +59,7 @@ type AdminDashboardV2Props = {
 };
 
 type AdminTabId =
+  | 'notifications'
   | 'announcements'
   | 'blog'
   | 'messages'
@@ -74,7 +77,8 @@ const navGroups: {
   {
     label: 'Communications',
     items: [
-      { id: 'announcements', label: 'Announcements', icon: Bell },
+      { id: 'notifications', label: 'Notifications', icon: Bell },
+      { id: 'announcements', label: 'Announcements', icon: Megaphone },
       { id: 'blog', label: 'Parent Blog', icon: BookOpen },
       { id: 'messages', label: 'Messages', icon: MessageSquare },
     ],
@@ -111,6 +115,7 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
   const setActiveTab = (tab: AdminTabId) => setSearchParams({ tab }, { replace: true });
   const { data: counts } = useSidebarCounts(user.id);
   const unreadMessages = counts?.unreadMessages ?? 0;
+  const unreadNotifications = counts?.unreadNotifications ?? 0;
   const unreadAnnouncements = counts?.unreadAnnouncements ?? 0;
   const unreadBlog = counts?.unreadBlog ?? 0;
   const actionNeededCount = useActionNeededCount();
@@ -173,6 +178,11 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
                         <Icon />
                         <span>{label}</span>
                       </SidebarMenuButton>
+                      {id === 'notifications' && unreadNotifications > 0 && (
+                        <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
+                          {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                        </SidebarMenuBadge>
+                      )}
                       {id === 'messages' && unreadMessages > 0 && (
                         <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
                           {unreadMessages > 9 ? '9+' : unreadMessages}
@@ -305,6 +315,7 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
 
         {/* Scrollable page content */}
         <main className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}>
+          {activeTab === 'notifications' && <AdminNotificationsTab userId={user.id} />}
           {activeTab === 'announcements' && <AdminAnnouncementsTab user={user} />}
           {activeTab === 'blog' && <AdminBlogTab user={user} />}
           {activeTab === 'messages' && (

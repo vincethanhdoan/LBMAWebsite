@@ -75,6 +75,7 @@ export function useRealtimeInvalidation(userId: string) {
         queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(userId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(userId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(userId) });
+        queryClient.invalidateQueries({ queryKey: ['notification-history'] });
       }),
     ];
 
