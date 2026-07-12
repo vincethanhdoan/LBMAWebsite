@@ -204,7 +204,6 @@ export function BookingPage() {
               onConfirm={handleBook}
               submitting={submitting}
               confirmLabel="Confirm Appointment"
-              showAutoConfirmBadge
             />
             {error && (
               <p className="text-sm text-destructive text-center">{error}</p>
