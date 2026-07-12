@@ -231,7 +231,7 @@ export function AllLeadsView({
   const terminalErrored =
     showTerminal && terminalQuery.isError && !terminalLoading;
   const activeRows = showActive ? activeMatches : [];
-  const visibleTerminal = showTerminal && !terminalLoading ? terminalLeads : [];
+  const visibleTerminal = showTerminal && !terminalLoading && !terminalErrored ? terminalLeads : [];
   const hasAny = activeRows.length + visibleTerminal.length > 0;
   const searching = search.trim() !== '';
 
@@ -282,7 +282,7 @@ export function AllLeadsView({
         ))}
       </div>
 
-      {hasAny && !terminalErrored && (
+      {hasAny && (
         <Surface
           className={`transition-opacity ${terminalQuery.isFetching && !terminalLoading ? 'opacity-60' : ''}`}
         >
@@ -299,13 +299,14 @@ export function AllLeadsView({
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="flex items-center justify-between px-4 py-3 border-t border-border first:border-t-0"
+              className="flex items-center gap-3 px-4 py-3 border-t border-border first:border-t-0"
             >
-              <div className="space-y-1.5">
+              <div className="flex-1 min-w-0 space-y-1.5">
                 <Skeleton className="h-4 w-44" />
                 <Skeleton className="h-3 w-64" />
               </div>
-              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full flex-shrink-0" />
+              <div className="w-4 h-4 flex-shrink-0" />
             </div>
           ))}
         </div>
