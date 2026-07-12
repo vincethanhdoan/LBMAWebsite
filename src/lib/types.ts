@@ -175,7 +175,6 @@ export type EnrollmentLead = {
     | 'appointment_scheduled'
     | 'appointment_confirmed'
     | 'denied'
-    | 'enrolled'
     | 'attended'
     | 'no_show'
     | 'closed';

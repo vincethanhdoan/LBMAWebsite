@@ -44,7 +44,6 @@ const VIEWS: { id: LeadView; label: string }[] = [
 ];
 
 const TERMINAL_STATUSES = new Set<EnrollmentLead['status']>([
-  'enrolled',
   'attended',
   'no_show',
   'closed',

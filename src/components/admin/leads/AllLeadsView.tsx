@@ -142,11 +142,7 @@ export function AllLeadsView({
   }, [activeLeads, terminalLeads]);
 
   const terminalTotal = counts
-    ? counts.enrolled +
-      counts.attended +
-      counts.no_show +
-      counts.closed +
-      counts.denied
+    ? counts.attended + counts.no_show + counts.closed + counts.denied
     : 0;
   const total = activeLeads.length + terminalTotal;
 

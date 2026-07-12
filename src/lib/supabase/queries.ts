@@ -474,13 +474,7 @@ const ACTIVE_LEAD_STATUSES = [
   'appointment_scheduled',
   'appointment_confirmed',
 ];
-const TERMINAL_LEAD_STATUSES = [
-  'enrolled',
-  'attended',
-  'no_show',
-  'closed',
-  'denied',
-];
+const TERMINAL_LEAD_STATUSES = ['attended', 'no_show', 'closed', 'denied'];
 
 export async function getActiveEnrollmentLeads(): Promise<EnrollmentLead[]> {
   const { data, error } = await supabase
@@ -494,7 +488,7 @@ export async function getActiveEnrollmentLeads(): Promise<EnrollmentLead[]> {
 }
 
 export type TerminalLeadFilter =
-  'enrolled' | 'attended' | 'no_show' | 'closed' | 'denied' | 'all_terminal';
+  'attended' | 'no_show' | 'closed' | 'denied' | 'all_terminal';
 
 export async function getTerminalEnrollmentLeads(opts: {
   filter: TerminalLeadFilter;
@@ -549,7 +543,6 @@ export async function getTerminalEnrollmentLeads(opts: {
 }
 
 export async function getTerminalLeadCounts(): Promise<{
-  enrolled: number;
   attended: number;
   no_show: number;
   closed: number;
@@ -562,18 +555,16 @@ export async function getTerminalLeadCounts(): Promise<{
       .eq('status', status)
       .is('deleted_at', null);
 
-  const [enrolled, attended, noShow, closed, denied] = await Promise.all([
-    countFor('enrolled'),
+  const [attended, noShow, closed, denied] = await Promise.all([
     countFor('attended'),
     countFor('no_show'),
     countFor('closed'),
     countFor('denied'),
   ]);
-  for (const r of [enrolled, attended, noShow, closed, denied]) {
+  for (const r of [attended, noShow, closed, denied]) {
     if (r.error) throw r.error;
   }
   return {
-    enrolled: enrolled.count ?? 0,
     attended: attended.count ?? 0,
     no_show: noShow.count ?? 0,
     closed: closed.count ?? 0,

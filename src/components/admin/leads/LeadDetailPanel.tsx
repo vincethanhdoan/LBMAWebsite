@@ -56,8 +56,6 @@ function HeaderStatus({ lead }: { lead: EnrollmentLead }) {
       return <StatusBadge kind="unconfirmed" />;
     case 'appointment_confirmed':
       return <StatusBadge kind="confirmed" />;
-    case 'enrolled':
-      return <StatusBadge kind="enrolled" />;
     case 'attended':
       return <StatusBadge kind="attended" />;
     case 'no_show':
@@ -588,8 +586,7 @@ export function LeadDetailPanel({
                   <DropdownMenuItem onSelect={() => onEdit(lead)}>
                     Edit lead
                   </DropdownMenuItem>
-                  {(lead.status === 'enrolled' ||
-                    lead.status === 'attended' ||
+                  {(lead.status === 'attended' ||
                     lead.status === 'no_show' ||
                     lead.status === 'closed') && (
                     <DropdownMenuItem
