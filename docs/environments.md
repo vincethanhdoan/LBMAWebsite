@@ -38,7 +38,7 @@ changes deliberately.
   ```
 - New migrations should apply cleanly to a fresh project (the `20260710000000_baseline.sql`
   snapshot plus the numbered migrations). Every new RPC must `GRANT EXECUTE` explicitly
-  (see `CLAUDE.md`).
+  (see `docs/engineering.md`).
 - Do **not** point the CLI at production for `db push`. Production schema changes are made
   deliberately through the SQL editor / MCP.
 
