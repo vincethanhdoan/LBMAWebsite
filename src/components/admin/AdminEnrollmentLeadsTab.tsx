@@ -33,6 +33,7 @@ import { PipelineView } from './leads/PipelineView';
 import { AppointmentsView } from './leads/AppointmentsView';
 import { AllLeadsView, type AllLeadsFilter } from './leads/AllLeadsView';
 import { LeadDetailPanel } from './leads/LeadDetailPanel';
+import { LeadsContentSkeleton } from './leads/LeadsSkeleton';
 
 type LeadView = 'overview' | 'pipeline' | 'appointments' | 'all';
 
@@ -59,7 +60,7 @@ function withoutId(set: Set<string>, id: string): Set<string> {
 
 export function AdminEnrollmentLeadsTab() {
   const queryClient = useQueryClient();
-  const { data: activeLeads = [], isLoading: activeLoading } = useActiveLeads();
+  const { data: activeLeads = [], isLoading: activeLoading, isError: activeIsError, refetch: refetchActiveLeads } = useActiveLeads();
   const { data: blocks = [] } = useBlockedDates();
   const actions = useLeadActions({ onError: msg => toast.error(msg) });
 
@@ -255,16 +256,6 @@ export function AdminEnrollmentLeadsTab() {
     }
   }
 
-  if (activeLoading) {
-    return (
-      <div className="space-y-2">
-        {[0, 1, 2].map(i => (
-          <div key={i} className="h-12 bg-muted rounded-xl animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
   const todayLabel = new Date(now).toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -293,6 +284,7 @@ export function AdminEnrollmentLeadsTab() {
               <button
                 key={v.id}
                 onClick={() => goToView(v.id)}
+                aria-current={isActive ? 'page' : undefined}
                 className={`px-4 py-2.5 text-[13px] whitespace-nowrap border-b-2 transition-colors ${
                   isActive
                     ? 'border-primary text-primary font-semibold -mb-px'
@@ -306,50 +298,64 @@ export function AdminEnrollmentLeadsTab() {
         </div>
       </div>
 
-      {view === 'overview' && (
-        <OverviewView
-          leads={activeLeads}
-          blocks={blocks}
-          now={now}
-          actions={actions}
-          onOpenLead={openLead}
-          onDeny={setDenyTarget}
-          onGoToAppointments={goToAppointments}
-          onGoToPipeline={() => goToView('pipeline')}
-          highlightedLeadId={highlightedLeadId}
-        />
-      )}
+      {activeLoading ? (
+        <LeadsContentSkeleton />
+      ) : activeIsError ? (
+        <div className="rounded-xl border bg-card px-6 py-10 text-center">
+          <p className="text-sm font-medium">Couldn't load leads.</p>
+          <p className="text-sm text-muted-foreground mt-1">Check your connection and try again.</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => refetchActiveLeads()}>
+            Try again
+          </Button>
+        </div>
+      ) : (
+        <>
+          {view === 'overview' && (
+            <OverviewView
+              leads={activeLeads}
+              blocks={blocks}
+              now={now}
+              actions={actions}
+              onOpenLead={openLead}
+              onDeny={setDenyTarget}
+              onGoToAppointments={goToAppointments}
+              onGoToPipeline={() => goToView('pipeline')}
+              highlightedLeadId={highlightedLeadId}
+            />
+          )}
 
-      {view === 'pipeline' && (
-        <PipelineView
-          leads={activeLeads}
-          now={now}
-          actions={actions}
-          onOpenLead={openLead}
-          onDeny={setDenyTarget}
-          highlightedLeadId={highlightedLeadId}
-        />
-      )}
+          {view === 'pipeline' && (
+            <PipelineView
+              leads={activeLeads}
+              now={now}
+              actions={actions}
+              onOpenLead={openLead}
+              onDeny={setDenyTarget}
+              highlightedLeadId={highlightedLeadId}
+            />
+          )}
 
-      {view === 'appointments' && (
-        <AppointmentsView
-          leads={activeLeads}
-          blocks={blocks}
-          actions={actions}
-          onOpenLead={openLead}
-          onManageAvailability={() => setSearchParams({ tab: 'availability' })}
-          initialSelectedDate={dateParam}
-          highlightedLeadId={highlightedLeadId}
-        />
-      )}
+          {view === 'appointments' && (
+            <AppointmentsView
+              leads={activeLeads}
+              blocks={blocks}
+              actions={actions}
+              onOpenLead={openLead}
+              onManageAvailability={() => setSearchParams({ tab: 'availability' })}
+              initialSelectedDate={dateParam}
+              highlightedLeadId={highlightedLeadId}
+            />
+          )}
 
-      {view === 'all' && (
-        <AllLeadsView
-          activeLeads={activeLeads}
-          onOpenLead={openLead}
-          highlightedLeadId={highlightedLeadId}
-          initialFilter={allInitialFilter}
-        />
+          {view === 'all' && (
+            <AllLeadsView
+              activeLeads={activeLeads}
+              onOpenLead={openLead}
+              highlightedLeadId={highlightedLeadId}
+              initialFilter={allInitialFilter}
+            />
+          )}
+        </>
       )}
 
       {detailLead && (
