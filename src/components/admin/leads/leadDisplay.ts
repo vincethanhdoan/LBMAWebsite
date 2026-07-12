@@ -55,6 +55,8 @@ export const STATUS_LABELS: Record<EnrollmentLead['status'], string> = {
   appointment_confirmed: 'Confirmed',
   denied: 'Denied',
   enrolled: 'Enrolled',
+  attended: 'Attended',
+  no_show: 'No-show',
   closed: 'Closed',
 };
 

@@ -21,15 +21,28 @@ import { childSummary, getAppointmentOccurrences } from './leadViews';
 import { LeadRow, StatusBadge, Surface } from './ui';
 
 export type AllLeadsFilter =
-  'everyone' | 'active' | 'enrolled' | 'closed' | 'denied' | 'archived';
+  | 'everyone'
+  | 'active'
+  | 'attended'
+  | 'no_show'
+  | 'closed'
+  | 'denied'
+  | 'archived';
 
 type BadgeKind =
-  'confirmed' | 'unconfirmed' | 'enrolled' | 'closed' | 'denied' | 'new';
+  | 'confirmed'
+  | 'unconfirmed'
+  | 'attended'
+  | 'no_show'
+  | 'closed'
+  | 'denied'
+  | 'new';
 
 const FILTERS: { id: AllLeadsFilter; label: string }[] = [
   { id: 'everyone', label: 'Everyone' },
   { id: 'active', label: 'Active' },
-  { id: 'enrolled', label: 'Enrolled' },
+  { id: 'attended', label: 'Attended' },
+  { id: 'no_show', label: 'No-show' },
   { id: 'closed', label: 'Closed' },
   { id: 'denied', label: 'Denied' },
   { id: 'archived', label: 'Archived' },
@@ -56,8 +69,10 @@ function badgeKind(status: EnrollmentLead['status']): BadgeKind | null {
       return 'unconfirmed';
     case 'appointment_confirmed':
       return 'confirmed';
-    case 'enrolled':
-      return 'enrolled';
+    case 'attended':
+      return 'attended';
+    case 'no_show':
+      return 'no_show';
     case 'closed':
       return 'closed';
     case 'denied':
@@ -143,7 +158,12 @@ export function AllLeadsView({
   }, [activeLeads, terminalLeads]);
 
   const terminalTotal = counts
-    ? counts.enrolled + counts.closed + counts.denied + counts.archived
+    ? counts.enrolled +
+      counts.attended +
+      counts.no_show +
+      counts.closed +
+      counts.denied +
+      counts.archived
     : 0;
   const total = activeLeads.length + terminalTotal;
 

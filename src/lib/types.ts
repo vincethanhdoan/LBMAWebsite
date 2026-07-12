@@ -176,6 +176,8 @@ export type EnrollmentLead = {
     | 'appointment_confirmed'
     | 'denied'
     | 'enrolled'
+    | 'attended'
+    | 'no_show'
     | 'closed';
   approved_at: string | null;
   approval_email_sent_at: string | null;
