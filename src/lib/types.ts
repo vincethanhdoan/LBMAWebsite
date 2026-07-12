@@ -188,7 +188,6 @@ export type EnrollmentLead = {
   admin_notes: string | null;
   created_at: string;
   deleted_at: string | null;
-  attendance_status: 'attended' | 'no_show' | null;
   attendance_recorded_at: string | null;
   attendance_recorded_by: string | null;
   children: EnrollmentLeadChild[];

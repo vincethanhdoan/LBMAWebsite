@@ -35,7 +35,7 @@ export const BLOG_COMMENT_COLUMNS =
   'comment_id, post_id, author_user_id, body, created_at, updated_at';
 
 export const ENROLLMENT_LEAD_COLUMNS =
-  'lead_id, parent_name, parent_email, phone, student_name, student_age, message, source_page, notification_status, notified_at, status, approved_at, approval_email_sent_at, booking_token, appointment_date, appointment_time, denied_at, denial_message, admin_notes, created_at, deleted_at, attendance_status, attendance_recorded_at, attendance_recorded_by';
+  'lead_id, parent_name, parent_email, phone, student_name, student_age, message, source_page, notification_status, notified_at, status, approved_at, approval_email_sent_at, booking_token, appointment_date, appointment_time, denied_at, denial_message, admin_notes, created_at, deleted_at, attendance_recorded_at, attendance_recorded_by';
 
 export const REVIEW_COLUMNS =
   'review_id, family_id, author_user_id, display_name, rating, review, created_at, updated_at';
