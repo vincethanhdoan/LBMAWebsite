@@ -188,7 +188,7 @@ export function OverviewView({
           />
           <Surface>
             {newPreview.map((lead) => {
-              const snippet = lead.message.slice(0, 60);
+              const snippet = (lead.message ?? '').slice(0, 60);
               const age = inquiryAge(lead.created_at, now);
               return (
                 <LeadRow

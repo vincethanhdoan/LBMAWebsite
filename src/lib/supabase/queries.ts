@@ -455,8 +455,6 @@ function mapEnrollmentLeadRow(row: Record<string, unknown>): EnrollmentLead {
     b.created_at.localeCompare(a.created_at),
   );
   const reminder = byRecency.find((n) => n.type === 'reminder') ?? null;
-  const confirmation =
-    byRecency.find((n) => n.type === 'booking_confirmation') ?? null;
   return {
     ...row,
     // message is nullable in the DB (admin-created leads have none) but typed
@@ -466,7 +464,6 @@ function mapEnrollmentLeadRow(row: Record<string, unknown>): EnrollmentLead {
     programBookings: (row.programBookings ??
       []) as EnrollmentLeadProgramBooking[],
     reminderNotification: reminder,
-    confirmationNotification: confirmation,
     notificationHistory: byRecency,
   } as EnrollmentLead;
 }

@@ -126,6 +126,12 @@ export function LeadDetailPanel({
   }
 
   useEffect(() => {
+    if (!notesSaved) return;
+    const t = setTimeout(() => setNotesSaved(false), 2500);
+    return () => clearTimeout(t);
+  }, [notesSaved]);
+
+  useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       // Radix dialogs stacked above the panel prevent default on the Esc that
       // closed them; only an unclaimed Esc closes the panel itself.
@@ -421,7 +427,7 @@ export function LeadDetailPanel({
                 />
                 {notesError && (
                   <p className="text-[11px] text-destructive">
-                    {"Couldn't save, try again"}
+                    {"Couldn't save notes. Please try again."}
                   </p>
                 )}
                 <div className="flex items-center gap-2">
