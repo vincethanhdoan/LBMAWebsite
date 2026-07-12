@@ -196,7 +196,6 @@ export function PickDateModal({
                       }}
                       submitting={false}
                       confirmLabel="Select this date"
-                      showAutoConfirmBadge={false}
                     />
                     {selection[booking.booking_id] && (
                       <p className="text-xs text-green-600 font-medium mt-2">

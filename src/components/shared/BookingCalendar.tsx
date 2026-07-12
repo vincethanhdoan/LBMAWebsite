@@ -5,13 +5,11 @@ import './booking-calendar.css';
 import { Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { getUpcomingBookableDates } from '../../lib/supabase/queries';
-import { daysUntilInPacific } from '../../lib/pacificTime';
 import type { AppointmentSlot } from '../../lib/types';
 
 interface DateOption {
   slotId: string;
   startTime: string;
-  label: string;
 }
 
 interface BookingCalendarProps {
@@ -19,7 +17,6 @@ interface BookingCalendarProps {
   onConfirm: (slotId: string, date: string) => Promise<void>;
   submitting: boolean;
   confirmLabel?: string;
-  showAutoConfirmBadge?: boolean;
 }
 
 function toDateKey(date: Date): string {
@@ -41,7 +38,6 @@ export function BookingCalendar({
   onConfirm,
   submitting,
   confirmLabel = 'Confirm Booking',
-  showAutoConfirmBadge = false,
 }: BookingCalendarProps) {
   const [availableMap, setAvailableMap] = useState<Map<string, DateOption[]>>(
     new Map(),
@@ -72,7 +68,6 @@ export function BookingCalendar({
             existing.push({
               slotId: slot.slot_id,
               startTime: slot.start_time,
-              label: slot.label,
             });
             map.set(date, existing);
           }
@@ -176,15 +171,8 @@ export function BookingCalendar({
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="font-semibold text-sm text-foreground">
-                      {formatTime(option.startTime)}
-                    </div>
-                    {option.label && (
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {option.label}
-                      </div>
-                    )}
+                  <div className="font-semibold text-sm text-foreground">
+                    {formatTime(option.startTime)}
                   </div>
                   {isChosen && (
                     <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
@@ -192,13 +180,6 @@ export function BookingCalendar({
                     </div>
                   )}
                 </div>
-                {showAutoConfirmBadge &&
-                  isChosen &&
-                  daysUntilInPacific(selected) < 2 && (
-                    <span className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded bg-amber-100 text-amber-800 border border-amber-200">
-                      Will be auto-confirmed
-                    </span>
-                  )}
               </button>
             );
           })}
