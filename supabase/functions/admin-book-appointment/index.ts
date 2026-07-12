@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
   if (daysUntilAppt < 0) {
     return new Response('Appointment date is in the past', { status: 422, headers: cors })
   }
-  const newProgramStatus = daysUntilAppt < 2 ? 'confirmed' : 'scheduled'
+  const newProgramStatus = daysUntilAppt <= 2 ? 'confirmed' : 'scheduled'
 
   const { error: updateError } = await supabase
     .from('enrollment_lead_program_bookings')
