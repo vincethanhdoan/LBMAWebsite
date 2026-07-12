@@ -327,7 +327,6 @@ export function AdminEnrollmentLeadsTab() {
           actions={actions}
           onOpenLead={openLead}
           onDeny={setDenyTarget}
-          onNewLead={() => setShowNewLeadModal(true)}
           highlightedLeadId={highlightedLeadId}
         />
       )}

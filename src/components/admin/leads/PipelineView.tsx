@@ -23,7 +23,6 @@ export function PipelineView({
   actions,
   onOpenLead,
   onDeny,
-  onNewLead,
   highlightedLeadId,
 }: {
   leads: EnrollmentLead[];
@@ -31,7 +30,6 @@ export function PipelineView({
   actions: ReturnType<typeof useLeadActions>;
   onOpenLead: (leadId: string) => void;
   onDeny: (lead: EnrollmentLead) => void;
-  onNewLead: () => void;
   highlightedLeadId: string | null;
 }): JSX.Element {
   const newInquiries = leads
@@ -52,9 +50,6 @@ export function PipelineView({
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Pipeline</h2>
-        <Button variant="outline" onClick={onNewLead}>
-          + New Lead
-        </Button>
       </div>
 
       <section>
