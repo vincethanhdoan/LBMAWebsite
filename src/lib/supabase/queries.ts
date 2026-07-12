@@ -494,13 +494,7 @@ export async function getActiveEnrollmentLeads(): Promise<EnrollmentLead[]> {
 }
 
 export type TerminalLeadFilter =
-  | 'enrolled'
-  | 'attended'
-  | 'no_show'
-  | 'closed'
-  | 'denied'
-  | 'archived'
-  | 'all_terminal';
+  'enrolled' | 'attended' | 'no_show' | 'closed' | 'denied' | 'all_terminal';
 
 export async function getTerminalEnrollmentLeads(opts: {
   filter: TerminalLeadFilter;
@@ -511,15 +505,11 @@ export async function getTerminalEnrollmentLeads(opts: {
   const pageSize = opts.pageSize ?? 50;
   let query = supabase.from('enrollment_leads').select(ENROLLMENT_LEAD_SELECT);
 
-  if (opts.filter === 'archived') {
-    query = query.not('deleted_at', 'is', null);
-  } else {
-    query = query.is('deleted_at', null);
-    query =
-      opts.filter === 'all_terminal'
-        ? query.in('status', TERMINAL_LEAD_STATUSES)
-        : query.eq('status', opts.filter);
-  }
+  query = query.is('deleted_at', null);
+  query =
+    opts.filter === 'all_terminal'
+      ? query.in('status', TERMINAL_LEAD_STATUSES)
+      : query.eq('status', opts.filter);
 
   const term = opts.search?.trim();
   if (term) {
@@ -564,7 +554,6 @@ export async function getTerminalLeadCounts(): Promise<{
   no_show: number;
   closed: number;
   denied: number;
-  archived: number;
 }> {
   const countFor = (status: string) =>
     supabase
@@ -573,19 +562,14 @@ export async function getTerminalLeadCounts(): Promise<{
       .eq('status', status)
       .is('deleted_at', null);
 
-  const [enrolled, attended, noShow, closed, denied, archived] =
-    await Promise.all([
-      countFor('enrolled'),
-      countFor('attended'),
-      countFor('no_show'),
-      countFor('closed'),
-      countFor('denied'),
-      supabase
-        .from('enrollment_leads')
-        .select('lead_id', { count: 'exact', head: true })
-        .not('deleted_at', 'is', null),
-    ]);
-  for (const r of [enrolled, attended, noShow, closed, denied, archived]) {
+  const [enrolled, attended, noShow, closed, denied] = await Promise.all([
+    countFor('enrolled'),
+    countFor('attended'),
+    countFor('no_show'),
+    countFor('closed'),
+    countFor('denied'),
+  ]);
+  for (const r of [enrolled, attended, noShow, closed, denied]) {
     if (r.error) throw r.error;
   }
   return {
@@ -594,7 +578,6 @@ export async function getTerminalLeadCounts(): Promise<{
     no_show: noShow.count ?? 0,
     closed: closed.count ?? 0,
     denied: denied.count ?? 0,
-    archived: archived.count ?? 0,
   };
 }
 

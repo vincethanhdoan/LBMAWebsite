@@ -17,10 +17,9 @@ import { queryKeys } from '../../lib/queryKeys';
 import type { EnrollmentLead } from '../../lib/types';
 import {
   useActiveLeads,
-  useArchiveLead,
   useBlockedDates,
+  useDeleteLead,
   useDismissLead,
-  useRestoreLead,
   useTerminalLeads,
 } from '../../lib/hooks/leads';
 import { DenyModal } from './DenyModal';
@@ -46,6 +45,8 @@ const VIEWS: { id: LeadView; label: string }[] = [
 
 const TERMINAL_STATUSES = new Set<EnrollmentLead['status']>([
   'enrolled',
+  'attended',
+  'no_show',
   'closed',
   'denied',
 ]);
@@ -73,17 +74,15 @@ export function AdminEnrollmentLeadsTab() {
   const { data: blocks = [] } = useBlockedDates();
   const actions = useLeadActions({ onError: (msg) => toast.error(msg) });
 
-  // Terminal + archived leads are loaded here only so deep links and the detail
-  // panel can resolve leads that live outside the active set. The empty search
-  // key is shared with AllLeadsView's unfiltered queries, so pages it loads are
+  // Terminal leads are loaded here only so deep links and the detail panel can
+  // resolve leads that live outside the active set. The empty search key is
+  // shared with AllLeadsView's unfiltered queries, so pages it loads are
   // visible here too.
   const terminalQuery = useTerminalLeads('all_terminal', '');
-  const archivedQuery = useTerminalLeads('archived', '');
-  const terminalLoading = terminalQuery.isLoading || archivedQuery.isLoading;
+  const terminalLoading = terminalQuery.isLoading;
 
   const dismissLead = useDismissLead();
-  const archiveLead = useArchiveLead();
-  const restoreLead = useRestoreLead();
+  const deleteLead = useDeleteLead();
 
   const [now, setNow] = useState(() => Date.now());
   const [searchParams, setSearchParams] = useSearchParams();
@@ -107,7 +106,7 @@ export function AdminEnrollmentLeadsTab() {
   const [editTargetId, setEditTargetId] = useState<string | null>(null);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<{
-    type: 'dismiss' | 'archive';
+    type: 'dismiss' | 'delete';
     lead: EnrollmentLead;
   } | null>(null);
   const [actingIds, setActingIds] = useState<Set<string>>(new Set());
@@ -128,13 +127,9 @@ export function AdminEnrollmentLeadsTab() {
     () => (terminalQuery.data?.pages ?? []).flatMap((p) => p.leads),
     [terminalQuery.data],
   );
-  const archivedLeads = useMemo(
-    () => (archivedQuery.data?.pages ?? []).flatMap((p) => p.leads),
-    [archivedQuery.data],
-  );
   const allLoadedLeads = useMemo(
-    () => [...activeLeads, ...terminalLeads, ...archivedLeads],
-    [activeLeads, terminalLeads, archivedLeads],
+    () => [...activeLeads, ...terminalLeads],
+    [activeLeads, terminalLeads],
   );
 
   function goToView(next: LeadView) {
@@ -193,10 +188,7 @@ export function AdminEnrollmentLeadsTab() {
     if (lead) {
       setDetailLeadId(lead.lead_id);
       setHighlightedLeadId(lead.lead_id);
-      if (lead.deleted_at) {
-        setAllInitialFilter('archived');
-        nextView = 'all';
-      } else if (TERMINAL_STATUSES.has(lead.status)) {
+      if (TERMINAL_STATUSES.has(lead.status)) {
         setAllInitialFilter(undefined);
         nextView = 'all';
       } else {
@@ -272,23 +264,15 @@ export function AdminEnrollmentLeadsTab() {
     }
   }
 
-  async function handleArchiveLead(lead: EnrollmentLead) {
+  async function handleDeleteLead(lead: EnrollmentLead) {
     if (actingIds.has(lead.lead_id)) return;
     setActingIds((s) => withId(s, lead.lead_id));
     try {
-      await archiveLead.mutateAsync(lead.lead_id);
-      toast('Lead archived', {
-        action: {
-          label: 'Undo',
-          onClick: () => {
-            restoreLead.mutate(lead.lead_id, {
-              onError: () => toast.error('Failed to restore lead'),
-            });
-          },
-        },
-      });
+      await deleteLead.mutateAsync(lead.lead_id);
+      toast.success('Lead deleted');
+      closeDetail();
     } catch {
-      toast.error('Failed to archive lead');
+      toast.error('Failed to delete lead');
     } finally {
       setActingIds((s) => withoutId(s, lead.lead_id));
       setPendingAction(null);
@@ -418,7 +402,7 @@ export function AdminEnrollmentLeadsTab() {
           onPickDate={(l) => setPickDateTargetId(l.lead_id)}
           onResend={setResendTarget}
           onDismiss={(l) => setPendingAction({ type: 'dismiss', lead: l })}
-          onArchive={(l) => setPendingAction({ type: 'archive', lead: l })}
+          onDelete={(l) => setPendingAction({ type: 'delete', lead: l })}
         />
       )}
 
@@ -435,30 +419,28 @@ export function AdminEnrollmentLeadsTab() {
               <AlertDialogTitle>
                 {pendingAction.type === 'dismiss'
                   ? 'Dismiss lead?'
-                  : 'Archive this lead?'}
+                  : 'Delete this lead?'}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {pendingAction.type === 'dismiss'
                   ? 'No email will be sent. Any booked appointment is cancelled.'
-                  : 'The lead is hidden from all views. You can restore it later.'}
+                  : 'This permanently deletes the lead and all its history. This cannot be undone.'}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                className={
-                  pendingAction.type === 'dismiss'
-                    ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                    : undefined
-                }
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 disabled={actingIds.has(pendingAction.lead.lead_id)}
                 onClick={() =>
                   pendingAction.type === 'dismiss'
                     ? handleDismissSilently(pendingAction.lead)
-                    : handleArchiveLead(pendingAction.lead)
+                    : handleDeleteLead(pendingAction.lead)
                 }
               >
-                {pendingAction.type === 'dismiss' ? 'Dismiss' : 'Archive'}
+                {pendingAction.type === 'dismiss'
+                  ? 'Dismiss'
+                  : 'Delete permanently'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

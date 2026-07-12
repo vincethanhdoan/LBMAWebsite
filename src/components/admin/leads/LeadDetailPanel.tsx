@@ -91,7 +91,7 @@ export function LeadDetailPanel({
   onPickDate,
   onResend,
   onDismiss,
-  onArchive,
+  onDelete,
 }: {
   lead: EnrollmentLead;
   onClose: () => void;
@@ -101,7 +101,7 @@ export function LeadDetailPanel({
   onPickDate: (lead: EnrollmentLead) => void;
   onResend: (lead: EnrollmentLead) => void;
   onDismiss: (lead: EnrollmentLead) => void;
-  onArchive: (lead: EnrollmentLead) => void;
+  onDelete: (lead: EnrollmentLead) => void;
 }) {
   const updateStatus = useUpdateLeadStatus();
   const closeLead = useCloseLead();
@@ -609,9 +609,9 @@ export function LeadDetailPanel({
                   )}
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                    onSelect={() => onArchive(lead)}
+                    onSelect={() => onDelete(lead)}
                   >
-                    Archive
+                    Delete permanently
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
