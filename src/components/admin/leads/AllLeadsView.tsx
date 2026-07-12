@@ -185,8 +185,10 @@ export function AllLeadsView({
         />
       );
     }
-    const dateSource = lead.denied_at ?? lead.attendance_recorded_at ?? lead.created_at;
-    const line2 = `${STATUS_LABELS[lead.status]} ${formatDate(dateSource)}${attendanceSuffix(lead)}`;
+    const outcomeDate = lead.denied_at ?? lead.attendance_recorded_at;
+    const line2 = outcomeDate
+      ? `${STATUS_LABELS[lead.status]} ${formatDate(outcomeDate)}${attendanceSuffix(lead)}`
+      : `${STATUS_LABELS[lead.status]} · inquired ${formatDate(lead.created_at)}${attendanceSuffix(lead)}`;
     const kind = badgeKind(lead.status);
     return (
       <LeadRow
