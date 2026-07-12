@@ -70,12 +70,11 @@ export function occurrenceKidCount(o: AppointmentOccurrence): number {
 export type FollowUpItem = {
   lead: EnrollmentLead;
   lastPastDateKey: string;
-  noShow: boolean; // attendance for the last past visit recorded as no_show
-  newLinkSent: boolean; // a booking invite went out after the no-show was recorded
 };
 
-// A lead needs follow-up when its last booked visit is in the past, no future
-// visit exists, and attendance for that visit is unrecorded or was a no-show.
+// A lead needs follow-up when its last booked visit is in the past and no
+// future visit exists — staff still has to record whether they came in.
+// Recording the outcome makes the lead terminal, so it drops out of here.
 export function deriveFollowUps(
   leads: EnrollmentLead[],
   todayKey: string,
@@ -86,19 +85,7 @@ export function deriveFollowUps(
     if (occ.length === 0) continue;
     if (occ.some((o) => o.dateKey >= todayKey)) continue;
     const lastPastDateKey = occ[occ.length - 1].dateKey;
-    const recordedAt = lead.attendance_recorded_at;
-    // Attendance counts only if recorded on or after the visit day; older
-    // records belong to a previous visit cycle.
-    const current =
-      recordedAt !== null && recordedAt.slice(0, 10) >= lastPastDateKey;
-    if (current && lead.attendance_status === 'attended') continue;
-    const noShow = current && lead.attendance_status === 'no_show';
-    const newLinkSent =
-      noShow &&
-      lead.notificationHistory.some(
-        (n) => n.type === 'approval' && n.created_at > (recordedAt ?? ''),
-      );
-    items.push({ lead, lastPastDateKey, noShow, newLinkSent });
+    items.push({ lead, lastPastDateKey });
   }
   return items.sort((a, b) =>
     a.lastPastDateKey.localeCompare(b.lastPastDateKey),

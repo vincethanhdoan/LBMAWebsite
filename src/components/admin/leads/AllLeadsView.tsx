@@ -82,12 +82,6 @@ function badgeKind(status: EnrollmentLead['status']): BadgeKind | null {
   }
 }
 
-function attendanceSuffix(lead: EnrollmentLead): string {
-  if (lead.attendance_status === 'attended') return ' · came in';
-  if (lead.attendance_status === 'no_show') return ' · no-show';
-  return '';
-}
-
 export function AllLeadsView({
   activeLeads,
   onOpenLead,
@@ -230,8 +224,8 @@ export function AllLeadsView({
     }
     const outcomeDate = lead.denied_at ?? lead.attendance_recorded_at;
     const line2 = outcomeDate
-      ? `${STATUS_LABELS[lead.status]} ${formatDate(outcomeDate)}${attendanceSuffix(lead)}`
-      : `${STATUS_LABELS[lead.status]} · inquired ${formatDate(lead.created_at)}${attendanceSuffix(lead)}`;
+      ? `${STATUS_LABELS[lead.status]} ${formatDate(outcomeDate)}`
+      : `${STATUS_LABELS[lead.status]} · inquired ${formatDate(lead.created_at)}`;
     const kind = badgeKind(lead.status);
     return (
       <LeadRow

@@ -273,23 +273,8 @@ function AttentionRow({
   } else if (item.reason === 'record_outcome') {
     const { followUp } = item;
     const dateLabel = formatDate(followUp.lastPastDateKey + 'T12:00:00');
-    line2 = followUp.noShow
-      ? `No-show ${dateLabel}${followUp.newLinkSent ? ' · new link sent' : ''}`
-      : `Was ${dateLabel} · did they come in?`;
-    action =
-      followUp.noShow && !followUp.newLinkSent ? (
-        <Button
-          size="sm"
-          variant="outline"
-          className="min-h-[44px]"
-          disabled={busy}
-          onClick={() => actions.resendBookingLink(lead)}
-        >
-          Send new link
-        </Button>
-      ) : (
-        <RecordOutcomeButton lead={lead} />
-      );
+    line2 = `Was ${dateLabel} · did they come in?`;
+    action = <RecordOutcomeButton lead={lead} />;
   } else if (item.reason === 'email_failed') {
     line2 = 'Confirmation email failed';
     action = (

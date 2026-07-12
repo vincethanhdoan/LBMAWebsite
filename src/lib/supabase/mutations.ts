@@ -544,7 +544,7 @@ export async function recordLeadAttendance(
   const { error } = await supabase
     .from('enrollment_leads')
     .update({
-      attendance_status: attendance,
+      status: attendance,
       attendance_recorded_at: new Date().toISOString(),
       attendance_recorded_by: user?.id ?? null,
     })
