@@ -288,6 +288,20 @@ export function LeadDetailPanel({
                   </div>
                 </div>
               )}
+              {!confirmationEmail &&
+                (lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && (
+                  <div className="text-[11px] flex items-center gap-2">
+                    <span className="text-muted-foreground">No confirmation email sent</span>
+                    <button
+                      type="button"
+                      onClick={() => actions.sendReminder(lead)}
+                      disabled={actions.sendingReminderId === lead.lead_id}
+                      className="font-medium text-primary hover:underline disabled:opacity-50"
+                    >
+                      {actions.sendingReminderId === lead.lead_id ? 'Sending…' : 'Send confirmation email'}
+                    </button>
+                  </div>
+                )}
               {confirmationEmail && (
                 <div className="text-[11px]">
                   {confirmationEmail.status === 'sent' && (
