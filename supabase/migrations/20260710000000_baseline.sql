@@ -487,7 +487,7 @@ BEGIN
 
   RETURN v_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.check_email_has_account(check_email text)
  RETURNS boolean
@@ -498,7 +498,7 @@ AS $function$
 BEGIN
   RETURN EXISTS (SELECT 1 FROM public.registered_emails WHERE email = lower(trim(check_email)));
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_enrollment_lead(p_parent_name text, p_parent_email text, p_phone text DEFAULT NULL::text, p_notes text DEFAULT NULL::text, p_children jsonb DEFAULT NULL::jsonb)
  RETURNS uuid
@@ -544,7 +544,7 @@ BEGIN
 
   RETURN v_lead_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_or_get_dm_conversation(other_user_id uuid)
  RETURNS uuid
@@ -611,7 +611,7 @@ BEGIN
 
   RETURN new_conversation_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.deactivate_admin(target_user_id uuid)
  RETURNS void
@@ -630,7 +630,7 @@ BEGIN
   SET is_active = false, deactivated_at = NOW()
   WHERE user_id = target_user_id AND role = 'admin';
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.delete_admin_notification_setting(p_setting_id uuid)
  RETURNS void
@@ -642,7 +642,7 @@ BEGIN
   IF NOT is_admin(auth.uid()) THEN RAISE EXCEPTION 'Unauthorized'; END IF;
   UPDATE admin_notification_settings SET is_active = false WHERE setting_id = p_setting_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.delete_appointment_slot(p_slot_id uuid)
  RETURNS void
@@ -654,7 +654,7 @@ BEGIN
   IF NOT is_admin(auth.uid()) THEN RAISE EXCEPTION 'Unauthorized'; END IF;
   UPDATE appointment_slots SET is_active = false WHERE slot_id = p_slot_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.enrollment_lead_notification_notify()
  RETURNS trigger
@@ -679,7 +679,7 @@ BEGIN
   );
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_admin_emails()
  RETURNS TABLE(user_id uuid, email text, display_name text)
@@ -698,7 +698,7 @@ BEGIN
     WHERE p.role = 'admin'
     ORDER BY p.display_name;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_admin_notification_settings()
  RETURNS SETOF admin_notification_settings
@@ -710,7 +710,7 @@ BEGIN
   IF NOT is_admin(auth.uid()) THEN RAISE EXCEPTION 'Unauthorized'; END IF;
   RETURN QUERY SELECT * FROM admin_notification_settings WHERE is_active = true ORDER BY created_at;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_available_slots(target_date date)
  RETURNS SETOF appointment_slots
@@ -734,7 +734,7 @@ AS $function$
       WHERE target_date BETWEEN b.start_date AND b.end_date
     )
   ORDER BY s.start_time;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_lead_by_token(p_token uuid)
  RETURNS TABLE(status text, parent_name text, parent_email text, appointment_date date, appointment_time time without time zone)
@@ -746,7 +746,7 @@ AS $function$
   FROM enrollment_leads
   WHERE booking_token = p_token
   LIMIT 1;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_program_booking_by_token(p_token uuid)
  RETURNS TABLE(booking_id uuid, program_type text, status text, appointment_date date, appointment_time time without time zone, parent_name text, child_names text[])
@@ -770,7 +770,7 @@ AS $function$
   JOIN enrollment_leads el ON el.lead_id = pb.lead_id
   WHERE pb.booking_token = p_token
   LIMIT 1;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_total_unread_count()
  RETURNS integer
@@ -795,7 +795,7 @@ AS $function$
     ),
     0
   )::INTEGER;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_upcoming_bookable_dates(p_slot_id uuid, p_weeks_ahead integer DEFAULT 20)
  RETURNS TABLE(available_date date)
@@ -840,7 +840,7 @@ BEGIN
     v_check_date := v_check_date + 1;
   END LOOP;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
@@ -872,7 +872,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.handle_user_deleted()
  RETURNS trigger
@@ -884,7 +884,7 @@ BEGIN
   DELETE FROM public.registered_emails WHERE email = lower(trim(OLD.email));
   RETURN OLD;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.is_admin(user_uuid uuid)
  RETURNS boolean
@@ -898,7 +898,7 @@ BEGIN
     WHERE user_id = user_uuid AND role = 'admin'
   );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.is_conversation_member(conv_id uuid, user_uuid uuid)
  RETURNS boolean
@@ -912,7 +912,7 @@ BEGIN
     WHERE conversation_id = conv_id AND user_id = user_uuid
   );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.is_family_to_staff_pair(user_a uuid, user_b uuid)
  RETURNS boolean
@@ -935,7 +935,7 @@ BEGIN
     (role_a = 'admin' AND role_b = 'admin')
   );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.is_owner(user_uuid uuid)
  RETURNS boolean
@@ -947,7 +947,7 @@ AS $function$
     SELECT 1 FROM public.profiles
     WHERE user_id = user_uuid AND is_owner = true
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.is_valid_dm_conversation(conv_id uuid)
  RETURNS boolean
@@ -986,7 +986,7 @@ BEGIN
       AND is_family_to_staff_pair(cm1.user_id, cm2.user_id)
   );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.join_global_conversation()
  RETURNS void
@@ -1008,7 +1008,7 @@ BEGIN
     ON CONFLICT DO NOTHING;
   END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.notify_announcement_comment()
  RETURNS trigger
@@ -1106,7 +1106,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.notify_blog_comment()
  RETURNS trigger
@@ -1204,7 +1204,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.notify_new_announcement()
  RETURNS trigger
@@ -1228,7 +1228,7 @@ BEGIN
   WHERE unp.notify_announcements = true;
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.notify_new_blog_post()
  RETURNS trigger
@@ -1262,7 +1262,7 @@ BEGIN
     AND prefs.user_id != NEW.author_user_id;
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.portal_email_queue_notify()
  RETURNS trigger
@@ -1287,7 +1287,7 @@ BEGIN
   );
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.reactivate_admin(target_user_id uuid)
  RETURNS void
@@ -1303,7 +1303,7 @@ BEGIN
   SET is_active = true, deactivated_at = NULL
   WHERE user_id = target_user_id AND role = 'admin';
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.register_invited_email(invited_email text)
  RETURNS text
@@ -1334,7 +1334,7 @@ BEGIN
 
   RETURN normalized_email;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.remove_blocked_dates(p_block_id uuid)
  RETURNS void
@@ -1346,7 +1346,7 @@ BEGIN
   IF NOT is_admin(auth.uid()) THEN RAISE EXCEPTION 'Unauthorized'; END IF;
   DELETE FROM blocked_dates WHERE block_id = p_block_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.set_admin_owner_status(target_user_id uuid, make_owner boolean)
  RETURNS void
@@ -1375,7 +1375,7 @@ BEGIN
   SET is_owner = make_owner
   WHERE user_id = target_user_id AND role = 'admin';
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.set_primary_guardian(p_guardian_id uuid)
  RETURNS void
@@ -1403,7 +1403,7 @@ BEGIN
       updated_at = NOW()
   WHERE family_id = v_family_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.submit_enrollment_lead(p_parent_name text, p_parent_email text, p_phone text DEFAULT NULL::text, p_message text DEFAULT NULL::text, p_source_page text DEFAULT 'contact'::text, p_children jsonb DEFAULT NULL::jsonb)
  RETURNS uuid
@@ -1521,7 +1521,7 @@ BEGIN
 
   RETURN v_lead_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.trigger_new_enrollment_lead_notification()
  RETURNS trigger
@@ -1550,7 +1550,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.update_conversation_updated_at()
  RETURNS trigger
@@ -1564,7 +1564,7 @@ BEGIN
   WHERE conversation_id = NEW.conversation_id;
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger
@@ -1575,7 +1575,7 @@ BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.upsert_admin_notification_setting(p_email text, p_notify_new_leads boolean DEFAULT true)
  RETURNS uuid
@@ -1595,7 +1595,7 @@ BEGIN
 
   RETURN v_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.upsert_appointment_slot(p_slot_id uuid DEFAULT NULL::uuid, p_day_of_week integer DEFAULT NULL::integer, p_start_time time without time zone DEFAULT NULL::time without time zone, p_end_time time without time zone DEFAULT NULL::time without time zone, p_label text DEFAULT NULL::text, p_week_of_month integer DEFAULT NULL::integer, p_program_type text DEFAULT NULL::text)
  RETURNS uuid
@@ -1633,7 +1633,7 @@ BEGIN
 
   RETURN v_id;
 END;
-$function$
+$function$;
 
 
 -- Triggers ---------------------------------------------------------------
@@ -2134,3 +2134,49 @@ GRANT EXECUTE ON FUNCTION public.submit_enrollment_lead(p_parent_name text, p_pa
 GRANT EXECUTE ON FUNCTION public.submit_enrollment_lead(p_parent_name text, p_parent_email text, p_phone text, p_message text, p_source_page text, p_children jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.upsert_admin_notification_setting(p_email text, p_notify_new_leads boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.upsert_appointment_slot(p_slot_id uuid, p_day_of_week integer, p_start_time time without time zone, p_end_time time without time zone, p_label text, p_week_of_month integer, p_program_type text) TO authenticated;
+
+
+-- Table privileges for the API roles (anon / authenticated / service_role).
+-- Introspected from production; RLS policies above gate the actual row access.
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.admin_notification_settings TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.admin_notification_settings TO service_role;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.announcement_comments TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.announcements TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.appointment_slots TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.blocked_dates TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.blog_comments TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.blog_posts TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.conversation_members TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.conversations TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.families TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.feedback_tests TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.guardians TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.message_attachments TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.messages TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.profiles TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.reviews TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.student_feedback TO authenticated;
+GRANT DELETE, INSERT, SELECT, UPDATE ON public.students TO authenticated;
+GRANT DELETE, SELECT, UPDATE ON public.enrollment_leads TO authenticated;
+GRANT INSERT, SELECT, UPDATE ON public.admin_notification_preferences TO authenticated;
+GRANT INSERT, SELECT, UPDATE ON public.enrollment_lead_notifications TO service_role;
+GRANT INSERT, SELECT, UPDATE ON public.registered_emails TO service_role;
+GRANT INSERT, SELECT, UPDATE ON public.user_notification_preferences TO authenticated;
+GRANT INSERT, SELECT, UPDATE ON public.user_section_last_seen TO authenticated;
+GRANT SELECT ON public.admin_notification_preferences TO service_role;
+GRANT SELECT ON public.appointment_slots TO anon;
+GRANT SELECT ON public.appointment_slots TO service_role;
+GRANT SELECT ON public.blocked_dates TO anon;
+GRANT SELECT ON public.blocked_dates TO service_role;
+GRANT SELECT ON public.conversation_members TO service_role;
+GRANT SELECT ON public.enrollment_lead_children TO service_role;
+GRANT SELECT ON public.profiles TO service_role;
+GRANT SELECT ON public.reviews TO anon;
+GRANT SELECT ON public.user_notification_preferences TO service_role;
+GRANT SELECT, UPDATE ON public.enrollment_lead_children TO authenticated;
+GRANT SELECT, UPDATE ON public.enrollment_lead_notifications TO authenticated;
+GRANT SELECT, UPDATE ON public.enrollment_lead_program_bookings TO authenticated;
+GRANT SELECT, UPDATE ON public.enrollment_lead_program_bookings TO service_role;
+GRANT SELECT, UPDATE ON public.enrollment_leads TO service_role;
+GRANT SELECT, UPDATE ON public.portal_email_queue TO service_role;
+GRANT SELECT, UPDATE ON public.user_notifications TO authenticated;
