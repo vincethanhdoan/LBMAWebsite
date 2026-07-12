@@ -10,6 +10,18 @@ import { queryKeys } from '../../../lib/queryKeys';
 import type { EnrollmentLead } from '../../../lib/types';
 import { PROGRAM_LABELS } from './leadDisplay';
 
+async function edgeErrorMessage(
+  error: unknown,
+  fallback: string,
+): Promise<string> {
+  if (error instanceof FunctionsHttpError) {
+    const payload = await error.context.json().catch(() => null);
+    if (payload && typeof payload.error === 'string' && payload.error)
+      return payload.error;
+  }
+  return fallback;
+}
+
 export function useLeadActions({
   onError,
 }: {
@@ -54,7 +66,12 @@ export function useLeadActions({
         },
       );
       if (error) {
-        onError('Failed to send approval');
+        onError(
+          await edgeErrorMessage(
+            error,
+            "Couldn't send the approval. Please try again.",
+          ),
+        );
         return;
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
@@ -78,7 +95,12 @@ export function useLeadActions({
         headers: fnHeaders,
       });
       if (error) {
-        onError('Failed to resend booking link');
+        onError(
+          await edgeErrorMessage(
+            error,
+            "Couldn't resend the booking link. Please try again.",
+          ),
+        );
         return;
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
@@ -89,6 +111,7 @@ export function useLeadActions({
   }
 
   async function deny(leadId: string, message: string): Promise<boolean> {
+    if (busyLeadIds.has(leadId)) return false;
     markBusy(leadId);
     try {
       const fnHeaders = await edgeFunctionUserAuthHeaders();
@@ -104,7 +127,12 @@ export function useLeadActions({
         },
       );
       if (error) {
-        onError('Failed to send denial');
+        onError(
+          await edgeErrorMessage(
+            error,
+            "Couldn't send the denial. Please try again.",
+          ),
+        );
         return false;
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
@@ -122,6 +150,7 @@ export function useLeadActions({
       appointmentDate: string;
     }>,
   ): Promise<boolean> {
+    if (busyLeadIds.has(lead.lead_id)) return false;
     markBusy(lead.lead_id);
     try {
       const fnHeaders = await edgeFunctionUserAuthHeaders();
@@ -131,6 +160,7 @@ export function useLeadActions({
       }
 
       let failedProgram: string | null = null;
+      let failedMessage: string | null = null;
       let slotTakenProgram: string | null = null;
       let successCount = 0;
       for (const b of bookings) {
@@ -157,6 +187,8 @@ export function useLeadActions({
                 : 'this program';
               break;
             }
+            if (body && typeof body.error === 'string' && body.error)
+              failedMessage = body.error;
           }
           failedProgram = programType ? PROGRAM_LABELS[programType] : 'This';
           break;
@@ -177,7 +209,10 @@ export function useLeadActions({
 
       if (failedProgram) {
         onError(
-          `${failedProgram} appointment could not be booked — the other bookings were saved. Please try again.`,
+          successCount > 0
+            ? `${failedProgram} appointment couldn't be booked. The other bookings were saved. Please try again.`
+            : (failedMessage ??
+                "Couldn't book the appointment. Please try again."),
         );
         return false;
       }
@@ -206,7 +241,12 @@ export function useLeadActions({
         },
       );
       if (error) {
-        onError('Failed to confirm appointment');
+        onError(
+          await edgeErrorMessage(
+            error,
+            "Couldn't confirm the appointment. Please try again.",
+          ),
+        );
         return false;
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
@@ -225,24 +265,35 @@ export function useLeadActions({
   }
 
   async function unconfirm(lead: EnrollmentLead): Promise<boolean> {
-    const fnHeaders = await edgeFunctionUserAuthHeaders();
-    if (!fnHeaders) {
-      onError('Session expired. Please sign in again.');
-      return false;
+    if (busyLeadIds.has(lead.lead_id)) return false;
+    markBusy(lead.lead_id);
+    try {
+      const fnHeaders = await edgeFunctionUserAuthHeaders();
+      if (!fnHeaders) {
+        onError('Session expired. Please sign in again.');
+        return false;
+      }
+      const { error } = await supabase.functions.invoke(
+        'admin-confirm-appointment',
+        {
+          body: { leadId: lead.lead_id, action: 'unconfirm' },
+          headers: fnHeaders,
+        },
+      );
+      if (error) {
+        onError(
+          await edgeErrorMessage(
+            error,
+            "Couldn't undo the confirmation. Please try again.",
+          ),
+        );
+        return false;
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+      return true;
+    } finally {
+      clearBusy(lead.lead_id);
     }
-    const { error } = await supabase.functions.invoke(
-      'admin-confirm-appointment',
-      {
-        body: { leadId: lead.lead_id, action: 'unconfirm' },
-        headers: fnHeaders,
-      },
-    );
-    if (error) {
-      onError('Failed to undo');
-      return false;
-    }
-    queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
-    return true;
   }
 
   async function sendReminder(lead: EnrollmentLead) {
@@ -261,12 +312,19 @@ export function useLeadActions({
         },
       );
       if (error) {
-        const status = (error as { context?: { status?: number } }).context
-          ?.status;
+        const status =
+          error instanceof FunctionsHttpError
+            ? error.context.status
+            : undefined;
         if (status === 409) {
           onError('A confirmation email is already on its way');
         } else {
-          onError('Failed to send confirmation email');
+          onError(
+            await edgeErrorMessage(
+              error,
+              "Couldn't send the confirmation email. Please try again.",
+            ),
+          );
         }
         return;
       }
