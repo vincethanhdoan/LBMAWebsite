@@ -271,12 +271,6 @@ export type Review = {
   updated_at: string;
 };
 
-export type UserSectionLastSeen = {
-  user_id: string;
-  section: 'announcements' | 'blog';
-  last_seen_at: string;
-};
-
 export type UserNotification = {
   notification_id: string;
   recipient_user_id: string;

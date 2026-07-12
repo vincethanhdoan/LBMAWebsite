@@ -5,7 +5,6 @@ import {
   updateBlogPost,
   deleteBlogPost,
   createBlogComment,
-  updateBlogComment,
   deleteBlogComment,
 } from '../supabase/mutations';
 import { queryKeys } from '../queryKeys';
@@ -63,17 +62,6 @@ export function useCreateBlogComment(postId: string) {
   return useMutation({
     mutationFn: ({ body, parentCommentId }: { body: string; parentCommentId?: string }) =>
       createBlogComment(postId, body, parentCommentId),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.blogComments(postId) });
-    },
-  });
-}
-
-export function useUpdateBlogComment(postId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ commentId, updates }: { commentId: string; updates: Parameters<typeof updateBlogComment>[1] }) =>
-      updateBlogComment(commentId, updates),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.blogComments(postId) });
     },

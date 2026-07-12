@@ -49,17 +49,6 @@ import {
 // PROFILES
 // ============================================
 
-export async function getProfile(userId: string): Promise<Profile | null> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select(PROFILE_COLUMNS)
-    .eq('user_id', userId)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
 export async function getAllProfiles(): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
@@ -96,7 +85,7 @@ export async function getFamilyByOwner(ownerUserId: string): Promise<Family | nu
   return data || null;
 }
 
-export async function getAllFamilies(): Promise<Family[]> {
+async function getAllFamilies(): Promise<Family[]> {
   const { data, error } = await supabase
     .from('families')
     .select(FAMILY_COLUMNS)
@@ -236,17 +225,6 @@ export async function getAnnouncements(): Promise<(Announcement & { profiles: { 
   return hydrateAuthorNames(data as Announcement[]);
 }
 
-export async function getAnnouncement(announcementId: string): Promise<Announcement> {
-  const { data, error } = await supabase
-    .from('announcements')
-    .select(ANNOUNCEMENT_COLUMNS)
-    .eq('announcement_id', announcementId)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
 export type AnnouncementCommentWithAuthor = AnnouncementComment & {
   profiles: { display_name: string | null; avatar_url: string | null } | null;
 };
@@ -281,17 +259,6 @@ export async function getBlogPosts(): Promise<(BlogPost & { profiles: { display_
   if (error) throw error;
   if (!data || data.length === 0) return [];
   return hydrateAuthorNames(data as BlogPost[]);
-}
-
-export async function getBlogPost(postId: string): Promise<BlogPost> {
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select(BLOG_POST_COLUMNS)
-    .eq('post_id', postId)
-    .single();
-
-  if (error) throw error;
-  return data;
 }
 
 export type BlogCommentWithAuthor = BlogComment & {
@@ -339,38 +306,6 @@ export async function getCommentPostRef(
     .maybeSingle();
   if (error) throw error;
   return data ? { tab: 'blog', postId: data.post_id } : null;
-}
-
-/**
- * Fetch comments for multiple posts in a single query.
- * Returns a map of post_id → comment array.
- */
-export async function getBlogCommentsForPosts(
-  postIds: string[]
-): Promise<Record<string, BlogCommentWithAuthor[]>> {
-  if (postIds.length === 0) return {};
-
-  const { data, error } = await supabase
-    .from('blog_comments')
-    .select(`
-      ${BLOG_COMMENT_COLUMNS},
-      profiles!blog_comments_author_user_id_fkey (
-        display_name,
-        avatar_url
-      )
-    `)
-    .in('post_id', postIds)
-    .order('created_at', { ascending: true });
-
-  if (error) throw error;
-
-  const result: Record<string, BlogCommentWithAuthor[]> = {};
-  for (const row of (data ?? []) as unknown as BlogCommentWithAuthor[]) {
-    const postId = (row as BlogCommentWithAuthor & { post_id: string }).post_id;
-    if (!result[postId]) result[postId] = [];
-    result[postId].push(row);
-  }
-  return result;
 }
 
 // ============================================
@@ -446,52 +381,6 @@ export async function getMessages(conversationId: string): Promise<MessageWithMe
   return (data || []) as unknown as MessageWithMeta[];
 }
 
-export async function getDirectMessageConversation(userId1: string, userId2: string): Promise<Conversation | null> {
-  const userConversations = await getUserConversations(userId1);
-  const directMessageConversationIds = userConversations
-    .filter((conversation) => conversation.type === 'dm')
-    .map((conversation) => conversation.conversation_id);
-
-  if (directMessageConversationIds.length === 0) return null;
-
-  const { data, error } = await supabase
-    .from('conversation_members')
-    .select('conversation_id')
-    .in('conversation_id', directMessageConversationIds)
-    .eq('user_id', userId2);
-
-  if (error) throw error;
-
-  const matchedIds = new Set((data || []).map((row) => row.conversation_id));
-  return userConversations.find((c) => matchedIds.has(c.conversation_id)) || null;
-}
-
-export async function getConversationUnreadCount(conversationId: string, userId: string): Promise<number> {
-  const { data: member, error: memberError } = await supabase
-    .from('conversation_members')
-    .select('last_read_at')
-    .eq('conversation_id', conversationId)
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (memberError) throw memberError;
-  if (!member) return 0;
-
-  let query = supabase
-    .from('messages')
-    .select('message_id', { count: 'exact', head: true })
-    .eq('conversation_id', conversationId)
-    .neq('author_user_id', userId);
-
-  if (member.last_read_at) {
-    query = query.gt('created_at', member.last_read_at);
-  }
-
-  const { count, error } = await query;
-  if (error) throw error;
-  return count || 0;
-}
-
 /**
  * Returns the total unread message count across all conversations for the
  * current user. Delegates to the get_total_unread_count DB function which
@@ -501,27 +390,6 @@ export async function getUnreadMessageCount(): Promise<number> {
   const { data, error } = await supabase.rpc('get_total_unread_count');
   if (error) throw error;
   return (data as number) || 0;
-}
-
-export async function getCommunicationCounts(): Promise<{
-  announcements: number;
-  blogPosts: number;
-  unreadMessages: number;
-}> {
-  const [announcementResult, blogResult, unreadMessages] = await Promise.all([
-    supabase.from('announcements').select('announcement_id', { count: 'exact', head: true }),
-    supabase.from('blog_posts').select('post_id', { count: 'exact', head: true }),
-    getUnreadMessageCount(),
-  ]);
-
-  if (announcementResult.error) throw announcementResult.error;
-  if (blogResult.error) throw blogResult.error;
-
-  return {
-    announcements: announcementResult.count || 0,
-    blogPosts: blogResult.count || 0,
-    unreadMessages,
-  };
 }
 
 // ============================================
@@ -843,12 +711,6 @@ export async function getUpcomingBookableDates(slotId: string, weeksAhead = 20):
   })
   if (error) throw error
   return (data ?? []).map((row: { available_date: string }) => row.available_date)
-}
-
-export async function getLeadByToken(token: string) {
-  const { data, error } = await supabase.rpc('get_lead_by_token', { p_token: token })
-  if (error) throw error
-  return data?.[0] ?? null
 }
 
 export async function getProgramBookingByToken(token: string): Promise<{

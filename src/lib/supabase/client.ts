@@ -16,7 +16,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-export type EnrollmentLeadInput = {
+type EnrollmentLeadInput = {
   parentName: string;
   parentEmail: string;
   phone?: string;

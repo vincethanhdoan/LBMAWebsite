@@ -8,8 +8,6 @@ import {
   updateAnnouncement,
   deleteAnnouncement,
   createAnnouncementComment,
-  updateAnnouncementComment,
-  deleteAnnouncementComment,
 } from '../supabase/mutations';
 import { queryKeys } from '../queryKeys';
 import type { Announcement } from '../types';
@@ -72,23 +70,3 @@ export function useCreateAnnouncementComment(announcementId: string) {
   });
 }
 
-export function useUpdateAnnouncementComment(announcementId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ commentId, updates }: { commentId: string; updates: Parameters<typeof updateAnnouncementComment>[1] }) =>
-      updateAnnouncementComment(commentId, updates),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.announcementComments(announcementId) });
-    },
-  });
-}
-
-export function useDeleteAnnouncementComment(announcementId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (commentId: string) => deleteAnnouncementComment(commentId),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.announcementComments(announcementId) });
-    },
-  });
-}

@@ -8,8 +8,6 @@ import type {
   AnnouncementComment,
   BlogPost,
   BlogComment,
-  Conversation,
-  ConversationMember,
   Message,
   MessageAttachment,
   EnrollmentLead,
@@ -20,8 +18,6 @@ import type {
   AdminNotificationPreferences,
 } from '../types';
 import {
-  CONVERSATION_COLUMNS,
-  CONVERSATION_MEMBER_COLUMNS,
   FAMILY_COLUMNS,
   FEEDBACK_TEST_COLUMNS,
   GUARDIAN_COLUMNS,
@@ -125,15 +121,6 @@ export async function setFamilyAccountStatus(
 
   if (error) throw error;
   return data;
-}
-
-export async function deleteFamily(familyId: string): Promise<void> {
-  const { error } = await supabase
-    .from('families')
-    .delete()
-    .eq('family_id', familyId);
-
-  if (error) throw error;
 }
 
 // ============================================
@@ -370,17 +357,6 @@ export async function deleteBlogComment(commentId: string): Promise<void> {
 // CONVERSATIONS & MESSAGES
 // ============================================
 
-export async function createConversation(conversation: Omit<Conversation, 'conversation_id' | 'created_at' | 'updated_at'>): Promise<Conversation> {
-  const { data, error } = await supabase
-    .from('conversations')
-    .insert(conversation)
-    .select(CONVERSATION_COLUMNS)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
 export async function joinGlobalConversation(): Promise<void> {
   const { error } = await supabase.rpc('join_global_conversation');
   if (error) throw error;
@@ -405,17 +381,6 @@ export async function createOrGetDirectConversation(otherUserId: string): Promis
   return data as string;
 }
 
-export async function addConversationMember(member: Omit<ConversationMember, 'created_at'>): Promise<ConversationMember> {
-  const { data, error } = await supabase
-    .from('conversation_members')
-    .insert(member)
-    .select(CONVERSATION_MEMBER_COLUMNS)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
 export async function markConversationAsRead(conversationId: string, userId: string): Promise<void> {
   const { error } = await supabase
     .from('conversation_members')
@@ -431,16 +396,6 @@ export async function markConversationAsRead(conversationId: string, userId: str
   }
 }
 
-export async function removeConversationMember(conversationId: string, userId: string): Promise<void> {
-  const { error } = await supabase
-    .from('conversation_members')
-    .delete()
-    .eq('conversation_id', conversationId)
-    .eq('user_id', userId);
-
-  if (error) throw error;
-}
-
 export async function createMessage(message: Omit<Message, 'message_id' | 'created_at' | 'updated_at'>): Promise<Message> {
   const { data, error } = await supabase
     .from('messages')
@@ -451,27 +406,6 @@ export async function createMessage(message: Omit<Message, 'message_id' | 'creat
   if (error) throw error;
   // conversations.updated_at is kept current by the trg_message_insert_update_conversation trigger.
   return data;
-}
-
-export async function updateMessage(messageId: string, updates: Partial<Message>): Promise<Message> {
-  const { data, error } = await supabase
-    .from('messages')
-    .update(updates)
-    .eq('message_id', messageId)
-    .select(MESSAGE_COLUMNS)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteMessage(messageId: string): Promise<void> {
-  const { error } = await supabase
-    .from('messages')
-    .delete()
-    .eq('message_id', messageId);
-
-  if (error) throw error;
 }
 
 export async function createMessageAttachment(attachment: Omit<MessageAttachment, 'attachment_id' | 'created_at'>): Promise<MessageAttachment> {
@@ -637,18 +571,6 @@ export async function createStudentFeedback(
   return data;
 }
 
-export async function updateStudentFeedback(feedbackId: string, updates: Partial<StudentFeedback>): Promise<StudentFeedback> {
-  const { data, error } = await supabase
-    .from('student_feedback')
-    .update(updates)
-    .eq('feedback_id', feedbackId)
-    .select(STUDENT_FEEDBACK_COLUMNS)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
 export async function deleteStudentFeedback(feedbackId: string): Promise<void> {
   const { error } = await supabase
     .from('student_feedback')
@@ -683,25 +605,6 @@ export async function updateReview(reviewId: string, updates: Partial<Review>): 
 
   if (error) throw error;
   return data;
-}
-
-export async function deleteReview(reviewId: string): Promise<void> {
-  const { error } = await supabase
-    .from('reviews')
-    .delete()
-    .eq('review_id', reviewId);
-
-  if (error) throw error;
-}
-
-export async function registerInvitedEmail(email: string): Promise<string> {
-  const normalizedEmail = email.trim().toLowerCase();
-  const { data, error } = await supabase.rpc('register_invited_email', {
-    invited_email: normalizedEmail,
-  });
-
-  if (error) throw error;
-  return data as string;
 }
 
 // ============================================

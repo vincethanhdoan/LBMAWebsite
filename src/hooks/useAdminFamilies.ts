@@ -49,7 +49,7 @@ export type Family = {
   guardians: GuardianRow[];
 };
 
-export type FamilyDetails = {
+type FamilyDetails = {
   family: Family;
   guardians: GuardianRow[];
   students: StudentRow[];

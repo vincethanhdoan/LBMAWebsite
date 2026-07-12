@@ -38,18 +38,6 @@ export async function getSignedUrl(path: string, expiresIn: number = 3600): Prom
 }
 
 // ============================================
-// FILE DELETE
-// ============================================
-
-export async function deleteFile(path: string): Promise<void> {
-  const { error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .remove([path]);
-
-  if (error) throw error;
-}
-
-// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
@@ -61,7 +49,7 @@ export function generateFilePath(userId: string, fileName: string): string {
   return `${userId}/${timestamp}-${sanitizedFileName}`;
 }
 
-export function getFileExtension(fileName: string): string {
+function getFileExtension(fileName: string): string {
   return fileName.split('.').pop()?.toLowerCase() || '';
 }
 
@@ -91,7 +79,7 @@ const PROFILE_PICTURES_BUCKET = 'profile-pictures';
 export const MAX_PROFILE_IMAGE_SIZE_MB = 10;
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-export function getProfilePublicUrl(path: string): string {
+function getProfilePublicUrl(path: string): string {
   const { data } = supabase.storage.from(PROFILE_PICTURES_BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
