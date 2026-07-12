@@ -149,14 +149,6 @@ export function BookingCalendar({
 
       {selected && dayOptions.length > 0 && (
         <div className="mt-3 space-y-2">
-          <div className="text-xs font-medium text-muted-foreground">
-            {selected.toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-            })}
-            {dayOptions.length > 1 && ' — pick a time'}
-          </div>
           {dayOptions.map((option) => {
             const isChosen = selectedOption?.slotId === option.slotId;
             return (
