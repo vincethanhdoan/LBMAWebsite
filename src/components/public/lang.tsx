@@ -293,7 +293,14 @@ const EN = {
   },
 } as const;
 
-type T = typeof EN;
+type T = { [K in keyof typeof EN]: Translated<(typeof EN)[K]> };
+
+type Translated<V> =
+  V extends (...args: infer A) => infer R ? (...args: A) => R
+  : V extends readonly (infer E)[] ? readonly Translated<E>[]
+  : V extends object ? { [P in keyof V]: Translated<V[P]> }
+  : V extends string ? string
+  : V;
 
 const ES: T = {
   nav: {
