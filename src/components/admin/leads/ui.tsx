@@ -54,7 +54,13 @@ export function SectionHeader({
 }
 
 type StatusKind =
-  'confirmed' | 'unconfirmed' | 'enrolled' | 'closed' | 'denied' | 'new';
+  | 'confirmed'
+  | 'unconfirmed'
+  | 'attended'
+  | 'no_show'
+  | 'closed'
+  | 'denied'
+  | 'new';
 
 const BADGE: Record<StatusKind, { label: string; cls: string }> = {
   confirmed: {
@@ -65,9 +71,13 @@ const BADGE: Record<StatusKind, { label: string; cls: string }> = {
     label: 'Not confirmed',
     cls: 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]',
   },
-  enrolled: {
-    label: 'Enrolled',
+  attended: {
+    label: 'Attended',
     cls: 'bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]',
+  },
+  no_show: {
+    label: 'No-show',
+    cls: 'bg-[#F1F0EF] text-[#6B6866] border-[#E8E6E3]',
   },
   closed: {
     label: 'Closed',

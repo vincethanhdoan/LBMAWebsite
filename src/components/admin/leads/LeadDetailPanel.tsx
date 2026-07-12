@@ -56,8 +56,10 @@ function HeaderStatus({ lead }: { lead: EnrollmentLead }) {
       return <StatusBadge kind="unconfirmed" />;
     case 'appointment_confirmed':
       return <StatusBadge kind="confirmed" />;
-    case 'enrolled':
-      return <StatusBadge kind="enrolled" />;
+    case 'attended':
+      return <StatusBadge kind="attended" />;
+    case 'no_show':
+      return <StatusBadge kind="no_show" />;
     case 'closed':
       return <StatusBadge kind="closed" />;
     case 'denied':
@@ -87,7 +89,7 @@ export function LeadDetailPanel({
   onPickDate,
   onResend,
   onDismiss,
-  onArchive,
+  onDelete,
 }: {
   lead: EnrollmentLead;
   onClose: () => void;
@@ -97,7 +99,7 @@ export function LeadDetailPanel({
   onPickDate: (lead: EnrollmentLead) => void;
   onResend: (lead: EnrollmentLead) => void;
   onDismiss: (lead: EnrollmentLead) => void;
-  onArchive: (lead: EnrollmentLead) => void;
+  onDelete: (lead: EnrollmentLead) => void;
 }) {
   const updateStatus = useUpdateLeadStatus();
   const closeLead = useCloseLead();
@@ -205,12 +207,6 @@ export function LeadDetailPanel({
         return {
           label: 'Mark confirmed',
           run: () => actions.markConfirmed(lead),
-        };
-      case 'appointment_confirmed':
-        return {
-          label: 'Mark enrolled',
-          run: () =>
-            updateStatus.mutate({ leadId: lead.lead_id, status: 'enrolled' }),
         };
       default:
         return null;
@@ -590,7 +586,9 @@ export function LeadDetailPanel({
                   <DropdownMenuItem onSelect={() => onEdit(lead)}>
                     Edit lead
                   </DropdownMenuItem>
-                  {(lead.status === 'enrolled' || lead.status === 'closed') && (
+                  {(lead.status === 'attended' ||
+                    lead.status === 'no_show' ||
+                    lead.status === 'closed') && (
                     <DropdownMenuItem
                       onSelect={reopen}
                       disabled={updateStatus.isPending}
@@ -608,9 +606,9 @@ export function LeadDetailPanel({
                   )}
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                    onSelect={() => onArchive(lead)}
+                    onSelect={() => onDelete(lead)}
                   >
-                    Archive
+                    Delete permanently
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

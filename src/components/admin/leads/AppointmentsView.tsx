@@ -137,7 +137,6 @@ export function AppointmentsView({
       ) : (
         <FollowUpSegment
           followUps={followUps}
-          actions={actions}
           onOpenLead={onOpenLead}
           highlightedLeadId={highlightedLeadId}
         />
@@ -389,12 +388,10 @@ function OccurrenceRow({
 
 function FollowUpSegment({
   followUps,
-  actions,
   onOpenLead,
   highlightedLeadId,
 }: {
   followUps: FollowUpItem[];
-  actions: ReturnType<typeof useLeadActions>;
   onOpenLead: (leadId: string) => void;
   highlightedLeadId: string | null;
 }): JSX.Element {
@@ -415,7 +412,6 @@ function FollowUpSegment({
             <FollowUpRow
               key={item.lead.lead_id}
               item={item}
-              actions={actions}
               onOpenLead={onOpenLead}
               highlightedLeadId={highlightedLeadId}
             />
@@ -428,25 +424,21 @@ function FollowUpSegment({
 
 function FollowUpRow({
   item,
-  actions,
   onOpenLead,
   highlightedLeadId,
 }: {
   item: FollowUpItem;
-  actions: ReturnType<typeof useLeadActions>;
   onOpenLead: (leadId: string) => void;
   highlightedLeadId: string | null;
 }): JSX.Element {
-  const { lead, lastPastDateKey, noShow, newLinkSent } = item;
+  const { lead, lastPastDateKey } = item;
   const phone = lead.phone;
   const lastOccurrence = getAppointmentOccurrences([lead]).slice(-1)[0];
   const booking = lastOccurrence?.booking ?? null;
 
-  const line2 = noShow
-    ? `No-show ${formatDate(lastPastDateKey + 'T12:00:00')}${newLinkSent ? ' · new link sent' : ''}`
-    : `Was ${formatGroupHeader(lastPastDateKey).label} · Parent: ${lead.parent_name}${
-        phone ? ' · ' + formatPhone(phone) : ''
-      }`;
+  const line2 = `Was ${formatGroupHeader(lastPastDateKey).label} · Parent: ${lead.parent_name}${
+    phone ? ' · ' + formatPhone(phone) : ''
+  }`;
 
   return (
     <LeadRow
@@ -460,21 +452,7 @@ function FollowUpRow({
       title={childSummary(lead) || lead.parent_name}
       titleMeta={booking ? PROGRAM_LABELS[booking.program_type] : undefined}
       line2={line2}
-      action={
-        noShow && !newLinkSent ? (
-          <Button
-            size="sm"
-            variant="outline"
-            className="min-h-[44px]"
-            disabled={actions.busyLeadIds.has(lead.lead_id)}
-            onClick={() => actions.resendBookingLink(lead)}
-          >
-            Send new link
-          </Button>
-        ) : (
-          <RecordOutcomeButton lead={lead} />
-        )
-      }
+      action={<RecordOutcomeButton lead={lead} />}
       onOpen={() => onOpenLead(lead.lead_id)}
     />
   );

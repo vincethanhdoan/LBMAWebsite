@@ -24,13 +24,7 @@ export function buildTimelineEntries(lead: EnrollmentLead): TimelineEntry[] {
   const entries: TimelineEntry[] = [];
 
   // Current-state lines have no timestamp column; surface them at the top.
-  if (lead.status === 'enrolled') {
-    entries.push({
-      key: 'state-enrolled',
-      label: 'Marked enrolled',
-      timestamp: null,
-    });
-  } else if (lead.status === 'closed') {
+  if (lead.status === 'closed') {
     entries.push({
       key: 'state-closed',
       label: 'Marked closed',
@@ -57,13 +51,13 @@ export function buildTimelineEntries(lead: EnrollmentLead): TimelineEntry[] {
       timestamp: lead.denied_at,
     });
   }
-  if (lead.attendance_status && lead.attendance_recorded_at) {
+  if (
+    (lead.status === 'attended' || lead.status === 'no_show') &&
+    lead.attendance_recorded_at
+  ) {
     entries.push({
       key: 'milestone-attendance',
-      label:
-        lead.attendance_status === 'attended'
-          ? 'Marked attended'
-          : 'Marked no-show',
+      label: lead.status === 'attended' ? 'Marked attended' : 'Marked no-show',
       timestamp: lead.attendance_recorded_at,
     });
   }

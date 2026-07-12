@@ -498,19 +498,10 @@ export async function closeLead(leadId: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function archiveEnrollmentLead(leadId: string): Promise<void> {
-  const { error } = await supabase
-    .from('enrollment_leads')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('lead_id', leadId);
-  if (error) throw error;
-}
-
-export async function restoreEnrollmentLead(leadId: string): Promise<void> {
-  const { error } = await supabase
-    .from('enrollment_leads')
-    .update({ deleted_at: null })
-    .eq('lead_id', leadId);
+export async function deleteEnrollmentLead(leadId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_enrollment_lead', {
+    p_lead_id: leadId,
+  });
   if (error) throw error;
 }
 
@@ -544,7 +535,7 @@ export async function recordLeadAttendance(
   const { error } = await supabase
     .from('enrollment_leads')
     .update({
-      attendance_status: attendance,
+      status: attendance,
       attendance_recorded_at: new Date().toISOString(),
       attendance_recorded_by: user?.id ?? null,
     })

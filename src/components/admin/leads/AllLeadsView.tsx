@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { JSX, ReactNode } from 'react';
 import { Loader2, Search, X } from 'lucide-react';
-import { toast } from 'sonner';
 import type { EnrollmentLead } from '../../../lib/types';
 import type { TerminalLeadFilter } from '../../../lib/supabase/queries';
 import { Button } from '../../ui/button';
 import { Skeleton } from '../../ui/skeleton';
 import {
-  useRestoreLead,
   useTerminalLeadCounts,
   useTerminalLeads,
 } from '../../../lib/hooks/leads';
@@ -21,18 +19,24 @@ import { childSummary, getAppointmentOccurrences } from './leadViews';
 import { LeadRow, StatusBadge, Surface } from './ui';
 
 export type AllLeadsFilter =
-  'everyone' | 'active' | 'enrolled' | 'closed' | 'denied' | 'archived';
+  'everyone' | 'active' | 'attended' | 'no_show' | 'closed' | 'denied';
 
 type BadgeKind =
-  'confirmed' | 'unconfirmed' | 'enrolled' | 'closed' | 'denied' | 'new';
+  | 'confirmed'
+  | 'unconfirmed'
+  | 'attended'
+  | 'no_show'
+  | 'closed'
+  | 'denied'
+  | 'new';
 
 const FILTERS: { id: AllLeadsFilter; label: string }[] = [
   { id: 'everyone', label: 'Everyone' },
   { id: 'active', label: 'Active' },
-  { id: 'enrolled', label: 'Enrolled' },
+  { id: 'attended', label: 'Attended' },
+  { id: 'no_show', label: 'No-show' },
   { id: 'closed', label: 'Closed' },
   { id: 'denied', label: 'Denied' },
-  { id: 'archived', label: 'Archived' },
 ];
 
 function useDebouncedValue<T>(value: T, delayMs: number): T {
@@ -56,8 +60,10 @@ function badgeKind(status: EnrollmentLead['status']): BadgeKind | null {
       return 'unconfirmed';
     case 'appointment_confirmed':
       return 'confirmed';
-    case 'enrolled':
-      return 'enrolled';
+    case 'attended':
+      return 'attended';
+    case 'no_show':
+      return 'no_show';
     case 'closed':
       return 'closed';
     case 'denied':
@@ -65,12 +71,6 @@ function badgeKind(status: EnrollmentLead['status']): BadgeKind | null {
     default:
       return null;
   }
-}
-
-function attendanceSuffix(lead: EnrollmentLead): string {
-  if (lead.attendance_status === 'attended') return ' · came in';
-  if (lead.attendance_status === 'no_show') return ' · no-show';
-  return '';
 }
 
 export function AllLeadsView({
@@ -95,7 +95,6 @@ export function AllLeadsView({
 
   const terminalQuery = useTerminalLeads(mapFilter(filter), debouncedSearch);
   const { data: counts } = useTerminalLeadCounts();
-  const restoreLead = useRestoreLead();
 
   const terminalLeads = useMemo(
     () => (terminalQuery.data?.pages ?? []).flatMap((p) => p.leads),
@@ -143,7 +142,7 @@ export function AllLeadsView({
   }, [activeLeads, terminalLeads]);
 
   const terminalTotal = counts
-    ? counts.enrolled + counts.closed + counts.denied + counts.archived
+    ? counts.attended + counts.no_show + counts.closed + counts.denied
     : 0;
   const total = activeLeads.length + terminalTotal;
 
@@ -177,41 +176,10 @@ export function AllLeadsView({
   }
 
   function terminalRow(lead: EnrollmentLead): ReactNode {
-    if (lead.deleted_at) {
-      return (
-        <LeadRow
-          key={lead.lead_id}
-          id={'lead-' + lead.lead_id}
-          highlighted={highlightedLeadId === lead.lead_id}
-          dimmed
-          title={lead.parent_name}
-          titleMeta={titleMeta(lead)}
-          line2={`Archived ${formatDate(lead.deleted_at)}`}
-          action={
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={
-                restoreLead.isPending && restoreLead.variables === lead.lead_id
-              }
-              onClick={() =>
-                restoreLead.mutate(lead.lead_id, {
-                  onError: () =>
-                    toast.error("Couldn't restore lead. Please try again."),
-                })
-              }
-            >
-              Restore
-            </Button>
-          }
-          onOpen={() => onOpenLead(lead.lead_id, lead)}
-        />
-      );
-    }
     const outcomeDate = lead.denied_at ?? lead.attendance_recorded_at;
     const line2 = outcomeDate
-      ? `${STATUS_LABELS[lead.status]} ${formatDate(outcomeDate)}${attendanceSuffix(lead)}`
-      : `${STATUS_LABELS[lead.status]} · inquired ${formatDate(lead.created_at)}${attendanceSuffix(lead)}`;
+      ? `${STATUS_LABELS[lead.status]} ${formatDate(outcomeDate)}`
+      : `${STATUS_LABELS[lead.status]} · inquired ${formatDate(lead.created_at)}`;
     const kind = badgeKind(lead.status);
     return (
       <LeadRow
@@ -231,7 +199,8 @@ export function AllLeadsView({
   const terminalErrored =
     showTerminal && terminalQuery.isError && !terminalLoading;
   const activeRows = showActive ? activeMatches : [];
-  const visibleTerminal = showTerminal && !terminalLoading && !terminalErrored ? terminalLeads : [];
+  const visibleTerminal =
+    showTerminal && !terminalLoading && !terminalErrored ? terminalLeads : [];
   const hasAny = activeRows.length + visibleTerminal.length > 0;
   const searching = search.trim() !== '';
 

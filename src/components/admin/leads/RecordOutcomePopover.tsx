@@ -24,6 +24,7 @@ export function RecordOutcomeButton({
         attendance === 'attended' ? 'Marked attended' : 'Marked no-show',
       );
       setOpen(false);
+      onClosed?.();
     } catch {
       toast.error('Failed to record outcome');
     }
