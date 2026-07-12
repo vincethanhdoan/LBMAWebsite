@@ -18,7 +18,7 @@ import { PhotoUploader } from './PhotoUploader';
 import { uploadProfileImage, deleteProfileImage } from '../../lib/supabase/storage';
 import { getUserNotificationPreferences } from '../../lib/supabase/queries';
 import { getInitials } from '../../lib/format';
-import type { User, Review } from '../../lib/types';
+import type { User, Review, BeltLevel, Relationship, Rating } from '../../lib/types';
 import { toast } from 'sonner';
 
 // Convert database types to UI types
@@ -111,7 +111,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
   // Review state
   const [existingReview, setExistingReview] = useState<Review | null>(null);
   const [isEditingReview, setIsEditingReview] = useState(false);
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState<Rating>(5);
   const [reviewText, setReviewText] = useState('');
   const [hoveredStar, setHoveredStar] = useState(0);
   const [, setReviewLoading] = useState(false);
@@ -239,7 +239,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
           notes: editingStudent.notes || null,
         };
         if (user.role !== 'family') {
-          studentUpdates.belt_level = editingStudent.beltLevel || null;
+          studentUpdates.belt_level = (editingStudent.beltLevel || null) as BeltLevel | null;
           studentUpdates.status = editingStudent.status;
         }
         await updateStudent(editingStudent.id, studentUpdates);
@@ -251,9 +251,10 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             first_name: newStudent.firstName,
             last_name: newStudent.lastName,
             date_of_birth: newStudent.dateOfBirth || null,
-            belt_level: user.role !== 'family' ? (newStudent.beltLevel || null) : null,
+            belt_level: user.role !== 'family' ? ((newStudent.beltLevel || null) as BeltLevel | null) : null,
             status: user.role !== 'family' ? ((newStudent.status || 'active') as 'active' | 'inactive') : 'active',
             notes: newStudent.notes || null,
+            photo_url: null,
           });
           setNewStudent({
             firstName: '',
@@ -283,7 +284,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
           last_name: editingGuardian.lastName,
           email: editingGuardian.email || null,
           phone_number: editingGuardian.phoneNumber || null,
-          relationship: editingGuardian.relationship || null,
+          relationship: (editingGuardian.relationship || null) as Relationship | null,
           is_primary_contact: editingGuardian.isPrimaryContact,
         });
         if (editingGuardian.isPrimaryContact) {
@@ -301,7 +302,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             last_name: newGuardian.lastName,
             email: newGuardian.email || null,
             phone_number: newGuardian.phoneNumber || null,
-            relationship: newGuardian.relationship || null,
+            relationship: (newGuardian.relationship || null) as Relationship | null,
             is_primary_contact: newGuardian.isPrimaryContact || false,
           });
           setNewGuardian({
@@ -355,7 +356,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             is_primary_contact: g.id === guardianId,
           });
         })
-        .filter((p): p is Promise<unknown> => p !== null);
+        .filter((p): p is NonNullable<typeof p> => p !== null);
 
       await Promise.all(updates);
       const newPrimary = guardians.find(g => g.id === guardianId);
@@ -429,6 +430,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
         const newReview = await createReview({
           family_id: family.family_id,
           author_user_id: user.id,
+          display_name: null,
           rating,
           review: reviewText.trim(),
         });
@@ -1122,7 +1124,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 <div className="space-y-2">
                   <Label>Rating</Label>
                   <div className="flex items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
+                    {([1, 2, 3, 4, 5] as const).map((star) => (
                       <button
                         key={star}
                         type="button"

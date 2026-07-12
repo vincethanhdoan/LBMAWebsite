@@ -66,7 +66,7 @@ export function useProfile(user: ProfileUser | null) {
     return updated;
   };
 
-  const addGuardian = async (guardian: Omit<Guardian, 'guardian_id' | 'created_at' | 'updated_at'>) => {
+  const addGuardian = async (guardian: Omit<Guardian, 'guardian_id' | 'created_at' | 'updated_at' | 'family_id'>) => {
     if (!family) throw new Error('No family found');
     const newGuardian = await createGuardian({ ...guardian, family_id: family.family_id });
     invalidate();
@@ -84,7 +84,7 @@ export function useProfile(user: ProfileUser | null) {
     invalidate();
   };
 
-  const addStudent = async (student: Omit<Student, 'student_id' | 'created_at' | 'updated_at'>) => {
+  const addStudent = async (student: Omit<Student, 'student_id' | 'created_at' | 'updated_at' | 'family_id'>) => {
     if (!family) throw new Error('No family found');
     const newStudent = await createStudent({ ...student, family_id: family.family_id });
     invalidate();

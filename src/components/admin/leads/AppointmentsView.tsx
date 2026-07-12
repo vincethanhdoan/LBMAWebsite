@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { JSX } from 'react';
 import { X } from 'lucide-react';
 import type { BlockedDate, EnrollmentLead } from '../../../lib/types';
 import { Button } from '../../ui/button';

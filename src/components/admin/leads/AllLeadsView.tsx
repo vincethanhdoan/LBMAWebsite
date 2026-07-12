@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { Loader2, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { EnrollmentLead } from '../../../lib/types';

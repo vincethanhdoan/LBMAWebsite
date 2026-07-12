@@ -3,7 +3,7 @@ import { getAllFamiliesWithRelations, getFamilyWithRelations, type FamilyWithRel
 import { setFamilyAccountStatus, updateGuardian, updateStudent, updateStudentsByFamily } from '../lib/supabase/mutations';
 import { supabase } from '../lib/supabase/client';
 import { calculateAge } from '../lib/format';
-import type { Guardian, Student } from '../lib/types';
+import type { BeltLevel, Guardian, Student } from '../lib/types';
 
 export type FamilyStatus = 'active' | 'inactive' | 'archived';
 export type StudentStatus = 'active' | 'inactive';
@@ -190,7 +190,7 @@ export function useAdminFamilies(searchTerm: string) {
   );
 
   const saveStudent = useCallback(
-    async (studentId: string, updates: { belt_level?: string | null; status?: StudentStatus; notes?: string | null }) => {
+    async (studentId: string, updates: { belt_level?: BeltLevel | null; status?: StudentStatus; notes?: string | null }) => {
       setSaving(true);
       setError(null);
       try {

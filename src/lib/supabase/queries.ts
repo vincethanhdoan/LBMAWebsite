@@ -265,7 +265,7 @@ export async function getAnnouncementComments(announcementId: string): Promise<A
     .order('created_at', { ascending: true });
 
   if (error) throw error;
-  return (data || []) as AnnouncementCommentWithAuthor[];
+  return (data || []) as unknown as AnnouncementCommentWithAuthor[];
 }
 
 // ============================================
@@ -312,7 +312,7 @@ export async function getBlogComments(postId: string): Promise<BlogCommentWithAu
     .order('created_at', { ascending: true });
 
   if (error) throw error;
-  return (data || []) as BlogCommentWithAuthor[];
+  return (data || []) as unknown as BlogCommentWithAuthor[];
 }
 
 /**
@@ -365,7 +365,7 @@ export async function getBlogCommentsForPosts(
   if (error) throw error;
 
   const result: Record<string, BlogCommentWithAuthor[]> = {};
-  for (const row of (data ?? []) as BlogCommentWithAuthor[]) {
+  for (const row of (data ?? []) as unknown as BlogCommentWithAuthor[]) {
     const postId = (row as BlogCommentWithAuthor & { post_id: string }).post_id;
     if (!result[postId]) result[postId] = [];
     result[postId].push(row);
@@ -419,7 +419,7 @@ export async function getConversationMembers(conversationId: string): Promise<Co
     .eq('conversation_id', conversationId);
 
   if (error) throw error;
-  return (data || []) as ConversationMemberWithProfile[];
+  return (data || []) as unknown as ConversationMemberWithProfile[];
 }
 
 export type MessageWithMeta = Message & {
@@ -443,7 +443,7 @@ export async function getMessages(conversationId: string): Promise<MessageWithMe
     .order('created_at', { ascending: true });
 
   if (error) throw error;
-  return (data || []) as MessageWithMeta[];
+  return (data || []) as unknown as MessageWithMeta[];
 }
 
 export async function getDirectMessageConversation(userId1: string, userId2: string): Promise<Conversation | null> {
@@ -712,7 +712,7 @@ export async function getFeedbackTestsByFamily(familyId: string): Promise<Feedba
   if (error) throw error;
 
   const testMap = new Map<string, FeedbackTest>();
-  for (const row of (data || []) as { test_id: string; feedback_tests: FeedbackTest | null }[]) {
+  for (const row of (data || []) as unknown as { test_id: string; feedback_tests: FeedbackTest | null }[]) {
     if (row.feedback_tests) testMap.set(row.feedback_tests.test_id, row.feedback_tests);
   }
 

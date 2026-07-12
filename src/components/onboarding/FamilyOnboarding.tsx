@@ -108,6 +108,7 @@ export function FamilyOnboarding({ user, onComplete, onLogout }: FamilyOnboardin
           belt_level: null,
           status: 'active',
           notes: null,
+          photo_url: null,
         })
       }
 

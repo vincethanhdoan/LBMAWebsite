@@ -81,7 +81,7 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
       .sort((a, b) => b.test_date.localeCompare(a.test_date));
   }
 
-  function getFeedbackForStudentInTest(studentId: string, testId: string): FeedbackRow | undefined {
+  function getFeedbackForStudentInTest(studentId: string, testId: string): FeedbackWithRelations | undefined {
     return feedback.find((f) => f.student_id === studentId && f.test_id === testId);
   }
 

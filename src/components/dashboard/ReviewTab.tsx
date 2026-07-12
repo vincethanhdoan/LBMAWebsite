@@ -7,7 +7,7 @@ import { Star, Edit2, Check, Loader2 } from 'lucide-react';
 import { getUserReview, getFamilyByOwner, getGuardiansByFamily } from '../../lib/supabase/queries';
 import { formatDate } from '../../lib/format';
 import { createReview, updateReview } from '../../lib/supabase/mutations';
-import type { User as AppUser, Review } from '../../lib/types';
+import type { User as AppUser, Review, Rating } from '../../lib/types';
 
 type ReviewTabProps = {
   user: NonNullable<AppUser>;
@@ -19,7 +19,7 @@ export function ReviewTab({ user }: ReviewTabProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState<Rating>(5);
   const [reviewText, setReviewText] = useState('');
   const [hoveredStar, setHoveredStar] = useState(0);
   const [primaryName, setPrimaryName] = useState<string | null>(null);
@@ -149,7 +149,7 @@ export function ReviewTab({ user }: ReviewTabProps) {
               <div className="space-y-2">
                 <Label>Rating</Label>
                 <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
+                  {([1, 2, 3, 4, 5] as const).map((star) => (
                     <button
                       key={star}
                       type="button"

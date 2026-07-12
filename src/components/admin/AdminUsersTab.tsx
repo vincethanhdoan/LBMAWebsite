@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase/client';
 import { formatShortDate } from '../../lib/format';
-import type { User } from '../../lib/types';
+import type { User, Relationship, BeltLevel } from '../../lib/types';
 import {
   FamilyStatus,
   GuardianRow,
@@ -129,7 +129,7 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
     if (!editingStudent) return;
     try {
       await saveStudent(editingStudent.studentId, {
-        belt_level: editingStudent.newBeltLevel,
+        belt_level: editingStudent.newBeltLevel as BeltLevel,
         status: editingStudent.newStatus,
       });
       setEditingStudent(null);
@@ -165,7 +165,7 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
         last_name: editingGuardian.lastName,
         email: editingGuardian.email || null,
         phone_number: editingGuardian.phone || null,
-        relationship: editingGuardian.relationship || null,
+        relationship: (editingGuardian.relationship || null) as Relationship | null,
       });
       setEditingGuardian(null);
       toast.success('Guardian updated.');

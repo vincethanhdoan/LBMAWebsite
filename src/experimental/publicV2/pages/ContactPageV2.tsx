@@ -56,10 +56,11 @@ export function ContactPageV2() {
         parentName: formData.parentName,
         parentEmail: formData.parentEmail,
         phone: formData.phone || undefined,
-        studentName: formData.studentName || undefined,
-        studentAge: parsedAge,
         message: formData.message || undefined,
         sourcePage: 'contact',
+        children: formData.studentName.trim()
+          ? [{ name: formData.studentName.trim(), age: parsedAge ?? 0 }]
+          : [],
       },
       12000,
     );

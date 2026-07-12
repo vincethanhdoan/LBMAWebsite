@@ -15,17 +15,21 @@ export function NotificationSettings({ userEmail }: NotificationSettingsProps) {
   const [prefsLoading, setPrefsLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from('admin_notification_settings')
-      .select('notify_new_leads')
-      .eq('email', userEmail)
-      .eq('is_active', true)
-      .maybeSingle()
-      .then(({ data }) => {
+    void (async () => {
+      try {
+        const { data } = await supabase
+          .from('admin_notification_settings')
+          .select('notify_new_leads')
+          .eq('email', userEmail)
+          .eq('is_active', true)
+          .maybeSingle();
         setNotifyNewLeads(data?.notify_new_leads ?? false);
-      })
-      .catch(console.error)
-      .finally(() => setPrefsLoading(false));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setPrefsLoading(false);
+      }
+    })();
   }, [userEmail]);
 
   async function handleNewLeadsToggle(value: boolean) {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import type { BlockedDate, EnrollmentLead } from '../../../lib/types';
 import { Button } from '../../ui/button';
