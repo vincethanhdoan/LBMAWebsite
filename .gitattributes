@@ -1,1 +1,4 @@
-*.sql text eol=lf
+# Normalize all text files to LF in the repository and on checkout,
+# so line endings stay consistent across platforms and Prettier's
+# format check behaves the same locally and in CI.
+* text=auto eol=lf
