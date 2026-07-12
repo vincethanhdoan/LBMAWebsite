@@ -8,7 +8,7 @@
   --rdp-today-color: #c8102e;
 }
 
-.booking-calendar > *:not(.rdp) {
+.booking-calendar > *:not(.rdp-root) {
   width: 100%;
 }
 
@@ -42,7 +42,7 @@
 }
 
 /* Center the DayPicker within its container */
-.booking-calendar .rdp {
+.booking-calendar .rdp-root {
   margin: 0 auto;
 }
 
