@@ -222,8 +222,6 @@ export type AppointmentSlot = {
   day_of_week: number; // 0=Sun, 1=Mon … 6=Sat
   week_of_month: number | null; // null=every, 1–4=nth, -1=last
   start_time: string; // "HH:MM:SS"
-  end_time: string; // "HH:MM:SS"
-  duration_minutes: number; // 15–240, multiple of 15
   label: string;
   is_active: boolean;
   program_type: 'little_dragons' | 'youth' | 'all';

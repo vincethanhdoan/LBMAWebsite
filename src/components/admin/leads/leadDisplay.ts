@@ -10,6 +10,11 @@ export const PROGRAM_LABELS: Record<string, string> = {
   youth: 'Youth Program',
 };
 
+export const PROGRAM_BADGE_STYLES: Record<string, string> = {
+  little_dragons: 'bg-amber-50 text-amber-700 border border-amber-200',
+  youth: 'bg-teal-50 text-teal-700 border border-teal-200',
+};
+
 // The confirm-attendance request is the `reminder` email, queued by the
 // 2-days-out cron or by an admin pressing Send. The `booking_confirmation`
 // email is only a booking receipt and carries no confirm link, so it never

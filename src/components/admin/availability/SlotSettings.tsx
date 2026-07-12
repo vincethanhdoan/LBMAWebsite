@@ -2,7 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
-import { Loader2, Pencil, Trash2, Plus } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '../../ui/collapsible';
+import { Loader2, Pencil, Trash2, Plus, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase/client';
 import { getAppointmentSlots } from '../../../lib/supabase/queries';
@@ -18,60 +23,16 @@ import {
   AlertDialogTitle,
 } from '../../ui/alert-dialog';
 import { SectionHeader, Surface } from '../leads/ui';
-import { PROGRAM_LABELS } from '../leads/leadDisplay';
+import {
+  DAY_NAMES,
+  WEEK_OPTIONS,
+  slotStartLabel,
+  programLabel,
+  programBadgeClass,
+  frequencyBadgeLabel,
+  groupSlotsByDay,
+} from './slotDisplay';
 import type { AppointmentSlot } from '../../../lib/types';
-
-const DAY_NAMES = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-];
-
-const WEEK_OPTIONS: { value: number | null; label: string }[] = [
-  { value: null, label: 'Every' },
-  { value: 1, label: '1st' },
-  { value: 2, label: '2nd' },
-  { value: 3, label: '3rd' },
-  { value: 4, label: '4th' },
-  { value: -1, label: 'Last' },
-];
-
-const DURATION_OPTIONS = Array.from({ length: 16 }, (_, i) => (i + 1) * 15);
-
-function durationLabel(minutes: number): string {
-  return minutes % 60 === 0
-    ? `${minutes / 60} hour${minutes / 60 > 1 ? 's' : ''}`
-    : `${minutes} min`;
-}
-
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
-
-function slotScheduleLabel(slot: AppointmentSlot): string {
-  const start = new Date('1970-01-01T' + slot.start_time);
-  const end = new Date(start.getTime() + slot.duration_minutes * 60000);
-  return `${formatTime(start)} – ${formatTime(end)}`;
-}
-
-function slotFrequencyLabel(slot: AppointmentSlot): string {
-  return (
-    WEEK_OPTIONS.find((o) => o.value === (slot.week_of_month ?? null))?.label ??
-    'Every'
-  );
-}
-
-// Sort order within a day: Every, 1st–4th, Last.
-function weekSortIndex(week: number | null): number {
-  return week == null ? 0 : week === -1 ? 5 : week;
-}
 
 export function SlotSettings() {
   const [slots, setSlots] = useState<AppointmentSlot[]>([]);
@@ -86,9 +47,9 @@ export function SlotSettings() {
   const [slotProgramType, setSlotProgramType] = useState<
     'little_dragons' | 'youth' | 'all'
   >('all');
-  const [slotDuration, setSlotDuration] = useState(60);
   const [slotError, setSlotError] = useState<string | null>(null);
   const [slotSaving, setSlotSaving] = useState(false);
+  const [repeatsOpen, setRepeatsOpen] = useState(false);
 
   const loadSlots = useCallback(async () => {
     setSlots(await getAppointmentSlots());
@@ -102,6 +63,23 @@ export function SlotSettings() {
     load();
   }, [loadSlots]);
 
+  function resetSlotForm() {
+    setEditSlotId(null);
+    setSlotDay('1');
+    setSlotWeekOfMonth(null);
+    setSlotStart('');
+    setSlotProgramType('all');
+    setSlotError(null);
+    setRepeatsOpen(false);
+    setShowSlotForm(false);
+  }
+
+  function openAddForm(day?: number) {
+    resetSlotForm();
+    if (day !== undefined) setSlotDay(String(day));
+    setShowSlotForm(true);
+  }
+
   function startEditSlot(slot: AppointmentSlot) {
     setEditSlotId(slot.slot_id);
     setSlotDay(String(slot.day_of_week));
@@ -110,20 +88,9 @@ export function SlotSettings() {
     setSlotProgramType(
       (slot.program_type ?? 'all') as 'little_dragons' | 'youth' | 'all',
     );
-    setSlotDuration(slot.duration_minutes);
     setSlotError(null);
+    setRepeatsOpen(slot.week_of_month != null);
     setShowSlotForm(true);
-  }
-
-  function resetSlotForm() {
-    setEditSlotId(null);
-    setSlotDay('1');
-    setSlotWeekOfMonth(null);
-    setSlotStart('');
-    setSlotProgramType('all');
-    setSlotDuration(60);
-    setSlotError(null);
-    setShowSlotForm(false);
   }
 
   async function saveSlot() {
@@ -154,7 +121,6 @@ export function SlotSettings() {
         slotId: editSlotId ?? undefined,
         dayOfWeek,
         startTime: slotStart,
-        durationMinutes: slotDuration,
         label: autoLabel,
         weekOfMonth: slotWeekOfMonth,
         programType: slotProgramType,
@@ -164,7 +130,7 @@ export function SlotSettings() {
       toast.success('Slot saved');
     } catch (err) {
       const message = err instanceof Error ? err.message : '';
-      if (/midnight|duration_minutes|program_type/.test(message)) {
+      if (/program_type/.test(message)) {
         toast.error(message);
       } else {
         toast.error('Failed to save slot');
@@ -187,12 +153,9 @@ export function SlotSettings() {
     setDeleteSlotTarget(null);
   }
 
-  const sortedSlots = [...slots].sort(
-    (a, b) =>
-      a.day_of_week - b.day_of_week ||
-      a.start_time.localeCompare(b.start_time) ||
-      weekSortIndex(a.week_of_month) - weekSortIndex(b.week_of_month),
-  );
+  const grouped = groupSlotsByDay(slots);
+  const usedDays = new Set(grouped.map((g) => g.day));
+  const emptyDays = DAY_NAMES.map((_, i) => i).filter((d) => !usedDays.has(d));
 
   return (
     <section>
@@ -202,10 +165,7 @@ export function SlotSettings() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => {
-              resetSlotForm();
-              setShowSlotForm(true);
-            }}
+            onClick={() => openAddForm()}
             className="gap-1.5"
           >
             <Plus className="w-4 h-4" />
@@ -221,47 +181,93 @@ export function SlotSettings() {
           <div className="flex justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
-        ) : sortedSlots.length === 0 ? (
+        ) : slots.length === 0 ? (
           <p className="text-[13px] text-muted-foreground px-4 py-3">
             No appointment slots configured.
           </p>
         ) : (
-          sortedSlots.map((slot) => (
-            <div
-              key={slot.slot_id}
-              className="flex items-center gap-3 px-4 py-3 border-t border-border first:border-t-0"
-            >
-              <span className="text-[13px] font-semibold w-24 flex-shrink-0">
-                {slotFrequencyLabel(slot)}{' '}
-                {DAY_NAMES[slot.day_of_week].slice(0, 3)}
-              </span>
-              <span className="flex-1 min-w-0 text-[13px] truncate">
-                {slotScheduleLabel(slot)} ·{' '}
-                {durationLabel(slot.duration_minutes)} ·{' '}
-                {slot.program_type === 'all'
-                  ? 'Both programs'
-                  : PROGRAM_LABELS[slot.program_type]}
-              </span>
-              <div className="flex gap-1.5 flex-shrink-0">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8"
-                  onClick={() => startEditSlot(slot)}
+          <>
+            {grouped.map((group) => (
+              <div
+                key={group.day}
+                className="border-t border-border first:border-t-0"
+              >
+                <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                  <h4 className="text-[13px] font-semibold">
+                    {DAY_NAMES[group.day]}
+                  </h4>
+                  <span className="text-[11px] text-muted-foreground">
+                    {group.slots.length}{' '}
+                    {group.slots.length === 1 ? 'time' : 'times'}
+                  </span>
+                </div>
+                {group.slots.map((slot) => (
+                  <div
+                    key={slot.slot_id}
+                    className="flex items-center gap-2.5 px-4 py-2"
+                  >
+                    <span className="text-[13px] font-medium w-[4.5rem] flex-shrink-0 tabular-nums">
+                      {slotStartLabel(slot)}
+                    </span>
+                    <span
+                      className={`text-[11px] font-medium rounded-full px-2 py-0.5 ${programBadgeClass(slot.program_type)}`}
+                    >
+                      {programLabel(slot.program_type)}
+                    </span>
+                    {frequencyBadgeLabel(slot) && (
+                      <span className="text-[11px] font-medium rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+                        {frequencyBadgeLabel(slot)}
+                      </span>
+                    )}
+                    <div className="flex-1" />
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => startEditSlot(slot)}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDeleteSlotTarget(slot.slot_id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => openAddForm(group.day)}
+                  className="flex items-center gap-1 px-4 pb-3 pt-1 text-[12px] text-muted-foreground hover:text-primary transition-colors"
                 >
-                  <Pencil className="w-3.5 h-3.5" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 text-destructive hover:text-destructive"
-                  onClick={() => setDeleteSlotTarget(slot.slot_id)}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
+                  <Plus className="w-3.5 h-3.5" />
+                  Add time
+                </button>
               </div>
-            </div>
-          ))
+            ))}
+            {emptyDays.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap px-4 py-3 border-t border-border">
+                <span className="text-[11px] text-muted-foreground">
+                  Add another day:
+                </span>
+                {emptyDays.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => openAddForm(d)}
+                    className="text-[12px] rounded-full border border-dashed border-border px-2.5 py-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                  >
+                    + {DAY_NAMES[d].slice(0, 3)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </Surface>
 
@@ -285,26 +291,16 @@ export function SlotSettings() {
             </select>
           </div>
           <div>
-            <Label>Frequency</Label>
-            <div className="mt-1 flex gap-1 flex-wrap">
-              {WEEK_OPTIONS.map((opt) => (
-                <button
-                  key={String(opt.value)}
-                  type="button"
-                  onClick={() => setSlotWeekOfMonth(opt.value)}
-                  className={`px-3 py-1.5 text-sm rounded border transition-colors ${
-                    slotWeekOfMonth === opt.value
-                      ? 'border-primary bg-primary/5 text-primary font-medium'
-                      : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <Label>Start time</Label>
+            <Input
+              type="time"
+              value={slotStart}
+              onChange={(e) => setSlotStart(e.target.value)}
+              className="mt-1"
+            />
           </div>
           <div className="flex flex-col gap-1">
-            <Label>Program type</Label>
+            <Label>Program</Label>
             <select
               value={slotProgramType}
               onChange={(e) =>
@@ -319,29 +315,40 @@ export function SlotSettings() {
               <option value="youth">Youth Program</option>
             </select>
           </div>
-          <div>
-            <Label>Start time</Label>
-            <Input
-              type="time"
-              value={slotStart}
-              onChange={(e) => setSlotStart(e.target.value)}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label>Length</Label>
-            <select
-              value={slotDuration}
-              onChange={(e) => setSlotDuration(parseInt(e.target.value))}
-              className="mt-1 w-full rounded border px-3 py-2 text-sm bg-background"
-            >
-              {DURATION_OPTIONS.map((m) => (
-                <option key={m} value={m}>
-                  {durationLabel(m)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Collapsible open={repeatsOpen} onOpenChange={setRepeatsOpen}>
+            <CollapsibleTrigger className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <ChevronRight
+                className={`w-4 h-4 transition-transform ${repeatsOpen ? 'rotate-90' : ''}`}
+              />
+              {slotWeekOfMonth == null
+                ? 'Repeats every week'
+                : `Repeats on the ${
+                    WEEK_OPTIONS.find((o) => o.value === slotWeekOfMonth)?.label
+                  } week`}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2">
+              <div className="flex gap-1 flex-wrap">
+                {WEEK_OPTIONS.map((opt) => (
+                  <button
+                    key={String(opt.value)}
+                    type="button"
+                    onClick={() => setSlotWeekOfMonth(opt.value)}
+                    className={`px-3 py-1.5 text-sm rounded border transition-colors ${
+                      slotWeekOfMonth === opt.value
+                        ? 'border-primary bg-primary/5 text-primary font-medium'
+                        : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                “Every” means weekly. Pick a week to repeat only on that week of
+                the month.
+              </p>
+            </CollapsibleContent>
+          </Collapsible>
           {slotError && <p className="text-sm text-destructive">{slotError}</p>}
           <div className="flex gap-2 justify-end">
             <Button size="sm" variant="ghost" onClick={resetSlotForm}>
