@@ -1,4 +1,10 @@
-import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   getActiveEnrollmentLeads,
   getBlockedDates,
@@ -30,9 +36,13 @@ export function useActiveLeads() {
 
 export function useAttentionCount(): number {
   const { data } = useActiveLeads();
-  // Reading the clock each render is intentional: the count reflects current time.
-  // eslint-disable-next-line react-hooks/purity
-  return deriveAttentionItems(data ?? [], toLocalDateKey(new Date()), Date.now()).length;
+  return deriveAttentionItems(
+    data ?? [],
+    toLocalDateKey(new Date()),
+    // Reading the clock each render is intentional: the count reflects current time.
+    // eslint-disable-next-line react-hooks/purity
+    Date.now(),
+  ).length;
 }
 
 export function useTerminalLeads(filter: TerminalLeadFilter, search: string) {
@@ -40,7 +50,11 @@ export function useTerminalLeads(filter: TerminalLeadFilter, search: string) {
     queryKey: queryKeys.enrollmentLeadsTerminal(filter, search),
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
-      getTerminalEnrollmentLeads({ filter, search: search || undefined, page: pageParam }),
+      getTerminalEnrollmentLeads({
+        filter,
+        search: search || undefined,
+        page: pageParam,
+      }),
     getNextPageParam: (last, all) => (last.hasMore ? all.length : undefined),
     placeholderData: keepPreviousData,
   });
@@ -63,8 +77,13 @@ export function useBlockedDates() {
 export function useUpdateLeadStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ leadId, status }: { leadId: string; status: EnrollmentLead['status'] }) =>
-      updateLeadStatus(leadId, status),
+    mutationFn: ({
+      leadId,
+      status,
+    }: {
+      leadId: string;
+      status: EnrollmentLead['status'];
+    }) => updateLeadStatus(leadId, status),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
     },
@@ -141,8 +160,13 @@ export function useRestoreLead() {
 export function useRecordAttendance() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ leadId, attendance }: { leadId: string; attendance: 'attended' | 'no_show' }) =>
-      recordLeadAttendance(leadId, attendance),
+    mutationFn: ({
+      leadId,
+      attendance,
+    }: {
+      leadId: string;
+      attendance: 'attended' | 'no_show';
+    }) => recordLeadAttendance(leadId, attendance),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
     },

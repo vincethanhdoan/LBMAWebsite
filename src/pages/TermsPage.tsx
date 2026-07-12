@@ -1,6 +1,6 @@
 // src/pages/TermsPage.tsx
-import { ArrowLeft } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function TermsPage() {
   return (
@@ -56,8 +56,8 @@ export function TermsPage() {
               1. Acceptance
             </h2>
             <p className="text-muted-foreground">
-              By accessing or using the LBMAA Family Portal, you agree to these Terms of Use.
-              If you do not agree, do not use the portal.
+              By accessing or using the LBMAA Family Portal, you agree to these
+              Terms of Use. If you do not agree, do not use the portal.
             </p>
           </section>
 
@@ -69,8 +69,9 @@ export function TermsPage() {
               2. Eligibility
             </h2>
             <p className="text-muted-foreground">
-              Access is by invitation only. Accounts are issued exclusively to authorized LBMAA
-              families. You may not use an account that was not issued to you.
+              Access is by invitation only. Accounts are issued exclusively to
+              authorized LBMAA families. You may not use an account that was not
+              issued to you.
             </p>
           </section>
 
@@ -82,8 +83,8 @@ export function TermsPage() {
               3. Account responsibility
             </h2>
             <p className="text-muted-foreground">
-              You are responsible for keeping your login credentials secure. Do not share your
-              account with others.
+              You are responsible for keeping your login credentials secure. Do
+              not share your account with others.
             </p>
           </section>
 
@@ -95,9 +96,10 @@ export function TermsPage() {
               4. Acceptable use
             </h2>
             <p className="text-muted-foreground">
-              The portal is provided for family-school communication related to LBMAA enrollment.
-              You may not use it to harass others, attempt unauthorized access, or for any purpose
-              outside its intended scope.
+              The portal is provided for family-school communication related to
+              LBMAA enrollment. You may not use it to harass others, attempt
+              unauthorized access, or for any purpose outside its intended
+              scope.
             </p>
           </section>
 
@@ -109,8 +111,8 @@ export function TermsPage() {
               5. Content you submit
             </h2>
             <p className="text-muted-foreground">
-              You are responsible for the accuracy of information and messages you submit through
-              the portal.
+              You are responsible for the accuracy of information and messages
+              you submit through the portal.
             </p>
           </section>
 
@@ -122,8 +124,9 @@ export function TermsPage() {
               6. Service availability
             </h2>
             <p className="text-muted-foreground">
-              We do not guarantee uninterrupted or error-free access to the portal. We may modify
-              or discontinue the service at any time without notice.
+              We do not guarantee uninterrupted or error-free access to the
+              portal. We may modify or discontinue the service at any time
+              without notice.
             </p>
           </section>
 
@@ -135,9 +138,9 @@ export function TermsPage() {
               7. Limitation of liability
             </h2>
             <p className="text-muted-foreground">
-              The portal is provided "as is." Los Banos Martial Arts Academy is not liable for
-              data loss, service interruptions, or any indirect or consequential damages arising
-              from your use of the website.
+              The portal is provided "as is." Los Banos Martial Arts Academy is
+              not liable for data loss, service interruptions, or any indirect
+              or consequential damages arising from your use of the website.
             </p>
           </section>
 
@@ -161,7 +164,8 @@ export function TermsPage() {
               9. Changes to terms
             </h2>
             <p className="text-muted-foreground">
-              We may update these terms at any time. Changes will be communicated by email.
+              We may update these terms at any time. Changes will be
+              communicated by email.
             </p>
           </section>
 
@@ -186,5 +190,5 @@ export function TermsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

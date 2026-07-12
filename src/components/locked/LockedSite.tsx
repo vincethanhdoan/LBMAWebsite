@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
-import { LanguageProvider, useLanguage } from '../public/lang';
+import { LanguageProvider } from '../public/LanguageProvider';
+import { useLanguage } from '../public/lang';
 import { ContactPage } from '../public/ContactPage';
 import { V3 } from '../public/design';
 import { UnderConstructionPage } from './UnderConstructionPage';
@@ -9,7 +10,10 @@ function LockedContactShell() {
   const { lang, setLang, t } = useLanguage();
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: V3.bg }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: V3.bg }}
+    >
       <header
         className="flex items-center justify-between px-6 py-4"
         style={{ borderBottom: `1px solid ${V3.border}` }}
@@ -21,7 +25,14 @@ function LockedContactShell() {
             className="rounded-full"
             style={{ width: '40px', height: '40px', objectFit: 'cover' }}
           />
-          <span className="v3-h" style={{ fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.02em' }}>
+          <span
+            className="v3-h"
+            style={{
+              fontSize: '1.05rem',
+              fontWeight: 700,
+              letterSpacing: '0.02em',
+            }}
+          >
             LOS BANOS MARTIAL ARTS ACADEMY
           </span>
         </Link>
@@ -52,7 +63,14 @@ function LockedContactShell() {
         style={{ borderTop: `1px solid ${V3.border}`, color: V3.muted }}
       >
         <span>{t.footer.copyright}</span>
-        <Link to="/privacy" style={{ color: V3.muted, textDecoration: 'underline', textUnderlineOffset: '2px' }}>
+        <Link
+          to="/privacy"
+          style={{
+            color: V3.muted,
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+          }}
+        >
           {lang === 'en' ? 'Privacy Policy' : 'Política de Privacidad'}
         </Link>
       </footer>

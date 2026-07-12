@@ -1,19 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap');
 
 .v3-root {
-  --v3-bg:            oklch(97.5% 0.008 35);
-  --v3-surface:       oklch(94.5% 0.009 35);
-  --v3-dark:          oklch(22% 0.014 30);
-  --v3-dark-surface:  oklch(26% 0.012 30);
-  --v3-text:          oklch(20% 0.012 30);
-  --v3-muted:         oklch(38% 0.012 30);
-  --v3-on-dark:       oklch(93% 0.006 30);
+  --v3-bg: oklch(97.5% 0.008 35);
+  --v3-surface: oklch(94.5% 0.009 35);
+  --v3-dark: oklch(22% 0.014 30);
+  --v3-dark-surface: oklch(26% 0.012 30);
+  --v3-text: oklch(20% 0.012 30);
+  --v3-muted: oklch(38% 0.012 30);
+  --v3-on-dark: oklch(93% 0.006 30);
   --v3-muted-on-dark: oklch(68% 0.007 30);
-  --v3-primary:       #A01F23;
+  --v3-primary: #a01f23;
   --v3-primary-hover: #7a1619;
-  --v3-primary-bg:    oklch(96.5% 0.011 20);
-  --v3-border:        oklch(88% 0.008 35);
-  --v3-border-dark:   oklch(26% 0.012 30);
+  --v3-primary-bg: oklch(96.5% 0.011 20);
+  --v3-border: oklch(88% 0.008 35);
+  --v3-border-dark: oklch(26% 0.012 30);
 
   background-color: var(--v3-bg);
   color: var(--v3-text);
@@ -72,7 +72,9 @@
   border-radius: 0.5rem;
   border: 1.5px solid oklch(100% 0 0 / 0.4);
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
   white-space: nowrap;
 }
 
@@ -133,8 +135,12 @@
 
 /* Student carousel */
 @keyframes v3-student-scroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-2052px); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-2052px);
+  }
 }
 
 .v3-student-track {
@@ -142,4 +148,3 @@
   animation: v3-student-scroll 28s linear infinite;
   will-change: transform;
 }
-

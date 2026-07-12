@@ -21,12 +21,16 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 function timeAgo(dateStr: string): string {
-  const diffDays = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+  const diffDays = Math.floor(
+    (Date.now() - new Date(dateStr).getTime()) / 86400000,
+  );
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return '1 day ago';
   if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+  if (diffDays < 30)
+    return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+  if (diffDays < 365)
+    return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
   return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
 }
 
@@ -38,7 +42,11 @@ export function ReviewsPageV3() {
   useEffect(() => {
     getReviews()
       .then(setReviews)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load reviews.'))
+      .catch((err) =>
+        setError(
+          err instanceof Error ? err.message : 'Failed to load reviews.',
+        ),
+      )
       .finally(() => setLoading(false));
   }, []);
 
@@ -47,9 +55,14 @@ export function ReviewsPageV3() {
 
   return (
     <div>
-
       {/* ── PAGE HERO ── */}
-      <section className="py-20" style={{ backgroundColor: V3.surface, borderBottom: `1px solid ${V3.border}` }}>
+      <section
+        className="py-20"
+        style={{
+          backgroundColor: V3.surface,
+          borderBottom: `1px solid ${V3.border}`,
+        }}
+      >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <p className="v3-eyebrow mb-4">What Families Say</p>
           <h1
@@ -58,16 +71,22 @@ export function ReviewsPageV3() {
           >
             From the LBMAA Community
           </h1>
-          <p className="text-base leading-relaxed max-w-xl" style={{ color: V3.muted }}>
-            Every review below comes from a parent or student who was exactly where you are
-            right now — wondering if this is the right place.
+          <p
+            className="text-base leading-relaxed max-w-xl"
+            style={{ color: V3.muted }}
+          >
+            Every review below comes from a parent or student who was exactly
+            where you are right now — wondering if this is the right place.
           </p>
         </div>
       </section>
 
       {loading ? (
         <section className="py-32 flex justify-center">
-          <Loader2 className="w-6 h-6 animate-spin" style={{ color: V3.primary }} />
+          <Loader2
+            className="w-6 h-6 animate-spin"
+            style={{ color: V3.primary }}
+          />
         </section>
       ) : error ? (
         <section className="py-32 text-center" style={{ color: V3.muted }}>
@@ -85,7 +104,11 @@ export function ReviewsPageV3() {
               <div className="max-w-7xl mx-auto px-6 md:px-10">
                 <div
                   className="v3-h font-black leading-none mb-6 select-none"
-                  style={{ fontSize: '7rem', color: 'oklch(55% 0.110 20)', lineHeight: 0.8 }}
+                  style={{
+                    fontSize: '7rem',
+                    color: 'oklch(55% 0.110 20)',
+                    lineHeight: 0.8,
+                  }}
                   aria-hidden="true"
                 >
                   "
@@ -95,14 +118,24 @@ export function ReviewsPageV3() {
                 </div>
                 <blockquote
                   className="v3-h font-semibold leading-[1.15] mb-6 max-w-3xl"
-                  style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2.25rem)', color: 'white' }}
+                  style={{
+                    fontSize: 'clamp(1.5rem, 3.5vw, 2.25rem)',
+                    color: 'white',
+                  }}
                 >
                   {featured.review}
                 </blockquote>
-                <p className="text-sm font-semibold" style={{ color: 'oklch(88% 0.040 20)' }}>
+                <p
+                  className="text-sm font-semibold"
+                  style={{ color: 'oklch(88% 0.040 20)' }}
+                >
                   — {featured.display_name || 'LBMAA Parent'}
-                  <span className="font-normal" style={{ color: 'oklch(80% 0.035 20)' }}>
-                    {' '}· {timeAgo(featured.created_at)}
+                  <span
+                    className="font-normal"
+                    style={{ color: 'oklch(80% 0.035 20)' }}
+                  >
+                    {' '}
+                    · {timeAgo(featured.created_at)}
                   </span>
                 </p>
               </div>
@@ -120,16 +153,24 @@ export function ReviewsPageV3() {
                       className="py-8 pr-12"
                       style={{
                         borderTop: `1px solid ${V3.border}`,
-                        ...(i >= rest.length - 2 ? { borderBottom: `1px solid ${V3.border}` } : {}),
+                        ...(i >= rest.length - 2
+                          ? { borderBottom: `1px solid ${V3.border}` }
+                          : {}),
                       }}
                     >
                       <div className="mb-3">
                         <StarRow rating={r.rating} />
                       </div>
-                      <p className="text-base leading-relaxed mb-5 italic" style={{ color: V3.muted }}>
+                      <p
+                        className="text-base leading-relaxed mb-5 italic"
+                        style={{ color: V3.muted }}
+                      >
                         "{r.review}"
                       </p>
-                      <p className="text-sm font-semibold" style={{ color: V3.text }}>
+                      <p
+                        className="text-sm font-semibold"
+                        style={{ color: V3.text }}
+                      >
                         {r.display_name || 'LBMAA Parent'}
                       </p>
                       <p className="text-xs" style={{ color: V3.muted }}>
@@ -143,7 +184,6 @@ export function ReviewsPageV3() {
           )}
         </>
       )}
-
     </div>
   );
 }

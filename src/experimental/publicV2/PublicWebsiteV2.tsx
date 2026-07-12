@@ -29,7 +29,10 @@ export function PublicWebsiteV2() {
           <Route path="reviews" element={<ReviewsPageV2 />} />
           <Route path="faq" element={<FAQPageV2 />} />
           <Route path="contact" element={<ContactPageV2 />} />
-          <Route path="*" element={<Navigate to="/experimental/public" replace />} />
+          <Route
+            path="*"
+            element={<Navigate to="/experimental/public" replace />}
+          />
         </Routes>
       </main>
 

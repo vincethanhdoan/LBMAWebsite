@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -15,80 +15,80 @@
      Source Sans 3: highly legible at all sizes, warm and approachable */
   --font-heading: 'Lexend', sans-serif;
   --font-body: 'Source Sans 3', sans-serif;
-  --background: #FAF9F6;
-  --foreground: #1B1212;
+  --background: #faf9f6;
+  --foreground: #1b1212;
   --card: #ffffff;
-  --card-foreground: #1B1212;
+  --card-foreground: #1b1212;
   --popover: #ffffff;
-  --popover-foreground: #1B1212;
-  --primary: #A01F23;
-  --primary-foreground: #FAF9F6;
-  --secondary: #F5E6E8;
-  --secondary-foreground: #1B1212;
-  --muted: #E8E6E3;
-  --muted-foreground: #6B6866;
-  --accent: #FFF5F5;
-  --accent-foreground: #A01F23;
-  --destructive: #A01F23;
-  --destructive-foreground: #FAF9F6;
+  --popover-foreground: #1b1212;
+  --primary: #a01f23;
+  --primary-foreground: #faf9f6;
+  --secondary: #f5e6e8;
+  --secondary-foreground: #1b1212;
+  --muted: #e8e6e3;
+  --muted-foreground: #6b6866;
+  --accent: #fff5f5;
+  --accent-foreground: #a01f23;
+  --destructive: #a01f23;
+  --destructive-foreground: #faf9f6;
   --border: rgba(27, 18, 18, 0.08);
   --input: transparent;
   --input-background: #ffffff;
-  --switch-background: #E8E6E3;
+  --switch-background: #e8e6e3;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #A01F23;
-  --chart-1: #A01F23;
-  --chart-2: #1B1212;
+  --ring: #a01f23;
+  --chart-1: #a01f23;
+  --chart-2: #1b1212;
   --chart-3: #303030;
-  --chart-4: #E8736F;
-  --chart-5: #7A1619;
+  --chart-4: #e8736f;
+  --chart-5: #7a1619;
   --radius: 0.625rem;
-  --sidebar: #1B1212;
-  --sidebar-foreground: #FAF9F6;
-  --sidebar-primary: #A01F23;
-  --sidebar-primary-foreground: #FAF9F6;
+  --sidebar: #1b1212;
+  --sidebar-foreground: #faf9f6;
+  --sidebar-primary: #a01f23;
+  --sidebar-primary-foreground: #faf9f6;
   --sidebar-accent: #303030;
-  --sidebar-accent-foreground: #FAF9F6;
+  --sidebar-accent-foreground: #faf9f6;
   --sidebar-border: rgba(250, 249, 246, 0.1);
-  --sidebar-ring: #A01F23;
+  --sidebar-ring: #a01f23;
 }
 
 .dark {
-  --background: #1B1212;
-  --foreground: #FAF9F6;
+  --background: #1b1212;
+  --foreground: #faf9f6;
   --card: #303030;
-  --card-foreground: #FAF9F6;
+  --card-foreground: #faf9f6;
   --popover: #303030;
-  --popover-foreground: #FAF9F6;
-  --primary: #A01F23;
-  --primary-foreground: #FAF9F6;
-  --secondary: #3D2B2C;
-  --secondary-foreground: #FAF9F6;
-  --muted: #3D3030;
-  --muted-foreground: #C0BFBC;
-  --accent: #3D2B2C;
-  --accent-foreground: #FAF9F6;
-  --destructive: #C93036;
-  --destructive-foreground: #FAF9F6;
+  --popover-foreground: #faf9f6;
+  --primary: #a01f23;
+  --primary-foreground: #faf9f6;
+  --secondary: #3d2b2c;
+  --secondary-foreground: #faf9f6;
+  --muted: #3d3030;
+  --muted-foreground: #c0bfbc;
+  --accent: #3d2b2c;
+  --accent-foreground: #faf9f6;
+  --destructive: #c93036;
+  --destructive-foreground: #faf9f6;
   --border: rgba(250, 249, 246, 0.1);
   --input: rgba(250, 249, 246, 0.1);
-  --ring: #A01F23;
+  --ring: #a01f23;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --chart-1: #A01F23;
-  --chart-2: #E8736F;
-  --chart-3: #FAF9F6;
-  --chart-4: #7A1619;
-  --chart-5: #C93036;
-  --sidebar: #1B1212;
-  --sidebar-foreground: #FAF9F6;
-  --sidebar-primary: #A01F23;
-  --sidebar-primary-foreground: #FAF9F6;
+  --chart-1: #a01f23;
+  --chart-2: #e8736f;
+  --chart-3: #faf9f6;
+  --chart-4: #7a1619;
+  --chart-5: #c93036;
+  --sidebar: #1b1212;
+  --sidebar-foreground: #faf9f6;
+  --sidebar-primary: #a01f23;
+  --sidebar-primary-foreground: #faf9f6;
   --sidebar-accent: #303030;
-  --sidebar-accent-foreground: #FAF9F6;
+  --sidebar-accent-foreground: #faf9f6;
   --sidebar-border: rgba(250, 249, 246, 0.1);
-  --sidebar-ring: #A01F23;
+  --sidebar-ring: #a01f23;
 }
 
 @theme inline {
@@ -148,7 +148,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading);
   }
 
@@ -158,7 +163,6 @@
     outline-offset: 2px;
     border-radius: 4px;
   }
-
 }
 
 /* Reduced motion — respect user's motion preferences (UX guideline #9, HIGH severity) */

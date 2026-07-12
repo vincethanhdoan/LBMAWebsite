@@ -4,28 +4,83 @@ import { CheckCircle2 } from 'lucide-react';
 import { BASE, V3 } from '../design';
 
 const PILLARS = [
-  { num: '01', label: 'Physical',      desc: 'Strength, coordination, and conditioning through structured training.' },
-  { num: '02', label: 'Mental',        desc: 'Focus, discipline, and confidence to set goals and achieve them.' },
-  { num: '03', label: 'Spiritual',     desc: 'Character, integrity, and the inner strength to do what is right.' },
-  { num: '04', label: 'Good Character', desc: 'Honor, loyalty, family, and bravery in everything we do.' },
+  {
+    num: '01',
+    label: 'Physical',
+    desc: 'Strength, coordination, and conditioning through structured training.',
+  },
+  {
+    num: '02',
+    label: 'Mental',
+    desc: 'Focus, discipline, and confidence to set goals and achieve them.',
+  },
+  {
+    num: '03',
+    label: 'Spiritual',
+    desc: 'Character, integrity, and the inner strength to do what is right.',
+  },
+  {
+    num: '04',
+    label: 'Good Character',
+    desc: 'Honor, loyalty, family, and bravery in everything we do.',
+  },
 ];
 
 const PROGRAMS = [
-  { name: 'Little Dragons',   ages: 'Ages 4–6',  desc: 'Fun, movement-based classes that build listening, coordination, and early discipline in our youngest students.' },
-  { name: 'Kids Martial Arts', ages: 'Ages 7–12', desc: 'Structured belt progression and real martial arts skills. Students develop focus, self-discipline, and confidence.' },
-  { name: 'Teens & Adults',   ages: 'Ages 13+',  desc: 'Advanced training, leadership, and genuine self-defense. A positive environment during the years it matters most.' },
+  {
+    name: 'Little Dragons',
+    ages: 'Ages 4–6',
+    desc: 'Fun, movement-based classes that build listening, coordination, and early discipline in our youngest students.',
+  },
+  {
+    name: 'Kids Martial Arts',
+    ages: 'Ages 7–12',
+    desc: 'Structured belt progression and real martial arts skills. Students develop focus, self-discipline, and confidence.',
+  },
+  {
+    name: 'Teens & Adults',
+    ages: 'Ages 13+',
+    desc: 'Advanced training, leadership, and genuine self-defense. A positive environment during the years it matters most.',
+  },
 ];
 
 const STEPS = [
-  { step: '01', heading: 'Arrive and meet the team',     body: "You and your child will be greeted by an instructor. We'll answer any questions before class starts." },
-  { step: '02', heading: 'Your child joins the class',   body: "We pair your child with students at their level. You're welcome to watch from the side — most parents do." },
-  { step: '03', heading: 'Talk to us afterward',         body: "We'll share what we observed and which program fits best. No pressure to sign up that day." },
+  {
+    step: '01',
+    heading: 'Arrive and meet the team',
+    body: "You and your child will be greeted by an instructor. We'll answer any questions before class starts.",
+  },
+  {
+    step: '02',
+    heading: 'Your child joins the class',
+    body: "We pair your child with students at their level. You're welcome to watch from the side — most parents do.",
+  },
+  {
+    step: '03',
+    heading: 'Talk to us afterward',
+    body: "We'll share what we observed and which program fits best. No pressure to sign up that day.",
+  },
 ];
 
 const TESTIMONIALS = [
-  { quote: 'My son has completely changed since joining. He listens better, focuses in school, and actually looks forward to going to class.', name: 'Maria G.', detail: 'Parent of a 9-year-old' },
-  { quote: 'The instructors are patient and genuinely care. My daughter went from shy to confident in just a few months.', name: 'James T.', detail: 'Parent of a 7-year-old' },
-  { quote: 'We tried another school first. LBMAA is different — it feels like a real community. Best decision we made for our kids.', name: 'Priya S.', detail: 'Parent of two students' },
+  {
+    quote:
+      'My son has completely changed since joining. He listens better, focuses in school, and actually looks forward to going to class.',
+    name: 'Maria G.',
+    detail: 'Parent of a 9-year-old',
+  },
+  {
+    quote:
+      'The instructors are patient and genuinely care. My daughter went from shy to confident in just a few months.',
+    name: 'James T.',
+    detail: 'Parent of a 7-year-old',
+  },
+  {
+    quote:
+      'We tried another school first. LBMAA is different — it feels like a real community. Best decision we made for our kids.',
+    name: 'Priya S.',
+    detail: 'Parent of two students',
+  },
 ];
 
 const FILMSTRIP = [
@@ -39,13 +94,14 @@ const FILMSTRIP = [
 
 export function HomePageV3() {
   const navigate = useNavigate();
-  const goToTrial = () => navigate(`${BASE}/contact`);
 
   return (
     <div>
-
       {/* ── HERO ── */}
-      <section className="relative overflow-hidden" style={{ minHeight: 'max(60svh, 420px)' }}>
+      <section
+        className="relative overflow-hidden"
+        style={{ minHeight: 'max(60svh, 420px)' }}
+      >
         <ImageWithFallback
           src="/photos/33-_MG_5061.jpg"
           alt="Los Banos Martial Arts Academy dojo"
@@ -54,14 +110,14 @@ export function HomePageV3() {
         <div
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(108deg, oklch(14% 0.018 30 / 0.9) 0%, oklch(14% 0.018 30 / 0.65) 55%, oklch(14% 0.018 30 / 0.2) 100%)',
+            background:
+              'linear-gradient(108deg, oklch(14% 0.018 30 / 0.9) 0%, oklch(14% 0.018 30 / 0.65) 55%, oklch(14% 0.018 30 / 0.2) 100%)',
           }}
         />
 
         <div className="relative h-full flex items-center">
           <div className="max-w-7xl mx-auto px-6 md:px-10 py-14 w-full">
             <div style={{ maxWidth: '520px' }}>
-
               {/* Heading */}
               <h1
                 className="v3-h font-extrabold leading-[0.95] mb-5"
@@ -71,8 +127,10 @@ export function HomePageV3() {
                   letterSpacing: '-0.01em',
                 }}
               >
-                Develop Your Child<br />
-                Physically, Mentally<br />
+                Develop Your Child
+                <br />
+                Physically, Mentally
+                <br />
                 <span style={{ color: V3.primary }}>&amp; Spiritually.</span>
               </h1>
 
@@ -81,8 +139,8 @@ export function HomePageV3() {
                 className="text-[0.95rem] leading-relaxed mb-7"
                 style={{ color: 'oklch(82% 0.006 30)', maxWidth: '400px' }}
               >
-                Safe, structured martial arts for children of all ages in Los Banos.
-                Family-run. No pressure. First class is free.
+                Safe, structured martial arts for children of all ages in Los
+                Banos. Family-run. No pressure. First class is free.
               </p>
 
               {/* CTAs */}
@@ -96,7 +154,13 @@ export function HomePageV3() {
               </div>
 
               {/* Trust note */}
-              <p style={{ color: 'oklch(60% 0.006 30)', fontSize: '0.75rem', fontFamily: "'Nunito', sans-serif" }}>
+              <p
+                style={{
+                  color: 'oklch(60% 0.006 30)',
+                  fontSize: '0.75rem',
+                  fontFamily: "'Nunito', sans-serif",
+                }}
+              >
                 No commitment · No uniform needed · We'll guide you
               </p>
             </div>
@@ -107,12 +171,23 @@ export function HomePageV3() {
       {/* ── PILLARS BAND ── */}
       <section style={{ backgroundColor: V3.primary }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-y-0 md:divide-x" style={{ '--tw-divide-opacity': '1', borderColor: 'oklch(50% 0.110 20)' } as React.CSSProperties}>
+          <div
+            className="grid grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-y-0 md:divide-x"
+            style={
+              {
+                '--tw-divide-opacity': '1',
+                borderColor: 'oklch(50% 0.110 20)',
+              } as React.CSSProperties
+            }
+          >
             {PILLARS.map(({ num, label, desc }, i) => (
               <div
                 key={num}
                 className="md:px-7"
-                style={{ paddingLeft: i === 0 ? 0 : undefined, paddingRight: i === PILLARS.length - 1 ? 0 : undefined }}
+                style={{
+                  paddingLeft: i === 0 ? 0 : undefined,
+                  paddingRight: i === PILLARS.length - 1 ? 0 : undefined,
+                }}
               >
                 <div
                   className="v3-h text-2xl font-black mb-1"
@@ -126,7 +201,10 @@ export function HomePageV3() {
                 >
                   {label}
                 </div>
-                <p className="text-xs leading-relaxed" style={{ color: 'oklch(82% 0.035 20)', maxWidth: '170px' }}>
+                <p
+                  className="text-xs leading-relaxed"
+                  style={{ color: 'oklch(82% 0.035 20)', maxWidth: '170px' }}
+                >
                   {desc}
                 </p>
               </div>
@@ -154,14 +232,22 @@ export function HomePageV3() {
               >
                 Impact and Empower Through Martial Arts
               </h2>
-              <p className="leading-relaxed mb-5 text-[0.95rem]" style={{ color: V3.muted }}>
-                LBMAA is part of the World Chun Woo Martial Arts system — a comprehensive
-                mixed martial arts curriculum incorporating Taekwondo, boxing, kickboxing,
-                grappling, and Filipino stick fighting.
+              <p
+                className="leading-relaxed mb-5 text-[0.95rem]"
+                style={{ color: V3.muted }}
+              >
+                LBMAA is part of the World Chun Woo Martial Arts system — a
+                comprehensive mixed martial arts curriculum incorporating
+                Taekwondo, boxing, kickboxing, grappling, and Filipino stick
+                fighting.
               </p>
-              <p className="leading-relaxed mb-8 text-[0.95rem]" style={{ color: V3.muted }}>
-                Our goal is simple: develop Black Belts in life. Students who carry discipline,
-                character, and confidence into everything they do — on and off the mat.
+              <p
+                className="leading-relaxed mb-8 text-[0.95rem]"
+                style={{ color: V3.muted }}
+              >
+                Our goal is simple: develop Black Belts in life. Students who
+                carry discipline, character, and confidence into everything they
+                do — on and off the mat.
               </p>
               <button
                 onClick={() => navigate(`${BASE}/about`)}
@@ -179,7 +265,6 @@ export function HomePageV3() {
       <section className="py-24" style={{ backgroundColor: V3.surface }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div className="grid md:grid-cols-5 gap-12 md:gap-16 items-start max-w-5xl mx-auto">
-
             {/* Left: heading */}
             <div className="md:col-span-2">
               <p className="v3-eyebrow mb-4">Our Programs</p>
@@ -189,9 +274,12 @@ export function HomePageV3() {
               >
                 Training for Every Stage of Life
               </h2>
-              <p className="text-[0.9rem] leading-relaxed mb-8" style={{ color: V3.muted }}>
-                Every program is age-appropriate and taught by ERWCMAA-certified instructors
-                who know every student by name.
+              <p
+                className="text-[0.9rem] leading-relaxed mb-8"
+                style={{ color: V3.muted }}
+              >
+                Every program is age-appropriate and taught by ERWCMAA-certified
+                instructors who know every student by name.
               </p>
               <button
                 onClick={() => navigate(`${BASE}/programs`)}
@@ -210,21 +298,32 @@ export function HomePageV3() {
                   className="py-6"
                   style={{
                     borderTop: `1px solid ${V3.border}`,
-                    ...(i === PROGRAMS.length - 1 ? { borderBottom: `1px solid ${V3.border}` } : {}),
+                    ...(i === PROGRAMS.length - 1
+                      ? { borderBottom: `1px solid ${V3.border}` }
+                      : {}),
                   }}
                 >
                   <div className="flex items-baseline gap-3 flex-wrap mb-2">
-                    <span className="v3-h text-xl font-bold" style={{ color: V3.text }}>
+                    <span
+                      className="v3-h text-xl font-bold"
+                      style={{ color: V3.text }}
+                    >
                       {p.name}
                     </span>
                     <span
                       className="text-[0.65rem] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: V3.primaryBg, color: V3.primary }}
+                      style={{
+                        backgroundColor: V3.primaryBg,
+                        color: V3.primary,
+                      }}
                     >
                       {p.ages}
                     </span>
                   </div>
-                  <p className="text-sm leading-relaxed" style={{ color: V3.muted }}>
+                  <p
+                    className="text-sm leading-relaxed"
+                    style={{ color: V3.muted }}
+                  >
                     {p.desc}
                   </p>
                 </div>
@@ -251,7 +350,11 @@ export function HomePageV3() {
                 <div key={step} className="relative">
                   <div
                     className="v3-h font-black leading-none mb-4 select-none"
-                    style={{ fontSize: '5rem', color: V3.surface, lineHeight: 1 }}
+                    style={{
+                      fontSize: '5rem',
+                      color: V3.surface,
+                      lineHeight: 1,
+                    }}
                     aria-hidden="true"
                   >
                     {step}
@@ -262,7 +365,10 @@ export function HomePageV3() {
                   >
                     {heading}
                   </div>
-                  <p className="text-sm leading-relaxed" style={{ color: V3.muted }}>
+                  <p
+                    className="text-sm leading-relaxed"
+                    style={{ color: V3.muted }}
+                  >
                     {body}
                   </p>
                 </div>
@@ -271,7 +377,15 @@ export function HomePageV3() {
 
             <div className="mt-14">
               <p className="text-sm" style={{ color: V3.muted }}>
-                Ready to visit? Find us on the <button onClick={() => navigate(`${BASE}/contact`)} className="underline underline-offset-2 font-semibold" style={{ color: V3.primary }}>Contact page</button> — first class is free.
+                Ready to visit? Find us on the{' '}
+                <button
+                  onClick={() => navigate(`${BASE}/contact`)}
+                  className="underline underline-offset-2 font-semibold"
+                  style={{ color: V3.primary }}
+                >
+                  Contact page
+                </button>{' '}
+                — first class is free.
               </p>
             </div>
           </div>
@@ -287,19 +401,29 @@ export function HomePageV3() {
           <div className="max-w-3xl mb-16">
             <div
               className="v3-h font-black leading-none mb-4 select-none"
-              style={{ fontSize: '7rem', color: 'oklch(90% 0.020 20)', lineHeight: 0.8 }}
+              style={{
+                fontSize: '7rem',
+                color: 'oklch(90% 0.020 20)',
+                lineHeight: 0.8,
+              }}
               aria-hidden="true"
             >
               "
             </div>
             <blockquote
               className="v3-h font-semibold leading-[1.15] mb-6"
-              style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2.25rem)', color: V3.text }}
+              style={{
+                fontSize: 'clamp(1.5rem, 3.5vw, 2.25rem)',
+                color: V3.text,
+              }}
             >
               {TESTIMONIALS[0].quote}
             </blockquote>
             <p className="text-sm font-semibold" style={{ color: V3.primary }}>
-              — {TESTIMONIALS[0].name}, <span style={{ color: V3.muted, fontWeight: 400 }}>{TESTIMONIALS[0].detail}</span>
+              — {TESTIMONIALS[0].name},{' '}
+              <span style={{ color: V3.muted, fontWeight: 400 }}>
+                {TESTIMONIALS[0].detail}
+              </span>
             </p>
           </div>
 
@@ -311,11 +435,17 @@ export function HomePageV3() {
                 className="py-6"
                 style={{ borderTop: `1px solid ${V3.border}` }}
               >
-                <p className="text-base leading-relaxed mb-4 italic" style={{ color: V3.muted }}>
+                <p
+                  className="text-base leading-relaxed mb-4 italic"
+                  style={{ color: V3.muted }}
+                >
                   "{t.quote}"
                 </p>
                 <p className="text-sm font-semibold" style={{ color: V3.text }}>
-                  — {t.name}, <span style={{ color: V3.muted, fontWeight: 400 }}>{t.detail}</span>
+                  — {t.name},{' '}
+                  <span style={{ color: V3.muted, fontWeight: 400 }}>
+                    {t.detail}
+                  </span>
                 </p>
               </div>
             ))}
@@ -333,10 +463,16 @@ export function HomePageV3() {
       </section>
 
       {/* ── PHOTO FILMSTRIP ── */}
-      <section className="py-5 overflow-x-auto" style={{ backgroundColor: V3.bg }}>
+      <section
+        className="py-5 overflow-x-auto"
+        style={{ backgroundColor: V3.bg }}
+      >
         <div className="flex gap-2.5 min-w-max px-6">
           {FILMSTRIP.map((src, i) => (
-            <div key={i} className="w-56 h-40 flex-shrink-0 rounded-lg overflow-hidden">
+            <div
+              key={i}
+              className="w-56 h-40 flex-shrink-0 rounded-lg overflow-hidden"
+            >
               <ImageWithFallback
                 src={src}
                 alt="LBMAA students training"
@@ -355,7 +491,10 @@ export function HomePageV3() {
               <p className="v3-eyebrow mb-4">Why LBMAA</p>
               <h2
                 className="v3-h font-black leading-[1.0] mb-8"
-                style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.75rem)', color: V3.text }}
+                style={{
+                  fontSize: 'clamp(1.8rem, 3.5vw, 2.75rem)',
+                  color: V3.text,
+                }}
               >
                 More Than Martial Arts — It's a Community
               </h2>
@@ -372,7 +511,10 @@ export function HomePageV3() {
                       className="w-4 h-4 flex-shrink-0 mt-0.5"
                       style={{ color: V3.primary }}
                     />
-                    <span className="text-sm leading-relaxed" style={{ color: V3.muted }}>
+                    <span
+                      className="text-sm leading-relaxed"
+                      style={{ color: V3.muted }}
+                    >
                       {point}
                     </span>
                   </li>
@@ -389,8 +531,6 @@ export function HomePageV3() {
           </div>
         </div>
       </section>
-
-
     </div>
   );
 }

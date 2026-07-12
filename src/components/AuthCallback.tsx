@@ -15,13 +15,14 @@ export function AuthCallback() {
       return;
     }
 
-    supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+    supabase.auth
+      .verifyOtp({ token_hash: tokenHash, type })
       .then(({ error }) => {
         if (error) setError(error.message);
         // On success, onAuthStateChange fires in useAuth which sets user state.
         // AppRoutes detects user at /auth/callback and redirects to /dashboard.
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (error) {
@@ -29,7 +30,9 @@ export function AuthCallback() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <p className="text-destructive font-medium">{error}</p>
-          <a href="/" className="text-primary underline text-sm">Return to home</a>
+          <a href="/" className="text-primary underline text-sm">
+            Return to home
+          </a>
         </div>
       </div>
     );

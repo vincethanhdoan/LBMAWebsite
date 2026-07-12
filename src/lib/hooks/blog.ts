@@ -5,7 +5,6 @@ import {
   updateBlogPost,
   deleteBlogPost,
   createBlogComment,
-  updateBlogComment,
   deleteBlogComment,
 } from '../supabase/mutations';
 import { queryKeys } from '../queryKeys';
@@ -29,8 +28,9 @@ export function useBlogComments(postId: string | null) {
 export function useCreateBlogPost() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<BlogPost, 'post_id' | 'created_at' | 'updated_at'>) =>
-      createBlogPost(data),
+    mutationFn: (
+      data: Omit<BlogPost, 'post_id' | 'created_at' | 'updated_at'>,
+    ) => createBlogPost(data),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.blogPosts() });
     },
@@ -61,21 +61,17 @@ export function useDeleteBlogPost() {
 export function useCreateBlogComment(postId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ body, parentCommentId }: { body: string; parentCommentId?: string }) =>
-      createBlogComment(postId, body, parentCommentId),
+    mutationFn: ({
+      body,
+      parentCommentId,
+    }: {
+      body: string;
+      parentCommentId?: string;
+    }) => createBlogComment(postId, body, parentCommentId),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.blogComments(postId) });
-    },
-  });
-}
-
-export function useUpdateBlogComment(postId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ commentId, updates }: { commentId: string; updates: Parameters<typeof updateBlogComment>[1] }) =>
-      updateBlogComment(commentId, updates),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.blogComments(postId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.blogComments(postId),
+      });
     },
   });
 }
@@ -85,7 +81,9 @@ export function useDeleteBlogComment(postId: string) {
   return useMutation({
     mutationFn: (commentId: string) => deleteBlogComment(commentId),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.blogComments(postId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.blogComments(postId),
+      });
     },
   });
 }

@@ -3,14 +3,18 @@ export const queryKeys = {
   messages: (conversationId: string) => ['messages', conversationId] as const,
   enrollmentLeads: () => ['enrollment-leads'] as const,
   enrollmentLeadsActive: () => ['enrollment-leads', 'active'] as const,
-  enrollmentLeadsTerminal: (filter: string, search: string) => ['enrollment-leads', 'terminal', filter, search] as const,
-  enrollmentLeadsTerminalCounts: () => ['enrollment-leads', 'terminal-counts'] as const,
+  enrollmentLeadsTerminal: (filter: string, search: string) =>
+    ['enrollment-leads', 'terminal', filter, search] as const,
+  enrollmentLeadsTerminalCounts: () =>
+    ['enrollment-leads', 'terminal-counts'] as const,
   announcements: () => ['announcements'] as const,
-  announcementComments: (announcementId: string) => ['announcement-comments', announcementId] as const,
+  announcementComments: (announcementId: string) =>
+    ['announcement-comments', announcementId] as const,
   blogPosts: () => ['blog-posts'] as const,
   blogComments: (postId: string) => ['blog-comments', postId] as const,
   notificationHistory: () => ['notification-history'] as const,
-  notificationSummary: (userId: string) => ['notification-summary', userId] as const,
+  notificationSummary: (userId: string) =>
+    ['notification-summary', userId] as const,
   sidebarCounts: (userId: string) => ['sidebar-counts', userId] as const,
   homeCounts: (userId: string) => ['home-counts', userId] as const,
   profile: (userId: string) => ['profile', userId] as const,

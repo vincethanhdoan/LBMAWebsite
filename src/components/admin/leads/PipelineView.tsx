@@ -1,8 +1,13 @@
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import type { EnrollmentLead } from '../../../lib/types';
 import { Button } from '../../ui/button';
 import { formatPhone } from '../../../lib/format';
-import { childSummary, daysSince, STALE_INQUIRY_DAYS, STALE_INVITE_DAYS } from './leadViews';
+import {
+  childSummary,
+  daysSince,
+  STALE_INQUIRY_DAYS,
+  STALE_INVITE_DAYS,
+} from './leadViews';
 import { PROGRAM_LABELS } from './leadDisplay';
 import { LeadRow, SectionHeader, Surface } from './ui';
 import type { useLeadActions } from './useLeadActions';
@@ -14,7 +19,9 @@ function relativeAge(days: number): string {
 }
 
 function EmptySection({ text }: { text: string }): JSX.Element {
-  return <p className="py-8 text-center text-[13px] text-muted-foreground">{text}</p>;
+  return (
+    <p className="py-8 text-center text-[13px] text-muted-foreground">{text}</p>
+  );
 }
 
 export function PipelineView({
@@ -33,15 +40,15 @@ export function PipelineView({
   highlightedLeadId: string | null;
 }): JSX.Element {
   const newInquiries = leads
-    .filter(lead => lead.status === 'new')
+    .filter((lead) => lead.status === 'new')
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
 
   const invited = leads
     .filter(
-      lead =>
+      (lead) =>
         lead.status === 'approved' &&
         (lead.programBookings?.length
-          ? lead.programBookings.some(b => !b.appointment_date)
+          ? lead.programBookings.some((b) => !b.appointment_date)
           : !lead.appointment_date),
     )
     .sort((a, b) => inviteSentDate(a).localeCompare(inviteSentDate(b)));
@@ -62,7 +69,7 @@ export function PipelineView({
           <EmptySection text="No new inquiries. Website inquiries appear here." />
         ) : (
           <Surface>
-            {newInquiries.map(lead => (
+            {newInquiries.map((lead) => (
               <LeadRow
                 key={lead.lead_id}
                 id={'lead-' + lead.lead_id}
@@ -98,12 +105,15 @@ export function PipelineView({
       </section>
 
       <section>
-        <SectionHeader title="Invited, waiting to book" count={invited.length} />
+        <SectionHeader
+          title="Invited, waiting to book"
+          count={invited.length}
+        />
         {invited.length === 0 ? (
           <EmptySection text="No one is waiting to book." />
         ) : (
           <Surface>
-            {invited.map(lead => (
+            {invited.map((lead) => (
               <InvitedRow
                 key={lead.lead_id}
                 lead={lead}
@@ -133,7 +143,9 @@ function inquiryLine2(lead: EnrollmentLead, now: number): ReactNode {
       relativeAge(days)
     );
   const snippet = lead.message.slice(0, 60);
-  const message = snippet ? ` · "${snippet}${lead.message.length > 60 ? '…' : ''}"` : '';
+  const message = snippet
+    ? ` · "${snippet}${lead.message.length > 60 ? '…' : ''}"`
+    : '';
   return (
     <>
       {timePart}
@@ -158,11 +170,13 @@ function InvitedRow({
   const days = daysSince(inviteSentDate(lead), now);
   const stale = days >= STALE_INVITE_DAYS;
 
-  const someBooked = (lead.programBookings ?? []).some(b => b.appointment_date);
+  const someBooked = (lead.programBookings ?? []).some(
+    (b) => b.appointment_date,
+  );
   const unbookedNote = someBooked
     ? (lead.programBookings ?? [])
-        .filter(b => !b.appointment_date)
-        .map(b => `${PROGRAM_LABELS[b.program_type]} not booked yet`)
+        .filter((b) => !b.appointment_date)
+        .map((b) => `${PROGRAM_LABELS[b.program_type]} not booked yet`)
         .join(' · ')
     : '';
   const noteSuffix = unbookedNote ? ` · ${unbookedNote}` : '';
@@ -179,7 +193,8 @@ function InvitedRow({
     `Invite sent ${relativeAge(days)}${noteSuffix}`
   );
 
-  const chipLabel = days === 0 ? 'today' : `${days} ${days === 1 ? 'day' : 'days'}`;
+  const chipLabel =
+    days === 0 ? 'today' : `${days} ${days === 1 ? 'day' : 'days'}`;
   const badge = (
     <span
       className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${

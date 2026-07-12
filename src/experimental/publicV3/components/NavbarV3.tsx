@@ -4,14 +4,14 @@ import { Menu, X } from 'lucide-react';
 import { BASE, V3 } from '../design';
 
 const NAV = [
-  { label: 'Home',        path: '/' },
-  { label: 'About',       path: `${BASE}/about` },
-  { label: 'Programs',    path: `${BASE}/programs` },
-  { label: 'Facilities',  path: `${BASE}/facilities` },
+  { label: 'Home', path: '/' },
+  { label: 'About', path: `${BASE}/about` },
+  { label: 'Programs', path: `${BASE}/programs` },
+  { label: 'Facilities', path: `${BASE}/facilities` },
   { label: 'Instructors', path: `${BASE}/instructors` },
-  { label: 'Reviews',     path: `${BASE}/reviews` },
-  { label: 'FAQ',         path: `${BASE}/faq` },
-  { label: 'Contact',     path: `${BASE}/contact` },
+  { label: 'Reviews', path: `${BASE}/reviews` },
+  { label: 'FAQ', path: `${BASE}/faq` },
+  { label: 'Contact', path: `${BASE}/contact` },
 ];
 
 export function NavbarV3({ onLogin }: { onLogin: () => void }) {
@@ -27,6 +27,8 @@ export function NavbarV3({ onLogin }: { onLogin: () => void }) {
   }, []);
 
   useEffect(() => {
+    // Prototype: resetting menu state on navigation alongside the scroll side effect; deriving is not worth it here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMobileOpen(false);
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [location.pathname]);
@@ -49,14 +51,17 @@ export function NavbarV3({ onLogin }: { onLogin: () => void }) {
       className="sticky top-0 z-50"
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-[72px]">
-
         {/* Brand */}
         <button
           onClick={() => goTo('/')}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity min-w-0 flex-shrink-0"
           aria-label="Los Banos Martial Arts Academy — home"
         >
-          <img src="/logo.png" alt="ERWCMAA Logo" className="h-11 w-auto flex-shrink-0" />
+          <img
+            src="/logo.png"
+            alt="ERWCMAA Logo"
+            className="h-11 w-auto flex-shrink-0"
+          />
           <div className="text-left leading-snug hidden sm:block">
             <div
               className="v3-h font-bold text-[15px] uppercase tracking-wide"
@@ -116,12 +121,22 @@ export function NavbarV3({ onLogin }: { onLogin: () => void }) {
             {mobileOpen ? (
               <>
                 <X className="w-5 h-5" />
-                <span className="text-xs font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>Close</span>
+                <span
+                  className="text-xs font-semibold"
+                  style={{ fontFamily: "'Nunito', sans-serif" }}
+                >
+                  Close
+                </span>
               </>
             ) : (
               <>
                 <Menu className="w-5 h-5" />
-                <span className="text-xs font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>Menu</span>
+                <span
+                  className="text-xs font-semibold"
+                  style={{ fontFamily: "'Nunito', sans-serif" }}
+                >
+                  Menu
+                </span>
               </>
             )}
           </button>
@@ -132,7 +147,10 @@ export function NavbarV3({ onLogin }: { onLogin: () => void }) {
       {mobileOpen && (
         <div
           className="lg:hidden"
-          style={{ borderTop: `1px solid ${V3.border}`, backgroundColor: 'white' }}
+          style={{
+            borderTop: `1px solid ${V3.border}`,
+            backgroundColor: 'white',
+          }}
         >
           <div className="max-w-7xl mx-auto px-6 py-3 flex flex-col gap-0.5">
             {NAV.map(({ label, path }) => (
@@ -143,7 +161,9 @@ export function NavbarV3({ onLogin }: { onLogin: () => void }) {
                 className="text-left px-3 min-h-[44px] flex items-center rounded-lg text-sm font-semibold transition-colors"
                 style={{
                   color: isActive(path) ? V3.primary : V3.text,
-                  backgroundColor: isActive(path) ? V3.primaryBg : 'transparent',
+                  backgroundColor: isActive(path)
+                    ? V3.primaryBg
+                    : 'transparent',
                 }}
               >
                 {label}

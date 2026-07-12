@@ -1,39 +1,39 @@
-import { useState, useEffect } from 'react'
-import { DayPicker } from 'react-day-picker'
-import 'react-day-picker/style.css'
-import './booking-calendar.css'
-import { Loader2 } from 'lucide-react'
-import { Button } from '../ui/button'
-import { getUpcomingBookableDates } from '../../lib/supabase/queries'
-import { daysUntilInPacific } from '../../lib/pacificTime'
-import type { AppointmentSlot } from '../../lib/types'
+import { useState, useEffect } from 'react';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/style.css';
+import './booking-calendar.css';
+import { Loader2 } from 'lucide-react';
+import { Button } from '../ui/button';
+import { getUpcomingBookableDates } from '../../lib/supabase/queries';
+import { daysUntilInPacific } from '../../lib/pacificTime';
+import type { AppointmentSlot } from '../../lib/types';
 
 interface DateOption {
-  slotId: string
-  startTime: string
-  label: string
+  slotId: string;
+  startTime: string;
+  label: string;
 }
 
 interface BookingCalendarProps {
-  slots: AppointmentSlot[]
-  onConfirm: (slotId: string, date: string) => Promise<void>
-  submitting: boolean
-  confirmLabel?: string
-  showAutoConfirmBadge?: boolean
+  slots: AppointmentSlot[];
+  onConfirm: (slotId: string, date: string) => Promise<void>;
+  submitting: boolean;
+  confirmLabel?: string;
+  showAutoConfirmBadge?: boolean;
 }
 
 function toDateKey(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function formatTime(timeStr: string): string {
   return new Date('1970-01-01T' + timeStr).toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
-  })
+  });
 }
 
 export function BookingCalendar({
@@ -43,56 +43,79 @@ export function BookingCalendar({
   confirmLabel = 'Confirm Booking',
   showAutoConfirmBadge = false,
 }: BookingCalendarProps) {
-  const [availableMap, setAvailableMap] = useState<Map<string, DateOption[]>>(new Map())
-  const [fetching, setFetching] = useState(slots.length === 0 ? false : true)
-  const [fetchError, setFetchError] = useState<string | null>(null)
-  const [selected, setSelected] = useState<Date | undefined>()
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
-  const slotIds = slots.map(s => s.slot_id).join(',')
+  const [availableMap, setAvailableMap] = useState<Map<string, DateOption[]>>(
+    new Map(),
+  );
+  const [fetching, setFetching] = useState(slots.length === 0 ? false : true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Date | undefined>();
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const slotIds = slots.map((s) => s.slot_id).join(',');
 
   useEffect(() => {
-    if (slots.length === 0) return
-    let cancelled = false
+    if (slots.length === 0) return;
+    let cancelled = false;
     Promise.all(
-      slots.map(s =>
-        getUpcomingBookableDates(s.slot_id).then(dates => ({ slot: s, dates }))
-      )
+      slots.map((s) =>
+        getUpcomingBookableDates(s.slot_id).then((dates) => ({
+          slot: s,
+          dates,
+        })),
+      ),
     )
-      .then(results => {
-        if (cancelled) return
-        const map = new Map<string, DateOption[]>()
+      .then((results) => {
+        if (cancelled) return;
+        const map = new Map<string, DateOption[]>();
         for (const { slot, dates } of results) {
           for (const date of dates) {
-            const existing = map.get(date) ?? []
-            existing.push({ slotId: slot.slot_id, startTime: slot.start_time, label: slot.label })
-            map.set(date, existing)
+            const existing = map.get(date) ?? [];
+            existing.push({
+              slotId: slot.slot_id,
+              startTime: slot.start_time,
+              label: slot.label,
+            });
+            map.set(date, existing);
           }
         }
         // Sort each day's options by start time
         for (const [key, opts] of map) {
-          map.set(key, opts.sort((a, b) => a.startTime.localeCompare(b.startTime)))
+          map.set(
+            key,
+            opts.sort((a, b) => a.startTime.localeCompare(b.startTime)),
+          );
         }
-        setAvailableMap(map)
+        setAvailableMap(map);
       })
-      .catch(() => { if (!cancelled) setFetchError('Failed to load available dates. Please refresh.') })
-      .finally(() => { if (!cancelled) setFetching(false) })
-    return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- slotIds is a stable string proxy for slot identity; avoids re-fetching on array reference changes
-  }, [slotIds])
+      .catch(() => {
+        if (!cancelled)
+          setFetchError('Failed to load available dates. Please refresh.');
+      })
+      .finally(() => {
+        if (!cancelled) setFetching(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- slotIds is a stable string proxy for slot identity; avoids re-fetching on array reference changes
+  }, [slotIds]);
 
-  const availableDates = Array.from(availableMap.keys()).map(d => new Date(d + 'T12:00:00'))
-  const selectedKey = selected ? toDateKey(selected) : null
-  const dayOptions = selectedKey ? (availableMap.get(selectedKey) ?? []) : []
-  const selectedOption = dayOptions.find(o => o.slotId === selectedSlotId) ?? (dayOptions.length === 1 ? dayOptions[0] : null)
+  const availableDates = Array.from(availableMap.keys()).map(
+    (d) => new Date(d + 'T12:00:00'),
+  );
+  const selectedKey = selected ? toDateKey(selected) : null;
+  const dayOptions = selectedKey ? (availableMap.get(selectedKey) ?? []) : [];
+  const selectedOption =
+    dayOptions.find((o) => o.slotId === selectedSlotId) ??
+    (dayOptions.length === 1 ? dayOptions[0] : null);
 
   function handleDaySelect(date: Date | undefined) {
-    setSelected(date)
-    setSelectedSlotId(null)
+    setSelected(date);
+    setSelectedSlotId(null);
   }
 
   async function handleConfirm() {
-    if (!selectedKey || !selectedOption) return
-    await onConfirm(selectedOption.slotId, selectedKey)
+    if (!selectedKey || !selectedOption) return;
+    await onConfirm(selectedOption.slotId, selectedKey);
   }
 
   if (fetching) {
@@ -100,11 +123,13 @@ export function BookingCalendar({
       <div className="flex justify-center py-8">
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
       </div>
-    )
+    );
   }
 
   if (fetchError) {
-    return <p className="text-sm text-destructive text-center py-4">{fetchError}</p>
+    return (
+      <p className="text-sm text-destructive text-center py-4">{fetchError}</p>
+    );
   }
 
   if (availableMap.size === 0) {
@@ -112,7 +137,7 @@ export function BookingCalendar({
       <p className="text-sm text-muted-foreground text-center py-4">
         No available dates in the next 20 weeks. Contact us directly.
       </p>
-    )
+    );
   }
 
   return (
@@ -130,11 +155,15 @@ export function BookingCalendar({
       {selected && dayOptions.length > 0 && (
         <div className="mt-3 space-y-2">
           <div className="text-xs font-medium text-muted-foreground">
-            {selected.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            {selected.toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+            })}
             {dayOptions.length > 1 && ' — pick a time'}
           </div>
-          {dayOptions.map(option => {
-            const isChosen = selectedOption?.slotId === option.slotId
+          {dayOptions.map((option) => {
+            const isChosen = selectedOption?.slotId === option.slotId;
             return (
               <button
                 key={option.slotId}
@@ -152,7 +181,9 @@ export function BookingCalendar({
                       {formatTime(option.startTime)}
                     </div>
                     {option.label && (
-                      <div className="text-xs text-muted-foreground mt-0.5">{option.label}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {option.label}
+                      </div>
                     )}
                   </div>
                   {isChosen && (
@@ -161,13 +192,15 @@ export function BookingCalendar({
                     </div>
                   )}
                 </div>
-                {showAutoConfirmBadge && isChosen && daysUntilInPacific(selected) < 2 && (
-                  <span className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded bg-amber-100 text-amber-800 border border-amber-200">
-                    Will be auto-confirmed
-                  </span>
-                )}
+                {showAutoConfirmBadge &&
+                  isChosen &&
+                  daysUntilInPacific(selected) < 2 && (
+                    <span className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded bg-amber-100 text-amber-800 border border-amber-200">
+                      Will be auto-confirmed
+                    </span>
+                  )}
               </button>
-            )
+            );
           })}
         </div>
       )}
@@ -178,11 +211,16 @@ export function BookingCalendar({
           disabled={!selectedOption || submitting}
           className="w-full mt-3"
         >
-          {submitting
-            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Confirming…</>
-            : confirmLabel}
+          {submitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Confirming…
+            </>
+          ) : (
+            confirmLabel
+          )}
         </Button>
       )}
     </div>
-  )
+  );
 }

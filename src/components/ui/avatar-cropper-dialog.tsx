@@ -20,7 +20,10 @@ type AvatarCropperDialogProps = {
   onCancel: () => void;
 };
 
-async function getCroppedImage(imageSrc: string, pixelCrop: Area): Promise<File> {
+async function getCroppedImage(
+  imageSrc: string,
+  pixelCrop: Area,
+): Promise<File> {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.addEventListener('load', () => resolve(img));
@@ -62,7 +65,11 @@ async function getCroppedImage(imageSrc: string, pixelCrop: Area): Promise<File>
   });
 }
 
-export function AvatarCropperDialog({ file, onConfirm, onCancel }: AvatarCropperDialogProps) {
+export function AvatarCropperDialog({
+  file,
+  onConfirm,
+  onCancel,
+}: AvatarCropperDialogProps) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);

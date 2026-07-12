@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/card';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Star, Edit2, Check, Loader2 } from 'lucide-react';
-import { getUserReview, getFamilyByOwner, getGuardiansByFamily } from '../../lib/supabase/queries';
+import {
+  getUserReview,
+  getFamilyByOwner,
+  getGuardiansByFamily,
+} from '../../lib/supabase/queries';
 import { formatDate } from '../../lib/format';
 import { createReview, updateReview } from '../../lib/supabase/mutations';
-import type { User as AppUser, Review } from '../../lib/types';
+import type { User as AppUser, Review, Rating } from '../../lib/types';
 
 type ReviewTabProps = {
   user: NonNullable<AppUser>;
@@ -19,7 +29,7 @@ export function ReviewTab({ user }: ReviewTabProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState<Rating>(5);
   const [reviewText, setReviewText] = useState('');
   const [hoveredStar, setHoveredStar] = useState(0);
   const [primaryName, setPrimaryName] = useState<string | null>(null);
@@ -38,8 +48,10 @@ export function ReviewTab({ user }: ReviewTabProps) {
         }
         if (family) {
           const guardians = await getGuardiansByFamily(family.family_id);
-          const primary = guardians.find(g => g.is_primary_contact) ?? guardians[0];
-          if (primary) setPrimaryName(`${primary.first_name} ${primary.last_name}`);
+          const primary =
+            guardians.find((g) => g.is_primary_contact) ?? guardians[0];
+          if (primary)
+            setPrimaryName(`${primary.first_name} ${primary.last_name}`);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load review');
@@ -56,11 +68,17 @@ export function ReviewTab({ user }: ReviewTabProps) {
     setError(null);
     try {
       if (existingReview) {
-        const updated = await updateReview(existingReview.review_id, { rating, review: reviewText.trim() });
+        const updated = await updateReview(existingReview.review_id, {
+          rating,
+          review: reviewText.trim(),
+        });
         setExistingReview(updated);
       } else {
         const family = await getFamilyByOwner(user.id);
-        if (!family) throw new Error('Family profile not found. Please complete your profile first.');
+        if (!family)
+          throw new Error(
+            'Family profile not found. Please complete your profile first.',
+          );
         const created = await createReview({
           family_id: family.family_id,
           author_user_id: user.id,
@@ -115,19 +133,24 @@ export function ReviewTab({ user }: ReviewTabProps) {
       <div>
         <h2 className="text-3xl font-bold">Share Your Experience</h2>
         <p className="text-muted-foreground mt-1">
-          Your review will be published on our public website to help prospective families
+          Your review will be published on our public website to help
+          prospective families
         </p>
       </div>
 
       {error && (
-        <div className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-2">{error}</div>
+        <div className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-2">
+          {error}
+        </div>
       )}
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{isAddingNew ? 'Write a Review' : 'Your Review'}</CardTitle>
+              <CardTitle>
+                {isAddingNew ? 'Write a Review' : 'Your Review'}
+              </CardTitle>
               <CardDescription>
                 {isAddingNew
                   ? "Share your family's experience at LBMAA with prospective families"
@@ -149,7 +172,7 @@ export function ReviewTab({ user }: ReviewTabProps) {
               <div className="space-y-2">
                 <Label>Rating</Label>
                 <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
+                  {([1, 2, 3, 4, 5] as const).map((star) => (
                     <button
                       key={star}
                       type="button"
@@ -183,20 +206,35 @@ export function ReviewTab({ user }: ReviewTabProps) {
                   className="min-h-[200px]"
                   maxLength={2000}
                 />
-                <p className="text-xs text-muted-foreground">{reviewText.length}/2000 characters</p>
+                <p className="text-xs text-muted-foreground">
+                  {reviewText.length}/2000 characters
+                </p>
               </div>
 
               {/* Actions */}
               <div className="flex gap-2">
-                <Button onClick={handleSaveReview} disabled={saving || !reviewText.trim()}>
+                <Button
+                  onClick={handleSaveReview}
+                  disabled={saving || !reviewText.trim()}
+                >
                   {saving ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
                   ) : (
-                    <><Check className="w-4 h-4 mr-2" />{isAddingNew ? 'Submit Review' : 'Save Changes'}</>
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      {isAddingNew ? 'Submit Review' : 'Save Changes'}
+                    </>
                   )}
                 </Button>
                 {isEditing && (
-                  <Button variant="outline" onClick={handleCancelEdit} disabled={saving}>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={saving}
+                  >
                     Cancel
                   </Button>
                 )}
@@ -204,8 +242,9 @@ export function ReviewTab({ user }: ReviewTabProps) {
 
               <div className="p-4 bg-secondary/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Note:</strong> Your review will be published using your name &ldquo;{primaryName ?? user.displayName}&rdquo;
-                  and will appear publicly on the LBMAA website.
+                  <strong>Note:</strong> Your review will be published using
+                  your name &ldquo;{primaryName ?? user.displayName}&rdquo; and
+                  will appear publicly on the LBMAA website.
                 </p>
               </div>
             </div>
@@ -232,11 +271,16 @@ export function ReviewTab({ user }: ReviewTabProps) {
 
               {/* Body */}
               <div className="p-4 bg-secondary/30 rounded-lg">
-                <p className="text-sm whitespace-pre-wrap">{existingReview!.review}</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {existingReview!.review}
+                </p>
               </div>
 
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Published by {existingReview!.display_name ?? user.displayName}</span>
+                <span>
+                  Published by{' '}
+                  {existingReview!.display_name ?? user.displayName}
+                </span>
                 <span>
                   {existingReview!.updated_at !== existingReview!.created_at
                     ? `Updated ${formatDate(existingReview!.updated_at)}`
@@ -246,7 +290,8 @@ export function ReviewTab({ user }: ReviewTabProps) {
 
               <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
                 <p className="text-sm text-green-700 dark:text-green-400">
-                  ✓ Your review is live on the public website and helping prospective families learn about LBMAA!
+                  ✓ Your review is live on the public website and helping
+                  prospective families learn about LBMAA!
                 </p>
               </div>
             </div>
@@ -261,7 +306,7 @@ export function ReviewTab({ user }: ReviewTabProps) {
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           {[
-            'Be honest and authentic about your family\'s experience',
+            "Be honest and authentic about your family's experience",
             'Share specific examples of how LBMAA has impacted your children',
             'Keep your review respectful and constructive',
             'Focus on your personal experience with the instructors, programs, and community',

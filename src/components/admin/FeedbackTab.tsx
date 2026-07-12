@@ -1,12 +1,32 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
-import { Plus, Calendar, Trash2, User, CheckCircle2, Clock, Pencil, Search } from 'lucide-react';
-import { getAllFeedbackTests, getAllStudentFeedback, getAllStudents, type FeedbackWithRelations } from '../../lib/supabase/queries';
+import {
+  Plus,
+  Calendar,
+  Trash2,
+  User,
+  CheckCircle2,
+  Clock,
+  Pencil,
+  Search,
+} from 'lucide-react';
+import {
+  getAllFeedbackTests,
+  getAllStudentFeedback,
+  getAllStudents,
+  type FeedbackWithRelations,
+} from '../../lib/supabase/queries';
 import {
   createFeedbackTest,
   updateFeedbackTest,
@@ -84,11 +104,13 @@ export function FeedbackTab() {
   const selectedTest = tests.find((t) => t.test_id === selectedTestId) ?? null;
   const feedbackForTest = feedback.filter((f) => f.test_id === selectedTestId);
   const studentsWithoutFeedback = students.filter(
-    (s) => !feedbackForTest.some((f) => f.student_id === s.student_id)
+    (s) => !feedbackForTest.some((f) => f.student_id === s.student_id),
   );
 
   const filteredPickerStudents = studentsWithoutFeedback.filter((s) =>
-    `${s.first_name} ${s.last_name}`.toLowerCase().includes(studentSearchQuery.toLowerCase())
+    `${s.first_name} ${s.last_name}`
+      .toLowerCase()
+      .includes(studentSearchQuery.toLowerCase()),
   );
 
   const filteredFeedback = feedbackForTest.filter((entry) => {
@@ -115,9 +137,10 @@ export function FeedbackTab() {
         const q = testSearchQuery.toLowerCase();
         if (test.title.toLowerCase().includes(q)) return true;
         if (test.description?.toLowerCase().includes(q)) return true;
-        if (formatTestDate(test.test_date).toLowerCase().includes(q)) return true;
+        if (formatTestDate(test.test_date).toLowerCase().includes(q))
+          return true;
         return (studentNamesByTest.get(test.test_id) ?? []).some((name) =>
-          name.toLowerCase().includes(q)
+          name.toLowerCase().includes(q),
         );
       })
     : tests;
@@ -126,7 +149,9 @@ export function FeedbackTab() {
     if (!testTitle.trim() || !testDate) return;
     setSavingTest(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       const newTest = await createFeedbackTest({
         title: testTitle.trim(),
@@ -167,7 +192,9 @@ export function FeedbackTab() {
         test_time: editTime || null,
         description: editDescription.trim() || null,
       });
-      setTests((prev) => prev.map((t) => (t.test_id === editingTestId ? updated : t)));
+      setTests((prev) =>
+        prev.map((t) => (t.test_id === editingTestId ? updated : t)),
+      );
       setEditingTestId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update test');
@@ -191,7 +218,9 @@ export function FeedbackTab() {
     if (!selectedTestId || !addStudentId || !addBody.trim()) return;
     setSavingFeedback(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       const newFeedback = await createStudentFeedback({
         student_id: addStudentId,
@@ -199,7 +228,10 @@ export function FeedbackTab() {
         test_id: selectedTestId,
         body: addBody.trim(),
       });
-      setFeedback((prev) => [{ ...newFeedback, profiles: null } satisfies FeedbackWithRelations, ...prev]);
+      setFeedback((prev) => [
+        { ...newFeedback, profiles: null } satisfies FeedbackWithRelations,
+        ...prev,
+      ]);
       setShowAddFeedbackForm(false);
       setAddStudentId('');
       setAddBody('');
@@ -217,7 +249,9 @@ export function FeedbackTab() {
       await deleteStudentFeedback(feedbackId);
       setFeedback((prev) => prev.filter((f) => f.feedback_id !== feedbackId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete feedback');
+      setError(
+        err instanceof Error ? err.message : 'Failed to delete feedback',
+      );
     }
   }
 
@@ -235,16 +269,25 @@ export function FeedbackTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-4xl font-bold">Student Feedback</h2>
-          <p className="text-muted-foreground text-lg">Create evaluation tests and provide feedback to students</p>
+          <p className="text-muted-foreground text-lg">
+            Create evaluation tests and provide feedback to students
+          </p>
         </div>
-        <Button onClick={() => { setShowCreateTestForm(true); setEditingTestId(null); }}>
+        <Button
+          onClick={() => {
+            setShowCreateTestForm(true);
+            setEditingTestId(null);
+          }}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Create Test
         </Button>
       </div>
 
       {error && (
-        <div className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-2">{error}</div>
+        <div className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-2">
+          {error}
+        </div>
       )}
 
       {/* Create Test Form */}
@@ -252,12 +295,16 @@ export function FeedbackTab() {
         <Card className="border-primary">
           <CardHeader>
             <CardTitle>New Evaluation Test</CardTitle>
-            <CardDescription>Create a test event before adding student feedback</CardDescription>
+            <CardDescription>
+              Create a test event before adding student feedback
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="test-title">Title <span className="text-destructive">*</span></Label>
+                <Label htmlFor="test-title">
+                  Title <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="test-title"
                   placeholder="e.g., Spring Belt Testing"
@@ -266,7 +313,9 @@ export function FeedbackTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="test-date">Date <span className="text-destructive">*</span></Label>
+                <Label htmlFor="test-date">
+                  Date <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="test-date"
                   type="date"
@@ -337,7 +386,9 @@ export function FeedbackTab() {
               />
             </div>
             {filteredTests.map((test) => {
-              const count = feedback.filter((f) => f.test_id === test.test_id).length;
+              const count = feedback.filter(
+                (f) => f.test_id === test.test_id,
+              ).length;
               return (
                 <div
                   key={test.test_id}
@@ -398,7 +449,9 @@ export function FeedbackTab() {
                     <CardTitle>Edit Test</CardTitle>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-title">Title <span className="text-destructive">*</span></Label>
+                        <Label htmlFor="edit-title">
+                          Title <span className="text-destructive">*</span>
+                        </Label>
                         <Input
                           id="edit-title"
                           value={editTitle}
@@ -406,7 +459,9 @@ export function FeedbackTab() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-date">Date <span className="text-destructive">*</span></Label>
+                        <Label htmlFor="edit-date">
+                          Date <span className="text-destructive">*</span>
+                        </Label>
                         <Input
                           id="edit-date"
                           type="date"
@@ -425,7 +480,9 @@ export function FeedbackTab() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-description">Description (optional)</Label>
+                      <Label htmlFor="edit-description">
+                        Description (optional)
+                      </Label>
                       <Textarea
                         id="edit-description"
                         rows={3}
@@ -442,7 +499,11 @@ export function FeedbackTab() {
                       >
                         {savingEdit ? 'Saving...' : 'Save Changes'}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => setEditingTestId(null)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingTestId(null)}
+                      >
                         Cancel
                       </Button>
                     </div>
@@ -460,10 +521,14 @@ export function FeedbackTab() {
                         )}
                       </div>
                       {selectedTest.description && (
-                        <p className="text-sm text-muted-foreground pt-1">{selectedTest.description}</p>
+                        <p className="text-sm text-muted-foreground pt-1">
+                          {selectedTest.description}
+                        </p>
                       )}
                       <CardDescription className="pt-1">
-                        {feedbackForTest.length} {feedbackForTest.length === 1 ? 'student' : 'students'} reviewed
+                        {feedbackForTest.length}{' '}
+                        {feedbackForTest.length === 1 ? 'student' : 'students'}{' '}
+                        reviewed
                       </CardDescription>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
@@ -515,13 +580,17 @@ export function FeedbackTab() {
                               setStudentPickerOpen(true);
                             }}
                             onFocus={() => setStudentPickerOpen(true)}
-                            onBlur={() => setTimeout(() => setStudentPickerOpen(false), 150)}
+                            onBlur={() =>
+                              setTimeout(() => setStudentPickerOpen(false), 150)
+                            }
                             autoComplete="off"
                           />
                           {studentPickerOpen && (
                             <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-input bg-background shadow-md">
                               {filteredPickerStudents.length === 0 ? (
-                                <div className="px-3 py-2 text-sm text-muted-foreground">No students found</div>
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No students found
+                                </div>
                               ) : (
                                 filteredPickerStudents.map((s) => (
                                   <button
@@ -531,13 +600,18 @@ export function FeedbackTab() {
                                     onMouseDown={(e) => e.preventDefault()}
                                     onClick={() => {
                                       setAddStudentId(s.student_id);
-                                      setStudentSearchQuery(`${s.first_name} ${s.last_name}${s.belt_level ? ` — ${s.belt_level}` : ''}`);
+                                      setStudentSearchQuery(
+                                        `${s.first_name} ${s.last_name}${s.belt_level ? ` — ${s.belt_level}` : ''}`,
+                                      );
                                       setStudentPickerOpen(false);
                                     }}
                                   >
                                     {s.first_name} {s.last_name}
                                     {s.belt_level && (
-                                      <span className="text-muted-foreground"> — {s.belt_level}</span>
+                                      <span className="text-muted-foreground">
+                                        {' '}
+                                        — {s.belt_level}
+                                      </span>
                                     )}
                                   </button>
                                 ))
@@ -560,7 +634,9 @@ export function FeedbackTab() {
                       <div className="flex gap-2">
                         <Button
                           onClick={handleAddFeedback}
-                          disabled={savingFeedback || !addStudentId || !addBody.trim()}
+                          disabled={
+                            savingFeedback || !addStudentId || !addBody.trim()
+                          }
                         >
                           {savingFeedback ? 'Saving...' : 'Save Feedback'}
                         </Button>
@@ -594,44 +670,58 @@ export function FeedbackTab() {
                   </div>
                 )}
                 {feedbackForTest.length > 0 ? (
-                  filteredFeedback.length > 0 ? filteredFeedback.map((entry) => {
-                    const student = students.find((s) => s.student_id === entry.student_id);
-                    return (
-                      <Card key={entry.feedback_id}>
-                        <CardContent className="pt-6">
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex items-start gap-3 flex-1">
-                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                  <User className="w-5 h-5 text-primary" />
+                  filteredFeedback.length > 0 ? (
+                    filteredFeedback.map((entry) => {
+                      const student = students.find(
+                        (s) => s.student_id === entry.student_id,
+                      );
+                      return (
+                        <Card key={entry.feedback_id}>
+                          <CardContent className="pt-6">
+                            <div className="space-y-3">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-start gap-3 flex-1">
+                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                    <User className="w-5 h-5 text-primary" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-medium">
+                                      {student
+                                        ? `${student.first_name} ${student.last_name}`
+                                        : 'Unknown Student'}
+                                    </h4>
+                                    {student?.belt_level && (
+                                      <p className="text-xs text-muted-foreground">
+                                        {student.belt_level}
+                                      </p>
+                                    )}
+                                    <p className="text-sm text-muted-foreground">
+                                      {entry.profiles?.display_name ??
+                                        'Instructor'}{' '}
+                                      · {formatShortDate(entry.created_at)}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium">
-                                    {student ? `${student.first_name} ${student.last_name}` : 'Unknown Student'}
-                                  </h4>
-                                  {student?.belt_level && (
-                                    <p className="text-xs text-muted-foreground">{student.belt_level}</p>
-                                  )}
-                                  <p className="text-sm text-muted-foreground">
-                                    {entry.profiles?.display_name ?? 'Instructor'} · {formatShortDate(entry.created_at)}
-                                  </p>
-                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() =>
+                                    handleDeleteFeedback(entry.feedback_id)
+                                  }
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteFeedback(entry.feedback_id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              <p className="text-sm leading-relaxed pl-13">
+                                {entry.body}
+                              </p>
                             </div>
-                            <p className="text-sm leading-relaxed pl-13">{entry.body}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  }) : (
+                          </CardContent>
+                        </Card>
+                      );
+                    })
+                  ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <Search className="w-10 h-10 mx-auto mb-2 opacity-50" />
                       <p>No students match your search</p>
@@ -642,7 +732,9 @@ export function FeedbackTab() {
                     <div className="text-center py-12 text-muted-foreground">
                       <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
                       <p>No feedback added yet</p>
-                      <p className="text-sm mt-1">Click "Add Student" to write feedback for a student</p>
+                      <p className="text-sm mt-1">
+                        Click "Add Student" to write feedback for a student
+                      </p>
                     </div>
                   )
                 )}
@@ -653,7 +745,9 @@ export function FeedbackTab() {
               <div className="text-center">
                 <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>Select a test to view feedback</p>
-                <p className="text-sm mt-1">Or create a new test to get started</p>
+                <p className="text-sm mt-1">
+                  Or create a new test to get started
+                </p>
               </div>
             </CardContent>
           )}

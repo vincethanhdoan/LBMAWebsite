@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../ui/card';
 import { Label } from '../../ui/label';
 import { Switch } from '../../ui/switch';
 import { Skeleton } from '../../ui/skeleton';
@@ -36,7 +42,7 @@ export function PersonalNotificationSettings() {
 
   async function handleAdminPrefToggle(
     key: keyof typeof defaultAdminPrefs,
-    value: boolean
+    value: boolean,
   ) {
     const updated = { ...adminPrefs, [key]: value };
     setAdminPrefs(updated);
@@ -53,7 +59,9 @@ export function PersonalNotificationSettings() {
     <Card>
       <CardHeader>
         <CardTitle>Email Preferences</CardTitle>
-        <CardDescription>Choose when you'd like to receive emails</CardDescription>
+        <CardDescription>
+          Choose when you'd like to receive emails
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {prefsLoading ? (
@@ -63,21 +71,49 @@ export function PersonalNotificationSettings() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : (
-          ([
-            { key: 'notify_messages' as const,        label: 'New Messages',           sub: 'Email me when I receive a message' },
-            { key: 'notify_blog_posts' as const,      label: 'New Blog Posts',         sub: 'Email me when anyone publishes a blog post' },
-            { key: 'notify_comment_replies' as const, label: 'Replies to My Comments', sub: 'Email me when someone replies to a comment I left' },
-            { key: 'notify_post_comments' as const,   label: 'Comments on My Posts',   sub: 'Email me when someone comments on a post or announcement I wrote' },
-          ] as const).map(({ key, label, sub }) => (
-            <div key={key} className="flex items-center justify-between gap-4 py-1">
-              <Label htmlFor={key} className="flex flex-col gap-0.5 cursor-pointer flex-1">
+          (
+            [
+              {
+                key: 'notify_messages' as const,
+                label: 'New Messages',
+                sub: 'Email me when I receive a message',
+              },
+              {
+                key: 'notify_blog_posts' as const,
+                label: 'New Blog Posts',
+                sub: 'Email me when anyone publishes a blog post',
+              },
+              {
+                key: 'notify_comment_replies' as const,
+                label: 'Replies to My Comments',
+                sub: 'Email me when someone replies to a comment I left',
+              },
+              {
+                key: 'notify_post_comments' as const,
+                label: 'Comments on My Posts',
+                sub: 'Email me when someone comments on a post or announcement I wrote',
+              },
+            ] as const
+          ).map(({ key, label, sub }) => (
+            <div
+              key={key}
+              className="flex items-center justify-between gap-4 py-1"
+            >
+              <Label
+                htmlFor={key}
+                className="flex flex-col gap-0.5 cursor-pointer flex-1"
+              >
                 <span className="font-medium">{label}</span>
-                <span className="text-xs text-muted-foreground font-normal">{sub}</span>
+                <span className="text-xs text-muted-foreground font-normal">
+                  {sub}
+                </span>
               </Label>
               <Switch
                 id={key}
                 checked={adminPrefs[key]}
-                onCheckedChange={(checked) => handleAdminPrefToggle(key, checked)}
+                onCheckedChange={(checked) =>
+                  handleAdminPrefToggle(key, checked)
+                }
               />
             </div>
           ))

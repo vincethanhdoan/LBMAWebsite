@@ -3,10 +3,20 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Skeleton } from './ui/skeleton';
-import { markSectionSeen, markNotificationsRead, markNotificationRead } from '../lib/supabase/mutations';
+import {
+  markSectionSeen,
+  markNotificationsRead,
+  markNotificationRead,
+} from '../lib/supabase/mutations';
 import { getCommentPostRef } from '../lib/supabase/queries';
-import { invalidateNotificationCaches, useNotificationSummary } from '../lib/hooks/notifications';
-import { notificationTitle, isLeadNotification } from '../lib/notificationDisplay';
+import {
+  invalidateNotificationCaches,
+  useNotificationSummary,
+} from '../lib/hooks/notifications';
+import {
+  notificationTitle,
+  isLeadNotification,
+} from '../lib/notificationDisplay';
 import type { UserNotification } from '../lib/types';
 
 type NotificationBellProps = {
@@ -18,10 +28,21 @@ type NotificationBellProps = {
   variant?: 'sidebar' | 'header';
 };
 
-export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, onOpenPost, variant = 'sidebar' }: NotificationBellProps) {
+export function NotificationBell({
+  userId,
+  onNavigate,
+  viewAllTab,
+  onOpenLead,
+  onOpenPost,
+  variant = 'sidebar',
+}: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
-  const { data: summary, isLoading: loading, refetch: loadSummary } = useNotificationSummary(userId);
+  const {
+    data: summary,
+    isLoading: loading,
+    refetch: loadSummary,
+  } = useNotificationSummary(userId);
 
   const totalUnread = summary
     ? summary.unreadMessages +
@@ -39,7 +60,10 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, o
     invalidateNotificationCaches(queryClient, userId);
   }
 
-  async function handleNavigate(tab: string, section?: 'announcements' | 'blog') {
+  async function handleNavigate(
+    tab: string,
+    section?: 'announcements' | 'blog',
+  ) {
     if (section) {
       await markSectionSeen(section).catch(console.error);
       await loadSummary();
@@ -58,10 +82,17 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, o
         onNavigate('leads');
       }
     } else {
-      const referenceType = notif.reference_type === 'announcement_comment' ? 'announcement_comment' : 'blog_comment';
-      const tab = referenceType === 'announcement_comment' ? 'announcements' : 'blog';
+      const referenceType =
+        notif.reference_type === 'announcement_comment'
+          ? 'announcement_comment'
+          : 'blog_comment';
+      const tab =
+        referenceType === 'announcement_comment' ? 'announcements' : 'blog';
       if (onOpenPost) {
-        const ref = await getCommentPostRef(referenceType, notif.reference_id).catch(() => null);
+        const ref = await getCommentPostRef(
+          referenceType,
+          notif.reference_id,
+        ).catch(() => null);
         if (ref) {
           onOpenPost(ref.tab, ref.postId);
         } else {
@@ -75,7 +106,13 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, o
   }
 
   return (
-    <Popover open={open} onOpenChange={(val) => { setOpen(val); if (val) loadSummary(); }}>
+    <Popover
+      open={open}
+      onOpenChange={(val) => {
+        setOpen(val);
+        if (val) loadSummary();
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           className={`relative p-1.5 rounded-md transition-colors ${
@@ -83,7 +120,11 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, o
               ? 'hover:bg-accent text-muted-foreground hover:text-foreground'
               : 'hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground'
           }`}
-          aria-label={totalUnread > 0 ? `${totalUnread} unread notifications` : 'Notifications'}
+          aria-label={
+            totalUnread > 0
+              ? `${totalUnread} unread notifications`
+              : 'Notifications'
+          }
         >
           <Bell className="h-4 w-4" />
           {totalUnread > 0 && (
@@ -139,21 +180,31 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, o
                 >
                   <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
                   <span className="text-sm">
-                    <strong>{summary!.unreadMessages}</strong>{' '}
-                    unread {summary!.unreadMessages === 1 ? 'message' : 'messages'}
+                    <strong>{summary!.unreadMessages}</strong> unread{' '}
+                    {summary!.unreadMessages === 1 ? 'message' : 'messages'}
                   </span>
                 </button>
               )}
               {summary!.announcements.count > 0 && (
                 <button
-                  onClick={() => handleNavigate('announcements', 'announcements')}
+                  onClick={() =>
+                    handleNavigate('announcements', 'announcements')
+                  }
                   className="w-full flex items-start gap-3 px-4 py-3 hover:bg-accent text-left transition-colors"
                 >
                   <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
                   <span className="text-sm line-clamp-2">
-                    {summary!.announcements.latestTitle
-                      ? <>New announcement: <strong>{summary!.announcements.latestTitle}</strong></>
-                      : <><strong>{summary!.announcements.count}</strong> new announcements</>}
+                    {summary!.announcements.latestTitle ? (
+                      <>
+                        New announcement:{' '}
+                        <strong>{summary!.announcements.latestTitle}</strong>
+                      </>
+                    ) : (
+                      <>
+                        <strong>{summary!.announcements.count}</strong> new
+                        announcements
+                      </>
+                    )}
                   </span>
                 </button>
               )}
@@ -164,9 +215,16 @@ export function NotificationBell({ userId, onNavigate, viewAllTab, onOpenLead, o
                 >
                   <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
                   <span className="text-sm line-clamp-2">
-                    {summary!.blog.latestTitle
-                      ? <>New blog post: <strong>{summary!.blog.latestTitle}</strong></>
-                      : <><strong>{summary!.blog.count}</strong> new blog posts</>}
+                    {summary!.blog.latestTitle ? (
+                      <>
+                        New blog post:{' '}
+                        <strong>{summary!.blog.latestTitle}</strong>
+                      </>
+                    ) : (
+                      <>
+                        <strong>{summary!.blog.count}</strong> new blog posts
+                      </>
+                    )}
                   </span>
                 </button>
               )}

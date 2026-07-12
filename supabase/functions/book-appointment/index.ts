@@ -1,92 +1,110 @@
 // supabase/functions/book-appointment/index.ts
 // Public endpoint — auth is the booking_token on enrollment_lead_program_bookings.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
   'https://www.lbmartialarts.com',
-])
+]);
 
 function corsHeaders(origin: string | null) {
-  const allowed = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.lbmartialarts.com'
+  const allowed =
+    origin && ALLOWED_ORIGINS.has(origin)
+      ? origin
+      : 'https://www.lbmartialarts.com';
   return {
     'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  }
+    'Access-Control-Allow-Headers':
+      'authorization, x-client-info, apikey, content-type',
+  };
 }
 
 function adminClient() {
   return createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    { auth: { persistSession: false } }
-  )
+    { auth: { persistSession: false } },
+  );
 }
 
 async function recalculateLeadStatus(
   supabase: ReturnType<typeof adminClient>,
-  leadId: string
+  leadId: string,
 ): Promise<boolean> {
   const { data: bookings } = await supabase
     .from('enrollment_lead_program_bookings')
     .select('status')
-    .eq('lead_id', leadId)
+    .eq('lead_id', leadId);
 
-  if (!bookings || bookings.length === 0) return false
+  if (!bookings || bookings.length === 0) return false;
 
-  const statuses = bookings.map((b: { status: string }) => b.status)
-  const allScheduledOrConfirmed = statuses.every((s: string) => s === 'scheduled' || s === 'confirmed')
-  const allConfirmed = statuses.every((s: string) => s === 'confirmed')
+  const statuses = bookings.map((b: { status: string }) => b.status);
+  const allScheduledOrConfirmed = statuses.every(
+    (s: string) => s === 'scheduled' || s === 'confirmed',
+  );
+  const allConfirmed = statuses.every((s: string) => s === 'confirmed');
 
   const leadStatus = allConfirmed
     ? 'appointment_confirmed'
     : allScheduledOrConfirmed
-    ? 'appointment_scheduled'
-    : 'approved'
+      ? 'appointment_scheduled'
+      : 'approved';
 
   await supabase
     .from('enrollment_leads')
     .update({ status: leadStatus })
-    .eq('lead_id', leadId)
+    .eq('lead_id', leadId);
 
-  return allScheduledOrConfirmed
+  return allScheduledOrConfirmed;
 }
 
-const BOOKABLE_STATUSES = ['link_sent', 'scheduled', 'confirmed']
+const BOOKABLE_STATUSES = ['link_sent', 'scheduled', 'confirmed'];
 
 Deno.serve(async (req) => {
-  const cors = corsHeaders(req.headers.get('Origin'))
+  const cors = corsHeaders(req.headers.get('Origin'));
 
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
-  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method !== 'POST')
+    return new Response('Method not allowed', { status: 405 });
 
-  const { token, slotId, appointmentDate } = await req.json()
+  const { token, slotId, appointmentDate } = await req.json();
   if (!token || !slotId || !appointmentDate) {
-    return new Response('Missing token, slotId, or appointmentDate', { status: 400, headers: cors })
+    return new Response('Missing token, slotId, or appointmentDate', {
+      status: 400,
+      headers: cors,
+    });
   }
 
-  const supabase = adminClient()
+  const supabase = adminClient();
 
   // Resolve token to program booking
   const { data: programBooking } = await supabase
     .from('enrollment_lead_program_bookings')
     .select('booking_id, lead_id, program_type, status')
     .eq('booking_token', token)
-    .single()
+    .single();
 
-  if (!programBooking) return new Response('Invalid booking token', { status: 404, headers: cors })
+  if (!programBooking)
+    return new Response('Invalid booking token', {
+      status: 404,
+      headers: cors,
+    });
   if (!BOOKABLE_STATUSES.includes(programBooking.status)) {
-    return new Response('This booking link is no longer valid', { status: 422, headers: cors })
+    return new Response('This booking link is no longer valid', {
+      status: 422,
+      headers: cors,
+    });
   }
 
   const { data: lead } = await supabase
     .from('enrollment_leads')
     .select('lead_id, parent_email, parent_name')
     .eq('lead_id', programBooking.lead_id)
-    .single()
+    .single();
 
-  if (!lead) return new Response('Lead not found', { status: 404, headers: cors })
+  if (!lead)
+    return new Response('Lead not found', { status: 404, headers: cors });
 
   // Validate slot
   const { data: slot } = await supabase
@@ -94,13 +112,20 @@ Deno.serve(async (req) => {
     .select('slot_id, start_time, day_of_week, is_active')
     .eq('slot_id', slotId)
     .eq('is_active', true)
-    .single()
+    .single();
 
-  if (!slot) return new Response('Slot not found or inactive', { status: 404, headers: cors })
+  if (!slot)
+    return new Response('Slot not found or inactive', {
+      status: 404,
+      headers: cors,
+    });
 
-  const targetDate = new Date(appointmentDate + 'T12:00:00')
+  const targetDate = new Date(appointmentDate + 'T12:00:00');
   if (targetDate.getDay() !== slot.day_of_week) {
-    return new Response('Appointment date does not match slot day', { status: 422, headers: cors })
+    return new Response('Appointment date does not match slot day', {
+      status: 422,
+      headers: cors,
+    });
   }
 
   const { data: block, error: blockError } = await supabase
@@ -109,10 +134,18 @@ Deno.serve(async (req) => {
     .lte('start_date', appointmentDate)
     .gte('end_date', appointmentDate)
     .limit(1)
-    .maybeSingle()
+    .maybeSingle();
 
-  if (blockError) return new Response('Unable to verify availability', { status: 500, headers: cors })
-  if (block) return new Response('This date is not available', { status: 422, headers: cors })
+  if (blockError)
+    return new Response('Unable to verify availability', {
+      status: 500,
+      headers: cors,
+    });
+  if (block)
+    return new Response('This date is not available', {
+      status: 422,
+      headers: cors,
+    });
 
   const { data: conflict } = await supabase
     .from('enrollment_lead_program_bookings')
@@ -122,23 +155,30 @@ Deno.serve(async (req) => {
     .in('status', ['scheduled', 'confirmed'])
     .neq('lead_id', programBooking.lead_id)
     .limit(1)
-    .maybeSingle()
+    .maybeSingle();
 
   if (conflict) {
     return new Response(JSON.stringify({ code: 'slot_taken' }), {
       status: 409,
       headers: { ...cors, 'Content-Type': 'application/json' },
-    })
+    });
   }
 
-  const todayPacific = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date())
-  const today = new Date(todayPacific + 'T12:00:00')
-  const daysUntilAppt = Math.floor((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  const todayPacific = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+  }).format(new Date());
+  const today = new Date(todayPacific + 'T12:00:00');
+  const daysUntilAppt = Math.floor(
+    (targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
   if (daysUntilAppt < 0) {
-    return new Response('Appointment date is in the past', { status: 422, headers: cors })
+    return new Response('Appointment date is in the past', {
+      status: 422,
+      headers: cors,
+    });
   }
   // Auto-confirm if appointment is within 2 days (inclusive)
-  const newProgramStatus = daysUntilAppt <= 2 ? 'confirmed' : 'scheduled'
+  const newProgramStatus = daysUntilAppt <= 2 ? 'confirmed' : 'scheduled';
 
   const { error: updateError } = await supabase
     .from('enrollment_lead_program_bookings')
@@ -149,19 +189,22 @@ Deno.serve(async (req) => {
       status: newProgramStatus,
       updated_by: null,
     })
-    .eq('booking_id', programBooking.booking_id)
+    .eq('booking_id', programBooking.booking_id);
 
   if (updateError) {
-    if (updateError.code === '23P01' || updateError.message?.includes('slot_taken')) {
+    if (
+      updateError.code === '23P01' ||
+      updateError.message?.includes('slot_taken')
+    ) {
       return new Response(JSON.stringify({ code: 'slot_taken' }), {
         status: 409,
         headers: { ...cors, 'Content-Type': 'application/json' },
-      })
+      });
     }
-    return new Response('Booking failed', { status: 500, headers: cors })
+    return new Response('Booking failed', { status: 500, headers: cors });
   }
 
-  const allBooked = await recalculateLeadStatus(supabase, lead.lead_id)
+  const allBooked = await recalculateLeadStatus(supabase, lead.lead_id);
 
   if (allBooked) {
     const { error: notifError } = await supabase
@@ -172,11 +215,17 @@ Deno.serve(async (req) => {
         channel: 'email',
         type: 'booking_confirmation',
         status: 'queued',
-      })
+      });
 
     if (notifError) {
-      console.error('[book-appointment] notification insert error:', notifError)
-      return new Response('Booking saved but notification failed', { status: 500, headers: cors })
+      console.error(
+        '[book-appointment] notification insert error:',
+        notifError,
+      );
+      return new Response('Booking saved but notification failed', {
+        status: 500,
+        headers: cors,
+      });
     }
   }
 
@@ -187,6 +236,6 @@ Deno.serve(async (req) => {
       appointment_date: appointmentDate,
       appointment_time: slot.start_time,
     }),
-    { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
-  )
-})
+    { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } },
+  );
+});

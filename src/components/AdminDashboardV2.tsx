@@ -73,7 +73,12 @@ type AdminTabId =
 
 const navGroups: {
   label: string;
-  items: { id: AdminTabId; label: string; icon: React.ElementType; ownerOnly?: boolean }[];
+  items: {
+    id: AdminTabId;
+    label: string;
+    icon: React.ElementType;
+    ownerOnly?: boolean;
+  }[];
 }[] = [
   {
     label: 'Communications',
@@ -110,12 +115,21 @@ function getTabLabel(id: AdminTabId): string {
   return 'Settings';
 }
 
-export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: AdminDashboardV2Props) {
+export function AdminDashboardV2({
+  user,
+  onLogout,
+  onRefreshUser,
+  isOwner,
+}: AdminDashboardV2Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
-  const activeTab: AdminTabId = rawTab === 'profile' ? 'settings' : ((rawTab as AdminTabId) ?? 'notifications');
+  const activeTab: AdminTabId =
+    rawTab === 'profile'
+      ? 'settings'
+      : ((rawTab as AdminTabId) ?? 'notifications');
   const queryClient = useQueryClient();
-  const setActiveTab = (tab: AdminTabId) => setSearchParams({ tab }, { replace: true });
+  const setActiveTab = (tab: AdminTabId) =>
+    setSearchParams({ tab }, { replace: true });
   const { data: counts } = useSidebarCounts(user.id);
   const unreadMessages = counts?.unreadMessages ?? 0;
   const unreadNotifications = counts?.unreadNotifications ?? 0;
@@ -137,10 +151,18 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
         {/* ── Brand header ── */}
         <SidebarHeader className="px-3 py-4">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="LBMAA Logo" className="h-9 w-9 shrink-0 rounded-lg object-contain" />
+            <img
+              src="/logo.png"
+              alt="LBMAA Logo"
+              className="h-9 w-9 shrink-0 rounded-lg object-contain"
+            />
             <div className="flex flex-col flex-1 group-data-[collapsible=icon]:hidden">
-              <span className="text-sm font-semibold leading-none text-sidebar-foreground">LBMAA</span>
-              <span className="mt-0.5 text-xs text-sidebar-foreground/60">Admin Portal</span>
+              <span className="text-sm font-semibold leading-none text-sidebar-foreground">
+                LBMAA
+              </span>
+              <span className="mt-0.5 text-xs text-sidebar-foreground/60">
+                Admin Portal
+              </span>
             </div>
           </div>
         </SidebarHeader>
@@ -157,57 +179,71 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
                   {group.items
                     .filter((item) => !item.ownerOnly || isOwner)
                     .map(({ id, label, icon: Icon }) => (
-                    <SidebarMenuItem key={id}>
-                      <SidebarMenuButton
-                        isActive={activeTab === id}
-                        onClick={() => {
-                          setActiveTab(id);
-                          if (id === 'announcements' || id === 'blog') {
-                            markSectionSeen(id).then(() => {
-                              queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(user.id) });
-                              queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(user.id) });
-                              queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(user.id) });
-                            }).catch(console.error);
+                      <SidebarMenuItem key={id}>
+                        <SidebarMenuButton
+                          isActive={activeTab === id}
+                          onClick={() => {
+                            setActiveTab(id);
+                            if (id === 'announcements' || id === 'blog') {
+                              markSectionSeen(id)
+                                .then(() => {
+                                  queryClient.invalidateQueries({
+                                    queryKey: queryKeys.sidebarCounts(user.id),
+                                  });
+                                  queryClient.invalidateQueries({
+                                    queryKey: queryKeys.homeCounts(user.id),
+                                  });
+                                  queryClient.invalidateQueries({
+                                    queryKey: queryKeys.notificationSummary(
+                                      user.id,
+                                    ),
+                                  });
+                                })
+                                .catch(console.error);
+                            }
+                          }}
+                          tooltip={label}
+                          size="lg"
+                          className={
+                            activeTab === id
+                              ? 'border-l-[3px] border-sidebar-primary rounded-tl-none rounded-bl-none pl-[calc(0.5rem-3px)]'
+                              : ''
                           }
-                        }}
-                        tooltip={label}
-                        size="lg"
-                        className={
-                          activeTab === id
-                            ? 'border-l-[3px] border-sidebar-primary rounded-tl-none rounded-bl-none pl-[calc(0.5rem-3px)]'
-                            : ''
-                        }
-                      >
-                        <Icon />
-                        <span>{label}</span>
-                      </SidebarMenuButton>
-                      {id === 'notifications' && unreadNotifications > 0 && (
-                        <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
-                          {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                        </SidebarMenuBadge>
-                      )}
-                      {id === 'messages' && unreadMessages > 0 && (
-                        <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
-                          {unreadMessages > 9 ? '9+' : unreadMessages}
-                        </SidebarMenuBadge>
-                      )}
-                      {id === 'announcements' && unreadAnnouncements > 0 && (
-                        <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
-                          {unreadAnnouncements > 9 ? '9+' : unreadAnnouncements}
-                        </SidebarMenuBadge>
-                      )}
-                      {id === 'blog' && unreadBlog > 0 && (
-                        <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
-                          {unreadBlog > 9 ? '9+' : unreadBlog}
-                        </SidebarMenuBadge>
-                      )}
-                      {id === 'leads' && actionNeededCount > 0 && (
-                        <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
-                          {actionNeededCount > 9 ? '9+' : actionNeededCount}
-                        </SidebarMenuBadge>
-                      )}
-                    </SidebarMenuItem>
-                  ))}
+                        >
+                          <Icon />
+                          <span>{label}</span>
+                        </SidebarMenuButton>
+                        {id === 'notifications' && unreadNotifications > 0 && (
+                          <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
+                            {unreadNotifications > 9
+                              ? '9+'
+                              : unreadNotifications}
+                          </SidebarMenuBadge>
+                        )}
+                        {id === 'messages' && unreadMessages > 0 && (
+                          <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
+                            {unreadMessages > 9 ? '9+' : unreadMessages}
+                          </SidebarMenuBadge>
+                        )}
+                        {id === 'announcements' && unreadAnnouncements > 0 && (
+                          <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
+                            {unreadAnnouncements > 9
+                              ? '9+'
+                              : unreadAnnouncements}
+                          </SidebarMenuBadge>
+                        )}
+                        {id === 'blog' && unreadBlog > 0 && (
+                          <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
+                            {unreadBlog > 9 ? '9+' : unreadBlog}
+                          </SidebarMenuBadge>
+                        )}
+                        {id === 'leads' && actionNeededCount > 0 && (
+                          <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
+                            {actionNeededCount > 9 ? '9+' : actionNeededCount}
+                          </SidebarMenuBadge>
+                        )}
+                      </SidebarMenuItem>
+                    ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -222,7 +258,9 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
           <div className="px-2 group-data-[collapsible=icon]:hidden">
             <div className="flex items-center gap-2 rounded-lg px-2 py-2">
               <Avatar className="h-8 w-8 shrink-0">
-                {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                {user.avatarUrl && (
+                  <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+                )}
                 <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
                   {getInitials(user.displayName)}
                 </AvatarFallback>
@@ -231,7 +269,9 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
                 <p className="truncate text-sm font-medium leading-none text-sidebar-foreground">
                   {user.displayName}
                 </p>
-                <p className="mt-0.5 truncate text-xs text-sidebar-foreground/60">{user.email}</p>
+                <p className="mt-0.5 truncate text-xs text-sidebar-foreground/60">
+                  {user.email}
+                </p>
               </div>
             </div>
             <div className="mt-1 flex gap-1">
@@ -264,7 +304,9 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
               aria-label="Settings"
             >
               <Avatar className="h-8 w-8">
-                {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                {user.avatarUrl && (
+                  <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+                )}
                 <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
                   {getInitials(user.displayName)}
                 </AvatarFallback>
@@ -300,26 +342,38 @@ export function AdminDashboardV2({ user, onLogout, onRefreshUser, isOwner }: Adm
             userId={user.id}
             onNavigate={(tab) => setActiveTab(tab as AdminTabId)}
             viewAllTab="notifications"
-            onOpenLead={(id) => setSearchParams({ tab: 'leads', lead: id }, { replace: true })}
-            onOpenPost={(tab, postId) => setSearchParams({ tab, post: postId }, { replace: true })}
+            onOpenLead={(id) =>
+              setSearchParams({ tab: 'leads', lead: id }, { replace: true })
+            }
+            onOpenPost={(tab, postId) =>
+              setSearchParams({ tab, post: postId }, { replace: true })
+            }
             variant="header"
           />
         </header>
 
         {/* Scrollable page content */}
-        <main className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}>
-          {activeTab === 'notifications' && <AdminNotificationsTab userId={user.id} userEmail={user.email} />}
-          {activeTab === 'announcements' && <AdminAnnouncementsTab user={user} />}
-          {activeTab === 'blog' && <AdminBlogTab user={user} />}
-          {activeTab === 'messages' && (
-            <AdminMessagesTab user={user} />
+        <main
+          className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}
+        >
+          {activeTab === 'notifications' && (
+            <AdminNotificationsTab userId={user.id} userEmail={user.email} />
           )}
+          {activeTab === 'announcements' && (
+            <AdminAnnouncementsTab user={user} />
+          )}
+          {activeTab === 'blog' && <AdminBlogTab user={user} />}
+          {activeTab === 'messages' && <AdminMessagesTab user={user} />}
           {activeTab === 'families' && <AdminUsersTab user={user} />}
           {activeTab === 'feedback' && <AdminFeedbackTab />}
           {activeTab === 'leads' && <AdminEnrollmentLeadsTab />}
           {activeTab === 'availability' && <AdminAvailabilitySettings />}
-          {activeTab === 'settings' && <AdminSettingsTab user={user} onRefreshUser={onRefreshUser} />}
-          {activeTab === 'team' && isOwner && <AdminTeamTab user={user} onRefreshUser={onRefreshUser} />}
+          {activeTab === 'settings' && (
+            <AdminSettingsTab user={user} onRefreshUser={onRefreshUser} />
+          )}
+          {activeTab === 'team' && isOwner && (
+            <AdminTeamTab user={user} onRefreshUser={onRefreshUser} />
+          )}
         </main>
       </SidebarInset>
     </SidebarProvider>

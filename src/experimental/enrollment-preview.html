@@ -1,1024 +1,1211 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Enrollment Dashboard – Design Preview</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enrollment Dashboard – Design Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Nunito:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-  :root {
-    --red:       oklch(38% 0.13 23);
-    --red-light: oklch(96% 0.018 23);
-    --red-dim:   oklch(55% 0.10 23);
-    --cream:     oklch(97.5% 0.006 60);
-    --sand:      oklch(93% 0.012 60);
-    --border:    oklch(88% 0.010 60);
-    --text:      oklch(22% 0.008 60);
-    --muted:     oklch(55% 0.008 60);
-    --card:      #fff;
+      :root {
+        --red: oklch(38% 0.13 23);
+        --red-light: oklch(96% 0.018 23);
+        --red-dim: oklch(55% 0.1 23);
+        --cream: oklch(97.5% 0.006 60);
+        --sand: oklch(93% 0.012 60);
+        --border: oklch(88% 0.01 60);
+        --text: oklch(22% 0.008 60);
+        --muted: oklch(55% 0.008 60);
+        --card: #fff;
 
-    --amber:     oklch(72% 0.13 65);
-    --amber-bg:  oklch(97% 0.022 65);
-    --sage:      oklch(60% 0.08 165);
-    --sage-bg:   oklch(96% 0.018 165);
+        --amber: oklch(72% 0.13 65);
+        --amber-bg: oklch(97% 0.022 65);
+        --sage: oklch(60% 0.08 165);
+        --sage-bg: oklch(96% 0.018 165);
 
-    --green:     oklch(50% 0.12 145);
-    --green-bg:  oklch(96% 0.022 145);
-  }
+        --green: oklch(50% 0.12 145);
+        --green-bg: oklch(96% 0.022 145);
+      }
 
-  body {
-    font-family: 'Nunito', sans-serif;
-    background: var(--cream);
-    color: var(--text);
-    font-size: 14px;
-    line-height: 1.5;
-  }
+      body {
+        font-family: 'Nunito', sans-serif;
+        background: var(--cream);
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.5;
+      }
 
-  h1, h2, .heading { font-family: 'Barlow Condensed', sans-serif; }
+      h1,
+      h2,
+      .heading {
+        font-family: 'Barlow Condensed', sans-serif;
+      }
 
-  /* ── Layout ── */
-  .page {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 32px 20px 60px;
-  }
+      /* ── Layout ── */
+      .page {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 32px 20px 60px;
+      }
 
-  .page-title {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-  .page-heading {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 32px;
-  }
+      .page-title {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .page-heading {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 32px;
+      }
 
-  /* ── Option toggle ── */
-  .toggle-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 28px;
-    align-items: center;
-  }
-  .toggle-label {
-    font-size: 13px;
-    color: var(--muted);
-    font-weight: 600;
-    margin-right: 4px;
-  }
-  .toggle-btn {
-    padding: 6px 16px;
-    border-radius: 20px;
-    border: 1.5px solid var(--border);
-    background: var(--card);
-    font-family: 'Nunito', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .toggle-btn.active {
-    background: var(--red);
-    border-color: var(--red);
-    color: #fff;
-  }
+      /* ── Option toggle ── */
+      .toggle-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 28px;
+        align-items: center;
+      }
+      .toggle-label {
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 600;
+        margin-right: 4px;
+      }
+      .toggle-btn {
+        padding: 6px 16px;
+        border-radius: 20px;
+        border: 1.5px solid var(--border);
+        background: var(--card);
+        font-family: 'Nunito', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .toggle-btn.active {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+      }
 
-  /* ── Option panels ── */
-  .option { display: none; }
-  .option.active { display: block; }
+      /* ── Option panels ── */
+      .option {
+        display: none;
+      }
+      .option.active {
+        display: block;
+      }
 
-  /* ── Admin panel shell ── */
-  .panel {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-  }
+      /* ── Admin panel shell ── */
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
 
-  .panel-header {
-    padding: 20px 24px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-  }
-  .panel-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-  }
-  .panel-subtitle {
-    font-size: 12.5px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-  .panel-subtitle strong { color: var(--red); font-weight: 700; }
+      .panel-header {
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .panel-title {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .panel-subtitle {
+        font-size: 12.5px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .panel-subtitle strong {
+        color: var(--red);
+        font-weight: 700;
+      }
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border-radius: 8px;
-    font-family: 'Nunito', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1.5px solid var(--border);
-    background: var(--card);
-    color: var(--text);
-    white-space: nowrap;
-  }
-  .btn-primary {
-    background: var(--red);
-    border-color: var(--red);
-    color: #fff;
-  }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 8px;
+        font-family: 'Nunito', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1.5px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+      }
 
-  /* ── Tabs ── */
-  .tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    overflow-x: auto;
-    gap: 0;
-  }
-  .tab {
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    border-bottom: 2.5px solid transparent;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: color 0.12s;
-    position: relative;
-    top: 1px;
-  }
-  .tab.active {
-    color: var(--red);
-    border-bottom-color: var(--red);
-  }
-  .tab .count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 9px;
-    background: var(--red-light);
-    color: var(--red);
-    font-size: 11px;
-    font-weight: 700;
-    margin-left: 5px;
-  }
-  .tab:not(.active) .count {
-    background: var(--sand);
-    color: var(--muted);
-  }
+      /* ── Tabs ── */
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        padding: 0 24px;
+        overflow-x: auto;
+        gap: 0;
+      }
+      .tab {
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        border-bottom: 2.5px solid transparent;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: color 0.12s;
+        position: relative;
+        top: 1px;
+      }
+      .tab.active {
+        color: var(--red);
+        border-bottom-color: var(--red);
+      }
+      .tab .count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background: var(--red-light);
+        color: var(--red);
+        font-size: 11px;
+        font-weight: 700;
+        margin-left: 5px;
+      }
+      .tab:not(.active) .count {
+        background: var(--sand);
+        color: var(--muted);
+      }
 
-  /* ── Search ── */
-  .search-row {
-    padding: 14px 24px;
-    border-bottom: 1px solid var(--border);
-  }
-  .search-input {
-    width: 100%;
-    max-width: 340px;
-    padding: 8px 12px 8px 36px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-family: 'Nunito', sans-serif;
-    font-size: 13px;
-    background: var(--sand);
-    color: var(--text);
-    outline: none;
-    position: relative;
-  }
-  .search-wrap { position: relative; display: inline-block; }
-  .search-icon {
-    position: absolute;
-    left: 10px; top: 50%;
-    transform: translateY(-50%);
-    color: var(--muted);
-    font-size: 14px;
-    pointer-events: none;
-  }
+      /* ── Search ── */
+      .search-row {
+        padding: 14px 24px;
+        border-bottom: 1px solid var(--border);
+      }
+      .search-input {
+        width: 100%;
+        max-width: 340px;
+        padding: 8px 12px 8px 36px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-family: 'Nunito', sans-serif;
+        font-size: 13px;
+        background: var(--sand);
+        color: var(--text);
+        outline: none;
+        position: relative;
+      }
+      .search-wrap {
+        position: relative;
+        display: inline-block;
+      }
+      .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-size: 14px;
+        pointer-events: none;
+      }
 
-  /* ── Tab explanation ── */
-  .tab-explain {
-    padding: 10px 24px;
-    background: var(--sand);
-    border-bottom: 1px solid var(--border);
-    font-size: 12.5px;
-    color: var(--muted);
-  }
+      /* ── Tab explanation ── */
+      .tab-explain {
+        padding: 10px 24px;
+        background: var(--sand);
+        border-bottom: 1px solid var(--border);
+        font-size: 12.5px;
+        color: var(--muted);
+      }
 
-  /* ── Content area ── */
-  .content { padding: 20px 24px; }
+      /* ── Content area ── */
+      .content {
+        padding: 20px 24px;
+      }
 
-  /* ── Date group header ── */
-  .date-group { margin-bottom: 24px; }
-  .date-group-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  .date-label {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    color: var(--text);
-    text-transform: uppercase;
-  }
-  .date-label.today { color: var(--red); }
-  .date-pill {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 10px;
-    background: var(--red);
-    color: #fff;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-  .date-count {
-    font-size: 12px;
-    color: var(--muted);
-    font-weight: 600;
-    margin-left: auto;
-  }
-  .date-line {
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
+      /* ── Date group header ── */
+      .date-group {
+        margin-bottom: 24px;
+      }
+      .date-group-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .date-label {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        color: var(--text);
+        text-transform: uppercase;
+      }
+      .date-label.today {
+        color: var(--red);
+      }
+      .date-pill {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: var(--red);
+        color: #fff;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .date-count {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+        margin-left: auto;
+      }
+      .date-line {
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
 
-  /* ── Lead card ── */
-  .lead-card {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 8px;
-    background: var(--card);
-  }
-  .lead-card.is-new { border-color: oklch(38% 0.13 23 / 0.3); }
+      /* ── Lead card ── */
+      .lead-card {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 8px;
+        background: var(--card);
+      }
+      .lead-card.is-new {
+        border-color: oklch(38% 0.13 23 / 0.3);
+      }
 
-  .lead-card-inner {
-    padding: 14px 16px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px 16px;
-    align-items: start;
-  }
+      .lead-card-inner {
+        padding: 14px 16px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px 16px;
+        align-items: start;
+      }
 
-  .lead-name {
-    font-weight: 700;
-    font-size: 14.5px;
-  }
-  .lead-appt-time {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--red);
-    line-height: 1;
-    white-space: nowrap;
-  }
-  .lead-appt-label {
-    font-size: 11px;
-    color: var(--muted);
-    font-weight: 600;
-    text-align: right;
-  }
+      .lead-name {
+        font-weight: 700;
+        font-size: 14.5px;
+      }
+      .lead-appt-time {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--red);
+        line-height: 1;
+        white-space: nowrap;
+      }
+      .lead-appt-label {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 600;
+        text-align: right;
+      }
 
-  .lead-meta {
-    grid-column: 1;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 12px;
-    font-size: 12.5px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-  .lead-meta a { color: var(--red-dim); text-decoration: none; }
+      .lead-meta {
+        grid-column: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        font-size: 12.5px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .lead-meta a {
+        color: var(--red-dim);
+        text-decoration: none;
+      }
 
-  .lead-programs {
-    grid-column: 1 / -1;
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 4px;
-  }
+      .lead-programs {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
 
-  .program-badge {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 9px;
-    border-radius: 10px;
-    letter-spacing: 0.02em;
-  }
-  .badge-dragons {
-    background: var(--amber-bg);
-    color: var(--amber);
-    border: 1px solid oklch(72% 0.13 65 / 0.3);
-  }
-  .badge-youth {
-    background: var(--sage-bg);
-    color: var(--sage);
-    border: 1px solid oklch(60% 0.08 165 / 0.3);
-  }
+      .program-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 10px;
+        letter-spacing: 0.02em;
+      }
+      .badge-dragons {
+        background: var(--amber-bg);
+        color: var(--amber);
+        border: 1px solid oklch(72% 0.13 65 / 0.3);
+      }
+      .badge-youth {
+        background: var(--sage-bg);
+        color: var(--sage);
+        border: 1px solid oklch(60% 0.08 165 / 0.3);
+      }
 
-  .status-badge {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 9px;
-    border-radius: 10px;
-    white-space: nowrap;
-  }
-  .badge-new { background: var(--red-light); color: var(--red); border: 1px solid oklch(38% 0.13 23 / 0.2); }
-  .badge-confirmed { background: var(--green-bg); color: var(--green); border: 1px solid oklch(50% 0.12 145 / 0.25); }
-  .badge-scheduled { background: oklch(96% 0.018 145); color: oklch(42% 0.10 145); border: 1px solid oklch(42% 0.10 145 / 0.2); }
-  .badge-approved { background: oklch(97% 0.022 65); color: oklch(50% 0.12 65); border: 1px solid oklch(50% 0.12 65 / 0.2); }
+      .status-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 10px;
+        white-space: nowrap;
+      }
+      .badge-new {
+        background: var(--red-light);
+        color: var(--red);
+        border: 1px solid oklch(38% 0.13 23 / 0.2);
+      }
+      .badge-confirmed {
+        background: var(--green-bg);
+        color: var(--green);
+        border: 1px solid oklch(50% 0.12 145 / 0.25);
+      }
+      .badge-scheduled {
+        background: oklch(96% 0.018 145);
+        color: oklch(42% 0.1 145);
+        border: 1px solid oklch(42% 0.1 145 / 0.2);
+      }
+      .badge-approved {
+        background: oklch(97% 0.022 65);
+        color: oklch(50% 0.12 65);
+        border: 1px solid oklch(50% 0.12 65 / 0.2);
+      }
 
-  .lead-actions {
-    grid-column: 1 / -1;
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-    margin-top: 8px;
-  }
-  .action-btn {
-    font-family: 'Nunito', sans-serif;
-    font-size: 12.5px;
-    font-weight: 700;
-    padding: 5px 12px;
-    border-radius: 7px;
-    border: 1.5px solid var(--border);
-    background: var(--card);
-    color: var(--text);
-    cursor: pointer;
-  }
-  .action-btn.primary {
-    background: var(--red);
-    border-color: var(--red);
-    color: #fff;
-  }
-  .action-btn.danger {
-    color: var(--red);
-    border-color: oklch(38% 0.13 23 / 0.3);
-  }
+      .lead-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+        margin-top: 8px;
+      }
+      .action-btn {
+        font-family: 'Nunito', sans-serif;
+        font-size: 12.5px;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 7px;
+        border: 1.5px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        cursor: pointer;
+      }
+      .action-btn.primary {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+      }
+      .action-btn.danger {
+        color: var(--red);
+        border-color: oklch(38% 0.13 23 / 0.3);
+      }
 
-  /* ── New lead card (flat list style) ── */
-  .new-lead-card {
-    border: 1px solid oklch(38% 0.13 23 / 0.28);
-    border-radius: 10px;
-    background: var(--card);
-    padding: 14px 16px;
-    margin-bottom: 8px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 6px 16px;
-    align-items: start;
-  }
+      /* ── New lead card (flat list style) ── */
+      .new-lead-card {
+        border: 1px solid oklch(38% 0.13 23 / 0.28);
+        border-radius: 10px;
+        background: var(--card);
+        padding: 14px 16px;
+        margin-bottom: 8px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 6px 16px;
+        align-items: start;
+      }
 
-  /* ── Option B: week strip ── */
-  .week-strip {
-    display: flex;
-    gap: 0;
-    padding: 14px 24px;
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-    background: var(--cream);
-  }
-  .week-day {
-    flex: 1;
-    min-width: 52px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 8px 4px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background 0.12s;
-    gap: 4px;
-  }
-  .week-day:hover { background: var(--sand); }
-  .week-day.active {
-    background: var(--red);
-    color: #fff;
-  }
-  .week-day-name {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    opacity: 0.7;
-  }
-  .week-day.active .week-day-name { opacity: 0.85; color: #fff; }
-  .week-day-num {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1;
-  }
-  .week-day-dots {
-    display: flex;
-    gap: 3px;
-    min-height: 8px;
-    align-items: center;
-  }
-  .dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--red);
-  }
-  .week-day.active .dot { background: rgba(255,255,255,0.7); }
-  .week-day-count {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--muted);
-  }
-  .week-day.active .week-day-count { color: rgba(255,255,255,0.85); }
-  .week-day-zero .dot { display: none; }
-  .week-day-zero .week-day-count { opacity: 0.35; }
+      /* ── Option B: week strip ── */
+      .week-strip {
+        display: flex;
+        gap: 0;
+        padding: 14px 24px;
+        border-bottom: 1px solid var(--border);
+        overflow-x: auto;
+        background: var(--cream);
+      }
+      .week-day {
+        flex: 1;
+        min-width: 52px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px 4px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.12s;
+        gap: 4px;
+      }
+      .week-day:hover {
+        background: var(--sand);
+      }
+      .week-day.active {
+        background: var(--red);
+        color: #fff;
+      }
+      .week-day-name {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        opacity: 0.7;
+      }
+      .week-day.active .week-day-name {
+        opacity: 0.85;
+        color: #fff;
+      }
+      .week-day-num {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .week-day-dots {
+        display: flex;
+        gap: 3px;
+        min-height: 8px;
+        align-items: center;
+      }
+      .dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--red);
+      }
+      .week-day.active .dot {
+        background: rgba(255, 255, 255, 0.7);
+      }
+      .week-day-count {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .week-day.active .week-day-count {
+        color: rgba(255, 255, 255, 0.85);
+      }
+      .week-day-zero .dot {
+        display: none;
+      }
+      .week-day-zero .week-day-count {
+        opacity: 0.35;
+      }
 
-  /* ── Option label ── */
-  .option-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 14px;
-  }
-  .option-tag {
-    background: var(--red);
-    color: #fff;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-  }
+      /* ── Option label ── */
+      .option-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 14px;
+      }
+      .option-tag {
+        background: var(--red);
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+      }
 
-  /* kebab / more */
-  .kebab {
-    width: 28px; height: 28px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 6px;
-    border: 1.5px solid var(--border);
-    background: transparent;
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 16px;
-  }
+      /* kebab / more */
+      .kebab {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1.5px solid var(--border);
+        background: transparent;
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 16px;
+      }
 
-  .aging { font-size: 11.5px; color: var(--muted); font-weight: 600; }
-  .aging.old { color: var(--red); }
+      .aging {
+        font-size: 11.5px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .aging.old {
+        color: var(--red);
+      }
 
-  .note-hint {
-    font-size: 12px;
-    color: var(--muted);
-    font-style: italic;
-    grid-column: 1 / -1;
-  }
+      .note-hint {
+        font-size: 12px;
+        color: var(--muted);
+        font-style: italic;
+        grid-column: 1 / -1;
+      }
 
-  hr.section-break {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 28px 0;
-  }
+      hr.section-break {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 28px 0;
+      }
 
-  /* Message box — full border, no side stripe */
-  .message-box {
-    grid-column: 1 / -1;
-    background: var(--sand);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 12.5px;
-    color: var(--muted);
-    line-height: 1.55;
-    margin-top: 2px;
-  }
+      /* Message box — full border, no side stripe */
+      .message-box {
+        grid-column: 1 / -1;
+        background: var(--sand);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 12.5px;
+        color: var(--muted);
+        line-height: 1.55;
+        margin-top: 2px;
+      }
 
-  @media (max-width: 600px) {
-    .page { padding: 20px 12px 40px; }
-    .panel-header { flex-direction: column; }
-    .tabs { padding: 0 12px; }
-    .content { padding: 16px 12px; }
-    .week-strip { padding: 10px 12px; }
-    .search-row { padding: 12px; }
-    .tab-explain { padding: 8px 12px; }
-  }
-</style>
-</head>
-<body>
-<div class="page">
+      @media (max-width: 600px) {
+        .page {
+          padding: 20px 12px 40px;
+        }
+        .panel-header {
+          flex-direction: column;
+        }
+        .tabs {
+          padding: 0 12px;
+        }
+        .content {
+          padding: 16px 12px;
+        }
+        .week-strip {
+          padding: 10px 12px;
+        }
+        .search-row {
+          padding: 12px;
+        }
+        .tab-explain {
+          padding: 8px 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <p class="page-title">Design Preview</p>
+      <h1 class="page-heading">Enrollment Dashboard — Two Options</h1>
 
-  <p class="page-title">Design Preview</p>
-  <h1 class="page-heading">Enrollment Dashboard — Two Options</h1>
+      <div class="toggle-row">
+        <span class="toggle-label">View:</span>
+        <button class="toggle-btn active" onclick="show('a', this)">
+          Option A — Date groups
+        </button>
+        <button class="toggle-btn" onclick="show('b', this)">
+          Option B — Week strip + groups
+        </button>
+      </div>
 
-  <div class="toggle-row">
-    <span class="toggle-label">View:</span>
-    <button class="toggle-btn active" onclick="show('a', this)">Option A — Date groups</button>
-    <button class="toggle-btn" onclick="show('b', this)">Option B — Week strip + groups</button>
-  </div>
-
-  <!-- ═══════════════════════════════════════════
+      <!-- ═══════════════════════════════════════════
        OPTION A — Date-grouped list
   ════════════════════════════════════════════ -->
-  <div id="opt-a" class="option active">
-    <p class="option-label"><span class="option-tag">A</span> Date-grouped list</p>
-    <div class="panel">
-
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Enrollment Leads</div>
-          <div class="panel-subtitle"><strong>2 new &nbsp;·&nbsp;</strong> 1 approved &nbsp;·&nbsp; 5 scheduled &nbsp;·&nbsp; 18 total</div>
-        </div>
-        <button class="btn">+ New Lead</button>
-      </div>
-
-      <div class="tabs">
-        <div class="tab">New <span class="count">2</span></div>
-        <div class="tab">Approved <span class="count">1</span></div>
-        <div class="tab active">Scheduled <span class="count">5</span></div>
-        <div class="tab">Confirmed <span class="count">3</span></div>
-        <div class="tab">Closed / Denied</div>
-      </div>
-
-      <div class="tab-explain">
-        Booking link sent &amp; date picked — waiting for day of class.
-      </div>
-
-      <div class="search-row">
-        <div class="search-wrap">
-          <span class="search-icon">⌕</span>
-          <input class="search-input" type="text" placeholder="Search by name, email, or student…">
-        </div>
-      </div>
-
-      <div class="content">
-
-        <!-- Date group: TODAY -->
-        <div class="date-group">
-          <div class="date-group-header">
-            <span class="date-label today">Mon Apr 28</span>
-            <span class="date-pill">Today</span>
-            <div class="date-line"></div>
-            <span class="date-count">2 appointments</span>
+      <div id="opt-a" class="option active">
+        <p class="option-label">
+          <span class="option-tag">A</span> Date-grouped list
+        </p>
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Enrollment Leads</div>
+              <div class="panel-subtitle">
+                <strong>2 new &nbsp;·&nbsp;</strong> 1 approved &nbsp;·&nbsp; 5
+                scheduled &nbsp;·&nbsp; 18 total
+              </div>
+            </div>
+            <button class="btn">+ New Lead</button>
           </div>
 
-          <!-- Card 1 -->
-          <div class="lead-card">
-            <div class="lead-card-inner">
-              <div class="lead-name">Sarah Chen</div>
-              <div style="text-align:right">
-                <div class="lead-appt-time">10:00 AM</div>
-                <div class="lead-appt-label">Tue class · confirmed</div>
-              </div>
+          <div class="tabs">
+            <div class="tab">New <span class="count">2</span></div>
+            <div class="tab">Approved <span class="count">1</span></div>
+            <div class="tab active">Scheduled <span class="count">5</span></div>
+            <div class="tab">Confirmed <span class="count">3</span></div>
+            <div class="tab">Closed / Denied</div>
+          </div>
 
-              <div class="lead-meta">
-                <a href="#">sarah.chen@email.com</a>
-                <span>(209) 555-0142</span>
-              </div>
-              <div></div>
+          <div class="tab-explain">
+            Booking link sent &amp; date picked — waiting for day of class.
+          </div>
 
-              <div class="lead-programs">
-                <span class="program-badge badge-youth">Youth · Emma, 9</span>
-                <span class="status-badge badge-confirmed">Confirmed</span>
-              </div>
-
-              <div class="lead-actions">
-                <button class="action-btn">Resend Invites</button>
-                <button class="action-btn">Pick New Date</button>
-              </div>
+          <div class="search-row">
+            <div class="search-wrap">
+              <span class="search-icon">⌕</span>
+              <input
+                class="search-input"
+                type="text"
+                placeholder="Search by name, email, or student…"
+              />
             </div>
           </div>
 
-          <!-- Card 2 -->
-          <div class="lead-card">
-            <div class="lead-card-inner">
-              <div class="lead-name">Mark Rivera</div>
-              <div style="text-align:right">
-                <div class="lead-appt-time">10:00 AM</div>
-                <div class="lead-appt-label">Tue class · scheduled</div>
+          <div class="content">
+            <!-- Date group: TODAY -->
+            <div class="date-group">
+              <div class="date-group-header">
+                <span class="date-label today">Mon Apr 28</span>
+                <span class="date-pill">Today</span>
+                <div class="date-line"></div>
+                <span class="date-count">2 appointments</span>
               </div>
 
-              <div class="lead-meta">
-                <a href="#">m.rivera@gmail.com</a>
-              </div>
-              <div></div>
+              <!-- Card 1 -->
+              <div class="lead-card">
+                <div class="lead-card-inner">
+                  <div class="lead-name">Sarah Chen</div>
+                  <div style="text-align: right">
+                    <div class="lead-appt-time">10:00 AM</div>
+                    <div class="lead-appt-label">Tue class · confirmed</div>
+                  </div>
 
+                  <div class="lead-meta">
+                    <a href="#">sarah.chen@email.com</a>
+                    <span>(209) 555-0142</span>
+                  </div>
+                  <div></div>
+
+                  <div class="lead-programs">
+                    <span class="program-badge badge-youth"
+                      >Youth · Emma, 9</span
+                    >
+                    <span class="status-badge badge-confirmed">Confirmed</span>
+                  </div>
+
+                  <div class="lead-actions">
+                    <button class="action-btn">Resend Invites</button>
+                    <button class="action-btn">Pick New Date</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2 -->
+              <div class="lead-card">
+                <div class="lead-card-inner">
+                  <div class="lead-name">Mark Rivera</div>
+                  <div style="text-align: right">
+                    <div class="lead-appt-time">10:00 AM</div>
+                    <div class="lead-appt-label">Tue class · scheduled</div>
+                  </div>
+
+                  <div class="lead-meta">
+                    <a href="#">m.rivera@gmail.com</a>
+                  </div>
+                  <div></div>
+
+                  <div class="lead-programs">
+                    <span class="program-badge badge-dragons"
+                      >Little Dragons · Leo, 5</span
+                    >
+                    <span class="status-badge badge-scheduled">Scheduled</span>
+                  </div>
+
+                  <div class="lead-actions">
+                    <button class="action-btn">Resend Invites</button>
+                    <button class="action-btn">Pick New Date</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Date group: Wed -->
+            <div class="date-group">
+              <div class="date-group-header">
+                <span class="date-label">Wed Apr 30</span>
+                <div class="date-line"></div>
+                <span class="date-count">1 appointment</span>
+              </div>
+
+              <div class="lead-card">
+                <div class="lead-card-inner">
+                  <div class="lead-name">Johnson Family</div>
+                  <div style="text-align: right">
+                    <div class="lead-appt-time">4:30 PM</div>
+                    <div class="lead-appt-label">Wed class · scheduled</div>
+                  </div>
+
+                  <div class="lead-meta">
+                    <a href="#">t.johnson@yahoo.com</a>
+                    <span>(209) 555-0189</span>
+                  </div>
+                  <div></div>
+
+                  <div class="lead-programs">
+                    <span class="program-badge badge-youth"
+                      >Youth · Jake, 12</span
+                    >
+                    <span class="status-badge badge-scheduled">Scheduled</span>
+                  </div>
+
+                  <div class="lead-actions">
+                    <button class="action-btn">Resend Invites</button>
+                    <button class="action-btn">Pick New Date</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Date group: next week -->
+            <div class="date-group">
+              <div class="date-group-header">
+                <span class="date-label">Mon May 5</span>
+                <div class="date-line"></div>
+                <span class="date-count">2 appointments</span>
+              </div>
+
+              <div class="lead-card">
+                <div class="lead-card-inner">
+                  <div class="lead-name">Patel Family</div>
+                  <div style="text-align: right">
+                    <div class="lead-appt-time">10:00 AM</div>
+                    <div class="lead-appt-label">Mon class · scheduled</div>
+                  </div>
+
+                  <div class="lead-meta">
+                    <a href="#">priya.p@email.com</a>
+                  </div>
+                  <div></div>
+
+                  <div class="lead-programs">
+                    <span class="program-badge badge-dragons"
+                      >Little Dragons · Rohan, 6</span
+                    >
+                    <span class="program-badge badge-youth"
+                      >Youth · Arjun, 10</span
+                    >
+                    <span class="status-badge badge-scheduled">Scheduled</span>
+                  </div>
+
+                  <div class="lead-actions">
+                    <button class="action-btn">Resend Invites</button>
+                    <button class="action-btn">Pick New Date</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="lead-card">
+                <div class="lead-card-inner">
+                  <div class="lead-name">Garcia Family</div>
+                  <div style="text-align: right">
+                    <div class="lead-appt-time">4:30 PM</div>
+                    <div class="lead-appt-label">Mon class · scheduled</div>
+                  </div>
+
+                  <div class="lead-meta">
+                    <a href="#">lgarcia@gmail.com</a>
+                    <span>(209) 555-0213</span>
+                  </div>
+                  <div></div>
+
+                  <div class="lead-programs">
+                    <span class="program-badge badge-youth"
+                      >Youth · Sofia, 11</span
+                    >
+                    <span class="status-badge badge-scheduled">Scheduled</span>
+                  </div>
+
+                  <div class="lead-actions">
+                    <button class="action-btn">Resend Invites</button>
+                    <button class="action-btn">Pick New Date</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /content -->
+        </div>
+        <!-- /panel -->
+
+        <hr class="section-break" />
+
+        <!-- Also show the "New" tab for context -->
+        <p
+          style="
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 600;
+            margin-bottom: 12px;
+          "
+        >
+          — New leads tab still works the same way —
+        </p>
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Enrollment Leads</div>
+              <div class="panel-subtitle">
+                <strong>2 new &nbsp;·&nbsp;</strong> 1 approved &nbsp;·&nbsp; 5
+                scheduled &nbsp;·&nbsp; 18 total
+              </div>
+            </div>
+            <button class="btn">+ New Lead</button>
+          </div>
+          <div class="tabs">
+            <div class="tab active">New <span class="count">2</span></div>
+            <div class="tab">Approved <span class="count">1</span></div>
+            <div class="tab">Scheduled <span class="count">5</span></div>
+            <div class="tab">Confirmed <span class="count">3</span></div>
+            <div class="tab">Closed / Denied</div>
+          </div>
+          <div class="tab-explain">
+            Fresh inquiries — approve to send a booking invite, or deny.
+          </div>
+          <div class="search-row">
+            <div class="search-wrap">
+              <span class="search-icon">⌕</span>
+              <input
+                class="search-input"
+                type="text"
+                placeholder="Search by name, email, or student…"
+              />
+            </div>
+          </div>
+          <div class="content">
+            <div class="new-lead-card">
+              <div class="lead-name">Williams Family</div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  flex-shrink: 0;
+                "
+              >
+                <span class="aging old">8d ago</span>
+                <span class="status-badge badge-new">New</span>
+                <button class="kebab">⋮</button>
+              </div>
+              <div class="lead-meta" style="grid-column: 1/-1">
+                <a href="#">k.williams@email.com</a>
+                <span>(209) 555-0177</span>
+              </div>
               <div class="lead-programs">
-                <span class="program-badge badge-dragons">Little Dragons · Leo, 5</span>
-                <span class="status-badge badge-scheduled">Scheduled</span>
+                <span class="program-badge badge-youth">Youth · Tyler, 13</span>
               </div>
-
+              <div class="message-box">
+                "We've heard great things about LBMAA from the Chens down the
+                street. Tyler's been wanting to try martial arts for a couple
+                years now — would love to come see the school."
+              </div>
               <div class="lead-actions">
-                <button class="action-btn">Resend Invites</button>
-                <button class="action-btn">Pick New Date</button>
+                <button class="action-btn primary">
+                  Approve &amp; Send Invites
+                </button>
+                <button class="action-btn danger">Deny</button>
+              </div>
+            </div>
+
+            <div class="new-lead-card">
+              <div class="lead-name">Kim Family</div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  flex-shrink: 0;
+                "
+              >
+                <span class="aging">today</span>
+                <span class="status-badge badge-new">New</span>
+                <button class="kebab">⋮</button>
+              </div>
+              <div class="lead-meta" style="grid-column: 1/-1">
+                <a href="#">j.kim@gmail.com</a>
+              </div>
+              <div class="lead-programs">
+                <span class="program-badge badge-dragons"
+                  >Little Dragons · Mia, 5</span
+                >
+              </div>
+              <div class="lead-actions">
+                <button class="action-btn primary">
+                  Approve &amp; Send Invites
+                </button>
+                <button class="action-btn danger">Deny</button>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Date group: Wed -->
-        <div class="date-group">
-          <div class="date-group-header">
-            <span class="date-label">Wed Apr 30</span>
-            <div class="date-line"></div>
-            <span class="date-count">1 appointment</span>
-          </div>
-
-          <div class="lead-card">
-            <div class="lead-card-inner">
-              <div class="lead-name">Johnson Family</div>
-              <div style="text-align:right">
-                <div class="lead-appt-time">4:30 PM</div>
-                <div class="lead-appt-label">Wed class · scheduled</div>
-              </div>
-
-              <div class="lead-meta">
-                <a href="#">t.johnson@yahoo.com</a>
-                <span>(209) 555-0189</span>
-              </div>
-              <div></div>
-
-              <div class="lead-programs">
-                <span class="program-badge badge-youth">Youth · Jake, 12</span>
-                <span class="status-badge badge-scheduled">Scheduled</span>
-              </div>
-
-              <div class="lead-actions">
-                <button class="action-btn">Resend Invites</button>
-                <button class="action-btn">Pick New Date</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Date group: next week -->
-        <div class="date-group">
-          <div class="date-group-header">
-            <span class="date-label">Mon May 5</span>
-            <div class="date-line"></div>
-            <span class="date-count">2 appointments</span>
-          </div>
-
-          <div class="lead-card">
-            <div class="lead-card-inner">
-              <div class="lead-name">Patel Family</div>
-              <div style="text-align:right">
-                <div class="lead-appt-time">10:00 AM</div>
-                <div class="lead-appt-label">Mon class · scheduled</div>
-              </div>
-
-              <div class="lead-meta">
-                <a href="#">priya.p@email.com</a>
-              </div>
-              <div></div>
-
-              <div class="lead-programs">
-                <span class="program-badge badge-dragons">Little Dragons · Rohan, 6</span>
-                <span class="program-badge badge-youth">Youth · Arjun, 10</span>
-                <span class="status-badge badge-scheduled">Scheduled</span>
-              </div>
-
-              <div class="lead-actions">
-                <button class="action-btn">Resend Invites</button>
-                <button class="action-btn">Pick New Date</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="lead-card">
-            <div class="lead-card-inner">
-              <div class="lead-name">Garcia Family</div>
-              <div style="text-align:right">
-                <div class="lead-appt-time">4:30 PM</div>
-                <div class="lead-appt-label">Mon class · scheduled</div>
-              </div>
-
-              <div class="lead-meta">
-                <a href="#">lgarcia@gmail.com</a>
-                <span>(209) 555-0213</span>
-              </div>
-              <div></div>
-
-              <div class="lead-programs">
-                <span class="program-badge badge-youth">Youth · Sofia, 11</span>
-                <span class="status-badge badge-scheduled">Scheduled</span>
-              </div>
-
-              <div class="lead-actions">
-                <button class="action-btn">Resend Invites</button>
-                <button class="action-btn">Pick New Date</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /content -->
-    </div><!-- /panel -->
-
-    <hr class="section-break">
-
-    <!-- Also show the "New" tab for context -->
-    <p style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:12px;">— New leads tab still works the same way —</p>
-    <div class="panel">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Enrollment Leads</div>
-          <div class="panel-subtitle"><strong>2 new &nbsp;·&nbsp;</strong> 1 approved &nbsp;·&nbsp; 5 scheduled &nbsp;·&nbsp; 18 total</div>
-        </div>
-        <button class="btn">+ New Lead</button>
       </div>
-      <div class="tabs">
-        <div class="tab active">New <span class="count">2</span></div>
-        <div class="tab">Approved <span class="count">1</span></div>
-        <div class="tab">Scheduled <span class="count">5</span></div>
-        <div class="tab">Confirmed <span class="count">3</span></div>
-        <div class="tab">Closed / Denied</div>
-      </div>
-      <div class="tab-explain">
-        Fresh inquiries — approve to send a booking invite, or deny.
-      </div>
-      <div class="search-row">
-        <div class="search-wrap">
-          <span class="search-icon">⌕</span>
-          <input class="search-input" type="text" placeholder="Search by name, email, or student…">
-        </div>
-      </div>
-      <div class="content">
-        <div class="new-lead-card">
-          <div class="lead-name">Williams Family</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span class="aging old">8d ago</span>
-            <span class="status-badge badge-new">New</span>
-            <button class="kebab">⋮</button>
-          </div>
-          <div class="lead-meta" style="grid-column:1/-1">
-            <a href="#">k.williams@email.com</a>
-            <span>(209) 555-0177</span>
-          </div>
-          <div class="lead-programs">
-            <span class="program-badge badge-youth">Youth · Tyler, 13</span>
-          </div>
-          <div class="message-box">
-            "We've heard great things about LBMAA from the Chens down the street. Tyler's been wanting to try martial arts for a couple years now — would love to come see the school."
-          </div>
-          <div class="lead-actions">
-            <button class="action-btn primary">Approve &amp; Send Invites</button>
-            <button class="action-btn danger">Deny</button>
-          </div>
-        </div>
+      <!-- /opt-a -->
 
-        <div class="new-lead-card">
-          <div class="lead-name">Kim Family</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span class="aging">today</span>
-            <span class="status-badge badge-new">New</span>
-            <button class="kebab">⋮</button>
-          </div>
-          <div class="lead-meta" style="grid-column:1/-1">
-            <a href="#">j.kim@gmail.com</a>
-          </div>
-          <div class="lead-programs">
-            <span class="program-badge badge-dragons">Little Dragons · Mia, 5</span>
-          </div>
-          <div class="lead-actions">
-            <button class="action-btn primary">Approve &amp; Send Invites</button>
-            <button class="action-btn danger">Deny</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div><!-- /opt-a -->
-
-
-  <!-- ═══════════════════════════════════════════
+      <!-- ═══════════════════════════════════════════
        OPTION B — Week strip + date groups
   ════════════════════════════════════════════ -->
-  <div id="opt-b" class="option">
-    <p class="option-label"><span class="option-tag">B</span> Week strip + date groups</p>
-    <div class="panel">
-
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Enrollment Leads</div>
-          <div class="panel-subtitle"><strong>2 new &nbsp;·&nbsp;</strong> 1 approved &nbsp;·&nbsp; 5 scheduled &nbsp;·&nbsp; 18 total</div>
-        </div>
-        <button class="btn">+ New Lead</button>
-      </div>
-
-      <div class="tabs">
-        <div class="tab">New <span class="count">2</span></div>
-        <div class="tab">Approved <span class="count">1</span></div>
-        <div class="tab active">Scheduled <span class="count">5</span></div>
-        <div class="tab">Confirmed <span class="count">3</span></div>
-        <div class="tab">Closed / Denied</div>
-      </div>
-
-      <div class="tab-explain">
-        Booking link sent &amp; date picked — waiting for day of class.
-      </div>
-
-      <!-- Week strip -->
-      <div class="week-strip">
-        <div class="week-day active" onclick="selectDay(this)">
-          <div class="week-day-name">Mon</div>
-          <div class="week-day-num">28</div>
-          <div class="week-day-dots"><div class="dot"></div><div class="dot"></div></div>
-          <div class="week-day-count">2</div>
-        </div>
-        <div class="week-day" onclick="selectDay(this)">
-          <div class="week-day-name">Tue</div>
-          <div class="week-day-num">29</div>
-          <div class="week-day-dots"></div>
-          <div class="week-day-count" style="opacity:.3">0</div>
-        </div>
-        <div class="week-day" onclick="selectDay(this)">
-          <div class="week-day-name">Wed</div>
-          <div class="week-day-num">30</div>
-          <div class="week-day-dots"><div class="dot"></div></div>
-          <div class="week-day-count">1</div>
-        </div>
-        <div class="week-day" onclick="selectDay(this)">
-          <div class="week-day-name">Thu</div>
-          <div class="week-day-num">1</div>
-          <div class="week-day-dots"></div>
-          <div class="week-day-count" style="opacity:.3">0</div>
-        </div>
-        <div class="week-day" onclick="selectDay(this)">
-          <div class="week-day-name">Fri</div>
-          <div class="week-day-num">2</div>
-          <div class="week-day-dots"></div>
-          <div class="week-day-count" style="opacity:.3">0</div>
-        </div>
-        <div class="week-day" onclick="selectDay(this)">
-          <div class="week-day-name">Sat</div>
-          <div class="week-day-num">3</div>
-          <div class="week-day-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-          <div class="week-day-count">3</div>
-        </div>
-        <div class="week-day" onclick="selectDay(this)">
-          <div class="week-day-name">Sun</div>
-          <div class="week-day-num">4</div>
-          <div class="week-day-dots"></div>
-          <div class="week-day-count" style="opacity:.3">0</div>
-        </div>
-      </div>
-
-      <div class="search-row">
-        <div class="search-wrap">
-          <span class="search-icon">⌕</span>
-          <input class="search-input" type="text" placeholder="Search by name, email, or student…">
-        </div>
-      </div>
-
-      <div class="content">
-
-        <!-- Date group: TODAY (highlighted because selected in strip) -->
-        <div class="date-group">
-          <div class="date-group-header">
-            <span class="date-label today">Mon Apr 28</span>
-            <span class="date-pill">Today</span>
-            <div class="date-line"></div>
-            <span class="date-count">2 appointments</span>
+      <div id="opt-b" class="option">
+        <p class="option-label">
+          <span class="option-tag">B</span> Week strip + date groups
+        </p>
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Enrollment Leads</div>
+              <div class="panel-subtitle">
+                <strong>2 new &nbsp;·&nbsp;</strong> 1 approved &nbsp;·&nbsp; 5
+                scheduled &nbsp;·&nbsp; 18 total
+              </div>
+            </div>
+            <button class="btn">+ New Lead</button>
           </div>
 
-          <div class="lead-card">
-            <div class="lead-card-inner">
-              <div class="lead-name">Sarah Chen</div>
-              <div style="text-align:right">
-                <div class="lead-appt-time">10:00 AM</div>
-                <div class="lead-appt-label">confirmed</div>
+          <div class="tabs">
+            <div class="tab">New <span class="count">2</span></div>
+            <div class="tab">Approved <span class="count">1</span></div>
+            <div class="tab active">Scheduled <span class="count">5</span></div>
+            <div class="tab">Confirmed <span class="count">3</span></div>
+            <div class="tab">Closed / Denied</div>
+          </div>
+
+          <div class="tab-explain">
+            Booking link sent &amp; date picked — waiting for day of class.
+          </div>
+
+          <!-- Week strip -->
+          <div class="week-strip">
+            <div class="week-day active" onclick="selectDay(this)">
+              <div class="week-day-name">Mon</div>
+              <div class="week-day-num">28</div>
+              <div class="week-day-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
               </div>
-              <div class="lead-meta"><a href="#">sarah.chen@email.com</a><span>(209) 555-0142</span></div>
-              <div></div>
-              <div class="lead-programs">
-                <span class="program-badge badge-youth">Youth · Emma, 9</span>
-                <span class="status-badge badge-confirmed">Confirmed</span>
+              <div class="week-day-count">2</div>
+            </div>
+            <div class="week-day" onclick="selectDay(this)">
+              <div class="week-day-name">Tue</div>
+              <div class="week-day-num">29</div>
+              <div class="week-day-dots"></div>
+              <div class="week-day-count" style="opacity: 0.3">0</div>
+            </div>
+            <div class="week-day" onclick="selectDay(this)">
+              <div class="week-day-name">Wed</div>
+              <div class="week-day-num">30</div>
+              <div class="week-day-dots"><div class="dot"></div></div>
+              <div class="week-day-count">1</div>
+            </div>
+            <div class="week-day" onclick="selectDay(this)">
+              <div class="week-day-name">Thu</div>
+              <div class="week-day-num">1</div>
+              <div class="week-day-dots"></div>
+              <div class="week-day-count" style="opacity: 0.3">0</div>
+            </div>
+            <div class="week-day" onclick="selectDay(this)">
+              <div class="week-day-name">Fri</div>
+              <div class="week-day-num">2</div>
+              <div class="week-day-dots"></div>
+              <div class="week-day-count" style="opacity: 0.3">0</div>
+            </div>
+            <div class="week-day" onclick="selectDay(this)">
+              <div class="week-day-name">Sat</div>
+              <div class="week-day-num">3</div>
+              <div class="week-day-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
               </div>
-              <div class="lead-actions">
-                <button class="action-btn">Resend Invites</button>
-                <button class="action-btn">Pick New Date</button>
-              </div>
+              <div class="week-day-count">3</div>
+            </div>
+            <div class="week-day" onclick="selectDay(this)">
+              <div class="week-day-name">Sun</div>
+              <div class="week-day-num">4</div>
+              <div class="week-day-dots"></div>
+              <div class="week-day-count" style="opacity: 0.3">0</div>
             </div>
           </div>
 
-          <div class="lead-card">
-            <div class="lead-card-inner">
-              <div class="lead-name">Mark Rivera</div>
-              <div style="text-align:right">
-                <div class="lead-appt-time">10:00 AM</div>
-                <div class="lead-appt-label">scheduled</div>
+          <div class="search-row">
+            <div class="search-wrap">
+              <span class="search-icon">⌕</span>
+              <input
+                class="search-input"
+                type="text"
+                placeholder="Search by name, email, or student…"
+              />
+            </div>
+          </div>
+
+          <div class="content">
+            <!-- Date group: TODAY (highlighted because selected in strip) -->
+            <div class="date-group">
+              <div class="date-group-header">
+                <span class="date-label today">Mon Apr 28</span>
+                <span class="date-pill">Today</span>
+                <div class="date-line"></div>
+                <span class="date-count">2 appointments</span>
               </div>
-              <div class="lead-meta"><a href="#">m.rivera@gmail.com</a></div>
-              <div></div>
-              <div class="lead-programs">
-                <span class="program-badge badge-dragons">Little Dragons · Leo, 5</span>
-                <span class="status-badge badge-scheduled">Scheduled</span>
+
+              <div class="lead-card">
+                <div class="lead-card-inner">
+                  <div class="lead-name">Sarah Chen</div>
+                  <div style="text-align: right">
+                    <div class="lead-appt-time">10:00 AM</div>
+                    <div class="lead-appt-label">confirmed</div>
+                  </div>
+                  <div class="lead-meta">
+                    <a href="#">sarah.chen@email.com</a
+                    ><span>(209) 555-0142</span>
+                  </div>
+                  <div></div>
+                  <div class="lead-programs">
+                    <span class="program-badge badge-youth"
+                      >Youth · Emma, 9</span
+                    >
+                    <span class="status-badge badge-confirmed">Confirmed</span>
+                  </div>
+                  <div class="lead-actions">
+                    <button class="action-btn">Resend Invites</button>
+                    <button class="action-btn">Pick New Date</button>
+                  </div>
+                </div>
               </div>
-              <div class="lead-actions">
-                <button class="action-btn">Resend Invites</button>
-                <button class="action-btn">Pick New Date</button>
+
+              <div class="lead-card">
+                <div class="lead-card-inner">
+                  <div class="lead-name">Mark Rivera</div>
+                  <div style="text-align: right">
+                    <div class="lead-appt-time">10:00 AM</div>
+                    <div class="lead-appt-label">scheduled</div>
+                  </div>
+                  <div class="lead-meta">
+                    <a href="#">m.rivera@gmail.com</a>
+                  </div>
+                  <div></div>
+                  <div class="lead-programs">
+                    <span class="program-badge badge-dragons"
+                      >Little Dragons · Leo, 5</span
+                    >
+                    <span class="status-badge badge-scheduled">Scheduled</span>
+                  </div>
+                  <div class="lead-actions">
+                    <button class="action-btn">Resend Invites</button>
+                    <button class="action-btn">Pick New Date</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Further dates still shown below -->
+            <div class="date-group">
+              <div class="date-group-header">
+                <span class="date-label">Wed Apr 30</span>
+                <div class="date-line"></div>
+                <span class="date-count">1 appointment</span>
+              </div>
+              <div class="lead-card">
+                <div class="lead-card-inner">
+                  <div class="lead-name">Johnson Family</div>
+                  <div style="text-align: right">
+                    <div class="lead-appt-time">4:30 PM</div>
+                    <div class="lead-appt-label">scheduled</div>
+                  </div>
+                  <div class="lead-meta">
+                    <a href="#">t.johnson@yahoo.com</a
+                    ><span>(209) 555-0189</span>
+                  </div>
+                  <div></div>
+                  <div class="lead-programs">
+                    <span class="program-badge badge-youth"
+                      >Youth · Jake, 12</span
+                    >
+                    <span class="status-badge badge-scheduled">Scheduled</span>
+                  </div>
+                  <div class="lead-actions">
+                    <button class="action-btn">Resend Invites</button>
+                    <button class="action-btn">Pick New Date</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="date-group">
+              <div class="date-group-header">
+                <span class="date-label">Sat May 3</span>
+                <div class="date-line"></div>
+                <span class="date-count">3 appointments</span>
+              </div>
+              <div class="lead-card">
+                <div class="lead-card-inner">
+                  <div class="lead-name">Patel Family</div>
+                  <div style="text-align: right">
+                    <div class="lead-appt-time">10:00 AM</div>
+                    <div class="lead-appt-label">scheduled</div>
+                  </div>
+                  <div class="lead-meta"><a href="#">priya.p@email.com</a></div>
+                  <div></div>
+                  <div class="lead-programs">
+                    <span class="program-badge badge-dragons"
+                      >Little Dragons · Rohan, 6</span
+                    >
+                    <span class="program-badge badge-youth"
+                      >Youth · Arjun, 10</span
+                    >
+                  </div>
+                  <div class="lead-actions">
+                    <button class="action-btn">Resend Invites</button>
+                    <button class="action-btn">Pick New Date</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Further dates still shown below -->
-        <div class="date-group">
-          <div class="date-group-header">
-            <span class="date-label">Wed Apr 30</span>
-            <div class="date-line"></div>
-            <span class="date-count">1 appointment</span>
-          </div>
-          <div class="lead-card">
-            <div class="lead-card-inner">
-              <div class="lead-name">Johnson Family</div>
-              <div style="text-align:right">
-                <div class="lead-appt-time">4:30 PM</div>
-                <div class="lead-appt-label">scheduled</div>
-              </div>
-              <div class="lead-meta"><a href="#">t.johnson@yahoo.com</a><span>(209) 555-0189</span></div>
-              <div></div>
-              <div class="lead-programs">
-                <span class="program-badge badge-youth">Youth · Jake, 12</span>
-                <span class="status-badge badge-scheduled">Scheduled</span>
-              </div>
-              <div class="lead-actions">
-                <button class="action-btn">Resend Invites</button>
-                <button class="action-btn">Pick New Date</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="date-group">
-          <div class="date-group-header">
-            <span class="date-label">Sat May 3</span>
-            <div class="date-line"></div>
-            <span class="date-count">3 appointments</span>
-          </div>
-          <div class="lead-card">
-            <div class="lead-card-inner">
-              <div class="lead-name">Patel Family</div>
-              <div style="text-align:right">
-                <div class="lead-appt-time">10:00 AM</div>
-                <div class="lead-appt-label">scheduled</div>
-              </div>
-              <div class="lead-meta"><a href="#">priya.p@email.com</a></div>
-              <div></div>
-              <div class="lead-programs">
-                <span class="program-badge badge-dragons">Little Dragons · Rohan, 6</span>
-                <span class="program-badge badge-youth">Youth · Arjun, 10</span>
-              </div>
-              <div class="lead-actions">
-                <button class="action-btn">Resend Invites</button>
-                <button class="action-btn">Pick New Date</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
+      <!-- /opt-b -->
     </div>
-  </div><!-- /opt-b -->
+    <!-- /page -->
 
-</div><!-- /page -->
-
-<script>
-  function show(id, btn) {
-    document.querySelectorAll('.option').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.toggle-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById('opt-' + id).classList.add('active');
-    btn.classList.add('active');
-  }
-  function selectDay(el) {
-    el.closest('.week-strip').querySelectorAll('.week-day').forEach(d => d.classList.remove('active'));
-    el.classList.add('active');
-  }
-</script>
-</body>
+    <script>
+      function show(id, btn) {
+        document
+          .querySelectorAll('.option')
+          .forEach((el) => el.classList.remove('active'));
+        document
+          .querySelectorAll('.toggle-btn')
+          .forEach((el) => el.classList.remove('active'));
+        document.getElementById('opt-' + id).classList.add('active');
+        btn.classList.add('active');
+      }
+      function selectDay(el) {
+        el.closest('.week-strip')
+          .querySelectorAll('.week-day')
+          .forEach((d) => d.classList.remove('active'));
+        el.classList.add('active');
+      }
+    </script>
+  </body>
 </html>

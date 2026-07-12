@@ -43,11 +43,17 @@ type Announcement = {
 function formatDate(dateString: string) {
   const date = new Date(dateString);
   const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+  );
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 function AnnouncementCommentSection({
@@ -77,7 +83,9 @@ function AnnouncementCommentSection({
   }));
 
   const onCountLoadedRef = useRef(onCountLoaded);
-  useEffect(() => { onCountLoadedRef.current = onCountLoaded; });
+  useEffect(() => {
+    onCountLoadedRef.current = onCountLoaded;
+  });
   useEffect(() => {
     onCountLoadedRef.current?.(comments.length);
   }, [comments.length]);
@@ -88,14 +96,20 @@ function AnnouncementCommentSection({
       await createComment.mutateAsync({ body: commentText.trim() });
       setCommentText('');
     } catch (error) {
-      toast.error('Error adding comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error adding comment: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     }
   };
 
   const handleSendReply = async () => {
     if (!replyText.trim() || !replyingTo) return;
     try {
-      await createComment.mutateAsync({ body: replyText.trim(), parentCommentId: replyingTo.commentId });
+      await createComment.mutateAsync({
+        body: replyText.trim(),
+        parentCommentId: replyingTo.commentId,
+      });
       setReplyText('');
       setReplyingTo(null);
     } catch {
@@ -109,14 +123,19 @@ function AnnouncementCommentSection({
         <div key={comment.id} className="space-y-1">
           {comment.parentCommentId && (
             <p className="text-xs text-muted-foreground pl-2 border-l-2 border-muted mb-1">
-              ↩ Replying to {
-                comments.find(c => c.id === comment.parentCommentId)?.authorName ?? 'comment'
-              }
+              ↩ Replying to{' '}
+              {comments.find((c) => c.id === comment.parentCommentId)
+                ?.authorName ?? 'comment'}
             </p>
           )}
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              {comment.authorAvatarUrl && <AvatarImage src={comment.authorAvatarUrl} alt={comment.authorName} />}
+              {comment.authorAvatarUrl && (
+                <AvatarImage
+                  src={comment.authorAvatarUrl}
+                  alt={comment.authorName}
+                />
+              )}
               <AvatarFallback className="text-xs">
                 {comment.authorName[0]}
               </AvatarFallback>
@@ -129,10 +148,12 @@ function AnnouncementCommentSection({
           <p className="text-sm pl-8">{comment.body}</p>
           {!comment.parentCommentId && (
             <button
-              onClick={() => setReplyingTo({
-                commentId: comment.id,
-                authorName: comment.authorName,
-              })}
+              onClick={() =>
+                setReplyingTo({
+                  commentId: comment.id,
+                  authorName: comment.authorName,
+                })
+              }
               className="text-xs text-muted-foreground hover:text-foreground mt-1 transition-colors"
             >
               Reply
@@ -147,14 +168,20 @@ function AnnouncementCommentSection({
                 onChange={(e) => setReplyText(e.target.value)}
                 className="text-sm min-h-[60px] resize-none"
                 onKeyDown={(e) => {
-                  if (e.key === 'Escape') { setReplyingTo(null); setReplyText(''); }
+                  if (e.key === 'Escape') {
+                    setReplyingTo(null);
+                    setReplyText('');
+                  }
                 }}
               />
               <div className="flex gap-2 justify-end">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => { setReplyingTo(null); setReplyText(''); }}
+                  onClick={() => {
+                    setReplyingTo(null);
+                    setReplyText('');
+                  }}
                 >
                   Cancel
                 </Button>
@@ -203,10 +230,15 @@ function AnnouncementCommentSection({
 }
 
 export function AnnouncementsTab({ user: _user }: { user: User }) {
-  const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [expandedComments, setExpandedComments] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>(
+    {},
+  );
 
-  const { data: rawAnnouncements = [], isLoading: loading } = useAnnouncements();
+  const { data: rawAnnouncements = [], isLoading: loading } =
+    useAnnouncements();
 
   useEffect(() => {
     markSectionSeen('announcements').catch(console.error);
@@ -233,7 +265,7 @@ export function AnnouncementsTab({ user: _user }: { user: User }) {
   const toggleComments = (announcementId: string) => {
     setExpandedComments({
       ...expandedComments,
-      [announcementId]: !expandedComments[announcementId]
+      [announcementId]: !expandedComments[announcementId],
     });
   };
 
@@ -265,66 +297,88 @@ export function AnnouncementsTab({ user: _user }: { user: User }) {
       ) : (
         <div className="space-y-6">
           {sortedAnnouncements.map((announcement) => (
-          <Card key={announcement.id}>
-            <CardHeader className={announcement.isPinned ? 'bg-secondary/50 border-l-4 border-l-primary' : ''}>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Avatar className="h-8 w-8">
-                      {announcement.authorAvatarUrl && <AvatarImage src={announcement.authorAvatarUrl} alt={announcement.authorName} />}
-                      <AvatarFallback>{announcement.authorName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{announcement.authorName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(announcement.createdAt)}
-                      </p>
+            <Card key={announcement.id}>
+              <CardHeader
+                className={
+                  announcement.isPinned
+                    ? 'bg-secondary/50 border-l-4 border-l-primary'
+                    : ''
+                }
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Avatar className="h-8 w-8">
+                        {announcement.authorAvatarUrl && (
+                          <AvatarImage
+                            src={announcement.authorAvatarUrl}
+                            alt={announcement.authorName}
+                          />
+                        )}
+                        <AvatarFallback>
+                          {announcement.authorName[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {announcement.authorName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(announcement.createdAt)}
+                        </p>
+                      </div>
                     </div>
+                    <CardTitle>{announcement.title}</CardTitle>
                   </div>
-                  <CardTitle>{announcement.title}</CardTitle>
+                  {announcement.isPinned && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                      <Pin className="w-3 h-3" />
+                      Pinned
+                    </span>
+                  )}
                 </div>
-                {announcement.isPinned && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-                    <Pin className="w-3 h-3" />
-                    Pinned
-                  </span>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-foreground whitespace-pre-line">{announcement.body}</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-foreground whitespace-pre-line">
+                  {announcement.body}
+                </p>
 
-              {announcement.imageUrl && (
-                <ImageWithFallback
-                  src={announcement.imageUrl}
-                  alt={announcement.title}
-                  className="w-full max-w-2xl rounded-lg"
-                />
-              )}
-
-              {/* Comments Section */}
-              <div className="border-t pt-4 space-y-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleComments(announcement.id)}
-                  className="gap-2"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  {commentCounts[announcement.id] !== undefined
-                    ? `${commentCounts[announcement.id]} ${commentCounts[announcement.id] === 1 ? 'Comment' : 'Comments'}`
-                    : 'Comments'}
-                </Button>
-
-                {expandedComments[announcement.id] && (
-                  <AnnouncementCommentSection
-                    announcementId={announcement.id}
-                    onCountLoaded={(count) => setCommentCounts((prev) => ({ ...prev, [announcement.id]: count }))}
+                {announcement.imageUrl && (
+                  <ImageWithFallback
+                    src={announcement.imageUrl}
+                    alt={announcement.title}
+                    className="w-full max-w-2xl rounded-lg"
                   />
                 )}
-              </div>
-            </CardContent>
-          </Card>
+
+                {/* Comments Section */}
+                <div className="border-t pt-4 space-y-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleComments(announcement.id)}
+                    className="gap-2"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    {commentCounts[announcement.id] !== undefined
+                      ? `${commentCounts[announcement.id]} ${commentCounts[announcement.id] === 1 ? 'Comment' : 'Comments'}`
+                      : 'Comments'}
+                  </Button>
+
+                  {expandedComments[announcement.id] && (
+                    <AnnouncementCommentSection
+                      announcementId={announcement.id}
+                      onCountLoaded={(count) =>
+                        setCommentCounts((prev) => ({
+                          ...prev,
+                          [announcement.id]: count,
+                        }))
+                      }
+                    />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

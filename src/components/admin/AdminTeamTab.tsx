@@ -1,19 +1,46 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { UserPlus, ShieldCheck, ShieldOff, UserX, UserCheck, Loader2, MoreHorizontal, MailPlus, MailX, AlertCircle } from 'lucide-react';
+import {
+  UserPlus,
+  ShieldCheck,
+  ShieldOff,
+  UserX,
+  UserCheck,
+  Loader2,
+  MoreHorizontal,
+  MailPlus,
+  MailX,
+  AlertCircle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { getAdminProfiles, getAdminEmails } from '../../lib/supabase/queries';
-import { deactivateAdmin, reactivateAdmin, setOwnerStatus } from '../../lib/supabase/mutations';
+import {
+  deactivateAdmin,
+  reactivateAdmin,
+  setOwnerStatus,
+} from '../../lib/supabase/mutations';
 import { invokeEdgeFunction } from '../../lib/supabase/functions';
 import { queryKeys } from '../../lib/queryKeys';
 import { getInitials, formatRelativeTime } from '../../lib/format';
@@ -86,7 +113,9 @@ export function AdminTeamTab({
 
   const admins: AdminRow[] = (profilesQuery.data ?? [])
     .map((p) => {
-      const emailRow = (emailsQuery.data ?? []).find((e) => e.user_id === p.user_id);
+      const emailRow = (emailsQuery.data ?? []).find(
+        (e) => e.user_id === p.user_id,
+      );
       return {
         user_id: p.user_id,
         display_name: p.display_name,
@@ -94,7 +123,8 @@ export function AdminTeamTab({
         avatar_url: p.avatar_url,
         is_owner: p.is_owner,
         is_active: p.is_active,
-        is_pending: p.is_active && !!emailRow && emailRow.last_sign_in_at === null,
+        is_pending:
+          p.is_active && !!emailRow && emailRow.last_sign_in_at === null,
         invited_at: emailRow?.invited_at ?? null,
         last_sign_in_at: emailRow?.last_sign_in_at ?? null,
       };
@@ -106,7 +136,7 @@ export function AdminTeamTab({
     });
 
   const otherActiveOwnerExists = admins.some(
-    (a) => a.is_owner && a.is_active && a.user_id !== user.id
+    (a) => a.is_owner && a.is_active && a.user_id !== user.id,
   );
 
   const activeAdmins = admins.filter((a) => a.is_active);
@@ -118,7 +148,11 @@ export function AdminTeamTab({
     queryClient.invalidateQueries({ queryKey: queryKeys.adminEmails() });
   };
 
-  const runConfirmed = async (fn: () => Promise<void>, successMessage: string, errorFallback: string) => {
+  const runConfirmed = async (
+    fn: () => Promise<void>,
+    successMessage: string,
+    errorFallback: string,
+  ) => {
     setConfirmLoading(true);
     try {
       await fn();
@@ -162,11 +196,16 @@ export function AdminTeamTab({
     if (busyId) return;
     setBusyId(admin.user_id);
     try {
-      await invokeEdgeFunction('invite-admin', { action: 'resend', email: admin.email });
+      await invokeEdgeFunction('invite-admin', {
+        action: 'resend',
+        email: admin.email,
+      });
       toast.success(`Invite email resent to ${admin.email}`);
       invalidate();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to resend invite');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to resend invite',
+      );
     } finally {
       setBusyId(null);
     }
@@ -180,9 +219,13 @@ export function AdminTeamTab({
       destructive: true,
       onConfirm: () =>
         runConfirmed(
-          () => invokeEdgeFunction('invite-admin', { action: 'revoke', email: admin.email }),
+          () =>
+            invokeEdgeFunction('invite-admin', {
+              action: 'revoke',
+              email: admin.email,
+            }),
           'Invite revoked',
-          'Failed to revoke invite'
+          'Failed to revoke invite',
         ),
     });
   };
@@ -190,14 +233,15 @@ export function AdminTeamTab({
   const handleDeactivate = (admin: AdminRow) => {
     setConfirmState({
       title: `Deactivate ${admin.display_name}?`,
-      description: 'They will lose access to the admin portal immediately. Their history is preserved and you can reactivate them later.',
+      description:
+        'They will lose access to the admin portal immediately. Their history is preserved and you can reactivate them later.',
       confirmLabel: 'Deactivate',
       destructive: true,
       onConfirm: () =>
         runConfirmed(
           () => deactivateAdmin(admin.user_id),
           `${admin.display_name} deactivated`,
-          'Failed to deactivate'
+          'Failed to deactivate',
         ),
     });
   };
@@ -226,8 +270,10 @@ export function AdminTeamTab({
       onConfirm: () =>
         runConfirmed(
           () => setOwnerStatus(admin.user_id, makeOwner),
-          makeOwner ? `${admin.display_name} is now an owner` : `Owner status removed from ${admin.display_name}`,
-          'Failed to update owner status'
+          makeOwner
+            ? `${admin.display_name} is now an owner`
+            : `Owner status removed from ${admin.display_name}`,
+          'Failed to update owner status',
         ),
     });
   };
@@ -235,7 +281,8 @@ export function AdminTeamTab({
   const handleStepDown = () => {
     setConfirmState({
       title: 'Step down as owner?',
-      description: 'You will remain an admin but lose owner controls, including this Team page.',
+      description:
+        'You will remain an admin but lose owner controls, including this Team page.',
       confirmLabel: 'Step Down',
       destructive: true,
       onConfirm: () =>
@@ -245,7 +292,7 @@ export function AdminTeamTab({
             await onRefreshUser();
           },
           'You are no longer an owner',
-          'Failed to update owner status'
+          'Failed to update owner status',
         ),
     });
   };
@@ -255,7 +302,9 @@ export function AdminTeamTab({
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-3xl font-bold">Team</h2>
-          <p className="text-muted-foreground mt-1">Manage admin accounts and ownership</p>
+          <p className="text-muted-foreground mt-1">
+            Manage admin accounts and ownership
+          </p>
         </div>
         <Button onClick={() => setIsInviteOpen(true)}>
           <UserPlus className="mr-2 h-4 w-4" />
@@ -278,7 +327,11 @@ export function AdminTeamTab({
                       : 'bg-muted text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {v.label} ({v.id === 'active' ? activeAdmins.length : formerAdmins.length})
+                  {v.label} (
+                  {v.id === 'active'
+                    ? activeAdmins.length
+                    : formerAdmins.length}
+                  )
                 </button>
               ))}
             </div>
@@ -303,7 +356,9 @@ export function AdminTeamTab({
           {!isLoading && isError && (
             <div className="px-6 py-10 text-center">
               <AlertCircle className="mx-auto h-8 w-8 text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">Couldn't load the team list.</p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Couldn't load the team list.
+              </p>
               <Button
                 variant="outline"
                 size="sm"
@@ -323,7 +378,8 @@ export function AdminTeamTab({
               {visibleAdmins.map((admin) => {
                 const isYou = admin.user_id === user.id;
                 const isBusy = busyId === admin.user_id;
-                const showMenu = !isYou || (admin.is_owner && otherActiveOwnerExists);
+                const showMenu =
+                  !isYou || (admin.is_owner && otherActiveOwnerExists);
 
                 return (
                   <div
@@ -331,7 +387,12 @@ export function AdminTeamTab({
                     className={`flex items-center gap-3 px-4 sm:px-6 py-4 ${isYou ? 'bg-accent/50' : ''} ${!admin.is_active ? 'opacity-60' : ''}`}
                   >
                     <Avatar className="h-9 w-9 shrink-0">
-                      {admin.avatar_url && <AvatarImage src={admin.avatar_url} alt={admin.display_name} />}
+                      {admin.avatar_url && (
+                        <AvatarImage
+                          src={admin.avatar_url}
+                          alt={admin.display_name}
+                        />
+                      )}
                       <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
                         {getInitials(admin.display_name)}
                       </AvatarFallback>
@@ -339,13 +400,19 @@ export function AdminTeamTab({
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold">{admin.display_name}</span>
+                        <span className="text-sm font-semibold">
+                          {admin.display_name}
+                        </span>
                         {admin.is_owner && (
                           <Badge className="bg-[#EEF2FF] text-[#3730A3] border border-[rgba(55,48,163,0.2)] rounded-full text-xs">
                             Owner
                           </Badge>
                         )}
-                        {isYou && <span className="text-xs text-muted-foreground italic">You</span>}
+                        {isYou && (
+                          <span className="text-xs text-muted-foreground italic">
+                            You
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         {admin.email}
@@ -353,7 +420,11 @@ export function AdminTeamTab({
                           <> · Invited {formatRelativeTime(admin.invited_at)}</>
                         )}
                         {!admin.is_pending && admin.last_sign_in_at && (
-                          <> · Last signed in {formatRelativeTime(admin.last_sign_in_at)}</>
+                          <>
+                            {' '}
+                            · Last signed in{' '}
+                            {formatRelativeTime(admin.last_sign_in_at)}
+                          </>
                         )}
                       </p>
                     </div>
@@ -378,20 +449,34 @@ export function AdminTeamTab({
                       {showMenu && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isBusy} aria-label={`Actions for ${admin.display_name}`}>
-                              {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={isBusy}
+                              aria-label={`Actions for ${admin.display_name}`}
+                            >
+                              {isBusy ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="h-4 w-4" />
+                              )}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {isYou && admin.is_owner && otherActiveOwnerExists && (
-                              <DropdownMenuItem onClick={handleStepDown}>
-                                <ShieldOff className="mr-2 h-4 w-4" />
-                                Step down as owner
-                              </DropdownMenuItem>
-                            )}
+                            {isYou &&
+                              admin.is_owner &&
+                              otherActiveOwnerExists && (
+                                <DropdownMenuItem onClick={handleStepDown}>
+                                  <ShieldOff className="mr-2 h-4 w-4" />
+                                  Step down as owner
+                                </DropdownMenuItem>
+                              )}
                             {!isYou && admin.is_pending && (
                               <>
-                                <DropdownMenuItem onClick={() => handleResend(admin)}>
+                                <DropdownMenuItem
+                                  onClick={() => handleResend(admin)}
+                                >
                                   <MailPlus className="mr-2 h-4 w-4" />
                                   Resend invite
                                 </DropdownMenuItem>
@@ -407,12 +492,16 @@ export function AdminTeamTab({
                             {!isYou && !admin.is_pending && admin.is_active && (
                               <>
                                 {admin.is_owner ? (
-                                  <DropdownMenuItem onClick={() => handleSetOwner(admin, false)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleSetOwner(admin, false)}
+                                  >
                                     <ShieldOff className="mr-2 h-4 w-4" />
                                     Remove owner
                                   </DropdownMenuItem>
                                 ) : (
-                                  <DropdownMenuItem onClick={() => handleSetOwner(admin, true)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleSetOwner(admin, true)}
+                                  >
                                     <ShieldCheck className="mr-2 h-4 w-4" />
                                     Make owner
                                   </DropdownMenuItem>
@@ -427,7 +516,9 @@ export function AdminTeamTab({
                               </>
                             )}
                             {!isYou && !admin.is_active && (
-                              <DropdownMenuItem onClick={() => handleReactivate(admin)}>
+                              <DropdownMenuItem
+                                onClick={() => handleReactivate(admin)}
+                              >
                                 <UserCheck className="mr-2 h-4 w-4" />
                                 Reactivate
                               </DropdownMenuItem>
@@ -442,7 +533,9 @@ export function AdminTeamTab({
 
               {visibleAdmins.length === 0 && (
                 <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-                  {teamView === 'active' ? 'No admins found.' : 'No former admins.'}
+                  {teamView === 'active'
+                    ? 'No admins found.'
+                    : 'No former admins.'}
                 </div>
               )}
             </div>
@@ -492,11 +585,18 @@ export function AdminTeamTab({
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setIsInviteOpen(false)} disabled={isInviting}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsInviteOpen(false)}
+                disabled={isInviting}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={isInviting}>
-                {isInviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isInviting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Send Invite
               </Button>
             </DialogFooter>

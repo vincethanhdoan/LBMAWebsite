@@ -14,7 +14,9 @@ export function QuickAnswerStrip() {
           {ANSWERS.map((answer) => (
             <div key={answer} className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-              <span className="text-sm font-medium text-foreground">{answer}</span>
+              <span className="text-sm font-medium text-foreground">
+                {answer}
+              </span>
             </div>
           ))}
         </div>

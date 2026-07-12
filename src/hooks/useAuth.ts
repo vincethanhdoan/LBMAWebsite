@@ -22,7 +22,10 @@ export function useAuth() {
         let session: Session | null = null;
 
         // 1) If we arrived via magic link, explicitly set the session from the hash
-        if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+        if (
+          typeof window !== 'undefined' &&
+          window.location.hash.includes('access_token')
+        ) {
           const params = new URLSearchParams(window.location.hash.slice(1));
           const accessToken = params.get('access_token');
           const refreshToken = params.get('refresh_token');
@@ -32,7 +35,11 @@ export function useAuth() {
             // not present in the URL during the setSession round-trip.
             const url = new URL(window.location.href);
             if (url.pathname === '/') url.pathname = '/dashboard';
-            window.history.replaceState(window.history.state, '', url.pathname + url.search);
+            window.history.replaceState(
+              window.history.state,
+              '',
+              url.pathname + url.search,
+            );
 
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
@@ -130,7 +137,7 @@ export function useAuth() {
         setUser(null);
         setAccessState('blocked');
         setAccessMessage(
-          'Your account is not provisioned for the portal yet. Please contact the academy for an invitation.'
+          'Your account is not provisioned for the portal yet. Please contact the academy for an invitation.',
         );
         return;
       }
@@ -140,7 +147,7 @@ export function useAuth() {
         setUser(null);
         setAccessState('blocked');
         setAccessMessage(
-          'Your account is not provisioned for the portal yet. Please contact the academy for an invitation.'
+          'Your account is not provisioned for the portal yet. Please contact the academy for an invitation.',
         );
         return;
       }
@@ -160,7 +167,9 @@ export function useAuth() {
         setProfile(resolvedProfile);
         setUser(null);
         setAccessState('blocked');
-        setAccessMessage('Your account has been deactivated. Please contact the academy for support.');
+        setAccessMessage(
+          'Your account has been deactivated. Please contact the academy for support.',
+        );
         return;
       }
 
@@ -178,7 +187,9 @@ export function useAuth() {
           setProfile(resolvedProfile);
           setUser(nextUser);
           setAccessState('blocked');
-          setAccessMessage('Unable to verify onboarding status. Please try again.');
+          setAccessMessage(
+            'Unable to verify onboarding status. Please try again.',
+          );
           return;
         }
 
@@ -190,12 +201,16 @@ export function useAuth() {
           return;
         }
 
-        const accountStatus = (familyData as { account_status?: string }).account_status ?? 'active';
+        const accountStatus =
+          (familyData as { account_status?: string }).account_status ??
+          'active';
         if (accountStatus !== 'active') {
           setProfile(resolvedProfile);
           setUser(null);
           setAccessState('blocked');
-          setAccessMessage('Your family portal access is currently inactive. Please contact the academy.');
+          setAccessMessage(
+            'Your family portal access is currently inactive. Please contact the academy.',
+          );
           return;
         }
       }
@@ -217,7 +232,10 @@ export function useAuth() {
   };
 
   const refreshUser = async () => {
-    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
+    const {
+      data: { user: supabaseUser },
+      error,
+    } = await supabase.auth.getUser();
     if (error) {
       console.error('refreshUser: failed to get user', error);
       return;

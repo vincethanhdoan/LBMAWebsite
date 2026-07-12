@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getAllFamiliesWithRelations, getFamilyWithRelations, type FamilyWithRelations } from '../lib/supabase/queries';
-import { setFamilyAccountStatus, updateGuardian, updateStudent, updateStudentsByFamily } from '../lib/supabase/mutations';
+import {
+  getAllFamiliesWithRelations,
+  getFamilyWithRelations,
+  type FamilyWithRelations,
+} from '../lib/supabase/queries';
+import {
+  setFamilyAccountStatus,
+  updateGuardian,
+  updateStudent,
+  updateStudentsByFamily,
+} from '../lib/supabase/mutations';
 import { supabase } from '../lib/supabase/client';
 import { calculateAge } from '../lib/format';
-import type { Guardian, Student } from '../lib/types';
+import type { BeltLevel, Guardian, Student } from '../lib/types';
 
 export type FamilyStatus = 'active' | 'inactive' | 'archived';
 export type StudentStatus = 'active' | 'inactive';
@@ -49,7 +58,7 @@ export type Family = {
   guardians: GuardianRow[];
 };
 
-export type FamilyDetails = {
+type FamilyDetails = {
   family: Family;
   guardians: GuardianRow[];
   students: StudentRow[];
@@ -74,23 +83,26 @@ function mapGuardian(guardian: Guardian): GuardianRow {
 
 function mapFamilyRecord(details: FamilyWithRelations): Family {
   const guardians = (details.guardians || []).map(mapGuardian);
-  const primaryGuardian = guardians.find((g) => g.isPrimaryContact) ?? guardians[0];
+  const primaryGuardian =
+    guardians.find((g) => g.isPrimaryContact) ?? guardians[0];
 
-  const students: StudentRow[] = (details.students || []).map((student: Student) => ({
-    studentId: student.student_id,
-    studentName: `${student.first_name} ${student.last_name}`,
-    firstName: student.first_name,
-    lastName: student.last_name,
-    age: calculateAge(student.date_of_birth),
-    beltLevel: student.belt_level ?? 'White Belt',
-    status: student.status === 'inactive' ? 'inactive' : 'active',
-    notes: student.notes ?? '',
-    photoUrl: student.photo_url ?? null,
-    familyId: details.family_id,
-    familyName: `${primaryGuardian?.name ?? 'Unknown'} Family`,
-    primaryContact: primaryGuardian?.name ?? 'Unknown',
-    primaryEmail: details.primary_email,
-  }));
+  const students: StudentRow[] = (details.students || []).map(
+    (student: Student) => ({
+      studentId: student.student_id,
+      studentName: `${student.first_name} ${student.last_name}`,
+      firstName: student.first_name,
+      lastName: student.last_name,
+      age: calculateAge(student.date_of_birth),
+      beltLevel: student.belt_level ?? 'White Belt',
+      status: student.status === 'inactive' ? 'inactive' : 'active',
+      notes: student.notes ?? '',
+      photoUrl: student.photo_url ?? null,
+      familyId: details.family_id,
+      familyName: `${primaryGuardian?.name ?? 'Unknown'} Family`,
+      primaryContact: primaryGuardian?.name ?? 'Unknown',
+      primaryEmail: details.primary_email,
+    }),
+  );
 
   return {
     id: details.family_id,
@@ -98,7 +110,10 @@ function mapFamilyRecord(details: FamilyWithRelations): Family {
     primaryEmail: details.primary_email,
     primaryContact: primaryGuardian?.name ?? 'Unknown',
     phoneNumber: primaryGuardian?.phone ?? null,
-    address: [details.address, details.city, details.state, details.zip].filter(Boolean).join(', ') || 'Not set',
+    address:
+      [details.address, details.city, details.state, details.zip]
+        .filter(Boolean)
+        .join(', ') || 'Not set',
     studentCount: students.length,
     status: toFamilyStatus(details.account_status),
     joinedDate: details.created_at,
@@ -109,7 +124,9 @@ function mapFamilyRecord(details: FamilyWithRelations): Family {
 
 export function useAdminFamilies(searchTerm: string) {
   const [families, setFamilies] = useState<Family[]>([]);
-  const [selectedFamily, setSelectedFamily] = useState<FamilyDetails | null>(null);
+  const [selectedFamily, setSelectedFamily] = useState<FamilyDetails | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,13 +148,17 @@ export function useAdminFamilies(searchTerm: string) {
     void refreshFamilies();
   }, [refreshFamilies]);
 
-  const allStudents: StudentRow[] = useMemo(() => families.flatMap((f) => f.students), [families]);
+  const allStudents: StudentRow[] = useMemo(
+    () => families.flatMap((f) => f.students),
+    [families],
+  );
 
   const filteredFamilies = useMemo(() => {
     const searchLower = searchTerm.trim().toLowerCase();
     if (!searchLower) return families;
     return families.filter((family) => {
-      if (family.primaryContact.toLowerCase().includes(searchLower)) return true;
+      if (family.primaryContact.toLowerCase().includes(searchLower))
+        return true;
       if (family.primaryEmail.toLowerCase().includes(searchLower)) return true;
       return family.guardians.some(
         (g) =>
@@ -152,7 +173,8 @@ export function useAdminFamilies(searchTerm: string) {
     if (!searchLower) return allStudents;
     return allStudents.filter((student) => {
       if (student.studentName.toLowerCase().includes(searchLower)) return true;
-      if (student.primaryContact.toLowerCase().includes(searchLower)) return true;
+      if (student.primaryContact.toLowerCase().includes(searchLower))
+        return true;
       return student.primaryEmail.toLowerCase().includes(searchLower);
     });
   }, [allStudents, searchTerm]);
@@ -160,7 +182,11 @@ export function useAdminFamilies(searchTerm: string) {
   const loadFamilyDetails = useCallback(async (familyId: string) => {
     const details = await getFamilyWithRelations(familyId);
     const mapped = mapFamilyRecord(details);
-    setSelectedFamily({ family: mapped, guardians: mapped.guardians, students: mapped.students });
+    setSelectedFamily({
+      family: mapped,
+      guardians: mapped.guardians,
+      students: mapped.students,
+    });
   }, []);
 
   const reloadSelectedFamily = useCallback(async () => {
@@ -180,7 +206,9 @@ export function useAdminFamilies(searchTerm: string) {
         await refreshFamilies();
         await reloadSelectedFamily();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to update family status');
+        setError(
+          err instanceof Error ? err.message : 'Failed to update family status',
+        );
         throw err;
       } finally {
         setSaving(false);
@@ -190,7 +218,14 @@ export function useAdminFamilies(searchTerm: string) {
   );
 
   const saveStudent = useCallback(
-    async (studentId: string, updates: { belt_level?: string | null; status?: StudentStatus; notes?: string | null }) => {
+    async (
+      studentId: string,
+      updates: {
+        belt_level?: BeltLevel | null;
+        status?: StudentStatus;
+        notes?: string | null;
+      },
+    ) => {
       setSaving(true);
       setError(null);
       try {
@@ -208,7 +243,15 @@ export function useAdminFamilies(searchTerm: string) {
   );
 
   const saveGuardian = useCallback(
-    async (guardianId: string, updates: Partial<Pick<Guardian, 'first_name' | 'last_name' | 'email' | 'phone_number' | 'relationship'>>) => {
+    async (
+      guardianId: string,
+      updates: Partial<
+        Pick<
+          Guardian,
+          'first_name' | 'last_name' | 'email' | 'phone_number' | 'relationship'
+        >
+      >,
+    ) => {
       setSaving(true);
       setError(null);
       try {
@@ -216,7 +259,9 @@ export function useAdminFamilies(searchTerm: string) {
         await refreshFamilies();
         await reloadSelectedFamily();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save guardian');
+        setError(
+          err instanceof Error ? err.message : 'Failed to save guardian',
+        );
         throw err;
       } finally {
         setSaving(false);
@@ -237,7 +282,9 @@ export function useAdminFamilies(searchTerm: string) {
         await refreshFamilies();
         await reloadSelectedFamily();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to set primary guardian');
+        setError(
+          err instanceof Error ? err.message : 'Failed to set primary guardian',
+        );
         throw err;
       } finally {
         setSaving(false);

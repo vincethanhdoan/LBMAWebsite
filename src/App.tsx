@@ -1,5 +1,12 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { QueryProvider } from './providers/QueryProvider';
 import { FamilyOnboarding } from './components/onboarding/FamilyOnboarding';
 import { DashboardV2 } from './components/DashboardV2';
@@ -51,7 +58,10 @@ function ProtectedRoute({
     return <Navigate to="/" replace />;
   }
 
-  if (accessState === 'needs_onboarding' && location.pathname !== '/onboarding') {
+  if (
+    accessState === 'needs_onboarding' &&
+    location.pathname !== '/onboarding'
+  ) {
     return <Navigate to="/onboarding" replace />;
   }
 
@@ -63,7 +73,15 @@ function ProtectedRoute({
 }
 
 function AppRoutes() {
-  const { user, loading, accessState, accessMessage, signOut, refreshUser, isOwner } = useAuth();
+  const {
+    user,
+    loading,
+    accessState,
+    accessMessage,
+    signOut,
+    refreshUser,
+    isOwner,
+  } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -72,11 +90,18 @@ function AppRoutes() {
   };
 
   // Redirect logged-in users from public home or auth callback to onboarding/dashboard.
-  if (user && (location.pathname === '/' || location.pathname === '/auth/callback' || location.pathname === '/portal')) {
+  if (
+    user &&
+    (location.pathname === '/' ||
+      location.pathname === '/auth/callback' ||
+      location.pathname === '/portal')
+  ) {
     if (accessState === 'needs_onboarding') {
       return <Navigate to="/onboarding" replace />;
     }
-    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+    return (
+      <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />
+    );
   }
 
   // Public route renders immediately; protected routes show loading via ProtectedRoute
@@ -102,11 +127,19 @@ function AppRoutes() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute user={user} loading={loading} accessState={accessState}>
+            <ProtectedRoute
+              user={user}
+              loading={loading}
+              accessState={accessState}
+            >
               {user?.role === 'admin' ? (
                 <Navigate to="/admin" replace />
               ) : user ? (
-                <DashboardV2 user={user} onLogout={handleLogout} onRefreshUser={refreshUser} />
+                <DashboardV2
+                  user={user}
+                  onLogout={handleLogout}
+                  onRefreshUser={refreshUser}
+                />
               ) : null}
             </ProtectedRoute>
           }
@@ -114,20 +147,40 @@ function AppRoutes() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute user={user} loading={loading} accessState={accessState} requireAdmin>
-              {user && <AdminDashboardV2 user={user} onLogout={handleLogout} onRefreshUser={refreshUser} isOwner={isOwner} />}
+            <ProtectedRoute
+              user={user}
+              loading={loading}
+              accessState={accessState}
+              requireAdmin
+            >
+              {user && (
+                <AdminDashboardV2
+                  user={user}
+                  onLogout={handleLogout}
+                  onRefreshUser={refreshUser}
+                  isOwner={isOwner}
+                />
+              )}
             </ProtectedRoute>
           }
         />
         <Route
           path="/onboarding"
           element={
-            <ProtectedRoute user={user} loading={loading} accessState={accessState}>
+            <ProtectedRoute
+              user={user}
+              loading={loading}
+              accessState={accessState}
+            >
               {user?.role === 'family' ? (
-                <FamilyOnboarding user={user} onComplete={async () => {
-                  await refreshUser();
-                  navigate('/dashboard');
-                }} onLogout={handleLogout} />
+                <FamilyOnboarding
+                  user={user}
+                  onComplete={async () => {
+                    await refreshUser();
+                    navigate('/dashboard');
+                  }}
+                  onLogout={handleLogout}
+                />
               ) : (
                 <Navigate to="/dashboard" replace />
               )}

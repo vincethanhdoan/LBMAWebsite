@@ -24,7 +24,9 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // per-student selected test ID
-  const [selectedTestByStudent, setSelectedTestByStudent] = useState<Map<string, string>>(new Map());
+  const [selectedTestByStudent, setSelectedTestByStudent] = useState<
+    Map<string, string>
+  >(new Map());
 
   // Auto-select the most recent test for each student once data loads
   useEffect(() => {
@@ -34,12 +36,15 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
       const initial = new Map<string, string>();
       for (const student of students) {
         const studentTestIds = new Set(
-          feedback.filter((f) => f.student_id === student.student_id).map((f) => f.test_id)
+          feedback
+            .filter((f) => f.student_id === student.student_id)
+            .map((f) => f.test_id),
         );
         const sorted = tests
           .filter((t) => studentTestIds.has(t.test_id))
           .sort((a, b) => b.test_date.localeCompare(a.test_date));
-        if (sorted.length > 0) initial.set(student.student_id, sorted[0].test_id);
+        if (sorted.length > 0)
+          initial.set(student.student_id, sorted[0].test_id);
       }
       return initial;
     });
@@ -64,7 +69,9 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
         setTests(testsData);
         setFeedback(feedbackData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load feedback');
+        setError(
+          err instanceof Error ? err.message : 'Failed to load feedback',
+        );
       } finally {
         setLoading(false);
       }
@@ -74,15 +81,20 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
 
   function getTestsForStudent(studentId: string): FeedbackTest[] {
     const testIdsForStudent = new Set(
-      feedback.filter((f) => f.student_id === studentId).map((f) => f.test_id)
+      feedback.filter((f) => f.student_id === studentId).map((f) => f.test_id),
     );
     return tests
       .filter((t) => testIdsForStudent.has(t.test_id))
       .sort((a, b) => b.test_date.localeCompare(a.test_date));
   }
 
-  function getFeedbackForStudentInTest(studentId: string, testId: string): FeedbackRow | undefined {
-    return feedback.find((f) => f.student_id === studentId && f.test_id === testId);
+  function getFeedbackForStudentInTest(
+    studentId: string,
+    testId: string,
+  ): FeedbackWithRelations | undefined {
+    return feedback.find(
+      (f) => f.student_id === studentId && f.test_id === testId,
+    );
   }
 
   function selectTest(studentId: string, testId: string) {
@@ -118,9 +130,10 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
       <div className="space-y-6">
         {students.map((student) => {
           const testsForStudent = getTestsForStudent(student.student_id);
-          const selectedTestId = selectedTestByStudent.get(student.student_id) ?? null;
+          const selectedTestId =
+            selectedTestByStudent.get(student.student_id) ?? null;
           const selectedTest = selectedTestId
-            ? tests.find((t) => t.test_id === selectedTestId) ?? null
+            ? (tests.find((t) => t.test_id === selectedTestId) ?? null)
             : null;
           const selectedFeedback = selectedTestId
             ? getFeedbackForStudentInTest(student.student_id, selectedTestId)
@@ -131,9 +144,16 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
               <CardHeader>
                 <div className="flex items-center gap-4">
                   <Avatar className="h-12 w-12">
-                    {student.photo_url && <AvatarImage src={student.photo_url} alt={`${student.first_name} ${student.last_name}`} />}
+                    {student.photo_url && (
+                      <AvatarImage
+                        src={student.photo_url}
+                        alt={`${student.first_name} ${student.last_name}`}
+                      />
+                    )}
                     <AvatarFallback className="text-lg bg-primary/10 text-primary">
-                      {getInitials(`${student.first_name} ${student.last_name}`)}
+                      {getInitials(
+                        `${student.first_name} ${student.last_name}`,
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <CardTitle className="flex items-center gap-3">
@@ -160,9 +180,13 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
                               ? 'bg-primary/10 border-primary'
                               : 'hover:bg-secondary/50 border-transparent'
                           }`}
-                          onClick={() => selectTest(student.student_id, test.test_id)}
+                          onClick={() =>
+                            selectTest(student.student_id, test.test_id)
+                          }
                         >
-                          <p className="font-medium text-sm leading-tight">{test.title}</p>
+                          <p className="font-medium text-sm leading-tight">
+                            {test.title}
+                          </p>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                             <Calendar className="w-3 h-3" />
                             {formatTestDate(test.test_date)}
@@ -176,7 +200,9 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
                       {selectedTest && selectedFeedback ? (
                         <div className="space-y-3">
                           <div>
-                            <h4 className="font-semibold">{selectedTest.title}</h4>
+                            <h4 className="font-semibold">
+                              {selectedTest.title}
+                            </h4>
                             <p className="text-sm text-muted-foreground">
                               {formatTestDate(selectedTest.test_date)}
                             </p>
@@ -186,12 +212,19 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
                               </p>
                             )}
                           </div>
-                          <p className="text-sm leading-relaxed">{selectedFeedback.body}</p>
+                          <p className="text-sm leading-relaxed">
+                            {selectedFeedback.body}
+                          </p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
                             <User className="w-4 h-4" />
-                            <span>{selectedFeedback.profiles?.display_name ?? 'Admin'}</span>
+                            <span>
+                              {selectedFeedback.profiles?.display_name ??
+                                'Admin'}
+                            </span>
                             <span>·</span>
-                            <span>{formatDate(selectedFeedback.created_at)}</span>
+                            <span>
+                              {formatDate(selectedFeedback.created_at)}
+                            </span>
                           </div>
                         </div>
                       ) : (

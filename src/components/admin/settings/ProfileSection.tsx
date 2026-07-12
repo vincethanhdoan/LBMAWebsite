@@ -1,13 +1,25 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Edit2, User } from 'lucide-react';
 import { toast } from 'sonner';
-import { updateProfile, updateProfileAvatar } from '../../../lib/supabase/mutations';
+import {
+  updateProfile,
+  updateProfileAvatar,
+} from '../../../lib/supabase/mutations';
 import { PhotoUploader } from '../../dashboard/PhotoUploader';
-import { uploadProfileImage, deleteProfileImage } from '../../../lib/supabase/storage';
+import {
+  uploadProfileImage,
+  deleteProfileImage,
+} from '../../../lib/supabase/storage';
 import type { User as UserType } from '../../../lib/types';
 
 type ProfileSectionProps = {
@@ -29,7 +41,11 @@ export function ProfileSection({ user, onRefreshUser }: ProfileSectionProps) {
       await onRefreshUser();
       setIsEditing(false);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save. Please try again.');
+      setSaveError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to save. Please try again.',
+      );
     } finally {
       setIsSaving(false);
     }
@@ -43,7 +59,9 @@ export function ProfileSection({ user, onRefreshUser }: ProfileSectionProps) {
             <User className="w-5 h-5" />
             <CardTitle>Profile Photo</CardTitle>
           </div>
-          <CardDescription>This photo appears on your account and in messages</CardDescription>
+          <CardDescription>
+            This photo appears on your account and in messages
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <PhotoUploader
@@ -80,7 +98,11 @@ export function ProfileSection({ user, onRefreshUser }: ProfileSectionProps) {
               <CardTitle>Profile Information</CardTitle>
             </div>
             {!isEditing && (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+              >
                 <Edit2 className="w-4 h-4 mr-2" />
                 Edit
               </Button>
@@ -100,7 +122,11 @@ export function ProfileSection({ user, onRefreshUser }: ProfileSectionProps) {
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">Email</Label>
-                <Input value={user.email} disabled className="disabled:opacity-50 cursor-not-allowed" />
+                <Input
+                  value={user.email}
+                  disabled
+                  className="disabled:opacity-50 cursor-not-allowed"
+                />
               </div>
               {saveError && (
                 <p className="text-sm text-destructive">{saveError}</p>
@@ -109,7 +135,14 @@ export function ProfileSection({ user, onRefreshUser }: ProfileSectionProps) {
                 <Button onClick={handleSave} disabled={isSaving}>
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
-                <Button variant="outline" onClick={() => { setIsEditing(false); setSaveError(null); }} disabled={isSaving}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setSaveError(null);
+                  }}
+                  disabled={isSaving}
+                >
                   Cancel
                 </Button>
               </div>

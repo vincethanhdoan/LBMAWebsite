@@ -12,18 +12,20 @@ export function AboutPageV2() {
 
   return (
     <div>
-
       {/* ── PAGE HEADER ───────────────────────────────────── */}
       <section className="py-20 border-b bg-slate-50">
         <div className="container mx-auto px-6 max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">About Us</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">
+            About Us
+          </p>
           <h1 className="text-4xl md:text-5xl font-bold mb-5 leading-snug">
             A school that feels like family.
           </h1>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Los Banos Martial Arts Academy was built around one belief: that every child
-            deserves a place where they feel safe, challenged, and supported. We're not a
-            franchise. We're a local, family-run school and we know every student by name.
+            Los Banos Martial Arts Academy was built around one belief: that
+            every child deserves a place where they feel safe, challenged, and
+            supported. We're not a franchise. We're a local, family-run school
+            and we know every student by name.
           </p>
         </div>
       </section>
@@ -44,20 +46,22 @@ export function AboutPageV2() {
               <SectionHeader heading="Our story." />
               <div className="space-y-4 text-base text-muted-foreground leading-relaxed">
                 <p>
-                  LBMAA started with a simple idea: that the best martial arts school for a
-                  child isn't the most decorated one — it's the one where they feel seen and
-                  respected every time they walk through the door.
+                  LBMAA started with a simple idea: that the best martial arts
+                  school for a child isn't the most decorated one — it's the one
+                  where they feel seen and respected every time they walk
+                  through the door.
                 </p>
                 <p>
-                  Our instructors aren't just skilled martial artists. They're mentors who
-                  understand children — how to challenge them without discouraging them, how
-                  to hold standards without creating pressure, and how to make every student
-                  feel like they belong.
+                  Our instructors aren't just skilled martial artists. They're
+                  mentors who understand children — how to challenge them
+                  without discouraging them, how to hold standards without
+                  creating pressure, and how to make every student feel like
+                  they belong.
                 </p>
                 <p>
-                  Whether your child is shy and needs a confidence boost, full of energy and
-                  needs focus, or just looking for something positive to be part of — we meet
-                  them where they are.
+                  Whether your child is shy and needs a confidence boost, full
+                  of energy and needs focus, or just looking for something
+                  positive to be part of — we meet them where they are.
                 </p>
               </div>
             </div>
@@ -91,12 +95,17 @@ export function AboutPageV2() {
                 body: 'The kind that comes from real achievement. When a student earns a belt, they know they earned it — and that feeling stays with them.',
               },
             ].map(({ icon: Icon, heading, body }) => (
-              <div key={heading} className="bg-white border border-border rounded-xl p-6 flex flex-col gap-4">
+              <div
+                key={heading}
+                className="bg-white border border-border rounded-xl p-6 flex flex-col gap-4"
+              >
                 <div className="w-12 h-12 rounded-xl bg-primary/8 flex items-center justify-center">
                   <Icon className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="font-semibold text-base">{heading}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {body}
+                </p>
               </div>
             ))}
           </div>
@@ -115,7 +124,7 @@ export function AboutPageV2() {
             {[
               {
                 heading: 'Your child is not a number here',
-                body: "We keep classes small on purpose. Every instructor knows every student — their name, their goals, and where they started.",
+                body: 'We keep classes small on purpose. Every instructor knows every student — their name, their goals, and where they started.',
               },
               {
                 heading: 'Progress based on readiness, not schedule',
@@ -123,7 +132,7 @@ export function AboutPageV2() {
               },
               {
                 heading: "You're always in the loop",
-                body: "Parents are welcome to watch any class. Our family portal keeps you connected with announcements, updates, and direct communication from staff.",
+                body: 'Parents are welcome to watch any class. Our family portal keeps you connected with announcements, updates, and direct communication from staff.',
               },
               {
                 heading: 'Mistakes are part of the plan',
@@ -134,7 +143,9 @@ export function AboutPageV2() {
                 <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-sm mb-1">{heading}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {body}
+                  </p>
                 </div>
               </div>
             ))}
@@ -176,8 +187,12 @@ export function AboutPageV2() {
                   <Users className="w-7 h-7 text-primary" />
                 </div>
                 <p className="font-semibold text-sm">{instructor.name}</p>
-                <p className="text-xs text-primary font-medium">{instructor.credential}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{instructor.note}</p>
+                <p className="text-xs text-primary font-medium">
+                  {instructor.credential}
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {instructor.note}
+                </p>
               </div>
             ))}
           </div>
@@ -202,21 +217,23 @@ export function AboutPageV2() {
           <div className="w-8 h-0.5 bg-primary rounded-full mx-auto mb-8" />
           <h2 className="text-2xl font-bold mb-3">Come see it for yourself.</h2>
           <p className="text-muted-foreground text-base mb-8 leading-relaxed">
-            The best way to know if LBMAA is right for your child is to bring them in.
-            First class is free, no strings attached.
+            The best way to know if LBMAA is right for your child is to bring
+            them in. First class is free, no strings attached.
           </p>
           <Button size="lg" className="px-10 font-semibold" onClick={goToTrial}>
             Book a Free Trial Class
           </Button>
           <p className="text-sm text-muted-foreground mt-5">
             Questions?{' '}
-            <a href="tel:+12095550123" className="font-medium text-foreground hover:underline">
+            <a
+              href="tel:+12095550123"
+              className="font-medium text-foreground hover:underline"
+            >
               Call us at (209) 555-0123
             </a>
           </p>
         </div>
       </section>
-
     </div>
   );
 }

@@ -1,18 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { Loader2, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { EnrollmentLead } from '../../../lib/types';
 import type { TerminalLeadFilter } from '../../../lib/supabase/queries';
 import { Button } from '../../ui/button';
-import { useRestoreLead, useTerminalLeadCounts, useTerminalLeads } from '../../../lib/hooks/leads';
-import { formatDate, leadMatchesSearch, STATUS_LABELS, toLocalDateKey } from './leadDisplay';
+import {
+  useRestoreLead,
+  useTerminalLeadCounts,
+  useTerminalLeads,
+} from '../../../lib/hooks/leads';
+import {
+  formatDate,
+  leadMatchesSearch,
+  STATUS_LABELS,
+  toLocalDateKey,
+} from './leadDisplay';
 import { childSummary, getAppointmentOccurrences } from './leadViews';
 import { LeadRow, StatusBadge, Surface } from './ui';
 
-export type AllLeadsFilter = 'everyone' | 'active' | 'enrolled' | 'closed' | 'denied' | 'archived';
+export type AllLeadsFilter =
+  'everyone' | 'active' | 'enrolled' | 'closed' | 'denied' | 'archived';
 
-type BadgeKind = 'confirmed' | 'unconfirmed' | 'enrolled' | 'closed' | 'denied' | 'new';
+type BadgeKind =
+  'confirmed' | 'unconfirmed' | 'enrolled' | 'closed' | 'denied' | 'new';
 
 const FILTERS: { id: AllLeadsFilter; label: string }[] = [
   { id: 'everyone', label: 'Everyone' },
@@ -76,7 +87,9 @@ export function AllLeadsView({
   initialFilter?: AllLeadsFilter;
 }): JSX.Element {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<AllLeadsFilter>(initialFilter ?? 'everyone');
+  const [filter, setFilter] = useState<AllLeadsFilter>(
+    initialFilter ?? 'everyone',
+  );
   const debouncedSearch = useDebouncedValue(search, 300);
 
   const terminalQuery = useTerminalLeads(mapFilter(filter), debouncedSearch);
@@ -84,7 +97,7 @@ export function AllLeadsView({
   const restoreLead = useRestoreLead();
 
   const terminalLeads = useMemo(
-    () => (terminalQuery.data?.pages ?? []).flatMap(p => p.leads),
+    () => (terminalQuery.data?.pages ?? []).flatMap((p) => p.leads),
     [terminalQuery.data],
   );
 
@@ -92,7 +105,8 @@ export function AllLeadsView({
   const showTerminal = filter !== 'active';
 
   const activeMatches = useMemo(
-    () => (showActive ? activeLeads.filter(l => leadMatchesSearch(l, search)) : []),
+    () =>
+      showActive ? activeLeads.filter((l) => leadMatchesSearch(l, search)) : [],
     [showActive, activeLeads, search],
   );
 
@@ -102,7 +116,8 @@ export function AllLeadsView({
     const todayKey = toLocalDateKey(new Date());
     const map = new Map<string, string>();
     for (const o of getAppointmentOccurrences(activeLeads)) {
-      if (o.dateKey >= todayKey && !map.has(o.lead.lead_id)) map.set(o.lead.lead_id, o.dateKey);
+      if (o.dateKey >= todayKey && !map.has(o.lead.lead_id))
+        map.set(o.lead.lead_id, o.dateKey);
     }
     return map;
   }, [activeLeads]);
@@ -115,7 +130,8 @@ export function AllLeadsView({
     for (const l of loaded) {
       const email = l.parent_email.trim().toLowerCase();
       const earliest = earliestByEmail.get(email);
-      if (!earliest || l.created_at < earliest) earliestByEmail.set(email, l.created_at);
+      if (!earliest || l.created_at < earliest)
+        earliestByEmail.set(email, l.created_at);
     }
     const ids = new Set<string>();
     for (const l of loaded) {
@@ -134,13 +150,16 @@ export function AllLeadsView({
     const parts: string[] = [];
     const summary = childSummary(lead);
     if (summary) parts.push(summary);
-    if (duplicateLeadIds.has(lead.lead_id)) parts.push('previous inquiry exists');
+    if (duplicateLeadIds.has(lead.lead_id))
+      parts.push('previous inquiry exists');
     return parts.length ? parts.join(' · ') : undefined;
   }
 
   function activeRow(lead: EnrollmentLead): ReactNode {
     const upcoming = nextUpcomingByLead.get(lead.lead_id);
-    const line2 = upcoming ? `appointment ${formatDate(upcoming + 'T12:00:00')}` : STATUS_LABELS[lead.status];
+    const line2 = upcoming
+      ? `appointment ${formatDate(upcoming + 'T12:00:00')}`
+      : STATUS_LABELS[lead.status];
     const kind = badgeKind(lead.status);
     return (
       <LeadRow
@@ -171,10 +190,13 @@ export function AllLeadsView({
             <Button
               size="sm"
               variant="outline"
-              disabled={restoreLead.isPending && restoreLead.variables === lead.lead_id}
+              disabled={
+                restoreLead.isPending && restoreLead.variables === lead.lead_id
+              }
               onClick={() =>
                 restoreLead.mutate(lead.lead_id, {
-                  onError: () => toast.error('Could not restore lead. Please try again.'),
+                  onError: () =>
+                    toast.error('Could not restore lead. Please try again.'),
                 })
               }
             >
@@ -222,7 +244,7 @@ export function AllLeadsView({
         <input
           type="text"
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email, phone, or student"
           className="w-full pl-9 pr-10 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
         />
@@ -239,7 +261,7 @@ export function AllLeadsView({
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        {FILTERS.map(f => (
+        {FILTERS.map((f) => (
           <button
             key={f.id}
             type="button"
@@ -264,7 +286,7 @@ export function AllLeadsView({
 
       {terminalLoading && (
         <div className="space-y-2">
-          {[0, 1, 2].map(i => (
+          {[0, 1, 2].map((i) => (
             <div key={i} className="h-12 bg-muted rounded-xl animate-pulse" />
           ))}
         </div>

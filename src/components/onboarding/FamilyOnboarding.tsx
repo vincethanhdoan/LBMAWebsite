@@ -1,93 +1,113 @@
 // src/components/onboarding/FamilyOnboarding.tsx
-import { useState } from 'react'
-import type { Relationship } from '../../lib/types'
-import { GuardianStep } from './GuardianStep'
-import { ChildrenStep } from './ChildrenStep'
-import { AddressStep } from './AddressStep'
-import { AgreementStep } from './AgreementStep'
-import { updateProfile, createFamily, createGuardian, createStudent } from '../../lib/supabase/mutations'
-import { ArrowRight, CheckCircle } from 'lucide-react'
-import { Button } from '../ui/button'
+import { useState } from 'react';
+import type { Relationship } from '../../lib/types';
+import { GuardianStep } from './GuardianStep';
+import { ChildrenStep } from './ChildrenStep';
+import { AddressStep } from './AddressStep';
+import { AgreementStep } from './AgreementStep';
+import {
+  updateProfile,
+  createFamily,
+  createGuardian,
+  createStudent,
+} from '../../lib/supabase/mutations';
+import { ArrowRight, CheckCircle } from 'lucide-react';
+import { Button } from '../ui/button';
 
 export type GuardianForm = {
-  firstName: string
-  lastName: string
-  phone: string
-  relationship: Relationship | ''
-}
+  firstName: string;
+  lastName: string;
+  phone: string;
+  relationship: Relationship | '';
+};
 
 export type ChildForm = {
-  id: string
-  firstName: string
-  lastName: string
-  dob: string
-}
+  id: string;
+  firstName: string;
+  lastName: string;
+  dob: string;
+};
 
 export type AddressForm = {
-  street: string
-  city: string
-  state: string
-  zip: string
-}
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+};
 
 type User = {
-  id: string
-  email: string
-  role: 'admin' | 'family'
-  displayName: string
-}
+  id: string;
+  email: string;
+  role: 'admin' | 'family';
+  displayName: string;
+};
 
 interface FamilyOnboardingProps {
-  user: User
-  onComplete: () => void | Promise<void>
-  onLogout: () => Promise<void>
+  user: User;
+  onComplete: () => void | Promise<void>;
+  onLogout: () => Promise<void>;
 }
 
-const PROGRESS: Record<0 | 1 | 2 | 3, number> = { 0: 8, 1: 33, 2: 66, 3: 90 }
+const PROGRESS: Record<0 | 1 | 2 | 3, number> = { 0: 8, 1: 33, 2: 66, 3: 90 };
 
-export function FamilyOnboarding({ user, onComplete, onLogout }: FamilyOnboardingProps) {
-  const [step, setStep] = useState<0 | 1 | 2 | 3 | 'done'>(0)
+export function FamilyOnboarding({
+  user,
+  onComplete,
+  onLogout,
+}: FamilyOnboardingProps) {
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 'done'>(0);
   const [guardian, setGuardian] = useState<GuardianForm>({
-    firstName: '', lastName: '', phone: '', relationship: '',
-  })
+    firstName: '',
+    lastName: '',
+    phone: '',
+    relationship: '',
+  });
   const [children, setChildren] = useState<ChildForm[]>([
     { id: crypto.randomUUID(), firstName: '', lastName: '', dob: '' },
-  ])
+  ]);
   const [address, setAddress] = useState<AddressForm>({
-    street: '', city: '', state: 'CA', zip: '',
-  })
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+    street: '',
+    city: '',
+    state: 'CA',
+    zip: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [savedData, setSavedData] = useState<{
-    guardianName: string
-    childNames: string[]
-    hasAddress: boolean
-  } | null>(null)
+    guardianName: string;
+    childNames: string[];
+    hasAddress: boolean;
+  } | null>(null);
 
-  const progressPct = step === 'done' ? 100 : PROGRESS[step as 0 | 1 | 2 | 3]
+  const progressPct = step === 'done' ? 100 : PROGRESS[step as 0 | 1 | 2 | 3];
 
   async function handleSubmit(skipAddress: boolean) {
-    setSubmitting(true)
-    setError(null)
+    setSubmitting(true);
+    setError(null);
     try {
-      const fullName = `${guardian.firstName.trim()} ${guardian.lastName.trim()}`
+      const fullName = `${guardian.firstName.trim()} ${guardian.lastName.trim()}`;
 
-      await updateProfile(user.id, { display_name: fullName })
+      await updateProfile(user.id, { display_name: fullName });
 
-      const addrFields: { address: string | null; city: string | null; state: string | null; zip: string | null } = skipAddress
+      const addrFields: {
+        address: string | null;
+        city: string | null;
+        state: string | null;
+        zip: string | null;
+      } = skipAddress
         ? { address: null, city: null, state: null, zip: null }
         : {
             address: address.street.trim() || null,
             city: address.city.trim() || null,
             state: address.state.trim() || null,
             zip: address.zip.trim() || null,
-          }
+          };
 
       const family = await createFamily({
         owner_user_id: user.id,
         primary_email: user.email,
         ...addrFields,
-      })
+      });
 
       await createGuardian({
         family_id: family.family_id,
@@ -97,7 +117,7 @@ export function FamilyOnboarding({ user, onComplete, onLogout }: FamilyOnboardin
         phone_number: guardian.phone.trim(),
         relationship: guardian.relationship || null,
         is_primary_contact: true,
-      })
+      });
 
       for (const child of children) {
         await createStudent({
@@ -108,21 +128,25 @@ export function FamilyOnboarding({ user, onComplete, onLogout }: FamilyOnboardin
           belt_level: null,
           status: 'active',
           notes: null,
-        })
+          photo_url: null,
+        });
       }
 
       setSavedData({
         guardianName: fullName,
-        childNames: children.map(c => c.firstName.trim()),
-        hasAddress: !skipAddress && !!(address.street.trim() || address.city.trim()),
-      })
-      setStep('done')
+        childNames: children.map((c) => c.firstName.trim()),
+        hasAddress:
+          !skipAddress && !!(address.street.trim() || address.city.trim()),
+      });
+      setStep('done');
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'Something went wrong. Please try again.'
-      )
+        err instanceof Error
+          ? err.message
+          : 'Something went wrong. Please try again.',
+      );
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
   }
 
@@ -170,14 +194,12 @@ export function FamilyOnboarding({ user, onComplete, onLogout }: FamilyOnboardin
       {/* Step area */}
       <div className="flex justify-center px-4 py-10">
         <div className="w-full max-w-md">
-          {step === 0 && (
-            <AgreementStep onNext={() => setStep(1)} />
-          )}
+          {step === 0 && <AgreementStep onNext={() => setStep(1)} />}
           {step === 1 && (
             <GuardianStep
               email={user.email}
               values={guardian}
-              onChange={updates => setGuardian(g => ({ ...g, ...updates }))}
+              onChange={(updates) => setGuardian((g) => ({ ...g, ...updates }))}
               onNext={() => setStep(2)}
             />
           )}
@@ -192,7 +214,7 @@ export function FamilyOnboarding({ user, onComplete, onLogout }: FamilyOnboardin
           {step === 3 && (
             <AddressStep
               values={address}
-              onChange={updates => setAddress(a => ({ ...a, ...updates }))}
+              onChange={(updates) => setAddress((a) => ({ ...a, ...updates }))}
               onFinish={() => void handleSubmit(false)}
               onSkip={() => void handleSubmit(true)}
               onBack={() => setStep(2)}
@@ -212,7 +234,8 @@ export function FamilyOnboarding({ user, onComplete, onLogout }: FamilyOnboardin
                 Welcome to the family!
               </h2>
               <p className="text-sm text-muted-foreground mb-7 leading-relaxed">
-                Your profile is set up. You can update any details from your dashboard.
+                Your profile is set up. You can update any details from your
+                dashboard.
               </p>
 
               <div className="bg-muted rounded-xl p-4 text-left mb-7 space-y-2.5">
@@ -222,17 +245,29 @@ export function FamilyOnboarding({ user, onComplete, onLogout }: FamilyOnboardin
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Children</span>
-                  <span className="font-medium">{savedData.childNames.join(', ')}</span>
+                  <span className="font-medium">
+                    {savedData.childNames.join(', ')}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Address</span>
-                  <span className={savedData.hasAddress ? 'font-medium' : 'text-muted-foreground'}>
+                  <span
+                    className={
+                      savedData.hasAddress
+                        ? 'font-medium'
+                        : 'text-muted-foreground'
+                    }
+                  >
                     {savedData.hasAddress ? 'Saved' : 'Not added yet'}
                   </span>
                 </div>
               </div>
 
-              <Button type="button" className="w-full" onClick={() => void onComplete()}>
+              <Button
+                type="button"
+                className="w-full"
+                onClick={() => void onComplete()}
+              >
                 Go to Dashboard
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
@@ -241,5 +276,5 @@ export function FamilyOnboarding({ user, onComplete, onLogout }: FamilyOnboardin
         </div>
       </div>
     </div>
-  )
+  );
 }

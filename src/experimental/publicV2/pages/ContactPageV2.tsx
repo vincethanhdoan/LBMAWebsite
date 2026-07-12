@@ -5,7 +5,14 @@ import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import { Label } from '../../../components/ui/label';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { Mail, Phone, MapPin, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react';
 import { submitEnrollmentLeadWithTimeout } from '../../../lib/supabase/client';
 
 const TRIAL_MESSAGE = "I'd like to schedule a free trial class.";
@@ -29,6 +36,8 @@ export function ContactPageV2() {
   // Sync message if intent param changes after mount
   useEffect(() => {
     if (isTrialIntent) {
+      // Prototype: prefills the message once when the trial intent param appears; deriving is not worth it here.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData((prev) => ({
         ...prev,
         message: prev.message || TRIAL_MESSAGE,
@@ -41,7 +50,9 @@ export function ContactPageV2() {
     setSubmitError(null);
     setIsSubmitting(true);
 
-    const parsedAge = formData.studentAge.trim() ? Number(formData.studentAge) : undefined;
+    const parsedAge = formData.studentAge.trim()
+      ? Number(formData.studentAge)
+      : undefined;
     if (
       parsedAge !== undefined &&
       (!Number.isInteger(parsedAge) || parsedAge < 3 || parsedAge > 99)
@@ -56,17 +67,19 @@ export function ContactPageV2() {
         parentName: formData.parentName,
         parentEmail: formData.parentEmail,
         phone: formData.phone || undefined,
-        studentName: formData.studentName || undefined,
-        studentAge: parsedAge,
         message: formData.message || undefined,
         sourcePage: 'contact',
+        children: formData.studentName.trim()
+          ? [{ name: formData.studentName.trim(), age: parsedAge ?? 0 }]
+          : [],
       },
       12000,
     );
 
     if (error || !data) {
       setSubmitError(
-        error?.message || 'Unable to submit right now. Please try again or call us directly.',
+        error?.message ||
+          'Unable to submit right now. Please try again or call us directly.',
       );
       setIsSubmitting(false);
       return;
@@ -76,24 +89,27 @@ export function ContactPageV2() {
     setIsSubmitting(false);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
     <div>
-
       {/* ── PAGE HEADER ───────────────────────────────────── */}
       <section className="py-20 border-b bg-slate-50">
         <div className="container mx-auto px-6 max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Contact</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">
+            Contact
+          </p>
           <h1 className="text-4xl md:text-5xl font-bold mb-5 leading-snug">
             {isTrialIntent ? 'Book your free trial class.' : 'Get in touch.'}
           </h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
             {isTrialIntent
               ? "Fill out the form and we'll get back to you within 24 hours to schedule your child's free trial class."
-              : 'Whether you have questions or you\'re ready to book a free trial class — fill out the form and we\'ll get back to you within 24 hours.'}
+              : "Whether you have questions or you're ready to book a free trial class — fill out the form and we'll get back to you within 24 hours."}
           </p>
         </div>
       </section>
@@ -102,11 +118,12 @@ export function ContactPageV2() {
       <section className="py-20">
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto grid lg:grid-cols-5 gap-14">
-
             {/* ── Left: Contact info ── */}
             <div className="lg:col-span-2 space-y-8">
               <div>
-                <h2 className="font-semibold text-base mb-5">Contact information</h2>
+                <h2 className="font-semibold text-base mb-5">
+                  Contact information
+                </h2>
                 <div className="space-y-5">
                   <div className="flex items-start gap-3">
                     <Phone className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
@@ -172,7 +189,10 @@ export function ContactPageV2() {
                   'We respond within 24 hours',
                   "We're here to help, not to sell",
                 ].map((point) => (
-                  <div key={point} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                  <div
+                    key={point}
+                    className="flex items-center gap-2.5 text-sm text-muted-foreground"
+                  >
                     <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                     <span>{point}</span>
                   </div>
@@ -188,17 +208,21 @@ export function ContactPageV2() {
                     <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-5">
                       <CheckCircle2 className="w-7 h-7 text-primary" />
                     </div>
-                    <h3 className="text-xl font-bold mb-2">We got your message.</h3>
+                    <h3 className="text-xl font-bold mb-2">
+                      We got your message.
+                    </h3>
                     <p className="text-muted-foreground text-sm max-w-sm mx-auto leading-relaxed">
-                      We'll be in touch within 24 hours to answer your questions and get your
-                      child scheduled for a free trial class.
+                      We'll be in touch within 24 hours to answer your questions
+                      and get your child scheduled for a free trial class.
                     </p>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-5">
                     {isTrialIntent && (
                       <div className="bg-primary/5 border border-primary/15 rounded-lg px-4 py-3 text-sm text-foreground">
-                        You're booking a <span className="font-semibold">free trial class</span>. Fill in your details and we'll reach out to schedule it.
+                        You're booking a{' '}
+                        <span className="font-semibold">free trial class</span>.
+                        Fill in your details and we'll reach out to schedule it.
                       </div>
                     )}
 
@@ -232,7 +256,9 @@ export function ContactPageV2() {
                     <div className="space-y-1.5">
                       <Label htmlFor="phone">
                         Phone number{' '}
-                        <span className="text-muted-foreground font-normal">(optional)</span>
+                        <span className="text-muted-foreground font-normal">
+                          (optional)
+                        </span>
                       </Label>
                       <Input
                         id="phone"
@@ -249,7 +275,9 @@ export function ContactPageV2() {
                       <div className="space-y-1.5">
                         <Label htmlFor="studentName">
                           Child's name{' '}
-                          <span className="text-muted-foreground font-normal">(optional)</span>
+                          <span className="text-muted-foreground font-normal">
+                            (optional)
+                          </span>
                         </Label>
                         <Input
                           id="studentName"
@@ -263,7 +291,9 @@ export function ContactPageV2() {
                       <div className="space-y-1.5">
                         <Label htmlFor="studentAge">
                           Child's age{' '}
-                          <span className="text-muted-foreground font-normal">(optional)</span>
+                          <span className="text-muted-foreground font-normal">
+                            (optional)
+                          </span>
                         </Label>
                         <Input
                           id="studentAge"
@@ -282,7 +312,9 @@ export function ContactPageV2() {
                     <div className="space-y-1.5">
                       <Label htmlFor="message">
                         Questions or notes{' '}
-                        <span className="text-muted-foreground font-normal">(optional)</span>
+                        <span className="text-muted-foreground font-normal">
+                          (optional)
+                        </span>
                       </Label>
                       <Textarea
                         id="message"
@@ -311,8 +343,8 @@ export function ContactPageV2() {
                       {isSubmitting
                         ? 'Sending...'
                         : isTrialIntent
-                        ? 'Request Free Trial Class'
-                        : 'Send Message'}
+                          ? 'Request Free Trial Class'
+                          : 'Send Message'}
                     </Button>
 
                     <p className="text-xs text-muted-foreground text-center">
@@ -343,7 +375,6 @@ export function ContactPageV2() {
           </div>
         </div>
       </section>
-
     </div>
   );
 }

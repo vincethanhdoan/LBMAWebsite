@@ -1,6 +1,14 @@
-import type { BlockedDate, EnrollmentLead, EnrollmentLeadProgramBooking } from '../../../lib/types';
+import type {
+  BlockedDate,
+  EnrollmentLead,
+  EnrollmentLeadProgramBooking,
+} from '../../../lib/types';
 import { daysUntilInPacific } from '../../../lib/pacificTime';
-import { effectiveConfirmationNotification, getWeekStart, toLocalDateKey } from './leadDisplay';
+import {
+  effectiveConfirmationNotification,
+  getWeekStart,
+  toLocalDateKey,
+} from './leadDisplay';
 
 export type AppointmentOccurrence = {
   lead: EnrollmentLead;
@@ -12,26 +20,37 @@ export type AppointmentOccurrence = {
 
 // Every booked visit, one entry per program booking with a date. Falls back to
 // the legacy lead-level appointment when no program bookings carry dates.
-export function getAppointmentOccurrences(leads: EnrollmentLead[]): AppointmentOccurrence[] {
+export function getAppointmentOccurrences(
+  leads: EnrollmentLead[],
+): AppointmentOccurrence[] {
   const occurrences: AppointmentOccurrence[] = [];
   for (const lead of leads) {
     const booked = (lead.programBookings ?? []).filter(
-      b => b.appointment_date && (b.status === 'scheduled' || b.status === 'confirmed'),
+      (b) =>
+        b.appointment_date &&
+        (b.status === 'scheduled' || b.status === 'confirmed'),
     );
     if (booked.length > 0) {
       for (const b of booked) {
         occurrences.push({
-          lead, booking: b, dateKey: b.appointment_date!,
-          time: b.appointment_time, confirmed: b.status === 'confirmed',
+          lead,
+          booking: b,
+          dateKey: b.appointment_date!,
+          time: b.appointment_time,
+          confirmed: b.status === 'confirmed',
         });
       }
     } else if (
       lead.appointment_date &&
-      (lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed')
+      (lead.status === 'appointment_scheduled' ||
+        lead.status === 'appointment_confirmed')
     ) {
       occurrences.push({
-        lead, booking: null, dateKey: lead.appointment_date,
-        time: lead.appointment_time, confirmed: lead.status === 'appointment_confirmed',
+        lead,
+        booking: null,
+        dateKey: lead.appointment_date,
+        time: lead.appointment_time,
+        confirmed: lead.status === 'appointment_confirmed',
       });
     }
   }
@@ -42,42 +61,56 @@ export function getAppointmentOccurrences(leads: EnrollmentLead[]): AppointmentO
 
 export function occurrenceKidCount(o: AppointmentOccurrence): number {
   if (!o.booking) return 1;
-  const matching = o.lead.children?.filter(c => c.program_type === o.booking!.program_type).length ?? 0;
+  const matching =
+    o.lead.children?.filter((c) => c.program_type === o.booking!.program_type)
+      .length ?? 0;
   return Math.max(matching, 1);
 }
 
 export type FollowUpItem = {
   lead: EnrollmentLead;
   lastPastDateKey: string;
-  noShow: boolean;      // attendance for the last past visit recorded as no_show
+  noShow: boolean; // attendance for the last past visit recorded as no_show
   newLinkSent: boolean; // a booking invite went out after the no-show was recorded
 };
 
 // A lead needs follow-up when its last booked visit is in the past, no future
 // visit exists, and attendance for that visit is unrecorded or was a no-show.
-export function deriveFollowUps(leads: EnrollmentLead[], todayKey: string): FollowUpItem[] {
+export function deriveFollowUps(
+  leads: EnrollmentLead[],
+  todayKey: string,
+): FollowUpItem[] {
   const items: FollowUpItem[] = [];
   for (const lead of leads) {
     const occ = getAppointmentOccurrences([lead]);
     if (occ.length === 0) continue;
-    if (occ.some(o => o.dateKey >= todayKey)) continue;
+    if (occ.some((o) => o.dateKey >= todayKey)) continue;
     const lastPastDateKey = occ[occ.length - 1].dateKey;
     const recordedAt = lead.attendance_recorded_at;
     // Attendance counts only if recorded on or after the visit day; older
     // records belong to a previous visit cycle.
-    const current = recordedAt !== null && recordedAt.slice(0, 10) >= lastPastDateKey;
+    const current =
+      recordedAt !== null && recordedAt.slice(0, 10) >= lastPastDateKey;
     if (current && lead.attendance_status === 'attended') continue;
     const noShow = current && lead.attendance_status === 'no_show';
     const newLinkSent =
       noShow &&
-      lead.notificationHistory.some(n => n.type === 'approval' && n.created_at > (recordedAt ?? ''));
+      lead.notificationHistory.some(
+        (n) => n.type === 'approval' && n.created_at > (recordedAt ?? ''),
+      );
     items.push({ lead, lastPastDateKey, noShow, newLinkSent });
   }
-  return items.sort((a, b) => a.lastPastDateKey.localeCompare(b.lastPastDateKey));
+  return items.sort((a, b) =>
+    a.lastPastDateKey.localeCompare(b.lastPastDateKey),
+  );
 }
 
 export type AttentionItem =
-  | { reason: 'call_to_confirm'; lead: EnrollmentLead; occurrence: AppointmentOccurrence }
+  | {
+      reason: 'call_to_confirm';
+      lead: EnrollmentLead;
+      occurrence: AppointmentOccurrence;
+    }
   | { reason: 'record_outcome'; lead: EnrollmentLead; followUp: FollowUpItem }
   | { reason: 'email_failed'; lead: EnrollmentLead }
   | { reason: 'stale_invite'; lead: EnrollmentLead; daysWaiting: number };
@@ -106,7 +139,8 @@ export function deriveAttentionItems(
   for (const o of getAppointmentOccurrences(leads)) {
     if (o.confirmed) continue;
     const days = daysUntilInPacific(new Date(o.dateKey + 'T12:00:00'));
-    if (days >= 0 && days <= 2) push({ reason: 'call_to_confirm', lead: o.lead, occurrence: o });
+    if (days >= 0 && days <= 2)
+      push({ reason: 'call_to_confirm', lead: o.lead, occurrence: o });
   }
   for (const followUp of deriveFollowUps(leads, todayKey)) {
     push({ reason: 'record_outcome', lead: followUp.lead, followUp });
@@ -121,10 +155,12 @@ export function deriveAttentionItems(
     const sentAt = lead.approval_email_sent_at ?? lead.approved_at;
     if (!sentAt) continue;
     const hasBooked =
-      lead.programBookings?.some(b => b.appointment_date) || lead.appointment_date !== null;
+      lead.programBookings?.some((b) => b.appointment_date) ||
+      lead.appointment_date !== null;
     if (hasBooked) continue;
     const daysWaiting = daysSince(sentAt, nowMs);
-    if (daysWaiting >= STALE_INVITE_DAYS) push({ reason: 'stale_invite', lead, daysWaiting });
+    if (daysWaiting >= STALE_INVITE_DAYS)
+      push({ reason: 'stale_invite', lead, daysWaiting });
   }
   return items;
 }
@@ -159,22 +195,29 @@ export function buildWeekDays(
     }
     return {
       dateKey,
-      dayName: d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase().slice(0, 3),
+      dayName: d
+        .toLocaleDateString('en-US', { weekday: 'short' })
+        .toUpperCase()
+        .slice(0, 3),
       dayNum: d.getDate(),
       confirmedKids,
       unconfirmedKids,
       isToday: dateKey === todayKey,
-      isBlocked: blocks.some(b => b.start_date <= dateKey && b.end_date >= dateKey),
+      isBlocked: blocks.some(
+        (b) => b.start_date <= dateKey && b.end_date >= dateKey,
+      ),
     };
   });
 }
 
 export function childSummary(lead: EnrollmentLead): string {
   if (lead.children?.length) {
-    return lead.children.map(c => `${c.name}, age ${c.age}`).join(' + ');
+    return lead.children.map((c) => `${c.name}, age ${c.age}`).join(' + ');
   }
   if (lead.student_name) {
-    return lead.student_age !== null ? `${lead.student_name}, age ${lead.student_age}` : lead.student_name;
+    return lead.student_age !== null
+      ? `${lead.student_name}, age ${lead.student_age}`
+      : lead.student_name;
   }
   return '';
 }
@@ -183,5 +226,5 @@ export function nextOccurrenceAfter(
   occurrences: AppointmentOccurrence[],
   dateKey: string,
 ): AppointmentOccurrence | null {
-  return occurrences.find(o => o.dateKey > dateKey) ?? null;
+  return occurrences.find((o) => o.dateKey > dateKey) ?? null;
 }

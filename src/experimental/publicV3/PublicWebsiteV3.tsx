@@ -31,15 +31,15 @@ export function PublicWebsiteV3() {
 
       <main className="flex-1">
         <Routes>
-          <Route path="/"           element={<HomePageV3 />} />
-          <Route path="about"       element={<AboutPageV3 />} />
-          <Route path="facilities"  element={<FacilitiesPageV3 />} />
-          <Route path="programs"    element={<ProgramsPageV3 />} />
+          <Route path="/" element={<HomePageV3 />} />
+          <Route path="about" element={<AboutPageV3 />} />
+          <Route path="facilities" element={<FacilitiesPageV3 />} />
+          <Route path="programs" element={<ProgramsPageV3 />} />
           <Route path="instructors" element={<InstructorsPageV3 />} />
-          <Route path="reviews"     element={<ReviewsPageV3 />} />
-          <Route path="faq"         element={<FAQPageV3 />} />
-          <Route path="contact"     element={<ContactPageV3 />} />
-          <Route path="*"           element={<Navigate to="/" replace />} />
+          <Route path="reviews" element={<ReviewsPageV3 />} />
+          <Route path="faq" element={<FAQPageV3 />} />
+          <Route path="contact" element={<ContactPageV3 />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
 

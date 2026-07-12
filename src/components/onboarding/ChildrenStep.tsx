@@ -1,22 +1,22 @@
 // src/components/onboarding/ChildrenStep.tsx
-import { useState } from 'react'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { Label } from '../ui/label'
-import { ArrowRight, ArrowLeft, X, Plus } from 'lucide-react'
-import type { ChildForm } from './FamilyOnboarding'
+import { useState } from 'react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { ArrowRight, ArrowLeft, X, Plus } from 'lucide-react';
+import type { ChildForm } from './FamilyOnboarding';
 
 interface ChildrenStepProps {
-  values: ChildForm[]
-  onChange: (children: ChildForm[]) => void
-  onNext: () => void
-  onBack: () => void
+  values: ChildForm[];
+  onChange: (children: ChildForm[]) => void;
+  onNext: () => void;
+  onBack: () => void;
 }
 
 function isValidDob(dob: string): boolean {
-  if (!dob) return false
-  const d = new Date(dob)
-  return !isNaN(d.getTime()) && d < new Date()
+  if (!dob) return false;
+  const d = new Date(dob);
+  return !isNaN(d.getTime()) && d < new Date();
 }
 
 function isValidChild(child: ChildForm): boolean {
@@ -24,31 +24,36 @@ function isValidChild(child: ChildForm): boolean {
     child.firstName.trim() !== '' &&
     child.lastName.trim() !== '' &&
     isValidDob(child.dob)
-  )
+  );
 }
 
-export function ChildrenStep({ values, onChange, onNext, onBack }: ChildrenStepProps) {
-  const [showErrors, setShowErrors] = useState(false)
+export function ChildrenStep({
+  values,
+  onChange,
+  onNext,
+  onBack,
+}: ChildrenStepProps) {
+  const [showErrors, setShowErrors] = useState(false);
 
   function updateChild(id: string, updates: Partial<ChildForm>) {
-    onChange(values.map(c => (c.id === id ? { ...c, ...updates } : c)))
+    onChange(values.map((c) => (c.id === id ? { ...c, ...updates } : c)));
   }
 
   function addChild() {
     onChange([
       ...values,
       { id: crypto.randomUUID(), firstName: '', lastName: '', dob: '' },
-    ])
+    ]);
   }
 
   function removeChild(id: string) {
-    if (values.length <= 1) return
-    onChange(values.filter(c => c.id !== id))
+    if (values.length <= 1) return;
+    onChange(values.filter((c) => c.id !== id));
   }
 
   function handleNext() {
-    setShowErrors(true)
-    if (values.every(isValidChild)) onNext()
+    setShowErrors(true);
+    if (values.every(isValidChild)) onNext();
   }
 
   return (
@@ -59,7 +64,10 @@ export function ChildrenStep({ values, onChange, onNext, onBack }: ChildrenStepP
       >
         Step 2 of 3
       </p>
-      <h2 className="text-2xl font-semibold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+      <h2
+        className="text-2xl font-semibold mb-1"
+        style={{ fontFamily: 'var(--font-heading)' }}
+      >
         Your Children
       </h2>
       <p className="text-sm text-muted-foreground mb-7 leading-relaxed">
@@ -93,11 +101,15 @@ export function ChildrenStep({ values, onChange, onNext, onBack }: ChildrenStepP
             <div className="space-y-2.5">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label htmlFor={`ob-fn-${child.id}`} className="text-xs">First name</Label>
+                  <Label htmlFor={`ob-fn-${child.id}`} className="text-xs">
+                    First name
+                  </Label>
                   <Input
                     id={`ob-fn-${child.id}`}
                     value={child.firstName}
-                    onChange={e => updateChild(child.id, { firstName: e.target.value })}
+                    onChange={(e) =>
+                      updateChild(child.id, { firstName: e.target.value })
+                    }
                     className="h-9 text-sm"
                   />
                   {showErrors && !child.firstName.trim() && (
@@ -105,11 +117,15 @@ export function ChildrenStep({ values, onChange, onNext, onBack }: ChildrenStepP
                   )}
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor={`ob-ln-${child.id}`} className="text-xs">Last name</Label>
+                  <Label htmlFor={`ob-ln-${child.id}`} className="text-xs">
+                    Last name
+                  </Label>
                   <Input
                     id={`ob-ln-${child.id}`}
                     value={child.lastName}
-                    onChange={e => updateChild(child.id, { lastName: e.target.value })}
+                    onChange={(e) =>
+                      updateChild(child.id, { lastName: e.target.value })
+                    }
                     className="h-9 text-sm"
                   />
                   {showErrors && !child.lastName.trim() && (
@@ -118,17 +134,23 @@ export function ChildrenStep({ values, onChange, onNext, onBack }: ChildrenStepP
                 </div>
               </div>
               <div className="space-y-1">
-                <Label htmlFor={`ob-dob-${child.id}`} className="text-xs">Date of birth</Label>
+                <Label htmlFor={`ob-dob-${child.id}`} className="text-xs">
+                  Date of birth
+                </Label>
                 <Input
                   id={`ob-dob-${child.id}`}
                   type="date"
                   value={child.dob}
                   max={new Date().toISOString().split('T')[0]}
-                  onChange={e => updateChild(child.id, { dob: e.target.value })}
+                  onChange={(e) =>
+                    updateChild(child.id, { dob: e.target.value })
+                  }
                   className="h-9 text-sm"
                 />
                 {showErrors && !isValidDob(child.dob) && (
-                  <p className="text-xs text-destructive">Valid date of birth required</p>
+                  <p className="text-xs text-destructive">
+                    Valid date of birth required
+                  </p>
                 )}
               </div>
             </div>
@@ -149,10 +171,15 @@ export function ChildrenStep({ values, onChange, onNext, onBack }: ChildrenStepP
           Next: Home Address
           <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
-        <Button type="button" variant="ghost" onClick={onBack} className="w-full text-muted-foreground">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onBack}
+          className="w-full text-muted-foreground"
+        >
           <ArrowLeft className="w-4 h-4 mr-1" /> Back
         </Button>
       </div>
     </div>
-  )
+  );
 }

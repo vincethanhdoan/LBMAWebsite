@@ -7,7 +7,8 @@ const PROGRAMS = [
   {
     name: 'Kids Martial Arts',
     ages: 'Ages 4–12',
-    summary: 'Our flagship program combines Taekwondo, boxing, and kickboxing into a structured, age-appropriate curriculum with two class tracks: Little Dragons (4–6) and Juniors (7–12).',
+    summary:
+      'Our flagship program combines Taekwondo, boxing, and kickboxing into a structured, age-appropriate curriculum with two class tracks: Little Dragons (4–6) and Juniors (7–12).',
     highlights: [
       'Age-split classes: Little Dragons (4–6) and Juniors (7–12)',
       'Clear belt progression with defined skill standards',
@@ -22,7 +23,8 @@ const PROGRAMS = [
   {
     name: 'Teens & Adults',
     ages: 'Ages 13+',
-    summary: 'Advanced training for teens and adults in a high-energy, welcoming environment. The curriculum includes striking, grappling, and Filipino stick fighting with a strong emphasis on leadership and real-world self-defense.',
+    summary:
+      'Advanced training for teens and adults in a high-energy, welcoming environment. The curriculum includes striking, grappling, and Filipino stick fighting with a strong emphasis on leadership and real-world self-defense.',
     highlights: [
       'Full WCWMA mixed martial arts curriculum',
       'Fitness conditioning built into every session',
@@ -37,7 +39,8 @@ const PROGRAMS = [
   {
     name: 'Kickboxing Fitness',
     ages: 'All Ages',
-    summary: 'A high-energy fitness class combining kickboxing fundamentals with cardio conditioning. No martial arts background required — just show up ready to move.',
+    summary:
+      'A high-energy fitness class combining kickboxing fundamentals with cardio conditioning. No martial arts background required — just show up ready to move.',
     highlights: [
       'No prior experience needed',
       'Full-body cardio workout every class',
@@ -52,18 +55,18 @@ const PROGRAMS = [
 ];
 
 const BELT_RANKS = [
-  { belt: 'White',      color: '#f9f8f5', border: '#c9c4bc' },
-  { belt: 'Yellow',     color: '#fef08a', border: '#ca8a04' },
-  { belt: 'Orange',     color: '#fed7aa', border: '#ea580c' },
-  { belt: 'Green',      color: '#bbf7d0', border: '#16a34a' },
-  { belt: 'Blue',       color: '#bfdbfe', border: '#2563eb' },
-  { belt: 'Purple',     color: '#e9d5ff', border: '#9333ea' },
-  { belt: 'Red',        color: '#fecaca', border: '#dc2626' },
-  { belt: 'Red/Black',  color: '#fecaca', border: '#1f2937' },
-  { belt: 'Brown',      color: '#d6b899', border: '#92400e' },
+  { belt: 'White', color: '#f9f8f5', border: '#c9c4bc' },
+  { belt: 'Yellow', color: '#fef08a', border: '#ca8a04' },
+  { belt: 'Orange', color: '#fed7aa', border: '#ea580c' },
+  { belt: 'Green', color: '#bbf7d0', border: '#16a34a' },
+  { belt: 'Blue', color: '#bfdbfe', border: '#2563eb' },
+  { belt: 'Purple', color: '#e9d5ff', border: '#9333ea' },
+  { belt: 'Red', color: '#fecaca', border: '#dc2626' },
+  { belt: 'Red/Black', color: '#fecaca', border: '#1f2937' },
+  { belt: 'Brown', color: '#d6b899', border: '#92400e' },
   { belt: 'Brown/Black', color: '#d6b899', border: '#1f2937' },
   { belt: 'Black Belt', color: '#1f2937', border: '#1f2937' },
-  { belt: 'Dan Ranks',  color: '#1f2937', border: '#A01F23' },
+  { belt: 'Dan Ranks', color: '#1f2937', border: '#A01F23' },
 ];
 
 export function ProgramsPageV3() {
@@ -72,11 +75,13 @@ export function ProgramsPageV3() {
 
   return (
     <div>
-
       {/* ── PAGE HERO ── */}
       <section
         className="py-20"
-        style={{ backgroundColor: V3.surface, borderBottom: `1px solid ${V3.border}` }}
+        style={{
+          backgroundColor: V3.surface,
+          borderBottom: `1px solid ${V3.border}`,
+        }}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <p className="v3-eyebrow mb-4">Our Programs</p>
@@ -86,9 +91,13 @@ export function ProgramsPageV3() {
           >
             Training for Every Stage of Life
           </h1>
-          <p className="text-base leading-relaxed max-w-xl" style={{ color: V3.muted }}>
-            From our youngest Little Dragons to adult black belt candidates — every program
-            is built around what students at that stage actually need.
+          <p
+            className="text-base leading-relaxed max-w-xl"
+            style={{ color: V3.muted }}
+          >
+            From our youngest Little Dragons to adult black belt candidates —
+            every program is built around what students at that stage actually
+            need.
           </p>
         </div>
       </section>
@@ -128,11 +137,17 @@ export function ProgramsPageV3() {
                 </span>
                 <h2
                   className="v3-h font-black leading-[1.0] mb-4"
-                  style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: V3.text }}
+                  style={{
+                    fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)',
+                    color: V3.text,
+                  }}
                 >
                   {p.name}
                 </h2>
-                <p className="text-[0.95rem] leading-relaxed mb-7" style={{ color: V3.muted }}>
+                <p
+                  className="text-[0.95rem] leading-relaxed mb-7"
+                  style={{ color: V3.muted }}
+                >
                   {p.summary}
                 </p>
                 <ul className="flex flex-col gap-3 mb-8">
@@ -142,7 +157,10 @@ export function ProgramsPageV3() {
                         className="w-4 h-4 flex-shrink-0 mt-0.5"
                         style={{ color: V3.primary }}
                       />
-                      <span className="text-sm leading-relaxed" style={{ color: V3.muted }}>
+                      <span
+                        className="text-sm leading-relaxed"
+                        style={{ color: V3.muted }}
+                      >
                         {h}
                       </span>
                     </li>
@@ -164,13 +182,20 @@ export function ProgramsPageV3() {
             <p className="v3-eyebrow mb-4">Belt System</p>
             <h2
               className="v3-h font-black leading-[1.0] mb-4"
-              style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: V3.text }}
+              style={{
+                fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)',
+                color: V3.text,
+              }}
             >
               Your Path to Black Belt
             </h2>
-            <p className="text-sm leading-relaxed mb-12 max-w-lg" style={{ color: V3.muted }}>
-              Every promotion is earned — based on demonstrated skill, effort, and character.
-              Students test when their instructor says they're ready, not on a fixed schedule.
+            <p
+              className="text-sm leading-relaxed mb-12 max-w-lg"
+              style={{ color: V3.muted }}
+            >
+              Every promotion is earned — based on demonstrated skill, effort,
+              and character. Students test when their instructor says they're
+              ready, not on a fixed schedule.
             </p>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
@@ -185,9 +210,15 @@ export function ProgramsPageV3() {
                 >
                   <div
                     className="w-8 h-2 rounded-full mx-auto mb-2.5"
-                    style={{ backgroundColor: color, border: `2px solid ${border}` }}
+                    style={{
+                      backgroundColor: color,
+                      border: `2px solid ${border}`,
+                    }}
                   />
-                  <p className="text-xs font-semibold leading-tight" style={{ color: V3.muted }}>
+                  <p
+                    className="text-xs font-semibold leading-tight"
+                    style={{ color: V3.muted }}
+                  >
                     {belt}
                   </p>
                 </div>
@@ -196,8 +227,6 @@ export function ProgramsPageV3() {
           </div>
         </div>
       </section>
-
-
     </div>
   );
 }

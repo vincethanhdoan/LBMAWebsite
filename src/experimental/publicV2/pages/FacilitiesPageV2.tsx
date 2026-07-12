@@ -2,7 +2,15 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { ImageWithFallback } from '../../../components/figma/ImageWithFallback';
 import { SectionHeader } from '../components/SectionHeader';
-import { Shield, Wind, Eye, Ruler, Users, CheckCircle2, Clock } from 'lucide-react';
+import {
+  Shield,
+  Wind,
+  Eye,
+  Ruler,
+  Users,
+  CheckCircle2,
+  Clock,
+} from 'lucide-react';
 
 const BASE = '/experimental/public';
 
@@ -39,18 +47,19 @@ export function FacilitiesPageV2() {
 
   return (
     <div>
-
       {/* ── PAGE HEADER ───────────────────────────────────── */}
       <section className="py-20 border-b bg-slate-50">
         <div className="container mx-auto px-6 max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Facilities</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">
+            Facilities
+          </p>
           <h1 className="text-4xl md:text-5xl font-bold mb-5 leading-snug">
             A space designed for kids to train safely.
           </h1>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Before you enroll your child, you should know exactly what kind of environment
-            they'll be in. Here's what our facility looks like and how we keep it safe,
-            clean, and structured.
+            Before you enroll your child, you should know exactly what kind of
+            environment they'll be in. Here's what our facility looks like and
+            how we keep it safe, clean, and structured.
           </p>
         </div>
       </section>
@@ -70,9 +79,10 @@ export function FacilitiesPageV2() {
             <div>
               <SectionHeader heading="The training floor." />
               <p className="text-base text-muted-foreground leading-relaxed mb-6">
-                Our main floor is fully matted from wall to wall — no hard surfaces, no gaps.
-                The space is sized to give each student room to move without crowding.
-                Good lighting, clear sightlines, and no clutter.
+                Our main floor is fully matted from wall to wall — no hard
+                surfaces, no gaps. The space is sized to give each student room
+                to move without crowding. Good lighting, clear sightlines, and
+                no clutter.
               </p>
               <ul className="space-y-3">
                 {[
@@ -127,7 +137,9 @@ export function FacilitiesPageV2() {
                   <Icon className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="font-semibold text-base">{heading}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {body}
+                </p>
               </div>
             ))}
           </div>
@@ -168,7 +180,9 @@ export function FacilitiesPageV2() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-sm mb-1">{heading}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {body}
+                  </p>
                 </div>
               </div>
             ))}
@@ -200,8 +214,8 @@ export function FacilitiesPageV2() {
           </div>
 
           <p className="text-xs text-muted-foreground mt-5">
-            Photos will be replaced with real facility images. Drop-ins welcome during class
-            hours — come see it for yourself.
+            Photos will be replaced with real facility images. Drop-ins welcome
+            during class hours — come see it for yourself.
           </p>
         </div>
       </section>
@@ -212,21 +226,28 @@ export function FacilitiesPageV2() {
           <div className="w-8 h-0.5 bg-primary rounded-full mx-auto mb-8" />
           <h2 className="text-2xl font-bold mb-3">Come see it in person.</h2>
           <p className="text-muted-foreground text-base mb-8 leading-relaxed">
-            No appointment needed during class hours. Walk in, look around, meet the
-            instructors. If you want to book a free trial class, we're ready for that too.
+            No appointment needed during class hours. Walk in, look around, meet
+            the instructors. If you want to book a free trial class, we're ready
+            for that too.
           </p>
-          <Button size="lg" className="px-10 font-semibold shadow-sm" onClick={goToTrial}>
+          <Button
+            size="lg"
+            className="px-10 font-semibold shadow-sm"
+            onClick={goToTrial}
+          >
             Book a Free Trial Class
           </Button>
           <p className="text-sm text-muted-foreground mt-5">
             Or call us:{' '}
-            <a href="tel:+12095550123" className="font-medium text-foreground hover:underline">
+            <a
+              href="tel:+12095550123"
+              className="font-medium text-foreground hover:underline"
+            >
               (209) 555-0123
             </a>
           </p>
         </div>
       </section>
-
     </div>
   );
 }

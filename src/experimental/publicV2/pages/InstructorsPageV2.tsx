@@ -14,31 +14,59 @@ const INSTRUCTORS = [
     belt: 'Black Belt — 5th Dan',
     specialties: ['Leadership', 'Youth Development', 'Advanced Techniques'],
     bio: 'Master Reyes has over 20 years of martial arts experience and a passion for helping young people discover their potential. His patient, encouraging teaching style creates an environment where every student feels valued and supported.',
-    certifications: ['Certified Youth Instructor', 'Sports Safety Certified', 'CPR/First Aid'],
+    certifications: [
+      'Certified Youth Instructor',
+      'Sports Safety Certified',
+      'CPR/First Aid',
+    ],
   },
   {
     name: 'Instructor Maria Santos',
     title: 'Little Dragons Program Director',
     belt: 'Black Belt — 3rd Dan',
-    specialties: ['Early Childhood Education', 'Motor Skills Development', 'Positive Reinforcement'],
+    specialties: [
+      'Early Childhood Education',
+      'Motor Skills Development',
+      'Positive Reinforcement',
+    ],
     bio: 'With a background in early childhood education and years of experience teaching young children, Instructor Santos brings joy and enthusiasm to every Little Dragons class. She has a special gift for connecting with our youngest students.',
-    certifications: ['Early Childhood Education Degree', 'Youth Martial Arts Specialist', 'CPR/First Aid'],
+    certifications: [
+      'Early Childhood Education Degree',
+      'Youth Martial Arts Specialist',
+      'CPR/First Aid',
+    ],
   },
   {
     name: 'Instructor David Chen',
     title: 'Teen Program Instructor',
     belt: 'Black Belt — 4th Dan',
-    specialties: ['Advanced Training', 'Competition Coaching', 'Fitness & Conditioning'],
+    specialties: [
+      'Advanced Training',
+      'Competition Coaching',
+      'Fitness & Conditioning',
+    ],
     bio: 'Instructor Chen specializes in working with teenage students, helping them develop discipline, confidence, and leadership skills. His high-energy classes challenge students while maintaining a supportive and encouraging atmosphere.',
-    certifications: ['Sport Martial Arts Coach', 'Strength & Conditioning Specialist', 'CPR/First Aid'],
+    certifications: [
+      'Sport Martial Arts Coach',
+      'Strength & Conditioning Specialist',
+      'CPR/First Aid',
+    ],
   },
   {
     name: 'Instructor Emily Rodriguez',
     title: 'Youth Program Instructor',
     belt: 'Black Belt — 2nd Dan',
-    specialties: ['Character Development', 'Anti-Bullying Programs', 'Student Mentorship'],
+    specialties: [
+      'Character Development',
+      'Anti-Bullying Programs',
+      'Student Mentorship',
+    ],
     bio: 'Instructor Rodriguez is passionate about using martial arts as a tool for building confidence and character. She creates a warm, inclusive environment where every student feels they belong and can succeed.',
-    certifications: ['Youth Development Specialist', 'Anti-Bullying Instructor', 'CPR/First Aid'],
+    certifications: [
+      'Youth Development Specialist',
+      'Anti-Bullying Instructor',
+      'CPR/First Aid',
+    ],
   },
 ];
 
@@ -71,17 +99,18 @@ export function InstructorsPageV2() {
 
   return (
     <div>
-
       {/* ── PAGE HEADER ───────────────────────────────────── */}
       <section className="py-20 border-b bg-slate-50">
         <div className="container mx-auto px-6 max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Our Team</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">
+            Our Team
+          </p>
           <h1 className="text-4xl md:text-5xl font-bold mb-5 leading-snug">
             Meet our instructors.
           </h1>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Experienced, certified professionals dedicated to your child's growth. Not just
-            martial artists — coaches who understand children.
+            Experienced, certified professionals dedicated to your child's
+            growth. Not just martial artists — coaches who understand children.
           </p>
         </div>
       </section>
@@ -96,7 +125,9 @@ export function InstructorsPageV2() {
                   <Icon className="w-5 h-5 text-primary" />
                 </div>
                 <h3 className="font-semibold text-sm">{heading}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{body}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {body}
+                </p>
               </div>
             ))}
           </div>
@@ -138,8 +169,12 @@ export function InstructorsPageV2() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold mb-0.5">{instructor.name}</h3>
-                      <p className="text-sm text-primary font-semibold mb-4">{instructor.title}</p>
+                      <h3 className="text-xl font-bold mb-0.5">
+                        {instructor.name}
+                      </h3>
+                      <p className="text-sm text-primary font-semibold mb-4">
+                        {instructor.title}
+                      </p>
                       <p className="text-sm text-muted-foreground leading-relaxed mb-5">
                         {instructor.bio}
                       </p>
@@ -151,7 +186,11 @@ export function InstructorsPageV2() {
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                             {instructor.specialties.map((s) => (
-                              <Badge key={s} variant="secondary" className="text-xs">
+                              <Badge
+                                key={s}
+                                variant="secondary"
+                                className="text-xs"
+                              >
                                 {s}
                               </Badge>
                             ))}
@@ -163,7 +202,10 @@ export function InstructorsPageV2() {
                           </p>
                           <ul className="space-y-1">
                             {instructor.certifications.map((cert) => (
-                              <li key={cert} className="flex items-start gap-2 text-xs text-muted-foreground">
+                              <li
+                                key={cert}
+                                className="flex items-start gap-2 text-xs text-muted-foreground"
+                              >
                                 <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
                                 {cert}
                               </li>
@@ -186,30 +228,35 @@ export function InstructorsPageV2() {
           <SectionHeader heading="Our teaching philosophy." />
           <div className="space-y-4 text-base text-muted-foreground leading-relaxed">
             <p>
-              At LBMAA, we believe every child learns differently and progresses at their own
-              pace. Our instructors are trained to recognize individual learning styles and
-              adapt their teaching to meet each student's needs.
+              At LBMAA, we believe every child learns differently and progresses
+              at their own pace. Our instructors are trained to recognize
+              individual learning styles and adapt their teaching to meet each
+              student's needs.
             </p>
             <p>
-              We use positive reinforcement to build confidence and motivation. Every
-              improvement — no matter how small — is celebrated. Mistakes are viewed as
-              valuable learning opportunities, not failures.
+              We use positive reinforcement to build confidence and motivation.
+              Every improvement — no matter how small — is celebrated. Mistakes
+              are viewed as valuable learning opportunities, not failures.
             </p>
             <p>
-              Our instructors serve as role models, demonstrating the values we teach: respect,
-              integrity, discipline, and kindness. Beyond martial arts techniques, we focus on
-              developing the whole child — building character, fostering leadership skills, and
-              teaching life lessons that extend far beyond our dojo walls.
+              Our instructors serve as role models, demonstrating the values we
+              teach: respect, integrity, discipline, and kindness. Beyond
+              martial arts techniques, we focus on developing the whole child —
+              building character, fostering leadership skills, and teaching life
+              lessons that extend far beyond our dojo walls.
             </p>
           </div>
 
           {/* Safety notice */}
           <div className="mt-10 bg-white border border-border rounded-xl p-5">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              <span className="font-semibold text-foreground">Your child's safety is our top priority.</span>{' '}
-              All instructors undergo comprehensive background checks and are CPR/First Aid
-              certified. We maintain strict safety protocols and a zero-tolerance policy for
-              any behavior that compromises student wellbeing.
+              <span className="font-semibold text-foreground">
+                Your child's safety is our top priority.
+              </span>{' '}
+              All instructors undergo comprehensive background checks and are
+              CPR/First Aid certified. We maintain strict safety protocols and a
+              zero-tolerance policy for any behavior that compromises student
+              wellbeing.
             </p>
           </div>
         </div>
@@ -219,23 +266,27 @@ export function InstructorsPageV2() {
       <section className="py-24">
         <div className="container mx-auto px-6 text-center max-w-lg">
           <div className="w-8 h-0.5 bg-primary rounded-full mx-auto mb-8" />
-          <h2 className="text-2xl font-bold mb-3">Come meet the team in person.</h2>
+          <h2 className="text-2xl font-bold mb-3">
+            Come meet the team in person.
+          </h2>
           <p className="text-muted-foreground text-base mb-8 leading-relaxed">
-            The first class is free. Bring your child in and let the instructors introduce
-            themselves — no pressure to sign up that day.
+            The first class is free. Bring your child in and let the instructors
+            introduce themselves — no pressure to sign up that day.
           </p>
           <Button size="lg" className="px-10 font-semibold" onClick={goToTrial}>
             Book a Free Trial Class
           </Button>
           <p className="text-sm text-muted-foreground mt-5">
             Questions?{' '}
-            <a href="tel:+12095550123" className="font-medium text-foreground hover:underline">
+            <a
+              href="tel:+12095550123"
+              className="font-medium text-foreground hover:underline"
+            >
               Call us at (209) 555-0123
             </a>
           </p>
         </div>
       </section>
-
     </div>
   );
 }

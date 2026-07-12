@@ -2,14 +2,18 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './client';
 import type { UserNotification } from '../types';
 
-export type RealtimeCallback<T> = (payload: T) => void;
+type RealtimeCallback<T> = (payload: T) => void;
 
 // ============================================
 // ANNOUNCEMENTS
 // ============================================
 
 export function subscribeToAnnouncements(
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
+  callback: RealtimeCallback<{
+    eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+    new?: any;
+    old?: any;
+  }>,
 ): RealtimeChannel {
   const channel = supabase
     .channel('announcements-changes')
@@ -26,34 +30,7 @@ export function subscribeToAnnouncements(
           new: payload.new,
           old: payload.old,
         });
-      }
-    )
-    .subscribe();
-
-  return channel;
-}
-
-export function subscribeToAnnouncementComments(
-  announcementId: string,
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
-): RealtimeChannel {
-  const channel = supabase
-    .channel(`announcement-comments-${announcementId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'announcement_comments',
-        filter: `announcement_id=eq.${announcementId}`,
       },
-      (payload) => {
-        callback({
-          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-          new: payload.new,
-          old: payload.old,
-        });
-      }
     )
     .subscribe();
 
@@ -61,7 +38,11 @@ export function subscribeToAnnouncementComments(
 }
 
 export function subscribeToAllAnnouncementComments(
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
+  callback: RealtimeCallback<{
+    eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+    new?: any;
+    old?: any;
+  }>,
 ): RealtimeChannel {
   const channel = supabase
     .channel('all-announcement-comments-changes')
@@ -78,7 +59,7 @@ export function subscribeToAllAnnouncementComments(
           new: payload.new,
           old: payload.old,
         });
-      }
+      },
     )
     .subscribe();
 
@@ -90,7 +71,11 @@ export function subscribeToAllAnnouncementComments(
 // ============================================
 
 export function subscribeToBlogPosts(
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
+  callback: RealtimeCallback<{
+    eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+    new?: any;
+    old?: any;
+  }>,
 ): RealtimeChannel {
   const channel = supabase
     .channel('blog-posts-changes')
@@ -107,34 +92,7 @@ export function subscribeToBlogPosts(
           new: payload.new,
           old: payload.old,
         });
-      }
-    )
-    .subscribe();
-
-  return channel;
-}
-
-export function subscribeToBlogComments(
-  postId: string,
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
-): RealtimeChannel {
-  const channel = supabase
-    .channel(`blog-comments-${postId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'blog_comments',
-        filter: `post_id=eq.${postId}`,
       },
-      (payload) => {
-        callback({
-          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-          new: payload.new,
-          old: payload.old,
-        });
-      }
     )
     .subscribe();
 
@@ -142,7 +100,11 @@ export function subscribeToBlogComments(
 }
 
 export function subscribeToAllBlogComments(
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
+  callback: RealtimeCallback<{
+    eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+    new?: any;
+    old?: any;
+  }>,
 ): RealtimeChannel {
   const channel = supabase
     .channel('all-blog-comments-changes')
@@ -159,7 +121,7 @@ export function subscribeToAllBlogComments(
           new: payload.new,
           old: payload.old,
         });
-      }
+      },
     )
     .subscribe();
 
@@ -170,35 +132,12 @@ export function subscribeToAllBlogComments(
 // MESSAGES
 // ============================================
 
-export function subscribeToMessages(
-  conversationId: string,
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
-): RealtimeChannel {
-  const channel = supabase
-    .channel(`messages-${conversationId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'messages',
-        filter: `conversation_id=eq.${conversationId}`,
-      },
-      (payload) => {
-        callback({
-          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-          new: payload.new,
-          old: payload.old,
-        });
-      }
-    )
-    .subscribe();
-
-  return channel;
-}
-
 export function subscribeToConversations(
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
+  callback: RealtimeCallback<{
+    eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+    new?: any;
+    old?: any;
+  }>,
 ): RealtimeChannel {
   const channel = supabase
     .channel('conversations-changes')
@@ -215,7 +154,7 @@ export function subscribeToConversations(
           new: payload.new,
           old: payload.old,
         });
-      }
+      },
     )
     .subscribe();
 
@@ -223,7 +162,11 @@ export function subscribeToConversations(
 }
 
 export function subscribeToAllMessages(
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
+  callback: RealtimeCallback<{
+    eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+    new?: any;
+    old?: any;
+  }>,
 ): RealtimeChannel {
   const channel = supabase
     .channel('all-messages-changes')
@@ -240,36 +183,7 @@ export function subscribeToAllMessages(
           new: payload.new,
           old: payload.old,
         });
-      }
-    )
-    .subscribe();
-
-  return channel;
-}
-
-// ============================================
-// REVIEWS
-// ============================================
-
-export function subscribeToReviews(
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
-): RealtimeChannel {
-  const channel = supabase
-    .channel('reviews-changes')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'reviews',
       },
-      (payload) => {
-        callback({
-          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-          new: payload.new,
-          old: payload.old,
-        });
-      }
     )
     .subscribe();
 
@@ -281,7 +195,11 @@ export function subscribeToReviews(
 // ============================================
 
 export function subscribeToEnrollmentLeads(
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
+  callback: RealtimeCallback<{
+    eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+    new?: any;
+    old?: any;
+  }>,
 ): RealtimeChannel {
   const channel = supabase
     .channel('enrollment-leads-changes')
@@ -298,7 +216,7 @@ export function subscribeToEnrollmentLeads(
           new: payload.new,
           old: payload.old,
         });
-      }
+      },
     )
     .on(
       'postgres_changes',
@@ -313,7 +231,7 @@ export function subscribeToEnrollmentLeads(
           new: payload.new,
           old: payload.old,
         });
-      }
+      },
     )
     .on(
       'postgres_changes',
@@ -328,7 +246,7 @@ export function subscribeToEnrollmentLeads(
           new: payload.new,
           old: payload.old,
         });
-      }
+      },
     )
     .subscribe();
 
@@ -340,7 +258,11 @@ export function subscribeToEnrollmentLeads(
 // ============================================
 
 export function subscribeToAdminProfiles(
-  callback: RealtimeCallback<{ eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new?: any; old?: any }>
+  callback: RealtimeCallback<{
+    eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+    new?: any;
+    old?: any;
+  }>,
 ): RealtimeChannel {
   const channel = supabase
     .channel('admin-profiles-changes')
@@ -357,7 +279,7 @@ export function subscribeToAdminProfiles(
           new: payload.new,
           old: payload.old,
         });
-      }
+      },
     )
     .subscribe();
 
@@ -370,7 +292,7 @@ export function subscribeToAdminProfiles(
 
 export function subscribeToUserNotifications(
   userId: string,
-  onNewNotification: (notification: UserNotification) => void
+  onNewNotification: (notification: UserNotification) => void,
 ): RealtimeChannel {
   return supabase
     .channel(`user_notifications:${userId}`)
@@ -382,7 +304,7 @@ export function subscribeToUserNotifications(
         table: 'user_notifications',
         filter: `recipient_user_id=eq.${userId}`,
       },
-      (payload) => onNewNotification(payload.new as UserNotification)
+      (payload) => onNewNotification(payload.new as UserNotification),
     )
     .subscribe();
 }

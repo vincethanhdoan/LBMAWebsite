@@ -21,7 +21,7 @@ export function LeadsContentSkeleton() {
       <div>
         <Skeleton className="h-4 w-28 mb-2" />
         <Surface>
-          {[0, 1, 2].map(i => (
+          {[0, 1, 2].map((i) => (
             <div
               key={i}
               className={`flex items-center justify-between px-4 py-3 ${i > 0 ? 'border-t border-border' : ''}`}

@@ -22,8 +22,21 @@ function StarRow({ rating }: { rating: number }) {
   );
 }
 
-function timeAgo(dateStr: string, lang: Lang, r: { timeToday: string; time1Day: string; timeDays: (d: number) => string; timeWeeks: (w: number) => string; timeMonths: (m: number) => string; timeYears: (y: number) => string }): string {
-  const diffDays = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+function timeAgo(
+  dateStr: string,
+  lang: Lang,
+  r: {
+    timeToday: string;
+    time1Day: string;
+    timeDays: (d: number) => string;
+    timeWeeks: (w: number) => string;
+    timeMonths: (m: number) => string;
+    timeYears: (y: number) => string;
+  },
+): string {
+  const diffDays = Math.floor(
+    (Date.now() - new Date(dateStr).getTime()) / 86400000,
+  );
   if (diffDays === 0) return r.timeToday;
   if (diffDays === 1) return r.time1Day;
   if (diffDays < 7) return r.timeDays(diffDays);
@@ -32,17 +45,30 @@ function timeAgo(dateStr: string, lang: Lang, r: { timeToday: string; time1Day: 
   return r.timeYears(Math.floor(diffDays / 365));
 }
 
-function RatingSummary({ reviews, overallRating, reviewWord, reviewsWord }: { reviews: Review[]; overallRating: string; reviewWord: string; reviewsWord: string }) {
+function RatingSummary({
+  reviews,
+  overallRating,
+  reviewWord,
+  reviewsWord,
+}: {
+  reviews: Review[];
+  overallRating: string;
+  reviewWord: string;
+  reviewsWord: string;
+}) {
   if (reviews.length < 1) return null;
 
   const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-  const dist = [5, 4, 3, 2, 1].map(star => ({
+  const dist = [5, 4, 3, 2, 1].map((star) => ({
     star,
-    count: reviews.filter(r => r.rating === star).length,
+    count: reviews.filter((r) => r.rating === star).length,
   }));
 
   return (
-    <section className="py-5 md:py-6 px-6 md:px-10" style={{ backgroundColor: V3.primary }}>
+    <section
+      className="py-5 md:py-6 px-6 md:px-10"
+      style={{ backgroundColor: V3.primary }}
+    >
       <div className="flex items-center gap-7 flex-wrap justify-center">
         <div className="flex-shrink-0 text-center">
           <div
@@ -56,36 +82,60 @@ function RatingSummary({ reviews, overallRating, reviewWord, reviewsWord }: { re
           </div>
           <div
             className="text-white uppercase tracking-wide"
-            style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '0.7rem', fontWeight: 700 }}
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontSize: '0.7rem',
+              fontWeight: 700,
+            }}
           >
             {overallRating}
           </div>
-          <div className="italic text-xs" style={{ color: 'oklch(82% 0.025 20)' }}>
+          <div
+            className="italic text-xs"
+            style={{ color: 'oklch(82% 0.025 20)' }}
+          >
             {reviews.length} {reviews.length === 1 ? reviewWord : reviewsWord}
           </div>
         </div>
 
-        <div className="hidden md:block w-px h-10" style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} />
+        <div
+          className="hidden md:block w-px h-10"
+          style={{ backgroundColor: 'rgba(255,255,255,0.18)' }}
+        />
 
         <div className="space-y-1">
           {dist.map(({ star, count }) => (
             <div key={star} className="flex items-center gap-2">
               <span
                 className="text-white text-right"
-                style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '0.6rem', fontWeight: 700, width: '1.25rem' }}
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  width: '1.25rem',
+                }}
               >
                 {star}★
               </span>
               <div
                 className="relative h-1.5 rounded-full overflow-hidden"
-                style={{ width: '5rem', backgroundColor: 'rgba(255,255,255,0.18)' }}
+                style={{
+                  width: '5rem',
+                  backgroundColor: 'rgba(255,255,255,0.18)',
+                }}
               >
                 <div
                   className="absolute inset-y-0 left-0 rounded-full bg-amber-400"
                   style={{ width: `${(count / reviews.length) * 100}%` }}
                 />
               </div>
-              <span style={{ color: 'oklch(82% 0.025 20)', fontSize: '0.6rem', width: '1rem' }}>
+              <span
+                style={{
+                  color: 'oklch(82% 0.025 20)',
+                  fontSize: '0.6rem',
+                  width: '1rem',
+                }}
+              >
                 {count}
               </span>
             </div>
@@ -96,7 +146,12 @@ function RatingSummary({ reviews, overallRating, reviewWord, reviewsWord }: { re
   );
 }
 
-function ReviewCard({ review, defaultName, lang, timeStrings }: {
+function ReviewCard({
+  review,
+  defaultName,
+  lang,
+  timeStrings,
+}: {
   review: Review;
   defaultName: string;
   lang: Lang;
@@ -110,7 +165,10 @@ function ReviewCard({ review, defaultName, lang, timeStrings }: {
       <div className="mb-2">
         <StarRow rating={review.rating} />
       </div>
-      <p className="flex-1 italic leading-relaxed mb-3" style={{ fontSize: '0.9rem', color: V3.muted }}>
+      <p
+        className="flex-1 italic leading-relaxed mb-3"
+        style={{ fontSize: '0.9rem', color: V3.muted }}
+      >
         "{review.review}"
       </p>
       <p className="text-sm font-semibold" style={{ color: V3.text }}>
@@ -146,7 +204,10 @@ export function ReviewsPage() {
       {/* Hero */}
       <section
         className="py-14"
-        style={{ backgroundColor: 'white', borderBottom: `1px solid ${V3.border}` }}
+        style={{
+          backgroundColor: 'white',
+          borderBottom: `1px solid ${V3.border}`,
+        }}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <p className="v3-eyebrow mb-4">{rv.eyebrow}</p>
@@ -156,7 +217,10 @@ export function ReviewsPage() {
           >
             {rv.heading}
           </h1>
-          <p className="text-base leading-relaxed max-w-xl" style={{ color: V3.muted }}>
+          <p
+            className="text-base leading-relaxed max-w-xl"
+            style={{ color: V3.muted }}
+          >
             {rv.sub}
           </p>
         </div>
@@ -164,7 +228,10 @@ export function ReviewsPage() {
 
       {loading ? (
         <section className="py-32 flex justify-center">
-          <Loader2 className="w-6 h-6 animate-spin" style={{ color: V3.primary }} />
+          <Loader2
+            className="w-6 h-6 animate-spin"
+            style={{ color: V3.primary }}
+          />
         </section>
       ) : isError ? (
         <section className="py-32 text-center" style={{ color: V3.muted }}>
@@ -184,10 +251,13 @@ export function ReviewsPage() {
           />
 
           {/* Card grid */}
-          <section className="py-6 px-6 md:px-10" style={{ backgroundColor: V3.surface }}>
+          <section
+            className="py-6 px-6 md:px-10"
+            style={{ backgroundColor: V3.surface }}
+          >
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {visible.map(r => (
+                {visible.map((r) => (
                   <ReviewCard
                     key={r.review_id}
                     review={r}
@@ -201,7 +271,7 @@ export function ReviewsPage() {
                 <div className="mt-4 text-center">
                   <button
                     className="v3-btn-outline"
-                    onClick={() => setVisibleCount(c => c + 6)}
+                    onClick={() => setVisibleCount((c) => c + 6)}
                   >
                     {rv.loadMore}
                   </button>

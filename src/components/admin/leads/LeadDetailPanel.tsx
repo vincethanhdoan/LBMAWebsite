@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Pencil, Check, MoreVertical, AlertCircle, Loader2, ChevronRight } from 'lucide-react';
+import {
+  X,
+  Pencil,
+  Check,
+  MoreVertical,
+  AlertCircle,
+  Loader2,
+  ChevronRight,
+} from 'lucide-react';
 import { Button } from '../../ui/button';
 import {
   DropdownMenu,
@@ -23,8 +31,15 @@ import { childSummary, getAppointmentOccurrences } from './leadViews';
 import type { useLeadActions } from './useLeadActions';
 import { formatPhone } from '../../../lib/format';
 import { pacificTodayISO } from '../../../lib/pacificTime';
-import { useUpdateLeadNotes, useUpdateLeadStatus, useCloseLead } from '../../../lib/hooks/leads';
-import type { EnrollmentLead, EnrollmentLeadProgramBooking } from '../../../lib/types';
+import {
+  useUpdateLeadNotes,
+  useUpdateLeadStatus,
+  useCloseLead,
+} from '../../../lib/hooks/leads';
+import type {
+  EnrollmentLead,
+  EnrollmentLeadProgramBooking,
+} from '../../../lib/types';
 
 const ACTIVE_STATUSES: EnrollmentLead['status'][] = [
   'approved',
@@ -47,7 +62,11 @@ function HeaderStatus({ lead }: { lead: EnrollmentLead }) {
     case 'denied':
       return <StatusBadge kind="denied" />;
     case 'approved':
-      return <span className="text-[11px] text-muted-foreground">{STATUS_LABELS.approved}</span>;
+      return (
+        <span className="text-[11px] text-muted-foreground">
+          {STATUS_LABELS.approved}
+        </span>
+      );
   }
 }
 
@@ -117,17 +136,18 @@ export function LeadDetailPanel({
   }, [onClose]);
 
   const bookings = lead.programBookings ?? [];
-  const hasAppointmentSection = bookings.length > 0 || lead.appointment_date !== null;
+  const hasAppointmentSection =
+    bookings.length > 0 || lead.appointment_date !== null;
   const confirmationEmail = effectiveConfirmationNotification(lead);
 
   const today = pacificTodayISO();
   const occurrences = getAppointmentOccurrences([lead]);
-  const hasPastAppointment = occurrences.some(o => o.dateKey < today);
+  const hasPastAppointment = occurrences.some((o) => o.dateKey < today);
 
   // The confirm-attendance email auto-sends 2 days before the visit (daily
   // cron); until then the panel shows the scheduled date with a send-now option.
   const autoSendDateKey = (() => {
-    const next = occurrences.find(o => o.dateKey >= today);
+    const next = occurrences.find((o) => o.dateKey >= today);
     if (!next) return null;
     const d = new Date(next.dateKey + 'T12:00:00');
     d.setDate(d.getDate() - 2);
@@ -137,7 +157,8 @@ export function LeadDetailPanel({
   const isActive = ACTIVE_STATUSES.includes(lead.status);
   const busy = actions.busyLeadIds.has(lead.lead_id);
   const hasAppointmentDate =
-    lead.appointment_date !== null || bookings.some(b => b.appointment_date !== null);
+    lead.appointment_date !== null ||
+    bookings.some((b) => b.appointment_date !== null);
 
   function openNotesEditor() {
     setNotesSaved(false);
@@ -177,13 +198,20 @@ export function LeadDetailPanel({
   const primaryAction: { label: string; run: () => void } | null = (() => {
     switch (lead.status) {
       case 'new':
-        return { label: 'Approve and send invites', run: () => actions.approve(lead) };
+        return {
+          label: 'Approve and send invites',
+          run: () => actions.approve(lead),
+        };
       case 'appointment_scheduled':
-        return { label: 'Mark confirmed', run: () => actions.markConfirmed(lead) };
+        return {
+          label: 'Mark confirmed',
+          run: () => actions.markConfirmed(lead),
+        };
       case 'appointment_confirmed':
         return {
           label: 'Mark enrolled',
-          run: () => updateStatus.mutate({ leadId: lead.lead_id, status: 'enrolled' }),
+          run: () =>
+            updateStatus.mutate({ leadId: lead.lead_id, status: 'enrolled' }),
         };
       default:
         return null;
@@ -194,29 +222,45 @@ export function LeadDetailPanel({
   // Program and kids are supporting context; per-program status appears only
   // when multiple bookings could disagree with the header badge.
   function renderBooking(booking: EnrollmentLeadProgramBooking) {
-    const kids = lead.children?.filter(c => c.program_type === booking.program_type) ?? [];
+    const kids =
+      lead.children?.filter((c) => c.program_type === booking.program_type) ??
+      [];
     const booked =
       (booking.status === 'scheduled' || booking.status === 'confirmed') &&
       booking.appointment_date !== null;
     const context = [
       PROGRAM_LABELS[booking.program_type],
       bookings.length > 1 && kids.length > 0
-        ? kids.map(c => `${c.name} · age ${c.age}`).join(', ')
+        ? kids.map((c) => `${c.name} · age ${c.age}`).join(', ')
         : null,
       bookings.length > 1 && booked
-        ? booking.status === 'confirmed' ? 'Confirmed' : 'Not confirmed'
+        ? booking.status === 'confirmed'
+          ? 'Confirmed'
+          : 'Not confirmed'
         : null,
-    ].filter(Boolean).join(' · ');
+    ]
+      .filter(Boolean)
+      .join(' · ');
     return (
-      <div key={booking.booking_id} className="rounded-lg border border-border bg-background px-3.5 py-2.5">
+      <div
+        key={booking.booking_id}
+        className="rounded-lg border border-border bg-background px-3.5 py-2.5"
+      >
         {booked ? (
           <div className="text-[15px] font-semibold leading-snug">
-            {formatVisit(booking.appointment_date as string, booking.appointment_time)}
+            {formatVisit(
+              booking.appointment_date as string,
+              booking.appointment_time,
+            )}
           </div>
         ) : (
-          <div className="text-[13px] text-muted-foreground">Invite sent, not booked yet</div>
+          <div className="text-[13px] text-muted-foreground">
+            Invite sent, not booked yet
+          </div>
         )}
-        <div className="text-[11px] text-muted-foreground mt-0.5">{context}</div>
+        <div className="text-[11px] text-muted-foreground mt-0.5">
+          {context}
+        </div>
       </div>
     );
   }
@@ -229,11 +273,15 @@ export function LeadDetailPanel({
         <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4 border-b border-border">
           <div className="min-w-0 space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[15px] font-semibold leading-tight">{lead.parent_name}</span>
+              <span className="text-[15px] font-semibold leading-tight">
+                {lead.parent_name}
+              </span>
               <HeaderStatus lead={lead} />
             </div>
             {childSummary(lead) && (
-              <div className="text-[11px] text-muted-foreground">{childSummary(lead)}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {childSummary(lead)}
+              </div>
             )}
           </div>
           <button
@@ -255,40 +303,47 @@ export function LeadDetailPanel({
               ) : (
                 <div className="rounded-lg border border-border bg-background px-3.5 py-2.5">
                   <div className="text-[15px] font-semibold leading-snug">
-                    {formatVisit(lead.appointment_date as string, lead.appointment_time)}
+                    {formatVisit(
+                      lead.appointment_date as string,
+                      lead.appointment_time,
+                    )}
                   </div>
                   {lead.student_name && (
                     <div className="text-[11px] text-muted-foreground mt-0.5">
                       {lead.student_name}
-                      {lead.student_age !== null ? ` · age ${lead.student_age}` : ''}
+                      {lead.student_age !== null
+                        ? ` · age ${lead.student_age}`
+                        : ''}
                     </div>
                   )}
                 </div>
               )}
               {/* Email state only when it still needs something from staff or family. */}
-              {lead.status === 'appointment_scheduled' && !confirmationEmail && (
-                <div className="text-[11px] flex items-center gap-2">
-                  <span className="text-muted-foreground">
-                    {autoSendDateKey
-                      ? `Confirmation email will be sent ${formatDateConcise(autoSendDateKey + 'T12:00:00')}`
-                      : 'No confirmation email sent'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => actions.sendReminder(lead)}
-                    disabled={actions.sendingReminderId === lead.lead_id}
-                    className="font-medium text-primary hover:underline disabled:opacity-50"
-                  >
-                    {actions.sendingReminderId === lead.lead_id
-                      ? 'Sending…'
-                      : autoSendDateKey
-                        ? 'Send now'
-                        : 'Send confirmation email'}
-                  </button>
-                </div>
-              )}
               {lead.status === 'appointment_scheduled' &&
-                (confirmationEmail?.status === 'sent' || confirmationEmail?.status === 'queued') && (
+                !confirmationEmail && (
+                  <div className="text-[11px] flex items-center gap-2">
+                    <span className="text-muted-foreground">
+                      {autoSendDateKey
+                        ? `Confirmation email will be sent ${formatDateConcise(autoSendDateKey + 'T12:00:00')}`
+                        : 'No confirmation email sent'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => actions.sendReminder(lead)}
+                      disabled={actions.sendingReminderId === lead.lead_id}
+                      className="font-medium text-primary hover:underline disabled:opacity-50"
+                    >
+                      {actions.sendingReminderId === lead.lead_id
+                        ? 'Sending…'
+                        : autoSendDateKey
+                          ? 'Send now'
+                          : 'Send confirmation email'}
+                    </button>
+                  </div>
+                )}
+              {lead.status === 'appointment_scheduled' &&
+                (confirmationEmail?.status === 'sent' ||
+                  confirmationEmail?.status === 'queued') && (
                   <div className="text-[11px] flex items-center gap-2">
                     <span className="text-muted-foreground">
                       {confirmationEmail.status === 'sent'
@@ -302,7 +357,9 @@ export function LeadDetailPanel({
                         disabled={actions.sendingReminderId === lead.lead_id}
                         className="font-medium text-primary hover:underline disabled:opacity-50"
                       >
-                        {actions.sendingReminderId === lead.lead_id ? 'Sending…' : 'Resend'}
+                        {actions.sendingReminderId === lead.lead_id
+                          ? 'Sending…'
+                          : 'Resend'}
                       </button>
                     )}
                   </div>
@@ -319,7 +376,9 @@ export function LeadDetailPanel({
                     disabled={actions.sendingReminderId === lead.lead_id}
                     className="font-medium text-primary hover:underline disabled:opacity-50"
                   >
-                    {actions.sendingReminderId === lead.lead_id ? 'Sending…' : 'Retry'}
+                    {actions.sendingReminderId === lead.lead_id
+                      ? 'Sending…'
+                      : 'Retry'}
                   </button>
                 </div>
               )}
@@ -335,7 +394,9 @@ export function LeadDetailPanel({
               {lead.parent_email}
             </a>
             {lead.phone && (
-              <div className="text-[13px] text-muted-foreground">{formatPhone(lead.phone)}</div>
+              <div className="text-[13px] text-muted-foreground">
+                {formatPhone(lead.phone)}
+              </div>
             )}
           </div>
 
@@ -353,16 +414,22 @@ export function LeadDetailPanel({
                 <textarea
                   autoFocus
                   value={notesDraft}
-                  onChange={e => setNotesDraft(e.target.value)}
+                  onChange={(e) => setNotesDraft(e.target.value)}
                   rows={3}
                   placeholder="Internal notes (only visible to admins)…"
                   className="w-full text-[13px] px-3 py-2 border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/60"
                 />
                 {notesError && (
-                  <p className="text-[11px] text-destructive">{"Couldn't save, try again"}</p>
+                  <p className="text-[11px] text-destructive">
+                    {"Couldn't save, try again"}
+                  </p>
                 )}
                 <div className="flex items-center gap-2">
-                  <Button size="sm" onClick={saveNotes} disabled={updateNotes.isPending}>
+                  <Button
+                    size="sm"
+                    onClick={saveNotes}
+                    disabled={updateNotes.isPending}
+                  >
                     {updateNotes.isPending ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -392,7 +459,9 @@ export function LeadDetailPanel({
                   {notesDraft}
                 </p>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  {notesSaved && <Check className="w-3.5 h-3.5 text-green-600" />}
+                  {notesSaved && (
+                    <Check className="w-3.5 h-3.5 text-green-600" />
+                  )}
                   <button
                     type="button"
                     onClick={openNotesEditor}
@@ -419,7 +488,7 @@ export function LeadDetailPanel({
           <div>
             <button
               type="button"
-              onClick={() => setActivityOpen(o => !o)}
+              onClick={() => setActivityOpen((o) => !o)}
               className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <ChevronRight
@@ -438,7 +507,11 @@ export function LeadDetailPanel({
         {/* Action bar */}
         <div className="sticky bottom-0 bg-card border-t border-border px-5 py-3 flex flex-wrap items-center gap-2">
           {primaryAction && (
-            <Button size="sm" onClick={primaryAction.run} disabled={busy || updateStatus.isPending}>
+            <Button
+              size="sm"
+              onClick={primaryAction.run}
+              disabled={busy || updateStatus.isPending}
+            >
               {primaryAction.label}
             </Button>
           )}
@@ -446,10 +519,18 @@ export function LeadDetailPanel({
             lead.status === 'appointment_scheduled' ||
             lead.status === 'appointment_confirmed') && (
             <>
-              <Button size="sm" variant="outline" onClick={() => onPickDate(lead)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onPickDate(lead)}
+              >
                 Pick new date
               </Button>
-              <Button size="sm" variant="outline" onClick={() => onResend(lead)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onResend(lead)}
+              >
                 Resend invites
               </Button>
             </>
@@ -490,9 +571,14 @@ export function LeadDetailPanel({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => onEdit(lead)}>Edit lead</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onEdit(lead)}>
+                  Edit lead
+                </DropdownMenuItem>
                 {(lead.status === 'enrolled' || lead.status === 'closed') && (
-                  <DropdownMenuItem onSelect={reopen} disabled={updateStatus.isPending}>
+                  <DropdownMenuItem
+                    onSelect={reopen}
+                    disabled={updateStatus.isPending}
+                  >
                     Reopen
                   </DropdownMenuItem>
                 )}

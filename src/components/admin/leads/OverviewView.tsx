@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import type { BlockedDate, EnrollmentLead } from '../../../lib/types';
 import { Button } from '../../ui/button';
@@ -56,18 +56,20 @@ export function OverviewView({
   const unconfirmedKids = days.reduce((sum, d) => sum + d.unconfirmedKids, 0);
   const totalKids = confirmedKids + unconfirmedKids;
 
-  const todayOccurrences = occurrences.filter(o => o.dateKey === todayKey);
+  const todayOccurrences = occurrences.filter((o) => o.dateKey === todayKey);
   const nextUpcoming = nextOccurrenceAfter(occurrences, todayKey);
 
   const attentionItems = deriveAttentionItems(leads, todayKey, now);
 
   const newLeads = leads
-    .filter(l => l.status === 'new')
+    .filter((l) => l.status === 'new')
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
   const newPreview = newLeads.slice(0, 3);
 
   const allEmpty =
-    occurrences.length === 0 && attentionItems.length === 0 && newLeads.length === 0;
+    occurrences.length === 0 &&
+    attentionItems.length === 0 &&
+    newLeads.length === 0;
 
   if (allEmpty) {
     return (
@@ -100,14 +102,14 @@ export function OverviewView({
           weekOffset={weekOffset}
           onWeekOffsetChange={setWeekOffset}
           selectedDate={null}
-          onSelectDate={d => d && onGoToAppointments(d)}
+          onSelectDate={(d) => d && onGoToAppointments(d)}
           totalKids={totalKids}
           confirmedKids={confirmedKids}
           unconfirmedKids={unconfirmedKids}
           showTodayButton={false}
         >
           {todayOccurrences.length > 0 ? (
-            todayOccurrences.map(o => (
+            todayOccurrences.map((o) => (
               <LeadRow
                 key={o.lead.lead_id + o.dateKey + (o.time ?? '')}
                 id={'lead-' + o.lead.lead_id}
@@ -118,7 +120,11 @@ export function OverviewView({
                   </span>
                 }
                 title={childSummary(o.lead) || o.lead.parent_name}
-                badge={<StatusBadge kind={o.confirmed ? 'confirmed' : 'unconfirmed'} />}
+                badge={
+                  <StatusBadge
+                    kind={o.confirmed ? 'confirmed' : 'unconfirmed'}
+                  />
+                }
                 onOpen={() => onOpenLead(o.lead.lead_id)}
               />
             ))
@@ -131,8 +137,14 @@ export function OverviewView({
                   Next: {formatDate(nextUpcoming.dateKey + 'T12:00:00')}
                 </span>
               }
-              title={childSummary(nextUpcoming.lead) || nextUpcoming.lead.parent_name}
-              badge={<StatusBadge kind={nextUpcoming.confirmed ? 'confirmed' : 'unconfirmed'} />}
+              title={
+                childSummary(nextUpcoming.lead) || nextUpcoming.lead.parent_name
+              }
+              badge={
+                <StatusBadge
+                  kind={nextUpcoming.confirmed ? 'confirmed' : 'unconfirmed'}
+                />
+              }
               onOpen={() => onOpenLead(nextUpcoming.lead.lead_id)}
             />
           ) : null}
@@ -141,9 +153,13 @@ export function OverviewView({
 
       {attentionItems.length > 0 && (
         <section>
-          <SectionHeader title="Needs attention" count={attentionItems.length} alert />
+          <SectionHeader
+            title="Needs attention"
+            count={attentionItems.length}
+            alert
+          />
           <Surface>
-            {attentionItems.map(item => (
+            {attentionItems.map((item) => (
               <AttentionRow
                 key={item.lead.lead_id}
                 item={item}
@@ -171,7 +187,7 @@ export function OverviewView({
             }
           />
           <Surface>
-            {newPreview.map(lead => {
+            {newPreview.map((lead) => {
               const snippet = lead.message.slice(0, 60);
               const age = inquiryAge(lead.created_at, now);
               return (
@@ -236,7 +252,8 @@ function AttentionRow({
       <>
         <span className="text-[#A01F23] font-bold">
           {relativeDayLabel(occurrence.dateKey)}
-          {occurrence.time ? ` ${formatTimeShort(occurrence.time)}` : ''}, not confirmed
+          {occurrence.time ? ` ${formatTimeShort(occurrence.time)}` : ''}, not
+          confirmed
         </span>
         {lead.phone ? ` · call ${formatPhone(lead.phone)}` : ''}
       </>
