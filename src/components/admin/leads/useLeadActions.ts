@@ -173,7 +173,7 @@ export function useLeadActions({ onError }: { onError: (msg: string) => void }) 
       if (error) {
         const status = (error as { context?: { status?: number } }).context?.status;
         if (status === 409) {
-          onError('Confirmation email already sent or queued');
+          onError('A confirmation email is already on its way');
         } else {
           onError('Failed to send confirmation email');
         }

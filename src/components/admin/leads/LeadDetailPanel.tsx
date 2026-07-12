@@ -268,10 +268,22 @@ export function LeadDetailPanel({
               )}
               {lead.status === 'appointment_scheduled' &&
                 (confirmationEmail?.status === 'sent' || confirmationEmail?.status === 'queued') && (
-                  <div className="text-[11px] text-muted-foreground">
-                    {confirmationEmail.status === 'sent'
-                      ? `Confirmation email sent ${formatDateConcise(confirmationEmail.created_at)}, waiting on the family`
-                      : 'Confirmation email queued'}
+                  <div className="text-[11px] flex items-center gap-2">
+                    <span className="text-muted-foreground">
+                      {confirmationEmail.status === 'sent'
+                        ? `Confirmation email sent ${formatDateConcise(confirmationEmail.created_at)}, waiting on the family`
+                        : 'Confirmation email queued'}
+                    </span>
+                    {confirmationEmail.status === 'sent' && (
+                      <button
+                        type="button"
+                        onClick={() => actions.sendReminder(lead)}
+                        disabled={actions.sendingReminderId === lead.lead_id}
+                        className="font-medium text-primary hover:underline disabled:opacity-50"
+                      >
+                        {actions.sendingReminderId === lead.lead_id ? 'Sending…' : 'Resend'}
+                      </button>
+                    )}
                   </div>
                 )}
               {confirmationEmail?.status === 'failed' && (

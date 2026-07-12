@@ -58,17 +58,19 @@ Deno.serve(async (req) => {
     return new Response('Lead is not scheduled or confirmed', { status: 422, headers: cors })
   }
 
-  // Only block if a reminder was already successfully sent or is queued — failed reminders can be retried
+  // Block only while a send is in flight. Already-sent confirmations can be
+  // re-sent: delivery fails silently (spam, typos fixed via edit), and staff
+  // need to nudge families again.
   const { data: existing } = await supabase
     .from('enrollment_lead_notifications')
     .select('notification_id')
     .eq('lead_id', leadId)
     .eq('type', 'reminder')
-    .in('status', ['sent', 'queued'])
+    .eq('status', 'queued')
     .maybeSingle()
 
   if (existing) {
-    return new Response('Reminder already sent or queued', { status: 409, headers: cors })
+    return new Response('Reminder already queued', { status: 409, headers: cors })
   }
 
   const { error: notifError } = await supabase
