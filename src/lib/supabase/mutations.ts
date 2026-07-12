@@ -5,7 +5,6 @@ import type {
   Guardian,
   Student,
   Announcement,
-  AnnouncementComment,
   BlogPost,
   BlogComment,
   Message,
@@ -257,27 +256,6 @@ export async function createAnnouncementComment(
       body,
       ...(parentCommentId ? { parent_comment_id: parentCommentId } : {}),
     });
-  if (error) throw error;
-}
-
-export async function updateAnnouncementComment(commentId: string, updates: Partial<AnnouncementComment>): Promise<AnnouncementComment> {
-  const { data, error } = await supabase
-    .from('announcement_comments')
-    .update(updates)
-    .eq('comment_id', commentId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteAnnouncementComment(commentId: string): Promise<void> {
-  const { error } = await supabase
-    .from('announcement_comments')
-    .delete()
-    .eq('comment_id', commentId);
-
   if (error) throw error;
 }
 

@@ -85,16 +85,6 @@ export async function getFamilyByOwner(ownerUserId: string): Promise<Family | nu
   return data || null;
 }
 
-async function getAllFamilies(): Promise<Family[]> {
-  const { data, error } = await supabase
-    .from('families')
-    .select(FAMILY_COLUMNS)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
-}
-
 export type FamilyWithRelations = Family & {
   guardians: Guardian[];
   students: Student[];
@@ -117,7 +107,6 @@ export async function getFamilyWithRelations(familyId: string): Promise<FamilyWi
 
 /**
  * Fetches all families with their guardians and students in a single query.
- * Use this instead of getAllFamilies() + N×getFamilyWithRelations().
  */
 export async function getAllFamiliesWithRelations(): Promise<FamilyWithRelations[]> {
   const { data, error } = await supabase
