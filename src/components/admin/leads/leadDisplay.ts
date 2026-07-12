@@ -83,6 +83,14 @@ export function formatDate(dateString: string) {
   });
 }
 
+// Like formatDate, but the year appears only when it isn't the current year.
+export function formatDateConcise(dateString: string) {
+  const d = new Date(dateString);
+  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString('en-US', opts);
+}
+
 // ─── Calendar view helpers ─────────────────────────────────────────────────
 
 export function toLocalDateKey(date: Date): string {

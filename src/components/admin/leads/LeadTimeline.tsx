@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Check, Clock, AlertCircle } from 'lucide-react';
 import type { EnrollmentLead, EnrollmentLeadNotification } from '../../../lib/types';
-import { formatDate } from './leadDisplay';
+import { formatDateConcise } from './leadDisplay';
 
 const EMAIL_LABELS: Record<string, string> = {
   new_lead: 'Admin alert email',
@@ -39,7 +40,7 @@ function StatusPill({ status }: { status: EnrollmentLeadNotification['status'] }
 
 function formatTimestamp(iso: string): string {
   const time = new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  return `${formatDate(iso)} · ${time}`;
+  return `${formatDateConcise(iso)} · ${time}`;
 }
 
 type TimelineEntry = {
@@ -75,12 +76,19 @@ function buildEntries(lead: EnrollmentLead): TimelineEntry[] {
     });
   }
 
+  const parentEmail = lead.parent_email.trim().toLowerCase();
   for (const n of lead.notificationHistory) {
+    // Admin alert emails are internal plumbing, not lead history.
+    if (n.type === 'new_lead') continue;
     entries.push({
       key: `email-${n.notification_id}`,
       label: EMAIL_LABELS[n.type] ?? n.type,
       timestamp: n.created_at,
-      recipient: n.recipient_email,
+      // The family's own address is implied; show a recipient only when it differs.
+      recipient:
+        n.recipient_email && n.recipient_email.trim().toLowerCase() !== parentEmail
+          ? n.recipient_email
+          : null,
       status: n.status,
     });
   }
@@ -94,12 +102,17 @@ function buildEntries(lead: EnrollmentLead): TimelineEntry[] {
   });
 }
 
+const COLLAPSED_ENTRY_COUNT = 3;
+
 export function LeadTimeline({ lead }: { lead: EnrollmentLead }) {
+  const [showAll, setShowAll] = useState(false);
   const entries = buildEntries(lead);
+  const visible = showAll ? entries : entries.slice(0, COLLAPSED_ENTRY_COUNT);
+  const hiddenCount = entries.length - visible.length;
 
   return (
     <ol className="flex flex-col gap-2.5">
-      {entries.map(entry => (
+      {visible.map(entry => (
         <li key={entry.key} className="flex items-start gap-2.5 text-xs">
           <span className="mt-1 w-1.5 h-1.5 rounded-full bg-muted-foreground/40 flex-shrink-0" />
           <div className="flex-1 min-w-0">
@@ -117,6 +130,17 @@ export function LeadTimeline({ lead }: { lead: EnrollmentLead }) {
           </div>
         </li>
       ))}
+      {hiddenCount > 0 && (
+        <li>
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Show all activity ({entries.length})
+          </button>
+        </li>
+      )}
     </ol>
   );
 }

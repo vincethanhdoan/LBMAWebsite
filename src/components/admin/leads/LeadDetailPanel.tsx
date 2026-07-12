@@ -13,7 +13,7 @@ import { RecordOutcomeButton } from './RecordOutcomePopover';
 import {
   PROGRAM_LABELS,
   STATUS_LABELS,
-  formatDate,
+  formatDateConcise,
   formatTimeShort,
   effectiveConfirmationNotification,
 } from './leadDisplay';
@@ -58,7 +58,9 @@ function HeaderStatus({ lead }: { lead: EnrollmentLead }) {
 }
 
 function formatVisit(date: string, time: string | null): string {
-  const dateLabel = formatDate(date + 'T12:00:00');
+  const d = new Date(date + 'T12:00:00');
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+  const dateLabel = `${weekday}, ${formatDateConcise(date + 'T12:00:00')}`;
   return time ? `${dateLabel} at ${formatTimeShort(time)}` : dateLabel;
 }
 
@@ -196,10 +198,13 @@ export function LeadDetailPanel({
         {booked ? (
           <div className="text-[13px]">
             {formatVisit(booking.appointment_date as string, booking.appointment_time)}
-            <span className="text-muted-foreground">
-              {' · '}
-              {booking.status === 'confirmed' ? 'Confirmed' : 'Not confirmed'}
-            </span>
+            {/* With one booking the header badge already carries the status. */}
+            {bookings.length > 1 && (
+              <span className="text-muted-foreground">
+                {' · '}
+                {booking.status === 'confirmed' ? 'Confirmed' : 'Not confirmed'}
+              </span>
+            )}
           </div>
         ) : (
           <div className="text-[13px] text-muted-foreground">Invite sent, not booked yet</div>
@@ -221,7 +226,7 @@ export function LeadDetailPanel({
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[11px] text-muted-foreground">
-                Inquired {formatDate(lead.created_at)}
+                Inquired {formatDateConcise(lead.created_at)}
               </span>
               <button
                 type="button"
@@ -281,10 +286,6 @@ export function LeadDetailPanel({
                   )}
                   <div className="text-[13px]">
                     {formatVisit(lead.appointment_date as string, lead.appointment_time)}
-                    <span className="text-muted-foreground">
-                      {' · '}
-                      {lead.status === 'appointment_confirmed' ? 'Confirmed' : 'Not confirmed'}
-                    </span>
                   </div>
                 </div>
               )}
@@ -306,7 +307,7 @@ export function LeadDetailPanel({
                 <div className="text-[11px]">
                   {confirmationEmail.status === 'sent' && (
                     <span className="text-muted-foreground">
-                      Confirmation email sent · {formatDate(confirmationEmail.created_at)}
+                      Confirmation email sent · {formatDateConcise(confirmationEmail.created_at)}
                     </span>
                   )}
                   {confirmationEmail.status === 'queued' && (
