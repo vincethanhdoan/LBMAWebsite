@@ -8,7 +8,8 @@ import {
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu';
 import { StatusBadge } from './ui';
-import { LeadTimeline, timelineEntryCount } from './LeadTimeline';
+import { LeadTimeline } from './LeadTimeline';
+import { buildTimelineEntries } from './timelineEntries';
 import { RecordOutcomeButton } from './RecordOutcomePopover';
 import {
   PROGRAM_LABELS,
@@ -391,7 +392,7 @@ export function LeadDetailPanel({
               <ChevronRight
                 className={`w-3.5 h-3.5 transition-transform ${activityOpen ? 'rotate-90' : ''}`}
               />
-              Activity ({timelineEntryCount(lead)})
+              Activity ({buildTimelineEntries(lead).length})
             </button>
             {activityOpen && (
               <div className="mt-3 pl-1">

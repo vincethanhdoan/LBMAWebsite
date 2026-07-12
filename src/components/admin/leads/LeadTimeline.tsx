@@ -1,15 +1,7 @@
 import { Check, Clock, AlertCircle } from 'lucide-react';
 import type { EnrollmentLead, EnrollmentLeadNotification } from '../../../lib/types';
 import { formatDateConcise } from './leadDisplay';
-
-const EMAIL_LABELS: Record<string, string> = {
-  new_lead: 'Admin alert email',
-  submission: 'Submission receipt',
-  approval: 'Booking invite email',
-  booking_confirmation: 'Confirmation email',
-  reminder: 'Reminder email',
-  denial: 'Denial email',
-};
+import { buildTimelineEntries } from './timelineEntries';
 
 // Status pill styling mirrors ReminderStatusBadge (sent green / queued amber / failed red).
 function StatusPill({ status }: { status: EnrollmentLeadNotification['status'] }) {
@@ -42,73 +34,8 @@ function formatTimestamp(iso: string): string {
   return `${formatDateConcise(iso)} · ${time}`;
 }
 
-type TimelineEntry = {
-  key: string;
-  label: string;
-  timestamp: string | null;
-  recipient?: string | null;
-  status?: EnrollmentLeadNotification['status'];
-};
-
-function buildEntries(lead: EnrollmentLead): TimelineEntry[] {
-  const entries: TimelineEntry[] = [];
-
-  // Current-state lines have no timestamp column; surface them at the top.
-  if (lead.status === 'enrolled') {
-    entries.push({ key: 'state-enrolled', label: 'Marked enrolled', timestamp: null });
-  } else if (lead.status === 'closed') {
-    entries.push({ key: 'state-closed', label: 'Marked closed', timestamp: null });
-  }
-
-  entries.push({ key: 'milestone-created', label: 'Lead received', timestamp: lead.created_at });
-  if (lead.approved_at) {
-    entries.push({ key: 'milestone-approved', label: 'Approved', timestamp: lead.approved_at });
-  }
-  if (lead.denied_at) {
-    entries.push({ key: 'milestone-denied', label: 'Denied', timestamp: lead.denied_at });
-  }
-  if (lead.attendance_status && lead.attendance_recorded_at) {
-    entries.push({
-      key: 'milestone-attendance',
-      label: lead.attendance_status === 'attended' ? 'Marked attended' : 'Marked no-show',
-      timestamp: lead.attendance_recorded_at,
-    });
-  }
-
-  const parentEmail = lead.parent_email.trim().toLowerCase();
-  for (const n of lead.notificationHistory) {
-    // Admin alert emails are internal plumbing, not lead history.
-    if (n.type === 'new_lead') continue;
-    entries.push({
-      key: `email-${n.notification_id}`,
-      label: EMAIL_LABELS[n.type] ?? n.type,
-      timestamp: n.created_at,
-      // The family's own address is implied; show a recipient only when it differs.
-      recipient:
-        n.recipient_email && n.recipient_email.trim().toLowerCase() !== parentEmail
-          ? n.recipient_email
-          : null,
-      status: n.status,
-    });
-  }
-
-  // Newest-first; timestamp-less current-state lines sort ahead of dated entries.
-  return entries.sort((a, b) => {
-    if (a.timestamp === null && b.timestamp === null) return 0;
-    if (a.timestamp === null) return -1;
-    if (b.timestamp === null) return 1;
-    return b.timestamp.localeCompare(a.timestamp);
-  });
-}
-
-// The panel gates the whole timeline behind one disclosure; the count on that
-// disclosure row comes from here so the two can never disagree.
-export function timelineEntryCount(lead: EnrollmentLead): number {
-  return buildEntries(lead).length;
-}
-
 export function LeadTimeline({ lead }: { lead: EnrollmentLead }) {
-  const entries = buildEntries(lead);
+  const entries = buildTimelineEntries(lead);
 
   return (
     <ol className="flex flex-col gap-2.5">
