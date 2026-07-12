@@ -3,7 +3,10 @@ export type MessageRecord = {
   author_user_id: string;
   body: string;
   created_at: string;
-  profiles?: { display_name?: string | null; avatar_url?: string | null } | null;
+  profiles?: {
+    display_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
   message_attachments?: Array<{
     file_name?: string | null;
     storage_path?: string | null;
@@ -21,7 +24,10 @@ export type MessageListItem = {
   attachmentPath?: string;
 };
 
-export function isDirectConversationAllowed(currentUserRole: 'admin' | 'family', otherRole?: string) {
+export function isDirectConversationAllowed(
+  currentUserRole: 'admin' | 'family',
+  otherRole?: string,
+) {
   if (!otherRole) return false;
   if (currentUserRole === 'family') return otherRole === 'admin';
   return otherRole === 'family' || otherRole === 'admin';
@@ -35,15 +41,23 @@ export function getErrorMessage(error: unknown) {
   return 'Unknown error';
 }
 
-export function calculateUnreadCount(messagesData: Array<{ author_user_id: string; created_at: string }>, userId: string, lastReadAt?: string | null) {
+export function calculateUnreadCount(
+  messagesData: Array<{ author_user_id: string; created_at: string }>,
+  userId: string,
+  lastReadAt?: string | null,
+) {
   return messagesData.filter((message) => {
     if (message.author_user_id === userId) return false;
     if (!lastReadAt) return true;
-    return new Date(message.created_at).getTime() > new Date(lastReadAt).getTime();
+    return (
+      new Date(message.created_at).getTime() > new Date(lastReadAt).getTime()
+    );
   }).length;
 }
 
-export function formatMessages(messagesData: MessageRecord[]): MessageListItem[] {
+export function formatMessages(
+  messagesData: MessageRecord[],
+): MessageListItem[] {
   return messagesData.map((message) => ({
     id: message.message_id,
     authorId: message.author_user_id,
@@ -59,10 +73,15 @@ export function formatMessages(messagesData: MessageRecord[]): MessageListItem[]
 export function formatConversationTime(dateString: string) {
   const date = new Date(dateString);
   const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
   if (diffDays === 0) {
-    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   }
   if (diffDays === 1) {
     return 'Yesterday';
@@ -74,7 +93,10 @@ export function formatConversationTime(dateString: string) {
 }
 
 export function formatMessageTime(dateString: string) {
-  return new Date(dateString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return new Date(dateString).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 export function formatMessageDate(dateString: string): string {
@@ -85,13 +107,24 @@ export function formatMessageDate(dateString: string): string {
   yesterday.setDate(yesterday.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
   if (date.getFullYear() === now.getFullYear()) {
-    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
   }
-  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export function formatMessageTimestamp(dateString: string): string {
-  return new Date(dateString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return new Date(dateString).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 export type MessageRenderItem = {
@@ -107,10 +140,14 @@ function isSameDay(a: string, b: string): boolean {
 }
 
 function isWithin5Minutes(a: string, b: string): boolean {
-  return Math.abs(new Date(a).getTime() - new Date(b).getTime()) < 5 * 60 * 1000;
+  return (
+    Math.abs(new Date(a).getTime() - new Date(b).getTime()) < 5 * 60 * 1000
+  );
 }
 
-export function computeMessageRenderList(messages: MessageListItem[]): MessageRenderItem[] {
+export function computeMessageRenderList(
+  messages: MessageListItem[],
+): MessageRenderItem[] {
   return messages.map((msg, i) => {
     const prev = messages[i - 1];
     const next = messages[i + 1];
@@ -127,7 +164,8 @@ export function computeMessageRenderList(messages: MessageListItem[]): MessageRe
       isSameDay(next.createdAt, msg.createdAt) &&
       isWithin5Minutes(next.createdAt, msg.createdAt);
 
-    const showDateSeparator = !prev || !isSameDay(prev.createdAt, msg.createdAt);
+    const showDateSeparator =
+      !prev || !isSameDay(prev.createdAt, msg.createdAt);
 
     return {
       message: msg,

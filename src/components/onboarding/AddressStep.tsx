@@ -1,19 +1,19 @@
 // src/components/onboarding/AddressStep.tsx
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { Label } from '../ui/label'
-import { Alert, AlertDescription } from '../ui/alert'
-import { AlertCircle, ArrowLeft, Check, Loader2 } from 'lucide-react'
-import type { AddressForm } from './FamilyOnboarding'
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Alert, AlertDescription } from '../ui/alert';
+import { AlertCircle, ArrowLeft, Check, Loader2 } from 'lucide-react';
+import type { AddressForm } from './FamilyOnboarding';
 
 interface AddressStepProps {
-  values: AddressForm
-  onChange: (updates: Partial<AddressForm>) => void
-  onFinish: () => void
-  onSkip: () => void
-  onBack: () => void
-  submitting: boolean
-  error: string | null
+  values: AddressForm;
+  onChange: (updates: Partial<AddressForm>) => void;
+  onFinish: () => void;
+  onSkip: () => void;
+  onBack: () => void;
+  submitting: boolean;
+  error: string | null;
 }
 
 export function AddressStep({
@@ -33,11 +33,15 @@ export function AddressStep({
       >
         Step 3 of 3
       </p>
-      <h2 className="text-2xl font-semibold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+      <h2
+        className="text-2xl font-semibold mb-1"
+        style={{ fontFamily: 'var(--font-heading)' }}
+      >
         Home Address
       </h2>
       <p className="text-sm text-muted-foreground mb-7 leading-relaxed">
-        Used for school records only. You can skip this and add it later from your profile.
+        Used for school records only. You can skip this and add it later from
+        your profile.
       </p>
 
       {error && (
@@ -54,7 +58,7 @@ export function AddressStep({
             id="ob-street"
             placeholder="123 Main St"
             value={values.street}
-            onChange={e => onChange({ street: e.target.value })}
+            onChange={(e) => onChange({ street: e.target.value })}
             disabled={submitting}
             autoComplete="street-address"
           />
@@ -65,7 +69,7 @@ export function AddressStep({
             id="ob-city"
             placeholder="Los Banos"
             value={values.city}
-            onChange={e => onChange({ city: e.target.value })}
+            onChange={(e) => onChange({ city: e.target.value })}
             disabled={submitting}
             autoComplete="address-level2"
           />
@@ -76,7 +80,7 @@ export function AddressStep({
             <Input
               id="ob-state"
               value={values.state}
-              onChange={e => onChange({ state: e.target.value })}
+              onChange={(e) => onChange({ state: e.target.value })}
               disabled={submitting}
               autoComplete="address-level1"
             />
@@ -87,7 +91,7 @@ export function AddressStep({
               id="ob-zip"
               placeholder="93635"
               value={values.zip}
-              onChange={e => onChange({ zip: e.target.value })}
+              onChange={(e) => onChange({ zip: e.target.value })}
               disabled={submitting}
               autoComplete="postal-code"
             />
@@ -96,7 +100,12 @@ export function AddressStep({
       </div>
 
       <div className="mt-8 space-y-2">
-        <Button type="button" onClick={onFinish} className="w-full" disabled={submitting}>
+        <Button
+          type="button"
+          onClick={onFinish}
+          className="w-full"
+          disabled={submitting}
+        >
           {submitting ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…
@@ -127,5 +136,5 @@ export function AddressStep({
         </Button>
       </div>
     </div>
-  )
+  );
 }

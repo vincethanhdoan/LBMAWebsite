@@ -2,7 +2,15 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { ImageWithFallback } from '../../../components/figma/ImageWithFallback';
 import { SectionHeader } from '../components/SectionHeader';
-import { Sparkles, Users, Zap, Clock, Shield, Target, Award } from 'lucide-react';
+import {
+  Sparkles,
+  Users,
+  Zap,
+  Clock,
+  Shield,
+  Target,
+  Award,
+} from 'lucide-react';
 
 const BASE = '/experimental/public';
 
@@ -82,14 +90,22 @@ const STYLES = [
     name: 'Brazilian Jiu-Jitsu (BJJ)',
     description:
       'A ground-based grappling art focused on leverage and technique over strength. BJJ is especially effective for smaller practitioners and teaches children that technique and smart thinking beat brute force — a lesson that carries off the mat.',
-    traits: ['Ground control', 'Submissions & escapes', 'Problem-solving mindset'],
+    traits: [
+      'Ground control',
+      'Submissions & escapes',
+      'Problem-solving mindset',
+    ],
   },
   {
     icon: Award,
     name: 'Taekwondo',
     description:
       'Known for its fast, high kicks and dynamic footwork, Taekwondo develops explosive athleticism, coordination, and confidence. Students progress through a clear belt system with regular testing milestones that make progress visible and motivating.',
-    traits: ['Dynamic kicking techniques', 'Athletic footwork', 'Structured belt system'],
+    traits: [
+      'Dynamic kicking techniques',
+      'Athletic footwork',
+      'Structured belt system',
+    ],
   },
 ];
 
@@ -99,18 +115,19 @@ export function ProgramsPageV2() {
 
   return (
     <div>
-
       {/* ── PAGE HEADER ───────────────────────────────────── */}
       <section className="py-20 border-b bg-slate-50">
         <div className="container mx-auto px-6 max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Programs</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">
+            Programs
+          </p>
           <h1 className="text-4xl md:text-5xl font-bold mb-5 leading-snug">
             The right class for every child.
           </h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            Three age-appropriate programs built around what children at each stage actually
-            need — plus three martial arts styles to find the right fit for your child's
-            personality and goals.
+            Three age-appropriate programs built around what children at each
+            stage actually need — plus three martial arts styles to find the
+            right fit for your child's personality and goals.
           </p>
         </div>
       </section>
@@ -161,7 +178,10 @@ export function ProgramsPageV2() {
                     </p>
                     <ul className="space-y-2.5 mb-6">
                       {program.highlights.map((point) => (
-                        <li key={point} className="flex items-start gap-2.5 text-sm">
+                        <li
+                          key={point}
+                          className="flex items-start gap-2.5 text-sm"
+                        >
                           <Icon className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                           <span className="text-foreground">{point}</span>
                         </li>
@@ -204,10 +224,15 @@ export function ProgramsPageV2() {
                   <Icon className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="text-lg font-bold">{name}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed flex-1">{description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+                  {description}
+                </p>
                 <ul className="space-y-1.5 border-t pt-4">
                   {traits.map((trait) => (
-                    <li key={trait} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <li
+                      key={trait}
+                      className="flex items-center gap-2 text-xs text-muted-foreground"
+                    >
                       <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                       {trait}
                     </li>
@@ -233,23 +258,27 @@ export function ProgramsPageV2() {
       <section className="py-20">
         <div className="container mx-auto px-6 text-center max-w-lg">
           <div className="w-8 h-0.5 bg-primary rounded-full mx-auto mb-8" />
-          <h2 className="text-2xl font-bold mb-3">Not sure which program fits?</h2>
+          <h2 className="text-2xl font-bold mb-3">
+            Not sure which program fits?
+          </h2>
           <p className="text-muted-foreground text-base mb-8 leading-relaxed">
-            Bring your child in for a free trial class and we'll help you figure it out together.
-            No commitment, no uniform, no pressure.
+            Bring your child in for a free trial class and we'll help you figure
+            it out together. No commitment, no uniform, no pressure.
           </p>
           <Button size="lg" className="px-10 font-semibold" onClick={goToTrial}>
             Book a Free Trial Class
           </Button>
           <p className="text-sm text-muted-foreground mt-5">
             Or call us:{' '}
-            <a href="tel:+12095550123" className="font-medium text-foreground hover:underline">
+            <a
+              href="tel:+12095550123"
+              className="font-medium text-foreground hover:underline"
+            >
               (209) 555-0123
             </a>
           </p>
         </div>
       </section>
-
     </div>
   );
 }

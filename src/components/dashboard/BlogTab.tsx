@@ -3,7 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Plus, MessageCircle, Send, Pin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -44,14 +50,26 @@ type BlogPost = {
 function formatDate(dateString: string) {
   const date = new Date(dateString);
   const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+  );
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
-function BlogCommentSection({ postId, onCountLoaded }: { postId: string; onCountLoaded?: (count: number) => void }) {
+function BlogCommentSection({
+  postId,
+  onCountLoaded,
+}: {
+  postId: string;
+  onCountLoaded?: (count: number) => void;
+}) {
   const [commentText, setCommentText] = useState('');
   const [replyingTo, setReplyingTo] = useState<{
     commentId: string;
@@ -72,7 +90,9 @@ function BlogCommentSection({ postId, onCountLoaded }: { postId: string; onCount
   }));
 
   const onCountLoadedRef = useRef(onCountLoaded);
-  useEffect(() => { onCountLoadedRef.current = onCountLoaded; });
+  useEffect(() => {
+    onCountLoadedRef.current = onCountLoaded;
+  });
   useEffect(() => {
     onCountLoadedRef.current?.(comments.length);
   }, [comments.length]);
@@ -83,14 +103,20 @@ function BlogCommentSection({ postId, onCountLoaded }: { postId: string; onCount
       await createComment.mutateAsync({ body: commentText.trim() });
       setCommentText('');
     } catch (error) {
-      toast.error('Error adding comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error adding comment: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     }
   };
 
   const handleSendReply = async () => {
     if (!replyText.trim() || !replyingTo) return;
     try {
-      await createComment.mutateAsync({ body: replyText.trim(), parentCommentId: replyingTo.commentId });
+      await createComment.mutateAsync({
+        body: replyText.trim(),
+        parentCommentId: replyingTo.commentId,
+      });
       setReplyText('');
       setReplyingTo(null);
     } catch {
@@ -104,14 +130,19 @@ function BlogCommentSection({ postId, onCountLoaded }: { postId: string; onCount
         <div key={comment.id} className="space-y-1">
           {comment.parentCommentId && (
             <p className="text-xs text-muted-foreground pl-2 border-l-2 border-muted mb-1">
-              ↩ Replying to {
-                comments.find(c => c.id === comment.parentCommentId)?.authorName ?? 'comment'
-              }
+              ↩ Replying to{' '}
+              {comments.find((c) => c.id === comment.parentCommentId)
+                ?.authorName ?? 'comment'}
             </p>
           )}
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              {comment.authorAvatarUrl && <AvatarImage src={comment.authorAvatarUrl} alt={comment.authorName} />}
+              {comment.authorAvatarUrl && (
+                <AvatarImage
+                  src={comment.authorAvatarUrl}
+                  alt={comment.authorName}
+                />
+              )}
               <AvatarFallback className="text-xs">
                 {comment.authorName[0]}
               </AvatarFallback>
@@ -124,10 +155,12 @@ function BlogCommentSection({ postId, onCountLoaded }: { postId: string; onCount
           <p className="text-sm pl-8">{comment.body}</p>
           {!comment.parentCommentId && (
             <button
-              onClick={() => setReplyingTo({
-                commentId: comment.id,
-                authorName: comment.authorName,
-              })}
+              onClick={() =>
+                setReplyingTo({
+                  commentId: comment.id,
+                  authorName: comment.authorName,
+                })
+              }
               className="text-xs text-muted-foreground hover:text-foreground mt-1 transition-colors"
             >
               Reply
@@ -142,14 +175,20 @@ function BlogCommentSection({ postId, onCountLoaded }: { postId: string; onCount
                 onChange={(e) => setReplyText(e.target.value)}
                 className="text-sm min-h-[60px] resize-none"
                 onKeyDown={(e) => {
-                  if (e.key === 'Escape') { setReplyingTo(null); setReplyText(''); }
+                  if (e.key === 'Escape') {
+                    setReplyingTo(null);
+                    setReplyText('');
+                  }
                 }}
               />
               <div className="flex gap-2 justify-end">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => { setReplyingTo(null); setReplyText(''); }}
+                  onClick={() => {
+                    setReplyingTo(null);
+                    setReplyText('');
+                  }}
                 >
                   Cancel
                 </Button>
@@ -201,8 +240,12 @@ export function BlogTab({ user }: { user: User }) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostBody, setNewPostBody] = useState('');
-  const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [expandedComments, setExpandedComments] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>(
+    {},
+  );
   const [saving, setSaving] = useState(false);
 
   const { data: rawPosts = [], isLoading: loading } = useBlogPosts();
@@ -244,7 +287,10 @@ export function BlogTab({ user }: { user: User }) {
       setNewPostBody('');
       setIsCreateDialogOpen(false);
     } catch (error) {
-      toast.error('Error creating post: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error creating post: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     } finally {
       setSaving(false);
     }
@@ -253,7 +299,7 @@ export function BlogTab({ user }: { user: User }) {
   const toggleComments = (postId: string) => {
     setExpandedComments({
       ...expandedComments,
-      [postId]: !expandedComments[postId]
+      [postId]: !expandedComments[postId],
     });
   };
 
@@ -306,7 +352,10 @@ export function BlogTab({ user }: { user: User }) {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -324,63 +373,83 @@ export function BlogTab({ user }: { user: User }) {
         {sortedPosts.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No blog posts yet. Be the first to share!</p>
+              <p className="text-muted-foreground">
+                No blog posts yet. Be the first to share!
+              </p>
             </CardContent>
           </Card>
         ) : (
           sortedPosts.map((post) => (
-          <Card key={post.id}>
-            <CardHeader className={post.isPinned ? 'bg-secondary/50 border-l-4 border-l-primary' : ''}>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Avatar className="h-8 w-8">
-                      {post.authorAvatarUrl && <AvatarImage src={post.authorAvatarUrl} alt={post.authorName} />}
-                      <AvatarFallback>{post.authorName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{post.authorName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(post.createdAt)}
-                      </p>
+            <Card key={post.id}>
+              <CardHeader
+                className={
+                  post.isPinned
+                    ? 'bg-secondary/50 border-l-4 border-l-primary'
+                    : ''
+                }
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Avatar className="h-8 w-8">
+                        {post.authorAvatarUrl && (
+                          <AvatarImage
+                            src={post.authorAvatarUrl}
+                            alt={post.authorName}
+                          />
+                        )}
+                        <AvatarFallback>{post.authorName[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{post.authorName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(post.createdAt)}
+                        </p>
+                      </div>
                     </div>
+                    <CardTitle>{post.title}</CardTitle>
                   </div>
-                  <CardTitle>{post.title}</CardTitle>
+                  {post.isPinned && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                      <Pin className="w-3 h-3" />
+                      Pinned
+                    </span>
+                  )}
                 </div>
-                {post.isPinned && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-                    <Pin className="w-3 h-3" />
-                    Pinned
-                  </span>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-foreground whitespace-pre-line">{post.body}</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-foreground whitespace-pre-line">
+                  {post.body}
+                </p>
 
-              {/* Comments Section */}
-              <div className="border-t pt-4 space-y-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleComments(post.id)}
-                  className="gap-2"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  {commentCounts[post.id] !== undefined
-                    ? `${commentCounts[post.id]} ${commentCounts[post.id] === 1 ? 'Comment' : 'Comments'}`
-                    : 'Comments'}
-                </Button>
+                {/* Comments Section */}
+                <div className="border-t pt-4 space-y-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleComments(post.id)}
+                    className="gap-2"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    {commentCounts[post.id] !== undefined
+                      ? `${commentCounts[post.id]} ${commentCounts[post.id] === 1 ? 'Comment' : 'Comments'}`
+                      : 'Comments'}
+                  </Button>
 
-                {expandedComments[post.id] && (
-                  <BlogCommentSection
-                    postId={post.id}
-                    onCountLoaded={(count) => setCommentCounts((prev) => ({ ...prev, [post.id]: count }))}
-                  />
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  {expandedComments[post.id] && (
+                    <BlogCommentSection
+                      postId={post.id}
+                      onCountLoaded={(count) =>
+                        setCommentCounts((prev) => ({
+                          ...prev,
+                          [post.id]: count,
+                        }))
+                      }
+                    />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           ))
         )}
       </div>

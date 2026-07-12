@@ -12,7 +12,9 @@ export function TrustStatsBar() {
         <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/10">
           {STATS.map((stat) => (
             <div key={stat.value} className="py-5 px-4 first:pl-0 last:pr-0">
-              <p className="text-sm font-semibold text-white leading-snug">{stat.value}</p>
+              <p className="text-sm font-semibold text-white leading-snug">
+                {stat.value}
+              </p>
               <p className="text-xs text-white/55 mt-0.5">{stat.label}</p>
             </div>
           ))}

@@ -47,7 +47,8 @@ type DashboardV2Props = {
   onRefreshUser: () => Promise<void>;
 };
 
-type TabId = 'home' | 'announcements' | 'blog' | 'messages' | 'feedback' | 'profile';
+type TabId =
+  'home' | 'announcements' | 'blog' | 'messages' | 'feedback' | 'profile';
 
 const navItems: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'home', label: 'Home', icon: Home },
@@ -57,7 +58,11 @@ const navItems: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'feedback', label: 'Feedback', icon: Award },
 ];
 
-export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props) {
+export function DashboardV2({
+  user,
+  onLogout,
+  onRefreshUser,
+}: DashboardV2Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get('tab') as TabId) ?? 'home';
   const queryClient = useQueryClient();
@@ -77,10 +82,18 @@ export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props)
         {/* ── Brand header ── */}
         <SidebarHeader className="px-3 py-4">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="LBMAA Logo" className="h-9 w-9 shrink-0 rounded-lg object-contain" />
+            <img
+              src="/logo.png"
+              alt="LBMAA Logo"
+              className="h-9 w-9 shrink-0 rounded-lg object-contain"
+            />
             <div className="flex flex-col flex-1 group-data-[collapsible=icon]:hidden">
-              <span className="text-sm font-semibold leading-none text-sidebar-foreground">LBMAA</span>
-              <span className="mt-0.5 text-xs text-sidebar-foreground/60">Parent Portal</span>
+              <span className="text-sm font-semibold leading-none text-sidebar-foreground">
+                LBMAA
+              </span>
+              <span className="mt-0.5 text-xs text-sidebar-foreground/60">
+                Parent Portal
+              </span>
             </div>
             <div className="group-data-[collapsible=icon]:hidden">
               <NotificationBell
@@ -104,12 +117,26 @@ export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props)
                       isActive={activeTab === id}
                       onClick={() => {
                         setActiveTab(id);
-                        if (id === 'announcements' || id === 'blog' || id === 'feedback') {
-                          markSectionSeen(id).then(() => {
-                            queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(user.id) });
-                            queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(user.id) });
-                            queryClient.invalidateQueries({ queryKey: queryKeys.notificationSummary(user.id) });
-                          }).catch(console.error);
+                        if (
+                          id === 'announcements' ||
+                          id === 'blog' ||
+                          id === 'feedback'
+                        ) {
+                          markSectionSeen(id)
+                            .then(() => {
+                              queryClient.invalidateQueries({
+                                queryKey: queryKeys.sidebarCounts(user.id),
+                              });
+                              queryClient.invalidateQueries({
+                                queryKey: queryKeys.homeCounts(user.id),
+                              });
+                              queryClient.invalidateQueries({
+                                queryKey: queryKeys.notificationSummary(
+                                  user.id,
+                                ),
+                              });
+                            })
+                            .catch(console.error);
                         }
                       }}
                       tooltip={label}
@@ -153,7 +180,9 @@ export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props)
           <div className="px-2 group-data-[collapsible=icon]:hidden">
             <div className="flex items-center gap-2 rounded-lg px-2 py-2">
               <Avatar className="h-8 w-8 shrink-0">
-                {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                {user.avatarUrl && (
+                  <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+                )}
                 <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
                   {getInitials(user.displayName)}
                 </AvatarFallback>
@@ -162,7 +191,9 @@ export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props)
                 <p className="truncate text-sm font-medium leading-none text-sidebar-foreground">
                   {user.displayName}
                 </p>
-                <p className="mt-0.5 truncate text-xs text-sidebar-foreground/60">{user.email}</p>
+                <p className="mt-0.5 truncate text-xs text-sidebar-foreground/60">
+                  {user.email}
+                </p>
               </div>
             </div>
             <div className="mt-1 flex gap-1">
@@ -195,7 +226,9 @@ export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props)
               aria-label="Profile"
             >
               <Avatar className="h-8 w-8">
-                {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                {user.avatarUrl && (
+                  <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+                )}
                 <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
                   {getInitials(user.displayName)}
                 </AvatarFallback>
@@ -230,15 +263,22 @@ export function DashboardV2({ user, onLogout, onRefreshUser }: DashboardV2Props)
         </header>
 
         {/* Scrollable page content */}
-        <main className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}>
-          {activeTab === 'home' && <HomeTab user={user} onNavigate={(tab) => setActiveTab(tab as TabId)} />}
+        <main
+          className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}
+        >
+          {activeTab === 'home' && (
+            <HomeTab
+              user={user}
+              onNavigate={(tab) => setActiveTab(tab as TabId)}
+            />
+          )}
           {activeTab === 'announcements' && <AnnouncementsTab user={user} />}
           {activeTab === 'blog' && <BlogTab user={user} />}
-          {activeTab === 'messages' && (
-            <MessagesTab user={user} />
-          )}
+          {activeTab === 'messages' && <MessagesTab user={user} />}
           {activeTab === 'feedback' && <FeedbackTab user={user} />}
-          {activeTab === 'profile' && <ProfileTab user={user} onRefreshUser={onRefreshUser} />}
+          {activeTab === 'profile' && (
+            <ProfileTab user={user} onRefreshUser={onRefreshUser} />
+          )}
         </main>
       </SidebarInset>
     </SidebarProvider>

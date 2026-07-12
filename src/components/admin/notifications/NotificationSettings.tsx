@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../ui/card';
 import { Label } from '../../ui/label';
 import { Switch } from '../../ui/switch';
 import { Skeleton } from '../../ui/skeleton';
@@ -39,7 +45,7 @@ export function NotificationSettings({ userEmail }: NotificationSettingsProps) {
         .from('admin_notification_settings')
         .upsert(
           { email: userEmail, notify_new_leads: value, is_active: true },
-          { onConflict: 'email' }
+          { onConflict: 'email' },
         );
       if (error) throw error;
       toast.success('Notification preferences saved');
@@ -53,7 +59,9 @@ export function NotificationSettings({ userEmail }: NotificationSettingsProps) {
     <Card>
       <CardHeader>
         <CardTitle>Notification Preferences</CardTitle>
-        <CardDescription>Choose when you'd like to receive emails</CardDescription>
+        <CardDescription>
+          Choose when you'd like to receive emails
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {prefsLoading ? (
@@ -62,9 +70,14 @@ export function NotificationSettings({ userEmail }: NotificationSettingsProps) {
           </div>
         ) : (
           <div className="flex items-center justify-between gap-4 py-1">
-            <Label htmlFor="notify_new_leads" className="flex flex-col gap-0.5 cursor-pointer flex-1">
+            <Label
+              htmlFor="notify_new_leads"
+              className="flex flex-col gap-0.5 cursor-pointer flex-1"
+            >
               <span className="font-medium">New Enrollment Inquiries</span>
-              <span className="text-xs text-muted-foreground font-normal">Email me when a family submits a contact form</span>
+              <span className="text-xs text-muted-foreground font-normal">
+                Email me when a family submits a contact form
+              </span>
             </Label>
             <Switch
               id="notify_new_leads"

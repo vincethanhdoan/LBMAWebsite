@@ -11,7 +11,8 @@ export type BeltLevel =
   | 'Red Belt'
   | 'Black Belt';
 
-export type Relationship = 'mother' | 'father' | 'guardian' | 'grandparent' | 'other';
+export type Relationship =
+  'mother' | 'father' | 'guardian' | 'grandparent' | 'other';
 
 export type Rating = 1 | 2 | 3 | 4 | 5;
 
@@ -168,12 +169,19 @@ export type EnrollmentLead = {
   source_page: string;
   notification_status: 'queued' | 'sent' | 'failed';
   notified_at: string | null;
-  status: 'new' | 'approved' | 'appointment_scheduled' | 'appointment_confirmed' | 'denied' | 'enrolled' | 'closed';
+  status:
+    | 'new'
+    | 'approved'
+    | 'appointment_scheduled'
+    | 'appointment_confirmed'
+    | 'denied'
+    | 'enrolled'
+    | 'closed';
   approved_at: string | null;
   approval_email_sent_at: string | null;
   booking_token: string | null;
-  appointment_date: string | null;   // "YYYY-MM-DD"
-  appointment_time: string | null;   // "HH:MM:SS"
+  appointment_date: string | null; // "YYYY-MM-DD"
+  appointment_time: string | null; // "HH:MM:SS"
   denied_at: string | null;
   denial_message: string | null;
   admin_notes: string | null;
@@ -212,11 +220,11 @@ export type EnrollmentLeadProgramBooking = {
 
 export type AppointmentSlot = {
   slot_id: string;
-  day_of_week: number;       // 0=Sun, 1=Mon … 6=Sat
+  day_of_week: number; // 0=Sun, 1=Mon … 6=Sat
   week_of_month: number | null; // null=every, 1–4=nth, -1=last
-  start_time: string;        // "HH:MM:SS"
-  end_time: string;          // "HH:MM:SS"
-  duration_minutes: number;  // 15–240, multiple of 15
+  start_time: string; // "HH:MM:SS"
+  end_time: string; // "HH:MM:SS"
+  duration_minutes: number; // 15–240, multiple of 15
   label: string;
   is_active: boolean;
   program_type: 'little_dragons' | 'youth' | 'all';
@@ -226,7 +234,7 @@ export type AppointmentSlot = {
 export type BlockedDate = {
   block_id: string;
   start_date: string; // "YYYY-MM-DD"
-  end_date: string;   // "YYYY-MM-DD"; equals start_date for a single day
+  end_date: string; // "YYYY-MM-DD"; equals start_date for a single day
   reason: string | null;
   created_at: string;
 };
@@ -242,7 +250,7 @@ export type AdminNotificationSetting = {
 export type FeedbackTest = {
   test_id: string;
   title: string;
-  test_date: string;        // "YYYY-MM-DD"
+  test_date: string; // "YYYY-MM-DD"
   test_time: string | null; // "HH:MM:SS"
   description: string | null;
   created_by: string | null;
@@ -274,7 +282,12 @@ export type Review = {
 export type UserNotification = {
   notification_id: string;
   recipient_user_id: string;
-  type: 'comment_reply' | 'post_comment' | 'new_lead' | 'appointment_booked' | 'appointment_confirmed';
+  type:
+    | 'comment_reply'
+    | 'post_comment'
+    | 'new_lead'
+    | 'appointment_booked'
+    | 'appointment_confirmed';
   reference_id: string;
   reference_type: 'announcement_comment' | 'blog_comment' | 'enrollment_lead';
   actor_display_name: string | null;

@@ -5,8 +5,16 @@ import { Surface } from './ui';
 import { formatWeekRange, getWeekStart } from './leadDisplay';
 
 export function WeekCard({
-  days, weekOffset, onWeekOffsetChange, selectedDate, onSelectDate,
-  totalKids, confirmedKids, unconfirmedKids, showTodayButton = false, children,
+  days,
+  weekOffset,
+  onWeekOffsetChange,
+  selectedDate,
+  onSelectDate,
+  totalKids,
+  confirmedKids,
+  unconfirmedKids,
+  showTodayButton = false,
+  children,
 }: {
   days: WeekDay[];
   weekOffset: number;
@@ -29,16 +37,21 @@ export function WeekCard({
             </span>
             {formatWeekRange(getWeekStart(weekOffset))}
             <span className="inline-flex items-center gap-1 ml-2.5 text-[11px]">
-              <span className="w-2 h-2 rounded-sm bg-[#15803D]" />{confirmedKids} confirmed
+              <span className="w-2 h-2 rounded-sm bg-[#15803D]" />
+              {confirmedKids} confirmed
             </span>
             <span className="inline-flex items-center gap-1 ml-2 text-[11px]">
-              <span className="w-2 h-2 rounded-sm bg-[#D97706]" />{unconfirmedKids} not confirmed
+              <span className="w-2 h-2 rounded-sm bg-[#D97706]" />
+              {unconfirmedKids} not confirmed
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             {showTodayButton && weekOffset !== 0 && (
               <button
-                onClick={() => { onWeekOffsetChange(0); onSelectDate(null); }}
+                onClick={() => {
+                  onWeekOffsetChange(0);
+                  onSelectDate(null);
+                }}
                 className="text-[11px] font-semibold border border-border rounded-md px-2 py-1 hover:bg-muted"
               >
                 Today
@@ -46,14 +59,20 @@ export function WeekCard({
             )}
             <button
               aria-label="Previous week"
-              onClick={() => { onWeekOffsetChange(weekOffset - 1); onSelectDate(null); }}
+              onClick={() => {
+                onWeekOffsetChange(weekOffset - 1);
+                onSelectDate(null);
+              }}
               className="w-7 h-7 border border-border rounded-md inline-flex items-center justify-center text-muted-foreground hover:bg-muted"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <button
               aria-label="Next week"
-              onClick={() => { onWeekOffsetChange(weekOffset + 1); onSelectDate(null); }}
+              onClick={() => {
+                onWeekOffsetChange(weekOffset + 1);
+                onSelectDate(null);
+              }}
               className="w-7 h-7 border border-border rounded-md inline-flex items-center justify-center text-muted-foreground hover:bg-muted"
             >
               <ChevronRight className="w-3.5 h-3.5" />
@@ -61,7 +80,7 @@ export function WeekCard({
           </div>
         </div>
         <div className="flex gap-1">
-          {days.map(day => {
+          {days.map((day) => {
             const selected = selectedDate === day.dateKey;
             const hasKids = day.confirmedKids > 0 || day.unconfirmedKids > 0;
             return (
@@ -78,20 +97,32 @@ export function WeekCard({
                         : 'border-transparent hover:bg-muted/50'
                 } ${day.isBlocked ? 'bg-[repeating-linear-gradient(-45deg,#F1F0EF_0_4px,transparent_4px_8px)]' : ''}`}
               >
-                <div className={`text-[9px] font-bold tracking-widest ${day.isToday ? 'text-primary' : 'text-muted-foreground/70'}`}>
+                <div
+                  className={`text-[9px] font-bold tracking-widest ${day.isToday ? 'text-primary' : 'text-muted-foreground/70'}`}
+                >
                   {day.dayName}
                 </div>
-                <div className={`text-[15px] font-semibold ${day.isBlocked ? 'line-through text-muted-foreground' : ''}`}>
+                <div
+                  className={`text-[15px] font-semibold ${day.isBlocked ? 'line-through text-muted-foreground' : ''}`}
+                >
                   {day.dayNum}
                 </div>
                 <div className="min-h-[16px] text-[11px] font-bold space-x-1">
                   {day.confirmedKids > 0 && (
-                    <span className="inline-block rounded-full px-1.5 bg-[#F0FDF4] text-[#15803D]">{day.confirmedKids}</span>
+                    <span className="inline-block rounded-full px-1.5 bg-[#F0FDF4] text-[#15803D]">
+                      {day.confirmedKids}
+                    </span>
                   )}
                   {day.unconfirmedKids > 0 && (
-                    <span className="inline-block rounded-full px-1.5 bg-[#FEF3C7] text-[#92400E]">{day.unconfirmedKids}</span>
+                    <span className="inline-block rounded-full px-1.5 bg-[#FEF3C7] text-[#92400E]">
+                      {day.unconfirmedKids}
+                    </span>
                   )}
-                  {!hasKids && !day.isBlocked && <span className="text-muted-foreground/30 font-normal">—</span>}
+                  {!hasKids && !day.isBlocked && (
+                    <span className="text-muted-foreground/30 font-normal">
+                      —
+                    </span>
+                  )}
                 </div>
               </button>
             );

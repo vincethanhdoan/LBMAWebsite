@@ -4,10 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Label } from '../ui/label';
-import { Plus, Edit2, Trash2, Upload, Pin, PinOff, Loader2, X, MessageCircle, Send } from 'lucide-react';
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Upload,
+  Pin,
+  PinOff,
+  Loader2,
+  X,
+  MessageCircle,
+  Send,
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { toast } from 'sonner';
 import {
@@ -67,7 +84,9 @@ function AdminAnnouncementCommentSection({
   }));
 
   const onCountLoadedRef = useRef(onCountLoaded);
-  useEffect(() => { onCountLoadedRef.current = onCountLoaded; });
+  useEffect(() => {
+    onCountLoadedRef.current = onCountLoaded;
+  });
   useEffect(() => {
     onCountLoadedRef.current?.(comments.length);
   }, [comments.length]);
@@ -78,7 +97,10 @@ function AdminAnnouncementCommentSection({
       await createComment.mutateAsync({ body: commentText.trim() });
       setCommentText('');
     } catch (error) {
-      toast.error('Error adding comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error adding comment: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     }
   };
 
@@ -89,7 +111,7 @@ function AdminAnnouncementCommentSection({
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -99,11 +121,20 @@ function AdminAnnouncementCommentSection({
         <div key={comment.id} className="space-y-1">
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              {comment.authorAvatarUrl && <AvatarImage src={comment.authorAvatarUrl} alt={comment.authorName} />}
-              <AvatarFallback className="text-xs">{comment.authorName[0]}</AvatarFallback>
+              {comment.authorAvatarUrl && (
+                <AvatarImage
+                  src={comment.authorAvatarUrl}
+                  alt={comment.authorName}
+                />
+              )}
+              <AvatarFallback className="text-xs">
+                {comment.authorName[0]}
+              </AvatarFallback>
             </Avatar>
             <span className="text-sm font-medium">{comment.authorName}</span>
-            <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</span>
+            <span className="text-xs text-muted-foreground">
+              {formatDate(comment.createdAt)}
+            </span>
           </div>
           <p className="text-sm pl-8">{comment.body}</p>
         </div>
@@ -133,21 +164,33 @@ function AdminAnnouncementCommentSection({
 
 export function AdminAnnouncementsTab({ user }: { user: User }) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [editingAnnouncement, setEditingAnnouncement] =
+    useState<Announcement | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newBody, setNewBody] = useState('');
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [confirmState, setConfirmState] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
-  const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
+  const [expandedComments, setExpandedComments] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>(
+    {},
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(
+    null,
+  );
   const processedPostParam = useRef<string | null>(null);
 
-  const { data: rawAnnouncements = [], isLoading: loading } = useAnnouncements();
+  const { data: rawAnnouncements = [], isLoading: loading } =
+    useAnnouncements();
   const createAnn = useCreateAnnouncement();
   const updateAnn = useUpdateAnnouncement();
   const deleteAnn = useDeleteAnnouncement();
@@ -182,7 +225,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
     }
     processedPostParam.current = deepLinkPostId;
 
-    if (announcements.some(a => a.id === deepLinkPostId)) {
+    if (announcements.some((a) => a.id === deepLinkPostId)) {
       setHighlightedPostId(deepLinkPostId);
     }
 
@@ -191,13 +234,18 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
 
   useEffect(() => {
     if (!highlightedPostId) return;
-    document.getElementById('post-' + highlightedPostId)?.scrollIntoView({ block: 'center' });
+    document
+      .getElementById('post-' + highlightedPostId)
+      ?.scrollIntoView({ block: 'center' });
     const timer = setTimeout(() => setHighlightedPostId(null), 2000);
     return () => clearTimeout(timer);
   }, [highlightedPostId]);
 
   const toggleComments = (announcementId: string) => {
-    setExpandedComments({ ...expandedComments, [announcementId]: !expandedComments[announcementId] });
+    setExpandedComments({
+      ...expandedComments,
+      [announcementId]: !expandedComments[announcementId],
+    });
   };
 
   const handleCreate = async () => {
@@ -215,7 +263,10 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       setIsCreateDialogOpen(false);
       toast.success('Announcement created!');
     } catch (error) {
-      toast.error('Error creating announcement: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error creating announcement: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     } finally {
       setSaving(false);
     }
@@ -238,7 +289,10 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       setEditingAnnouncement(null);
       toast.success('Announcement updated!');
     } catch (error) {
-      toast.error('Error updating announcement: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error updating announcement: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     } finally {
       setSaving(false);
     }
@@ -254,14 +308,17 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
           await deleteAnn.mutateAsync(id);
           toast.success('Announcement deleted!');
         } catch (error) {
-          toast.error('Error deleting announcement: ' + (error instanceof Error ? error.message : 'Unknown error'));
+          toast.error(
+            'Error deleting announcement: ' +
+              (error instanceof Error ? error.message : 'Unknown error'),
+          );
         }
       },
     });
   };
 
   const handleTogglePin = async (id: string) => {
-    const announcement = announcements.find(a => a.id === id);
+    const announcement = announcements.find((a) => a.id === id);
     if (!announcement) return;
     try {
       await updateAnn.mutateAsync({
@@ -269,7 +326,10 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
         updates: { is_pinned: !announcement.isPinned },
       });
     } catch (error) {
-      toast.error('Error updating pin status: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error updating pin status: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     }
   };
 
@@ -305,7 +365,9 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
     fileInputRef.current?.click();
   };
 
-  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -332,7 +394,10 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
         .getPublicUrl(path);
       setSelectedImage(urlData.publicUrl);
     } catch (err) {
-      toast.error('Image upload failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toast.error(
+        'Image upload failed: ' +
+          (err instanceof Error ? err.message : 'Unknown error'),
+      );
     } finally {
       setUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -346,7 +411,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -362,7 +427,11 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       />
       {selectedImage ? (
         <div className="space-y-2">
-          <img src={selectedImage} alt="Preview" className="w-full max-h-48 object-cover rounded-md border" />
+          <img
+            src={selectedImage}
+            alt="Preview"
+            className="w-full max-h-48 object-cover rounded-md border"
+          />
           <Button
             variant="outline"
             size="sm"
@@ -380,9 +449,15 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
           className="w-full"
         >
           {uploadingImage ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Uploading...
+            </>
           ) : (
-            <><Upload className="w-4 h-4 mr-2" />Upload Image</>
+            <>
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Image
+            </>
           )}
         </Button>
       )}
@@ -398,7 +473,12 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
             Create and manage official school announcements
           </p>
         </div>
-        <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
+        <Button
+          onClick={() => {
+            resetForm();
+            setIsCreateDialogOpen(true);
+          }}
+        >
           <Plus className="w-4 h-4 mr-2" />
           New Announcement
         </Button>
@@ -431,7 +511,10 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
               <ImageUploadField />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -453,13 +536,14 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       </div>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editingAnnouncement} onOpenChange={(open) => !open && setEditingAnnouncement(null)}>
+      <Dialog
+        open={!!editingAnnouncement}
+        onOpenChange={(open) => !open && setEditingAnnouncement(null)}
+      >
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Announcement</DialogTitle>
-            <DialogDescription>
-              Update announcement details
-            </DialogDescription>
+            <DialogDescription>Update announcement details</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -492,7 +576,10 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setEditingAnnouncement(null)}>
+            <Button
+              variant="outline"
+              onClick={() => setEditingAnnouncement(null)}
+            >
               Cancel
             </Button>
             <Button
@@ -520,16 +607,31 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
             id={`post-${announcement.id}`}
             className={`transition-shadow duration-700 ${highlightedPostId === announcement.id ? 'ring-2 ring-primary' : ''}`}
           >
-            <CardHeader className={announcement.isPinned ? 'bg-secondary/50 border-l-4 border-l-primary' : ''}>
+            <CardHeader
+              className={
+                announcement.isPinned
+                  ? 'bg-secondary/50 border-l-4 border-l-primary'
+                  : ''
+              }
+            >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-8 w-8">
-                      {announcement.authorAvatarUrl && <AvatarImage src={announcement.authorAvatarUrl} alt={announcement.authorName} />}
-                      <AvatarFallback>{announcement.authorName[0]}</AvatarFallback>
+                      {announcement.authorAvatarUrl && (
+                        <AvatarImage
+                          src={announcement.authorAvatarUrl}
+                          alt={announcement.authorName}
+                        />
+                      )}
+                      <AvatarFallback>
+                        {announcement.authorName[0]}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-medium">{announcement.authorName}</p>
+                      <p className="text-sm font-medium">
+                        {announcement.authorName}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {formatDate(announcement.createdAt)}
                       </p>
@@ -548,7 +650,11 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
                     variant="outline"
                     size="sm"
                     onClick={() => handleTogglePin(announcement.id)}
-                    title={announcement.isPinned ? 'Unpin announcement' : 'Pin announcement'}
+                    title={
+                      announcement.isPinned
+                        ? 'Unpin announcement'
+                        : 'Pin announcement'
+                    }
                   >
                     {announcement.isPinned ? (
                       <PinOff className="w-4 h-4" />
@@ -581,7 +687,9 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
                   className="w-full max-h-64 object-cover rounded-md"
                 />
               )}
-              <p className="text-foreground whitespace-pre-line">{announcement.body}</p>
+              <p className="text-foreground whitespace-pre-line">
+                {announcement.body}
+              </p>
 
               {/* Comments Section */}
               <div className="border-t pt-4 space-y-4">
@@ -600,7 +708,12 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
                 {expandedComments[announcement.id] && (
                   <AdminAnnouncementCommentSection
                     announcementId={announcement.id}
-                    onCountLoaded={(count) => setCommentCounts((prev) => ({ ...prev, [announcement.id]: count }))}
+                    onCountLoaded={(count) =>
+                      setCommentCounts((prev) => ({
+                        ...prev,
+                        [announcement.id]: count,
+                      }))
+                    }
                   />
                 )}
               </div>

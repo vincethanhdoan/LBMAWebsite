@@ -36,14 +36,17 @@ export function FooterV2({ onLogin }: FooterV2Props) {
                 <img src="/logo.png" alt="LBMAA Logo" className="h-5 w-auto" />
               </button>
               <p className="text-sm leading-relaxed opacity-70 max-w-xs">
-                A family-run martial arts school in Los Banos, CA. Teaching children
-                confidence, discipline, and respect — through Karate, BJJ, and Taekwondo.
+                A family-run martial arts school in Los Banos, CA. Teaching
+                children confidence, discipline, and respect — through Karate,
+                BJJ, and Taekwondo.
               </p>
             </div>
 
             {/* Links */}
             <div>
-              <h4 className="font-semibold text-white text-sm mb-4">Quick Links</h4>
+              <h4 className="font-semibold text-white text-sm mb-4">
+                Quick Links
+              </h4>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                 {FOOTER_LINKS.map(({ label, path }) => (
                   <button
@@ -62,12 +65,18 @@ export function FooterV2({ onLogin }: FooterV2Props) {
               <h4 className="font-semibold text-white text-sm mb-4">Contact</h4>
               <div className="space-y-2.5 text-sm text-slate-400">
                 <p>
-                  <a href="mailto:info@lbmaa.com" className="hover:text-white transition-colors">
+                  <a
+                    href="mailto:info@lbmaa.com"
+                    className="hover:text-white transition-colors"
+                  >
                     info@lbmaa.com
                   </a>
                 </p>
                 <p>
-                  <a href="tel:+12095550123" className="hover:text-white transition-colors">
+                  <a
+                    href="tel:+12095550123"
+                    className="hover:text-white transition-colors"
+                  >
                     (209) 555-0123
                   </a>
                 </p>
@@ -76,7 +85,8 @@ export function FooterV2({ onLogin }: FooterV2Props) {
                   Los Banos, CA 93635
                 </p>
                 <p className="pt-1">
-                  Mon–Fri: 3:00 – 8:30 PM<br />
+                  Mon–Fri: 3:00 – 8:30 PM
+                  <br />
                   Saturday: 9:00 AM – 2:00 PM
                 </p>
               </div>
@@ -84,8 +94,13 @@ export function FooterV2({ onLogin }: FooterV2Props) {
           </div>
 
           <div className="mt-10 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
-            <span>© 2026 Los Banos Martial Arts Academy. All rights reserved.</span>
-            <button onClick={onLogin} className="hover:text-slate-300 transition-colors underline">
+            <span>
+              © 2026 Los Banos Martial Arts Academy. All rights reserved.
+            </span>
+            <button
+              onClick={onLogin}
+              className="hover:text-slate-300 transition-colors underline"
+            >
               Parent Login
             </button>
           </div>

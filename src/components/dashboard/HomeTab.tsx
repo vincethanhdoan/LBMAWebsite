@@ -1,8 +1,22 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/card';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
-import { Bell, BookOpen, Loader2, MessageCircle, MessageSquare, Trophy, Award } from 'lucide-react';
+import {
+  Bell,
+  BookOpen,
+  Loader2,
+  MessageCircle,
+  MessageSquare,
+  Trophy,
+  Award,
+} from 'lucide-react';
 import { useProfile } from '../../hooks/useProfile';
 import { useHomeCounts, useFeedbackCount } from '../../lib/hooks/notifications';
 
@@ -21,7 +35,6 @@ type Student = {
   photoUrl: string | null;
 };
 
-
 type HomeTabProps = {
   user: User;
   onNavigate: (tab: string) => void;
@@ -35,8 +48,16 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
     error: profileError,
     reload: reloadProfile,
   } = useProfile(user);
-  const { data: counts, isLoading: loading, error: countsError, refetch: reloadCounts } = useHomeCounts(user.id);
-  const { data: feedbackCount = 0 } = useFeedbackCount(user.id, family?.family_id ?? '');
+  const {
+    data: counts,
+    isLoading: loading,
+    error: countsError,
+    refetch: reloadCounts,
+  } = useHomeCounts(user.id);
+  const { data: feedbackCount = 0 } = useFeedbackCount(
+    user.id,
+    family?.family_id ?? '',
+  );
   const unreadMessages = counts?.unreadMessages ?? 0;
   const announcementCount = counts?.announcementCount ?? 0;
   const blogCount = counts?.blogCount ?? 0;
@@ -46,7 +67,7 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map(n => n[0])
+      .map((n) => n[0])
       .join('')
       .toUpperCase();
   };
@@ -81,14 +102,14 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
       count: unreadMessages,
       label: 'Unread Messages',
       icon: MessageSquare,
-      action: () => onNavigate('messages')
+      action: () => onNavigate('messages'),
     },
     {
       type: 'announcements',
       count: newAnnouncementsCount,
       label: 'New Announcements',
       icon: Bell,
-      action: () => onNavigate('announcements')
+      action: () => onNavigate('announcements'),
     },
     {
       type: 'blog',
@@ -114,7 +135,12 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
   ];
 
   const notifications = allNotifications.filter((n) => n.count > 0);
-  const totalNotifications = unreadMessages + newAnnouncementsCount + blogCount + feedbackCount + notifCount;
+  const totalNotifications =
+    unreadMessages +
+    newAnnouncementsCount +
+    blogCount +
+    feedbackCount +
+    notifCount;
 
   const isLoading = loading || profileLoading;
   const loadError = error || profileError;
@@ -152,7 +178,9 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Welcome back, {user.displayName.split(' ')[0]}</h2>
+        <h2 className="text-2xl font-bold">
+          Welcome back, {user.displayName.split(' ')[0]}
+        </h2>
         <p className="text-muted-foreground">
           Here's what's happening with your family at LBMAA
         </p>
@@ -175,7 +203,9 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
         </CardHeader>
         <CardContent>
           {notifications.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">You're all caught up — nothing new right now.</p>
+            <p className="text-sm text-muted-foreground py-2">
+              You're all caught up — nothing new right now.
+            </p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {notifications.map((notification) => {
@@ -190,8 +220,12 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
                       <Icon className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <div className="text-2xl font-bold">{notification.count}</div>
-                      <div className="text-sm text-muted-foreground">{notification.label}</div>
+                      <div className="text-2xl font-bold">
+                        {notification.count}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {notification.label}
+                      </div>
                     </div>
                   </button>
                 );
@@ -207,7 +241,9 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Your Students</CardTitle>
-              <CardDescription>Quick overview of your children's progress</CardDescription>
+              <CardDescription>
+                Quick overview of your children's progress
+              </CardDescription>
             </div>
             <Button variant="outline" onClick={() => onNavigate('profile')}>
               View All
@@ -217,50 +253,59 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
         <CardContent>
           {students.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
-              No students on file yet. Add your student details in Profile to get started.
+              No students on file yet. Add your student details in Profile to
+              get started.
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {students.map((student) => (
-              <Card key={student.id} className="bg-secondary/50">
-                <CardHeader>
-                  <div className="flex items-start gap-4">
-                    <Avatar className="h-12 w-12">
-                      {student.photoUrl && <AvatarImage src={student.photoUrl} alt={student.name} />}
-                      <AvatarFallback className="text-lg">
-                        {getInitials(student.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{student.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {student.age === null ? 'Age not available' : `Age ${student.age}`}
-                      </p>
-                      <div className="mt-2">
-                        <Badge variant="secondary" className="gap-1">
-                          <Trophy className="w-3 h-3" />
-                          {student.beltLevel}
-                        </Badge>
+                <Card key={student.id} className="bg-secondary/50">
+                  <CardHeader>
+                    <div className="flex items-start gap-4">
+                      <Avatar className="h-12 w-12">
+                        {student.photoUrl && (
+                          <AvatarImage
+                            src={student.photoUrl}
+                            alt={student.name}
+                          />
+                        )}
+                        <AvatarFallback className="text-lg">
+                          {getInitials(student.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">
+                          {student.name}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {student.age === null
+                            ? 'Age not available'
+                            : `Age ${student.age}`}
+                        </p>
+                        <div className="mt-2">
+                          <Badge variant="secondary" className="gap-1">
+                            <Trophy className="w-3 h-3" />
+                            {student.beltLevel}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3 w-full"
-                    onClick={() => onNavigate('feedback')}
-                  >
-                    <Award className="w-4 h-4 mr-2" />
-                    View Feedback
-                  </Button>
-                </CardHeader>
-              </Card>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={() => onNavigate('feedback')}
+                    >
+                      <Award className="w-4 h-4 mr-2" />
+                      View Feedback
+                    </Button>
+                  </CardHeader>
+                </Card>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
-
     </div>
   );
 }

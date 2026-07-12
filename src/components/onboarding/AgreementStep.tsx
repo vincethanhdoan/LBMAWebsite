@@ -1,15 +1,15 @@
-import { useState } from 'react'
-import { Button } from '../ui/button'
-import { Checkbox } from '../ui/checkbox'
-import { Label } from '../ui/label'
-import { ArrowRight } from 'lucide-react'
+import { useState } from 'react';
+import { Button } from '../ui/button';
+import { Checkbox } from '../ui/checkbox';
+import { Label } from '../ui/label';
+import { ArrowRight } from 'lucide-react';
 
 interface AgreementStepProps {
-  onNext: () => void
+  onNext: () => void;
 }
 
 export function AgreementStep({ onNext }: AgreementStepProps) {
-  const [agreed, setAgreed] = useState(false)
+  const [agreed, setAgreed] = useState(false);
 
   return (
     <div>
@@ -19,17 +19,27 @@ export function AgreementStep({ onNext }: AgreementStepProps) {
       >
         Before you begin
       </p>
-      <h2 className="text-2xl font-semibold mb-7" style={{ fontFamily: 'var(--font-heading)' }}>
+      <h2
+        className="text-2xl font-semibold mb-7"
+        style={{ fontFamily: 'var(--font-heading)' }}
+      >
         A few things first
       </h2>
 
-      <div className="border-l-2 border-primary bg-secondary rounded-r-xl p-4 mb-6" role="note">
-        <p className="text-sm font-semibold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+      <div
+        className="border-l-2 border-primary bg-secondary rounded-r-xl p-4 mb-6"
+        role="note"
+      >
+        <p
+          className="text-sm font-semibold mb-1"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
           Enable email notifications on your device
         </p>
         <p className="text-sm text-secondary-foreground leading-relaxed">
-          All updates from this portal are sent to your email. Make sure email notifications
-          are enabled on your phone or personal device so you don't miss anything.
+          All updates from this portal are sent to your email. Make sure email
+          notifications are enabled on your phone or personal device so you
+          don't miss anything.
         </p>
       </div>
 
@@ -40,7 +50,10 @@ export function AgreementStep({ onNext }: AgreementStepProps) {
           onCheckedChange={(checked) => setAgreed(checked === true)}
           className="mt-0.5 flex-shrink-0"
         />
-        <Label htmlFor="agree" className="text-sm text-muted-foreground leading-relaxed cursor-pointer font-normal">
+        <Label
+          htmlFor="agree"
+          className="text-sm text-muted-foreground leading-relaxed cursor-pointer font-normal"
+        >
           I agree to LBMAA's{' '}
           <a
             href="/terms"
@@ -73,5 +86,5 @@ export function AgreementStep({ onNext }: AgreementStepProps) {
         <ArrowRight className="w-4 h-4 ml-1" />
       </Button>
     </div>
-  )
+  );
 }

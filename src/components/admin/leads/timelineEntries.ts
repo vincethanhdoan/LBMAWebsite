@@ -1,4 +1,7 @@
-import type { EnrollmentLead, EnrollmentLeadNotification } from '../../../lib/types';
+import type {
+  EnrollmentLead,
+  EnrollmentLeadNotification,
+} from '../../../lib/types';
 
 const EMAIL_LABELS: Record<string, string> = {
   new_lead: 'Admin alert email',
@@ -22,22 +25,45 @@ export function buildTimelineEntries(lead: EnrollmentLead): TimelineEntry[] {
 
   // Current-state lines have no timestamp column; surface them at the top.
   if (lead.status === 'enrolled') {
-    entries.push({ key: 'state-enrolled', label: 'Marked enrolled', timestamp: null });
+    entries.push({
+      key: 'state-enrolled',
+      label: 'Marked enrolled',
+      timestamp: null,
+    });
   } else if (lead.status === 'closed') {
-    entries.push({ key: 'state-closed', label: 'Marked closed', timestamp: null });
+    entries.push({
+      key: 'state-closed',
+      label: 'Marked closed',
+      timestamp: null,
+    });
   }
 
-  entries.push({ key: 'milestone-created', label: 'Lead received', timestamp: lead.created_at });
+  entries.push({
+    key: 'milestone-created',
+    label: 'Lead received',
+    timestamp: lead.created_at,
+  });
   if (lead.approved_at) {
-    entries.push({ key: 'milestone-approved', label: 'Approved', timestamp: lead.approved_at });
+    entries.push({
+      key: 'milestone-approved',
+      label: 'Approved',
+      timestamp: lead.approved_at,
+    });
   }
   if (lead.denied_at) {
-    entries.push({ key: 'milestone-denied', label: 'Denied', timestamp: lead.denied_at });
+    entries.push({
+      key: 'milestone-denied',
+      label: 'Denied',
+      timestamp: lead.denied_at,
+    });
   }
   if (lead.attendance_status && lead.attendance_recorded_at) {
     entries.push({
       key: 'milestone-attendance',
-      label: lead.attendance_status === 'attended' ? 'Marked attended' : 'Marked no-show',
+      label:
+        lead.attendance_status === 'attended'
+          ? 'Marked attended'
+          : 'Marked no-show',
       timestamp: lead.attendance_recorded_at,
     });
   }
@@ -52,7 +78,8 @@ export function buildTimelineEntries(lead: EnrollmentLead): TimelineEntry[] {
       timestamp: n.created_at,
       // The family's own address is implied; show a recipient only when it differs.
       recipient:
-        n.recipient_email && n.recipient_email.trim().toLowerCase() !== parentEmail
+        n.recipient_email &&
+        n.recipient_email.trim().toLowerCase() !== parentEmail
           ? n.recipient_email
           : null,
       status: n.status,

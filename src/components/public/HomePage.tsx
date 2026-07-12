@@ -35,9 +35,11 @@ export function HomePage() {
 
   return (
     <div>
-
       {/* ── HERO ── */}
-      <section className="relative flex flex-col" style={{ minHeight: 'max(calc(100svh - 72px), 520px)' }}>
+      <section
+        className="relative flex flex-col"
+        style={{ minHeight: 'max(calc(100svh - 72px), 520px)' }}
+      >
         <ImageWithFallback
           src="/photos/class-synchronized.jpg"
           alt="Los Banos Martial Arts Academy"
@@ -47,15 +49,22 @@ export function HomePage() {
         <div
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(110deg, oklch(11% 0.018 30 / 0.95) 0%, oklch(11% 0.018 30 / 0.78) 48%, oklch(11% 0.018 30 / 0.18) 100%)',
+            background:
+              'linear-gradient(110deg, oklch(11% 0.018 30 / 0.95) 0%, oklch(11% 0.018 30 / 0.78) 48%, oklch(11% 0.018 30 / 0.18) 100%)',
           }}
         />
 
         <div className="relative flex-1 flex items-center">
           <div className="max-w-7xl mx-auto px-6 md:px-10 py-12 md:py-20 w-full">
             <div style={{ maxWidth: '580px' }}>
-
-              <div style={{ width: '36px', height: '3px', backgroundColor: V3.primary, marginBottom: '20px' }} />
+              <div
+                style={{
+                  width: '36px',
+                  height: '3px',
+                  backgroundColor: V3.primary,
+                  marginBottom: '20px',
+                }}
+              />
 
               <h1
                 className="v3-h font-black mb-6"
@@ -66,27 +75,38 @@ export function HomePage() {
                   letterSpacing: '-0.02em',
                 }}
               >
-                {h.heroHeading1}<br />
-                {h.heroHeading2}<br />
+                {h.heroHeading1}
+                <br />
+                {h.heroHeading2}
+                <br />
                 <span style={{ color: V3.primary }}>{h.heroHeading3}</span>
               </h1>
 
               <p
                 className="leading-relaxed mb-8"
-                style={{ color: 'oklch(82% 0.007 30)', maxWidth: '42ch', fontSize: '1rem' }}
+                style={{
+                  color: 'oklch(82% 0.007 30)',
+                  maxWidth: '42ch',
+                  fontSize: '1rem',
+                }}
               >
                 {h.heroSub}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <button className="v3-btn-primary" onClick={() => navigate(`${BASE}/contact`)}>
+                <button
+                  className="v3-btn-primary"
+                  onClick={() => navigate(`${BASE}/contact`)}
+                >
                   {c.bookTrial}
                 </button>
-                <button className="v3-btn-ghost" onClick={() => navigate(`${BASE}/programs`)}>
+                <button
+                  className="v3-btn-ghost"
+                  onClick={() => navigate(`${BASE}/programs`)}
+                >
                   {h.explorePrograms}
                 </button>
               </div>
-
             </div>
           </div>
         </div>
@@ -110,17 +130,29 @@ export function HomePage() {
                   letterSpacing: '-0.015em',
                 }}
               >
-                {h.aboutHeading1}<br />{h.aboutHeading2}<br /><span style={{ color: V3.primary }}>{h.aboutHeading3}</span>
+                {h.aboutHeading1}
+                <br />
+                {h.aboutHeading2}
+                <br />
+                <span style={{ color: V3.primary }}>{h.aboutHeading3}</span>
               </h2>
               <p
                 className="leading-relaxed mb-4"
-                style={{ color: V3.muted, fontSize: '0.95rem', maxWidth: '50ch' }}
+                style={{
+                  color: V3.muted,
+                  fontSize: '0.95rem',
+                  maxWidth: '50ch',
+                }}
               >
                 {h.aboutP1}
               </p>
               <p
                 className="leading-relaxed mb-8"
-                style={{ color: V3.muted, fontSize: '0.95rem', maxWidth: '50ch' }}
+                style={{
+                  color: V3.muted,
+                  fontSize: '0.95rem',
+                  maxWidth: '50ch',
+                }}
               >
                 {h.aboutP2}
               </p>
@@ -133,7 +165,10 @@ export function HomePage() {
               </button>
             </div>
 
-            <div className="rounded-xl overflow-hidden bg-gray-100 order-first md:order-last" style={{ aspectRatio: '4/5' }}>
+            <div
+              className="rounded-xl overflow-hidden bg-gray-100 order-first md:order-last"
+              style={{ aspectRatio: '4/5' }}
+            >
               <ImageWithFallback
                 src="/photos/kjn-guerra-portrait.jpg"
                 alt="LBMAA instructor with students"
@@ -148,7 +183,14 @@ export function HomePage() {
       <section className="py-20" style={{ backgroundColor: V3.surface }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div style={{ maxWidth: '1040px', margin: '0 auto' }}>
-            <div style={{ width: '36px', height: '3px', backgroundColor: V3.primary, marginBottom: '20px' }} />
+            <div
+              style={{
+                width: '36px',
+                height: '3px',
+                backgroundColor: V3.primary,
+                marginBottom: '20px',
+              }}
+            />
             <p className="v3-eyebrow mb-5">{h.firstVisitEyebrow}</p>
             <h2
               className="v3-h font-black mb-16"
@@ -263,19 +305,35 @@ export function HomePage() {
               <ImageWithFallback
                 src={src}
                 alt="LBMAA student"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 12%' }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center 12%',
+                }}
               />
             </div>
           ))}
         </div>
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'linear-gradient(to right, oklch(10% 0.012 28) 0%, transparent 8%, transparent 92%, oklch(10% 0.012 28) 100%)',
-        }} />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            background:
+              'linear-gradient(to right, oklch(10% 0.012 28) 0%, transparent 8%, transparent 92%, oklch(10% 0.012 28) 100%)',
+          }}
+        />
       </div>
 
       {/* ── PROGRAMS ── */}
-      <section style={{ backgroundColor: 'white', paddingTop: '64px', paddingBottom: '64px' }}>
+      <section
+        style={{
+          backgroundColor: 'white',
+          paddingTop: '64px',
+          paddingBottom: '64px',
+        }}
+      >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div
             className="flex items-end justify-between mb-8"
@@ -285,7 +343,11 @@ export function HomePage() {
               <p className="v3-eyebrow mb-3">{h.programsEyebrow}</p>
               <h2
                 className="v3-h font-black"
-                style={{ fontSize: 'clamp(1.9rem, 3.5vw, 2.75rem)', color: V3.text, lineHeight: 1.0 }}
+                style={{
+                  fontSize: 'clamp(1.9rem, 3.5vw, 2.75rem)',
+                  color: V3.text,
+                  lineHeight: 1.0,
+                }}
               >
                 {h.programsHeading}
               </h2>
@@ -311,7 +373,11 @@ export function HomePage() {
             }}
           >
             {h.programs.map((p, idx) => (
-              <div key={p.name} className="relative overflow-hidden" style={{ borderRadius: '10px' }}>
+              <div
+                key={p.name}
+                className="relative overflow-hidden"
+                style={{ borderRadius: '10px' }}
+              >
                 <ImageWithFallback
                   src={PROGRAM_PHOTOS[idx]}
                   alt={p.name}
@@ -320,7 +386,8 @@ export function HomePage() {
                 <div
                   className="absolute inset-0"
                   style={{
-                    background: 'linear-gradient(to top, oklch(10% 0.016 28 / 0.93) 0%, oklch(10% 0.016 28 / 0.45) 45%, transparent 70%)',
+                    background:
+                      'linear-gradient(to top, oklch(10% 0.016 28 / 0.93) 0%, oklch(10% 0.016 28 / 0.45) 45%, transparent 70%)',
                   }}
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-5">
@@ -343,7 +410,11 @@ export function HomePage() {
                   </span>
                   <h3
                     className="v3-h font-black mb-2"
-                    style={{ fontSize: 'clamp(1.3rem, 2vw, 1.65rem)', color: 'oklch(97% 0.004 30)', lineHeight: 1.05 }}
+                    style={{
+                      fontSize: 'clamp(1.3rem, 2vw, 1.65rem)',
+                      color: 'oklch(97% 0.004 30)',
+                      lineHeight: 1.05,
+                    }}
                   >
                     {p.name}
                   </h3>
@@ -381,17 +452,76 @@ export function HomePage() {
                   padding: '28px 32px',
                 }}
               >
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-                  <span style={{ display: 'inline-block', fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: 'oklch(74% 0.11 54)', backgroundColor: 'oklch(74% 0.11 54 / 0.14)', padding: '2px 8px', borderRadius: '999px' }}>{c.comingSoon}</span>
-                  <span style={{ display: 'inline-block', fontFamily: "'Nunito', sans-serif", fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: 'oklch(52% 0.007 30)', backgroundColor: 'oklch(29% 0.012 30)', padding: '2px 8px', borderRadius: '999px' }}>{p.ages}</span>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '6px',
+                    alignItems: 'center',
+                    marginBottom: '12px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      fontFamily: "'Nunito', sans-serif",
+                      fontSize: '0.6rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.15em',
+                      textTransform: 'uppercase' as const,
+                      color: 'oklch(74% 0.11 54)',
+                      backgroundColor: 'oklch(74% 0.11 54 / 0.14)',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                    }}
+                  >
+                    {c.comingSoon}
+                  </span>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      fontFamily: "'Nunito', sans-serif",
+                      fontSize: '0.6rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.15em',
+                      textTransform: 'uppercase' as const,
+                      color: 'oklch(52% 0.007 30)',
+                      backgroundColor: 'oklch(29% 0.012 30)',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                    }}
+                  >
+                    {p.ages}
+                  </span>
                 </div>
-                <h3 className="v3-h font-black mb-2" style={{ fontSize: 'clamp(1.1rem, 1.6vw, 1.35rem)', color: 'oklch(72% 0.005 30)', lineHeight: 1.05 }}>{p.name}</h3>
-                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: '0.78rem', lineHeight: 1.55, color: 'oklch(46% 0.007 30)' }}>{p.desc}</p>
+                <h3
+                  className="v3-h font-black mb-2"
+                  style={{
+                    fontSize: 'clamp(1.1rem, 1.6vw, 1.35rem)',
+                    color: 'oklch(72% 0.005 30)',
+                    lineHeight: 1.05,
+                  }}
+                >
+                  {p.name}
+                </h3>
+                <p
+                  style={{
+                    fontFamily: "'Nunito', sans-serif",
+                    fontSize: '0.78rem',
+                    lineHeight: 1.55,
+                    color: 'oklch(46% 0.007 30)',
+                  }}
+                >
+                  {p.desc}
+                </p>
               </div>
             ))}
           </div>
 
-          <div className="mt-6 md:hidden" style={{ maxWidth: '1040px', margin: '24px auto 0' }}>
+          <div
+            className="mt-6 md:hidden"
+            style={{ maxWidth: '1040px', margin: '24px auto 0' }}
+          >
             <button
               onClick={() => navigate(`${BASE}/programs`)}
               className="v3-h font-bold uppercase tracking-wide text-sm"
@@ -407,7 +537,6 @@ export function HomePage() {
       <section style={{ backgroundColor: V3.surface, padding: '72px 0' }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div style={{ maxWidth: '1040px', margin: '0 auto' }}>
-
             <div style={{ marginBottom: '36px' }}>
               <p className="v3-eyebrow mb-3">{h.valuesEyebrow}</p>
               <h2
@@ -540,7 +669,9 @@ export function HomePage() {
       {/* ── CTA ── */}
       <section className="py-20" style={{ backgroundColor: V3.primary }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
-          <div style={{ maxWidth: '44ch', margin: '0 auto', textAlign: 'center' }}>
+          <div
+            style={{ maxWidth: '44ch', margin: '0 auto', textAlign: 'center' }}
+          >
             <p
               style={{
                 fontFamily: "'Nunito', sans-serif",
@@ -571,7 +702,10 @@ export function HomePage() {
             >
               {c.trialBody}
             </p>
-            <button onClick={() => navigate(`${BASE}/contact`)} className="v3-btn-white">
+            <button
+              onClick={() => navigate(`${BASE}/contact`)}
+              className="v3-btn-white"
+            >
               {c.bookTrial}
             </button>
             <p
@@ -587,7 +721,6 @@ export function HomePage() {
           </div>
         </div>
       </section>
-
     </div>
   );
 }

@@ -21,9 +21,13 @@ export function SectionHeader({
           {eyebrow}
         </p>
       )}
-      <div className={`flex items-center gap-3 mb-3 ${isCenter ? 'justify-center' : ''}`}>
+      <div
+        className={`flex items-center gap-3 mb-3 ${isCenter ? 'justify-center' : ''}`}
+      >
         <div className="w-7 h-0.5 bg-primary rounded-full flex-shrink-0" />
-        <h2 className="text-2xl md:text-3xl font-bold leading-snug">{heading}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold leading-snug">
+          {heading}
+        </h2>
       </div>
       {subheading && (
         <p

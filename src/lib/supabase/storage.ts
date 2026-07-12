@@ -8,7 +8,7 @@ const BUCKET_NAME = 'message-attachments';
 
 export async function uploadFile(
   file: File,
-  path: string
+  path: string,
 ): Promise<{ path: string }> {
   const { data, error } = await supabase.storage
     .from(BUCKET_NAME)
@@ -28,7 +28,10 @@ export async function uploadFile(
 // FILE DOWNLOAD
 // ============================================
 
-export async function getSignedUrl(path: string, expiresIn: number = 3600): Promise<string> {
+export async function getSignedUrl(
+  path: string,
+  expiresIn: number = 3600,
+): Promise<string> {
   const { data, error } = await supabase.storage
     .from(BUCKET_NAME)
     .createSignedUrl(path, expiresIn);
@@ -56,9 +59,14 @@ function getFileExtension(fileName: string): string {
 export function isValidFileType(fileName: string): boolean {
   const extension = getFileExtension(fileName);
   const allowedExtensions = [
-    'jpg', 'jpeg', 'png', 'gif', 'webp', // Images
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp', // Images
     'pdf', // PDFs
-    'doc', 'docx', // Word documents
+    'doc',
+    'docx', // Word documents
     'txt', // Text files
   ];
   return allowedExtensions.includes(extension);
@@ -77,14 +85,24 @@ export const MAX_FILE_SIZE_MB = 10;
 const PROFILE_PICTURES_BUCKET = 'profile-pictures';
 
 export const MAX_PROFILE_IMAGE_SIZE_MB = 10;
-export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+export const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
 
 function getProfilePublicUrl(path: string): string {
-  const { data } = supabase.storage.from(PROFILE_PICTURES_BUCKET).getPublicUrl(path);
+  const { data } = supabase.storage
+    .from(PROFILE_PICTURES_BUCKET)
+    .getPublicUrl(path);
   return data.publicUrl;
 }
 
-export async function uploadProfileImage(path: string, file: File): Promise<string> {
+export async function uploadProfileImage(
+  path: string,
+  file: File,
+): Promise<string> {
   const { error } = await supabase.storage
     .from(PROFILE_PICTURES_BUCKET)
     .upload(path, file, { cacheControl: '3600', upsert: true });

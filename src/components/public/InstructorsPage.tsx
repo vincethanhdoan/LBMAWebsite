@@ -13,11 +13,11 @@ const STORM_WARM_TONES = [
 ];
 
 const STORM_STUDENTS: { name: string; rankIdx: number; photo?: string }[] = [
-  { name: 'Alex M.',    rankIdx: 0 },
-  { name: 'Sofia R.',   rankIdx: 1 },
-  { name: 'Marcus T.',  rankIdx: 2 },
-  { name: 'Lily C.',    rankIdx: 3 },
-  { name: 'Jordan K.',  rankIdx: 4 },
+  { name: 'Alex M.', rankIdx: 0 },
+  { name: 'Sofia R.', rankIdx: 1 },
+  { name: 'Marcus T.', rankIdx: 2 },
+  { name: 'Lily C.', rankIdx: 3 },
+  { name: 'Jordan K.', rankIdx: 4 },
 ];
 
 const STATS_NUMS = ['25+', '5th', '1st', '2020'];
@@ -28,12 +28,10 @@ export function InstructorsPage() {
 
   return (
     <div>
-
       {/* ── HERO ── */}
       <section style={{ backgroundColor: 'white' }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 md:gap-12 items-center py-9 md:py-12">
-
             {/* Text */}
             <div className="order-last md:order-first">
               <p className="v3-eyebrow mb-3">{ins.masterEyebrow}</p>
@@ -45,7 +43,9 @@ export function InstructorsPage() {
                   letterSpacing: '-0.02em',
                 }}
               >
-                Kwan Jang Nim<br />Eduardo Guerra
+                Kwan Jang Nim
+                <br />
+                Eduardo Guerra
               </h1>
             </div>
 
@@ -73,7 +73,6 @@ export function InstructorsPage() {
                 />
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -84,7 +83,10 @@ export function InstructorsPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4 md:gap-x-10 md:gap-y-0 py-5 md:py-6">
             {ins.stats.map(({ label, sub }, i) => (
               <div key={i}>
-                <div className="flex items-baseline gap-1.5 mb-0.5" style={{ flexWrap: 'nowrap' }}>
+                <div
+                  className="flex items-baseline gap-1.5 mb-0.5"
+                  style={{ flexWrap: 'nowrap' }}
+                >
                   <span
                     className="font-black leading-none"
                     style={{
@@ -126,7 +128,6 @@ export function InstructorsPage() {
       <section className="py-12" style={{ backgroundColor: V3.surface }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div className="grid md:grid-cols-2 gap-10 items-center max-w-5xl mx-auto">
-
             <div
               style={{
                 borderRadius: '16px',
@@ -147,7 +148,10 @@ export function InstructorsPage() {
             <div>
               <h2
                 className="v3-h font-black leading-[1.0] mb-5"
-                style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', color: V3.text }}
+                style={{
+                  fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
+                  color: V3.text,
+                }}
               >
                 {ins.aboutMeHeading}
               </h2>
@@ -160,7 +164,6 @@ export function InstructorsPage() {
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -170,7 +173,10 @@ export function InstructorsPage() {
         <div className="max-w-3xl mx-auto px-6 text-center">
           <p
             className="text-xs font-bold uppercase tracking-[0.2em] mb-6"
-            style={{ color: 'oklch(85% 0.055 20)', fontFamily: "'Nunito', sans-serif" }}
+            style={{
+              color: 'oklch(85% 0.055 20)',
+              fontFamily: "'Nunito', sans-serif",
+            }}
           >
             {ins.quoteEyebrow}
           </p>
@@ -192,7 +198,6 @@ export function InstructorsPage() {
       {/* ── STORM ── */}
       <section style={{ backgroundColor: 'white', padding: '5rem 0 6rem' }}>
         <div className="max-w-7xl mx-auto px-6 md:px-10">
-
           {/* Heading */}
           <div style={{ marginBottom: '3.5rem' }}>
             <h2
@@ -207,7 +212,13 @@ export function InstructorsPage() {
             >
               STORM
             </h2>
-            <div style={{ height: '2px', backgroundColor: V3.primary, marginBottom: '1.25rem' }} />
+            <div
+              style={{
+                height: '2px',
+                backgroundColor: V3.primary,
+                marginBottom: '1.25rem',
+              }}
+            />
             <div
               style={{
                 display: 'flex',
@@ -279,16 +290,31 @@ export function InstructorsPage() {
                       style={{
                         position: 'absolute',
                         inset: 0,
-                        backgroundColor: STORM_WARM_TONES[i % STORM_WARM_TONES.length],
+                        backgroundColor:
+                          STORM_WARM_TONES[i % STORM_WARM_TONES.length],
                         display: 'flex',
                         alignItems: 'flex-end',
                         justifyContent: 'center',
                         overflow: 'hidden',
                       }}
                     >
-                      <svg width="62%" height="72%" viewBox="0 0 40 46" fill="none">
-                        <ellipse cx="20" cy="11" rx="9.5" ry="10" fill="oklch(52% 0.016 30 / 0.55)" />
-                        <path d="M0 44 C0 26 40 26 40 44" fill="oklch(52% 0.016 30 / 0.48)" />
+                      <svg
+                        width="62%"
+                        height="72%"
+                        viewBox="0 0 40 46"
+                        fill="none"
+                      >
+                        <ellipse
+                          cx="20"
+                          cy="11"
+                          rx="9.5"
+                          ry="10"
+                          fill="oklch(52% 0.016 30 / 0.55)"
+                        />
+                        <path
+                          d="M0 44 C0 26 40 26 40 44"
+                          fill="oklch(52% 0.016 30 / 0.48)"
+                        />
                       </svg>
                     </div>
                   )}
@@ -320,10 +346,8 @@ export function InstructorsPage() {
               </div>
             ))}
           </div>
-
         </div>
       </section>
-
     </div>
   );
 }

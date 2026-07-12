@@ -1,92 +1,122 @@
-import { useRef, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { FunctionsHttpError } from '@supabase/supabase-js'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { Textarea } from '../ui/textarea'
-import { Label } from '../ui/label'
-import { Loader2, X, Plus } from 'lucide-react'
-import { createEnrollmentLead } from '../../lib/supabase/mutations'
-import { getEnrollmentLeadById, findLeadsByEmail } from '../../lib/supabase/queries'
-import { edgeFunctionUserAuthHeaders, supabase } from '../../lib/supabase/client'
-import { queryKeys } from '../../lib/queryKeys'
-import { formatShortDate } from '../../lib/format'
-import type { EnrollmentLead } from '../../lib/types'
-import { STATUS_LABELS } from './leads/leadDisplay'
-import { PickDateModal } from './PickDateModal'
+import { useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { FunctionsHttpError } from '@supabase/supabase-js';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
+import { Loader2, X, Plus } from 'lucide-react';
+import { createEnrollmentLead } from '../../lib/supabase/mutations';
+import {
+  getEnrollmentLeadById,
+  findLeadsByEmail,
+} from '../../lib/supabase/queries';
+import {
+  edgeFunctionUserAuthHeaders,
+  supabase,
+} from '../../lib/supabase/client';
+import { queryKeys } from '../../lib/queryKeys';
+import { formatShortDate } from '../../lib/format';
+import type { EnrollmentLead } from '../../lib/types';
+import { STATUS_LABELS } from './leads/leadDisplay';
+import { PickDateModal } from './PickDateModal';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const PROGRAM_LABELS: Record<string, string> = {
   little_dragons: 'Little Dragons',
   youth: 'Youth Program',
-}
+};
 
-type PostAction = 'send_link' | 'pick_date' | 'create_only'
+type PostAction = 'send_link' | 'pick_date' | 'create_only';
 
 interface NewLeadModalProps {
-  onSuccess: (lead: EnrollmentLead) => void
-  onCancel: () => void
+  onSuccess: (lead: EnrollmentLead) => void;
+  onCancel: () => void;
 }
 
 export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
-  const queryClient = useQueryClient()
-  const [parentName, setParentName] = useState('')
-  const [parentEmail, setParentEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [children, setChildren] = useState<Array<{ name: string; age: string }>>([{ name: '', age: '' }])
-  const [notes, setNotes] = useState('')
-  const [postAction, setPostAction] = useState<PostAction>('send_link')
-  const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState<{ parentName?: string; parentEmail?: string; children?: string }>({})
-  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
+  const queryClient = useQueryClient();
+  const [parentName, setParentName] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [children, setChildren] = useState<
+    Array<{ name: string; age: string }>
+  >([{ name: '', age: '' }]);
+  const [notes, setNotes] = useState('');
+  const [postAction, setPostAction] = useState<PostAction>('send_link');
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    parentName?: string;
+    parentEmail?: string;
+    children?: string;
+  }>({});
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   // Mirrors parentEmail so an in-flight duplicate check can detect the field changed.
-  const parentEmailRef = useRef(parentEmail)
-  const [createdLead, setCreatedLead] = useState<EnrollmentLead | null>(null)
+  const parentEmailRef = useRef(parentEmail);
+  const [createdLead, setCreatedLead] = useState<EnrollmentLead | null>(null);
 
   function addChild() {
-    setChildren(prev => [...prev, { name: '', age: '' }])
+    setChildren((prev) => [...prev, { name: '', age: '' }]);
   }
   function removeChild(i: number) {
-    setChildren(prev => prev.filter((_, idx) => idx !== i))
+    setChildren((prev) => prev.filter((_, idx) => idx !== i));
   }
   function updateChild(i: number, field: 'name' | 'age', value: string) {
-    setChildren(prev => prev.map((c, idx) => idx === i ? { ...c, [field]: value } : c))
+    setChildren((prev) =>
+      prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)),
+    );
   }
 
   function validate() {
-    const errs: { parentName?: string; parentEmail?: string; children?: string } = {}
-    if (!parentName.trim()) errs.parentName = 'Required'
-    if (!parentEmail.trim()) errs.parentEmail = 'Required'
-    else if (!EMAIL_REGEX.test(parentEmail)) errs.parentEmail = 'Invalid email'
+    const errs: {
+      parentName?: string;
+      parentEmail?: string;
+      children?: string;
+    } = {};
+    if (!parentName.trim()) errs.parentName = 'Required';
+    if (!parentEmail.trim()) errs.parentEmail = 'Required';
+    else if (!EMAIL_REGEX.test(parentEmail)) errs.parentEmail = 'Invalid email';
     for (const c of children) {
-      const age = Number(c.age)
-      if (!c.name.trim() || !c.age) { errs.children = 'Each child requires a name and age.'; break }
-      if (!Number.isInteger(age) || age < 4 || age > 17) { errs.children = 'Child ages must be between 4 and 17.'; break }
+      const age = Number(c.age);
+      if (!c.name.trim() || !c.age) {
+        errs.children = 'Each child requires a name and age.';
+        break;
+      }
+      if (!Number.isInteger(age) || age < 4 || age > 17) {
+        errs.children = 'Child ages must be between 4 and 17.';
+        break;
+      }
     }
-    setErrors(errs)
-    return Object.keys(errs).length === 0
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   }
 
   async function handleEmailBlur() {
-    validate()
-    const email = parentEmail.trim()
+    validate();
+    const email = parentEmail.trim();
     if (!EMAIL_REGEX.test(email)) {
-      setDuplicateWarning(null)
-      return
+      setDuplicateWarning(null);
+      return;
     }
     try {
-      const matches = await findLeadsByEmail(email)
-      if (parentEmailRef.current.trim() !== email) return // field changed while checking
+      const matches = await findLeadsByEmail(email);
+      if (parentEmailRef.current.trim() !== email) return; // field changed while checking
       if (matches.length > 0) {
-        const [newest] = matches
+        const [newest] = matches;
         setDuplicateWarning(
           `A lead already exists for this email: ${newest.parent_name} (${STATUS_LABELS[newest.status]}, ${formatShortDate(newest.created_at)}).`,
-        )
+        );
       } else {
-        setDuplicateWarning(null)
+        setDuplicateWarning(null);
       }
     } catch {
       // Advisory only — a failed check never blocks creation.
@@ -94,92 +124,122 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
   }
 
   async function handleSubmit() {
-    if (!validate()) return
-    setLoading(true)
+    if (!validate()) return;
+    setLoading(true);
     try {
       const leadId = await createEnrollmentLead({
         parentName: parentName.trim(),
         parentEmail: parentEmail.trim(),
         phone: phone.trim() || undefined,
         notes: notes.trim() || undefined,
-        children: children.map(c => ({ name: c.name.trim(), age: Number(c.age) })),
-      })
+        children: children.map((c) => ({
+          name: c.name.trim(),
+          age: Number(c.age),
+        })),
+      });
 
-      const leadData = await getEnrollmentLeadById(leadId)
+      const leadData = await getEnrollmentLeadById(leadId);
 
       if (postAction === 'send_link') {
-        const fnHeaders = await edgeFunctionUserAuthHeaders()
+        const fnHeaders = await edgeFunctionUserAuthHeaders();
         if (!fnHeaders) {
-          toast.error('Session expired. Lead was created; sign in again to send the invite.')
+          toast.error(
+            'Session expired. Lead was created; sign in again to send the invite.',
+          );
         } else {
-          const { error: approveError } = await supabase.functions.invoke('approve-enrollment-lead', {
-            body: { leadId },
-            headers: fnHeaders,
-          })
+          const { error: approveError } = await supabase.functions.invoke(
+            'approve-enrollment-lead',
+            {
+              body: { leadId },
+              headers: fnHeaders,
+            },
+          );
           if (approveError) {
-            toast.error('Lead created but booking link failed to send')
+            toast.error('Lead created but booking link failed to send');
           }
         }
-        onSuccess(leadData)
+        onSuccess(leadData);
       } else if (postAction === 'create_only') {
-        onSuccess(leadData)
+        onSuccess(leadData);
       } else if (postAction === 'pick_date') {
-        setCreatedLead(leadData)
+        setCreatedLead(leadData);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Something went wrong'
-      toast.error(msg)
+      const msg = err instanceof Error ? err.message : 'Something went wrong';
+      toast.error(msg);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
-  async function handlePickDateConfirm(bookings: Array<{ programBookingId: string; slotId: string; appointmentDate: string }>) {
-    const fnHeaders = await edgeFunctionUserAuthHeaders()
-    if (!fnHeaders) throw new Error('Session expired. Please sign in again.')
+  async function handlePickDateConfirm(
+    bookings: Array<{
+      programBookingId: string;
+      slotId: string;
+      appointmentDate: string;
+    }>,
+  ) {
+    const fnHeaders = await edgeFunctionUserAuthHeaders();
+    if (!fnHeaders) throw new Error('Session expired. Please sign in again.');
 
-    let failedProgram: string | null = null
-    let slotTaken = false
+    let failedProgram: string | null = null;
+    let slotTaken = false;
     for (const b of bookings) {
-      const { error: bookError } = await supabase.functions.invoke('admin-book-appointment', {
-        body: { programBookingId: b.programBookingId, slotId: b.slotId, appointmentDate: b.appointmentDate },
-        headers: fnHeaders,
-      })
+      const { error: bookError } = await supabase.functions.invoke(
+        'admin-book-appointment',
+        {
+          body: {
+            programBookingId: b.programBookingId,
+            slotId: b.slotId,
+            appointmentDate: b.appointmentDate,
+          },
+          headers: fnHeaders,
+        },
+      );
       if (bookError) {
         if (bookError instanceof FunctionsHttpError) {
-          const body = await bookError.context.json().catch(() => null)
-          if (body?.code === 'slot_taken') { slotTaken = true; break }
+          const body = await bookError.context.json().catch(() => null);
+          if (body?.code === 'slot_taken') {
+            slotTaken = true;
+            break;
+          }
         }
-        const programType = createdLead?.programBookings.find(pb => pb.booking_id === b.programBookingId)?.program_type
-        failedProgram = programType ? PROGRAM_LABELS[programType] : 'This'
-        break
+        const programType = createdLead?.programBookings.find(
+          (pb) => pb.booking_id === b.programBookingId,
+        )?.program_type;
+        failedProgram = programType ? PROGRAM_LABELS[programType] : 'This';
+        break;
       }
     }
 
-    if (!createdLead) return
-    const updatedLead = await getEnrollmentLeadById(createdLead.lead_id)
-    queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() })
+    if (!createdLead) return;
+    const updatedLead = await getEnrollmentLeadById(createdLead.lead_id);
+    queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
 
     if (slotTaken) {
-      toast.error('That time was just taken. Please pick another date.')
-      onSuccess(updatedLead)
-      return
+      toast.error('That time was just taken. Please pick another date.');
+      onSuccess(updatedLead);
+      return;
     }
 
     if (failedProgram) {
-      setCreatedLead(updatedLead)
-      toast.error(`${failedProgram} appointment could not be booked — the other bookings were saved. Please try again.`)
-      return
+      setCreatedLead(updatedLead);
+      toast.error(
+        `${failedProgram} appointment could not be booked — the other bookings were saved. Please try again.`,
+      );
+      return;
     }
 
-    onSuccess(updatedLead)
+    onSuccess(updatedLead);
   }
 
   const ctaLabel = loading
     ? undefined
-    : postAction === 'send_link' ? 'Create & Send Link'
-    : postAction === 'pick_date' ? 'Create & Pick Date'
-    : 'Create Lead'
+    : postAction === 'send_link'
+      ? 'Create & Send Link'
+      : postAction === 'pick_date'
+        ? 'Create & Pick Date'
+        : 'Create Lead';
 
   if (createdLead) {
     return (
@@ -188,11 +248,16 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
         onConfirm={handlePickDateConfirm}
         onCancel={onCancel}
       />
-    )
+    );
   }
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onCancel() }}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>New enrollment lead</DialogTitle>
@@ -201,84 +266,177 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="nl-parent-name">Parent name *</Label>
-              <Input id="nl-parent-name" value={parentName} onChange={e => setParentName(e.target.value)} onBlur={validate} className="mt-1" />
-              {errors.parentName && <p className="text-xs text-destructive mt-1">{errors.parentName}</p>}
+              <Input
+                id="nl-parent-name"
+                value={parentName}
+                onChange={(e) => setParentName(e.target.value)}
+                onBlur={validate}
+                className="mt-1"
+              />
+              {errors.parentName && (
+                <p className="text-xs text-destructive mt-1">
+                  {errors.parentName}
+                </p>
+              )}
             </div>
             <div>
               <Label htmlFor="nl-email">Email *</Label>
-              <Input id="nl-email" type="email" value={parentEmail} onChange={e => { setParentEmail(e.target.value); parentEmailRef.current = e.target.value; setDuplicateWarning(null) }} onBlur={handleEmailBlur} className="mt-1" />
-              {errors.parentEmail && <p className="text-xs text-destructive mt-1">{errors.parentEmail}</p>}
-              {duplicateWarning && <p className="text-xs text-amber-700 mt-1">{duplicateWarning}</p>}
+              <Input
+                id="nl-email"
+                type="email"
+                value={parentEmail}
+                onChange={(e) => {
+                  setParentEmail(e.target.value);
+                  parentEmailRef.current = e.target.value;
+                  setDuplicateWarning(null);
+                }}
+                onBlur={handleEmailBlur}
+                className="mt-1"
+              />
+              {errors.parentEmail && (
+                <p className="text-xs text-destructive mt-1">
+                  {errors.parentEmail}
+                </p>
+              )}
+              {duplicateWarning && (
+                <p className="text-xs text-amber-700 mt-1">
+                  {duplicateWarning}
+                </p>
+              )}
             </div>
           </div>
           <div>
             <Label htmlFor="nl-phone">Phone</Label>
-            <Input id="nl-phone" value={phone} onChange={e => setPhone(e.target.value)} className="mt-1" />
+            <Input
+              id="nl-phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-1"
+            />
           </div>
           {/* Children */}
           <div className="flex flex-col gap-2">
-            <Label>Children <span className="text-destructive">*</span></Label>
+            <Label>
+              Children <span className="text-destructive">*</span>
+            </Label>
             {children.map((child, i) => {
-              const age = Number(child.age)
+              const age = Number(child.age);
               const progLabel = child.age
-                ? (age >= 4 && age <= 7 ? { text: 'Little Dragons · 4–7', color: '#6d28d9' }
-                  : age >= 8 && age <= 17 ? { text: 'Youth Program · 8–17', color: '#1d4ed8' }
-                  : { text: 'Age must be 4–17', color: '#dc2626' })
-                : null
+                ? age >= 4 && age <= 7
+                  ? { text: 'Little Dragons · 4–7', color: '#6d28d9' }
+                  : age >= 8 && age <= 17
+                    ? { text: 'Youth Program · 8–17', color: '#1d4ed8' }
+                    : { text: 'Age must be 4–17', color: '#dc2626' }
+                : null;
               return (
                 <div key={i} className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
-                    <Input placeholder="Name" value={child.name} onChange={e => updateChild(i,'name',e.target.value)} disabled={loading} required className="flex-1 h-9 text-sm" />
-                    <Input type="number" min={4} max={17} placeholder="Age" value={child.age} onChange={e => updateChild(i,'age',e.target.value)} disabled={loading} required className="w-16 h-9 text-sm" />
+                    <Input
+                      placeholder="Name"
+                      value={child.name}
+                      onChange={(e) => updateChild(i, 'name', e.target.value)}
+                      disabled={loading}
+                      required
+                      className="flex-1 h-9 text-sm"
+                    />
+                    <Input
+                      type="number"
+                      min={4}
+                      max={17}
+                      placeholder="Age"
+                      value={child.age}
+                      onChange={(e) => updateChild(i, 'age', e.target.value)}
+                      disabled={loading}
+                      required
+                      className="w-16 h-9 text-sm"
+                    />
                     {children.length > 1 && (
-                      <button type="button" onClick={() => removeChild(i)} disabled={loading}
+                      <button
+                        type="button"
+                        onClick={() => removeChild(i)}
+                        disabled={loading}
                         className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ background: '#fee2e2', color: '#ef4444' }}>
+                        style={{ background: '#fee2e2', color: '#ef4444' }}
+                      >
                         <X className="w-3 h-3" />
                       </button>
                     )}
                   </div>
-                  {progLabel && <p className="text-xs font-medium pl-0.5" style={{ color: progLabel.color }}>{progLabel.text}</p>}
+                  {progLabel && (
+                    <p
+                      className="text-xs font-medium pl-0.5"
+                      style={{ color: progLabel.color }}
+                    >
+                      {progLabel.text}
+                    </p>
+                  )}
                 </div>
-              )
+              );
             })}
-            <button type="button" onClick={addChild} disabled={loading}
-              className="flex items-center gap-1 text-xs text-primary self-start hover:opacity-70">
+            <button
+              type="button"
+              onClick={addChild}
+              disabled={loading}
+              className="flex items-center gap-1 text-xs text-primary self-start hover:opacity-70"
+            >
               <Plus className="w-3 h-3" /> Add another child
             </button>
-            {errors.children && <p className="text-xs text-destructive">{errors.children}</p>}
+            {errors.children && (
+              <p className="text-xs text-destructive">{errors.children}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="nl-notes">Notes</Label>
-            <Textarea id="nl-notes" value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="mt-1" />
+            <Textarea
+              id="nl-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="mt-1"
+            />
           </div>
           <div>
             <Label>After creating</Label>
             <div className="flex gap-2 mt-1.5">
-              {(['send_link', 'pick_date', 'create_only'] as PostAction[]).map(action => (
-                <button
-                  key={action}
-                  type="button"
-                  onClick={() => setPostAction(action)}
-                  className={`px-3 py-1.5 rounded border text-sm transition-colors ${
-                    postAction === action
-                      ? 'border-primary bg-primary/5 text-primary font-medium'
-                      : 'border-border text-muted-foreground hover:border-primary/50'
-                  }`}
-                >
-                  {action === 'send_link' ? 'Send Booking Link' : action === 'pick_date' ? 'Pick Date for Them' : 'Create Only'}
-                </button>
-              ))}
+              {(['send_link', 'pick_date', 'create_only'] as PostAction[]).map(
+                (action) => (
+                  <button
+                    key={action}
+                    type="button"
+                    onClick={() => setPostAction(action)}
+                    className={`px-3 py-1.5 rounded border text-sm transition-colors ${
+                      postAction === action
+                        ? 'border-primary bg-primary/5 text-primary font-medium'
+                        : 'border-border text-muted-foreground hover:border-primary/50'
+                    }`}
+                  >
+                    {action === 'send_link'
+                      ? 'Send Booking Link'
+                      : action === 'pick_date'
+                        ? 'Pick Date for Them'
+                        : 'Create Only'}
+                  </button>
+                ),
+              )}
             </div>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onCancel} disabled={loading}>Cancel</Button>
+          <Button variant="ghost" onClick={onCancel} disabled={loading}>
+            Cancel
+          </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating…</> : ctaLabel}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Creating…
+              </>
+            ) : (
+              ctaLabel
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

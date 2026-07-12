@@ -57,7 +57,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "We tried another school first. LBMAA is different — it feels like a real community. Best decision we made for our kids.",
+      'We tried another school first. LBMAA is different — it feels like a real community. Best decision we made for our kids.',
     name: 'Priya S.',
     detail: 'Parent of two students',
   },
@@ -77,7 +77,7 @@ const WHY_US = [
   {
     icon: Star,
     heading: 'Progress-based belts',
-    body: 'Students test when they\'re ready — no pressure, no fixed timeline.',
+    body: "Students test when they're ready — no pressure, no fixed timeline.",
   },
   {
     icon: Heart,
@@ -116,7 +116,9 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         {q}
         <ChevronDown className="w-4 h-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
       </summary>
-      <p className="pb-4 text-sm text-muted-foreground leading-relaxed pr-6">{a}</p>
+      <p className="pb-4 text-sm text-muted-foreground leading-relaxed pr-6">
+        {a}
+      </p>
     </details>
   );
 }
@@ -127,7 +129,6 @@ export function HomePageV2() {
 
   return (
     <div>
-
       {/* ── HERO ──────────────────────────────────────────── */}
       <section className="relative min-h-[88svh] flex items-center">
         <div className="absolute inset-0">
@@ -145,8 +146,7 @@ export function HomePageV2() {
             <div className="w-10 h-1 bg-primary rounded-full mb-6" />
 
             <h1 className="text-4xl md:text-5xl font-bold leading-[1.1] text-white mb-5">
-              Where Kids Build Confidence,
-              Discipline, and Respect.
+              Where Kids Build Confidence, Discipline, and Respect.
             </h1>
             <p className="text-base md:text-lg text-white/85 mb-10 leading-relaxed max-w-md">
               Safe, structured martial arts for children ages 4–16 in Los Banos.
@@ -200,7 +200,9 @@ export function HomePageV2() {
                   <Icon className="w-5 h-5 text-primary" />
                 </div>
                 <h3 className="font-semibold text-sm">{heading}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{body}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {body}
+                </p>
               </div>
             ))}
           </div>
@@ -285,10 +287,15 @@ export function HomePageV2() {
               >
                 <div className="flex gap-0.5">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <Star
+                      key={i}
+                      className="w-3.5 h-3.5 fill-amber-400 text-amber-400"
+                    />
                   ))}
                 </div>
-                <p className="text-sm leading-relaxed text-foreground flex-1">"{t.quote}"</p>
+                <p className="text-sm leading-relaxed text-foreground flex-1">
+                  "{t.quote}"
+                </p>
                 <div>
                   <p className="text-sm font-semibold">{t.name}</p>
                   <p className="text-xs text-muted-foreground">{t.detail}</p>
@@ -336,15 +343,23 @@ export function HomePageV2() {
                 },
               ].map(({ step, heading, body }) => (
                 <div key={step} className="flex flex-col gap-3">
-                  <span className="text-5xl font-bold text-primary/12 leading-none">{step}</span>
+                  <span className="text-5xl font-bold text-primary/12 leading-none">
+                    {step}
+                  </span>
                   <h3 className="font-semibold text-base">{heading}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {body}
+                  </p>
                 </div>
               ))}
             </div>
 
             <div className="mt-12 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <Button size="lg" className="font-semibold px-8" onClick={goToTrial}>
+              <Button
+                size="lg"
+                className="font-semibold px-8"
+                onClick={goToTrial}
+              >
                 Book a Free Trial Class
               </Button>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -369,9 +384,7 @@ export function HomePageV2() {
             </div>
 
             <div>
-              <SectionHeader
-                heading="We're not just teaching martial arts."
-              />
+              <SectionHeader heading="We're not just teaching martial arts." />
               <ul className="space-y-4">
                 {[
                   'Certified, background-checked instructors',
@@ -424,23 +437,27 @@ export function HomePageV2() {
       <section className="py-24">
         <div className="container mx-auto px-6 text-center max-w-lg">
           <div className="w-8 h-0.5 bg-primary rounded-full mx-auto mb-8" />
-          <h2 className="text-3xl font-bold mb-3">Ready to see if it's a good fit?</h2>
+          <h2 className="text-3xl font-bold mb-3">
+            Ready to see if it's a good fit?
+          </h2>
           <p className="text-muted-foreground text-base mb-8 leading-relaxed">
-            The first class is free. No uniform, no commitment —
-            just come and see what we're about.
+            The first class is free. No uniform, no commitment — just come and
+            see what we're about.
           </p>
           <Button size="lg" className="px-10 font-semibold" onClick={goToTrial}>
             Book a Free Trial Class
           </Button>
           <p className="text-sm text-muted-foreground mt-5">
             Prefer to call first?{' '}
-            <a href="tel:+12095550123" className="font-medium text-foreground hover:underline">
+            <a
+              href="tel:+12095550123"
+              className="font-medium text-foreground hover:underline"
+            >
               (209) 555-0123
             </a>
           </p>
         </div>
       </section>
-
     </div>
   );
 }

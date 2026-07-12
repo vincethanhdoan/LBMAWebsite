@@ -5,7 +5,10 @@ import { Camera, Loader2, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { AvatarCropperDialog } from '../ui/avatar-cropper-dialog';
 import { toast } from 'sonner';
-import { ACCEPTED_IMAGE_TYPES, MAX_PROFILE_IMAGE_SIZE_MB } from '../../lib/supabase/storage';
+import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_PROFILE_IMAGE_SIZE_MB,
+} from '../../lib/supabase/storage';
 
 type PhotoUploaderProps = {
   currentUrl: string | null;
@@ -47,7 +50,9 @@ export function PhotoUploader({
       return;
     }
     if (file.size > MAX_PROFILE_IMAGE_SIZE_MB * 1024 * 1024) {
-      toast.error(`Image must be smaller than ${MAX_PROFILE_IMAGE_SIZE_MB} MB.`);
+      toast.error(
+        `Image must be smaller than ${MAX_PROFILE_IMAGE_SIZE_MB} MB.`,
+      );
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
@@ -62,7 +67,9 @@ export function PhotoUploader({
     try {
       await onRemove();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to remove photo.');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to remove photo.',
+      );
     } finally {
       setRemoving(false);
     }
@@ -73,11 +80,19 @@ export function PhotoUploader({
   const isVertical = layout === 'vertical';
 
   return (
-    <div className={isVertical ? 'flex flex-col items-center gap-2 w-full' : 'flex items-center gap-4'}>
+    <div
+      className={
+        isVertical
+          ? 'flex flex-col items-center gap-2 w-full'
+          : 'flex items-center gap-4'
+      }
+    >
       <div className="relative group">
         <Avatar key={currentUrl ?? 'no-image'} className={sizeClasses[size]}>
           {currentUrl && <AvatarImage src={currentUrl} alt="Profile photo" />}
-          <AvatarFallback className="text-lg bg-sidebar-primary text-sidebar-primary-foreground font-semibold">{fallback}</AvatarFallback>
+          <AvatarFallback className="text-lg bg-sidebar-primary text-sidebar-primary-foreground font-semibold">
+            {fallback}
+          </AvatarFallback>
         </Avatar>
         {!disabled && (
           <button
@@ -101,7 +116,11 @@ export function PhotoUploader({
         disabled={disabled}
       />
 
-      <div className={isVertical ? 'flex flex-col gap-1 w-full' : 'flex flex-col gap-1'}>
+      <div
+        className={
+          isVertical ? 'flex flex-col gap-1 w-full' : 'flex flex-col gap-1'
+        }
+      >
         {!disabled && (
           <Button
             type="button"
@@ -121,11 +140,21 @@ export function PhotoUploader({
             size="sm"
             onClick={() => setConfirmRemove(true)}
             disabled={busy}
-            className={isVertical ? 'w-full text-xs text-destructive hover:text-destructive' : 'text-destructive hover:text-destructive'}
+            className={
+              isVertical
+                ? 'w-full text-xs text-destructive hover:text-destructive'
+                : 'text-destructive hover:text-destructive'
+            }
           >
             {removing ? (
               <>
-                <Loader2 className={isVertical ? 'w-3 h-3 animate-spin' : 'w-4 h-4 mr-2 animate-spin'} />
+                <Loader2
+                  className={
+                    isVertical
+                      ? 'w-3 h-3 animate-spin'
+                      : 'w-4 h-4 mr-2 animate-spin'
+                  }
+                />
                 Removing...
               </>
             ) : (

@@ -1,0 +1,12 @@
+dist
+node_modules
+package-lock.json
+supabase/migrations
+supabase/templates
+docs
+*.md
+
+# local files, not part of the project
+.*
+tasks
+skills-lock.json

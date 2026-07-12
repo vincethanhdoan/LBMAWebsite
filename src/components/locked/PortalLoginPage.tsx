@@ -7,7 +7,10 @@ export function PortalLoginPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="v3-root" style={{ minHeight: '100svh', backgroundColor: V3.bg }}>
+    <div
+      className="v3-root"
+      style={{ minHeight: '100svh', backgroundColor: V3.bg }}
+    >
       <LoginModal onClose={() => navigate('/', { replace: true })} />
     </div>
   );

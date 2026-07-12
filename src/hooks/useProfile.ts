@@ -53,10 +53,16 @@ export function useProfile(user: ProfileUser | null) {
   const students = data?.students ?? [];
   const review = data?.review ?? null;
   const loading = isLoading;
-  const errorMessage = error instanceof Error ? error.message : error ? 'Failed to load profile' : null;
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : error
+        ? 'Failed to load profile'
+        : null;
 
   const invalidate = useCallback(() => {
-    if (user) queryClient.invalidateQueries({ queryKey: queryKeys.profile(user.id) });
+    if (user)
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(user.id) });
   }, [queryClient, user]);
 
   const saveFamily = async (updates: Partial<Family>) => {
@@ -66,14 +72,25 @@ export function useProfile(user: ProfileUser | null) {
     return updated;
   };
 
-  const addGuardian = async (guardian: Omit<Guardian, 'guardian_id' | 'created_at' | 'updated_at' | 'family_id'>) => {
+  const addGuardian = async (
+    guardian: Omit<
+      Guardian,
+      'guardian_id' | 'created_at' | 'updated_at' | 'family_id'
+    >,
+  ) => {
     if (!family) throw new Error('No family found');
-    const newGuardian = await createGuardian({ ...guardian, family_id: family.family_id });
+    const newGuardian = await createGuardian({
+      ...guardian,
+      family_id: family.family_id,
+    });
     invalidate();
     return newGuardian;
   };
 
-  const updateGuardianData = async (guardianId: string, updates: Partial<Guardian>) => {
+  const updateGuardianData = async (
+    guardianId: string,
+    updates: Partial<Guardian>,
+  ) => {
     const updated = await updateGuardian(guardianId, updates);
     invalidate();
     return updated;
@@ -84,14 +101,25 @@ export function useProfile(user: ProfileUser | null) {
     invalidate();
   };
 
-  const addStudent = async (student: Omit<Student, 'student_id' | 'created_at' | 'updated_at' | 'family_id'>) => {
+  const addStudent = async (
+    student: Omit<
+      Student,
+      'student_id' | 'created_at' | 'updated_at' | 'family_id'
+    >,
+  ) => {
     if (!family) throw new Error('No family found');
-    const newStudent = await createStudent({ ...student, family_id: family.family_id });
+    const newStudent = await createStudent({
+      ...student,
+      family_id: family.family_id,
+    });
     invalidate();
     return newStudent;
   };
 
-  const updateStudentData = async (studentId: string, updates: Partial<Student>) => {
+  const updateStudentData = async (
+    studentId: string,
+    updates: Partial<Student>,
+  ) => {
     const updated = await updateStudent(studentId, updates);
     invalidate();
     return updated;

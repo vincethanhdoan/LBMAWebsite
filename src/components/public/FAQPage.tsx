@@ -21,7 +21,10 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
-        <span className="text-sm font-bold leading-snug" style={{ color: V3.text }}>
+        <span
+          className="text-sm font-bold leading-snug"
+          style={{ color: V3.text }}
+        >
           {q}
         </span>
         <span
@@ -65,18 +68,35 @@ export function FAQPage() {
 
   return (
     <div>
-
       {/* ── HERO ── */}
-      <section className="py-14" style={{ backgroundColor: 'white', borderBottom: `1px solid ${V3.border}` }}>
+      <section
+        className="py-14"
+        style={{
+          backgroundColor: 'white',
+          borderBottom: `1px solid ${V3.border}`,
+        }}
+      >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <p className="v3-eyebrow mb-4">{f.eyebrow}</p>
           <h1
             className="v3-h font-black mb-6"
-            style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: V3.text, lineHeight: 1.0, letterSpacing: '-0.01em' }}
+            style={{
+              fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
+              color: V3.text,
+              lineHeight: 1.0,
+              letterSpacing: '-0.01em',
+            }}
           >
             {f.heading}
           </h1>
-          <p style={{ fontSize: '0.95rem', lineHeight: 1.7, color: V3.muted, maxWidth: '48ch' }}>
+          <p
+            style={{
+              fontSize: '0.95rem',
+              lineHeight: 1.7,
+              color: V3.muted,
+              maxWidth: '48ch',
+            }}
+          >
             {f.sub}
           </p>
         </div>
@@ -86,19 +106,35 @@ export function FAQPage() {
       {f.faqs.map(({ category, subtitle, items }, idx) => (
         <section
           key={category}
-          style={{ backgroundColor: idx % 2 === 0 ? V3.surface : 'white', padding: '68px 0' }}
+          style={{
+            backgroundColor: idx % 2 === 0 ? V3.surface : 'white',
+            padding: '68px 0',
+          }}
         >
           <div className="max-w-3xl mx-auto px-6 md:px-10">
-
             <div className="flex items-start gap-4 mb-8">
               <div style={{ paddingTop: '4px' }}>
                 <h2
                   className="v3-h font-extrabold uppercase"
-                  style={{ fontSize: '1.6rem', color: V3.text, lineHeight: 1.05, letterSpacing: '0.01em', marginBottom: '4px' }}
+                  style={{
+                    fontSize: '1.6rem',
+                    color: V3.text,
+                    lineHeight: 1.05,
+                    letterSpacing: '0.01em',
+                    marginBottom: '4px',
+                  }}
                 >
                   {category}
                 </h2>
-                <p style={{ fontSize: '0.78rem', color: V3.muted, lineHeight: 1.5 }}>{subtitle}</p>
+                <p
+                  style={{
+                    fontSize: '0.78rem',
+                    color: V3.muted,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {subtitle}
+                </p>
               </div>
             </div>
 
@@ -107,7 +143,6 @@ export function FAQPage() {
                 <FaqItem key={item.q} q={item.q} a={item.a} />
               ))}
             </div>
-
           </div>
         </section>
       ))}
@@ -131,11 +166,23 @@ export function FAQPage() {
             </p>
             <h2
               className="v3-h font-black mb-3"
-              style={{ fontSize: 'clamp(2rem, 4vw, 2.75rem)', color: 'white', lineHeight: 1.0, letterSpacing: '-0.01em' }}
+              style={{
+                fontSize: 'clamp(2rem, 4vw, 2.75rem)',
+                color: 'white',
+                lineHeight: 1.0,
+                letterSpacing: '-0.01em',
+              }}
             >
               {f.ctaHeading}
             </h2>
-            <p style={{ fontSize: '0.875rem', color: 'oklch(88% 0.032 22)', lineHeight: 1.65, maxWidth: '40ch' }}>
+            <p
+              style={{
+                fontSize: '0.875rem',
+                color: 'oklch(88% 0.032 22)',
+                lineHeight: 1.65,
+                maxWidth: '40ch',
+              }}
+            >
               {f.ctaBody}
             </p>
           </div>
@@ -147,7 +194,6 @@ export function FAQPage() {
           </button>
         </div>
       </section>
-
     </div>
   );
 }

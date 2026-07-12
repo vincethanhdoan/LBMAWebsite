@@ -44,7 +44,11 @@ const VIEWS: { id: LeadView; label: string }[] = [
   { id: 'all', label: 'All Leads' },
 ];
 
-const TERMINAL_STATUSES = new Set<EnrollmentLead['status']>(['enrolled', 'closed', 'denied']);
+const TERMINAL_STATUSES = new Set<EnrollmentLead['status']>([
+  'enrolled',
+  'closed',
+  'denied',
+]);
 
 function withId(set: Set<string>, id: string): Set<string> {
   const next = new Set(set);
@@ -60,9 +64,14 @@ function withoutId(set: Set<string>, id: string): Set<string> {
 
 export function AdminEnrollmentLeadsTab() {
   const queryClient = useQueryClient();
-  const { data: activeLeads = [], isLoading: activeLoading, isError: activeIsError, refetch: refetchActiveLeads } = useActiveLeads();
+  const {
+    data: activeLeads = [],
+    isLoading: activeLoading,
+    isError: activeIsError,
+    refetch: refetchActiveLeads,
+  } = useActiveLeads();
   const { data: blocks = [] } = useBlockedDates();
-  const actions = useLeadActions({ onError: msg => toast.error(msg) });
+  const actions = useLeadActions({ onError: (msg) => toast.error(msg) });
 
   // Terminal + archived leads are loaded here only so deep links and the detail
   // panel can resolve leads that live outside the active set. The empty search
@@ -85,15 +94,22 @@ export function AdminEnrollmentLeadsTab() {
   // pagination). Used only when the live lookup misses, so fresher query data
   // always wins.
   const [fallbackLead, setFallbackLead] = useState<EnrollmentLead | null>(null);
-  const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(null);
-  const [allInitialFilter, setAllInitialFilter] = useState<AllLeadsFilter | undefined>(undefined);
+  const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(
+    null,
+  );
+  const [allInitialFilter, setAllInitialFilter] = useState<
+    AllLeadsFilter | undefined
+  >(undefined);
 
   const [denyTarget, setDenyTarget] = useState<EnrollmentLead | null>(null);
   const [resendTarget, setResendTarget] = useState<EnrollmentLead | null>(null);
   const [pickDateTargetId, setPickDateTargetId] = useState<string | null>(null);
   const [editTargetId, setEditTargetId] = useState<string | null>(null);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ type: 'dismiss' | 'archive'; lead: EnrollmentLead } | null>(null);
+  const [pendingAction, setPendingAction] = useState<{
+    type: 'dismiss' | 'archive';
+    lead: EnrollmentLead;
+  } | null>(null);
   const [actingIds, setActingIds] = useState<Set<string>>(new Set());
 
   const processedLeadParam = useRef<string | null>(null);
@@ -104,14 +120,16 @@ export function AdminEnrollmentLeadsTab() {
   }, []);
 
   const rawView = searchParams.get('view');
-  const view: LeadView = VIEWS.some(v => v.id === rawView) ? (rawView as LeadView) : 'overview';
+  const view: LeadView = VIEWS.some((v) => v.id === rawView)
+    ? (rawView as LeadView)
+    : 'overview';
 
   const terminalLeads = useMemo(
-    () => (terminalQuery.data?.pages ?? []).flatMap(p => p.leads),
+    () => (terminalQuery.data?.pages ?? []).flatMap((p) => p.leads),
     [terminalQuery.data],
   );
   const archivedLeads = useMemo(
-    () => (archivedQuery.data?.pages ?? []).flatMap(p => p.leads),
+    () => (archivedQuery.data?.pages ?? []).flatMap((p) => p.leads),
     [archivedQuery.data],
   );
   const allLoadedLeads = useMemo(
@@ -138,7 +156,10 @@ export function AdminEnrollmentLeadsTab() {
   // is stripped immediately after so a later remount starts clean.
   function goToAppointments(dateKey?: string) {
     if (dateKey) {
-      setSearchParams({ tab: 'leads', view: 'appointments', date: dateKey }, { replace: true });
+      setSearchParams(
+        { tab: 'leads', view: 'appointments', date: dateKey },
+        { replace: true },
+      );
     } else {
       goToView('appointments');
     }
@@ -167,7 +188,7 @@ export function AdminEnrollmentLeadsTab() {
     }
     processedLeadParam.current = deepLinkLeadId;
 
-    const lead = allLoadedLeads.find(l => l.lead_id === deepLinkLeadId);
+    const lead = allLoadedLeads.find((l) => l.lead_id === deepLinkLeadId);
     let nextView: LeadView = 'all';
     if (lead) {
       setDetailLeadId(lead.lead_id);
@@ -186,12 +207,22 @@ export function AdminEnrollmentLeadsTab() {
       nextView = 'all';
     }
     setSearchParams({ tab: 'leads', view: nextView }, { replace: true });
-  }, [deepLinkLeadId, activeLoading, terminalLoading, allLoadedLeads, view, searchParams, setSearchParams]);
+  }, [
+    deepLinkLeadId,
+    activeLoading,
+    terminalLoading,
+    allLoadedLeads,
+    view,
+    searchParams,
+    setSearchParams,
+  ]);
 
   // Scroll the highlighted row into view once it renders, then fade the ring.
   useEffect(() => {
     if (!highlightedLeadId) return;
-    document.getElementById('lead-' + highlightedLeadId)?.scrollIntoView({ block: 'center' });
+    document
+      .getElementById('lead-' + highlightedLeadId)
+      ?.scrollIntoView({ block: 'center' });
     const timer = setTimeout(() => setHighlightedLeadId(null), 2000);
     return () => clearTimeout(timer);
   }, [highlightedLeadId]);
@@ -201,20 +232,24 @@ export function AdminEnrollmentLeadsTab() {
   // passed when the lead isn't in the loaded pages; a fallback-resolved lead is
   // exempt from close-on-disappear since it will never appear in those pages.
   const liveDetailLead = detailLeadId
-    ? allLoadedLeads.find(l => l.lead_id === detailLeadId) ?? null
+    ? (allLoadedLeads.find((l) => l.lead_id === detailLeadId) ?? null)
     : null;
   const detailLead =
     liveDetailLead ??
-    (fallbackLead && fallbackLead.lead_id === detailLeadId ? fallbackLead : null);
+    (fallbackLead && fallbackLead.lead_id === detailLeadId
+      ? fallbackLead
+      : null);
   const pickDateTarget = pickDateTargetId
-    ? activeLeads.find(l => l.lead_id === pickDateTargetId) ?? null
+    ? (activeLeads.find((l) => l.lead_id === pickDateTargetId) ?? null)
     : null;
   const liveEditTarget = editTargetId
-    ? allLoadedLeads.find(l => l.lead_id === editTargetId) ?? null
+    ? (allLoadedLeads.find((l) => l.lead_id === editTargetId) ?? null)
     : null;
   const editTarget =
     liveEditTarget ??
-    (fallbackLead && fallbackLead.lead_id === editTargetId ? fallbackLead : null);
+    (fallbackLead && fallbackLead.lead_id === editTargetId
+      ? fallbackLead
+      : null);
 
   useEffect(() => {
     if (detailLeadId && !detailLead && !activeLoading && !terminalLoading) {
@@ -225,33 +260,37 @@ export function AdminEnrollmentLeadsTab() {
 
   async function handleDismissSilently(lead: EnrollmentLead) {
     if (actingIds.has(lead.lead_id)) return;
-    setActingIds(s => withId(s, lead.lead_id));
+    setActingIds((s) => withId(s, lead.lead_id));
     try {
       await dismissLead.mutateAsync(lead.lead_id);
       toast.success('Lead dismissed');
     } catch {
       toast.error('Failed to dismiss lead');
     } finally {
-      setActingIds(s => withoutId(s, lead.lead_id));
+      setActingIds((s) => withoutId(s, lead.lead_id));
       setPendingAction(null);
     }
   }
 
   async function handleArchiveLead(lead: EnrollmentLead) {
     if (actingIds.has(lead.lead_id)) return;
-    setActingIds(s => withId(s, lead.lead_id));
+    setActingIds((s) => withId(s, lead.lead_id));
     try {
       await archiveLead.mutateAsync(lead.lead_id);
       toast('Lead archived', {
         action: {
           label: 'Undo',
-          onClick: () => { restoreLead.mutate(lead.lead_id, { onError: () => toast.error('Failed to restore lead') }); },
+          onClick: () => {
+            restoreLead.mutate(lead.lead_id, {
+              onError: () => toast.error('Failed to restore lead'),
+            });
+          },
         },
       });
     } catch {
       toast.error('Failed to archive lead');
     } finally {
-      setActingIds(s => withoutId(s, lead.lead_id));
+      setActingIds((s) => withoutId(s, lead.lead_id));
       setPendingAction(null);
     }
   }
@@ -268,7 +307,9 @@ export function AdminEnrollmentLeadsTab() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold">Enrollment Leads</h2>
-          <p className="text-[13px] text-muted-foreground mt-0.5">{todayLabel}</p>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
+            {todayLabel}
+          </p>
         </div>
         <Button variant="outline" onClick={() => setShowNewLeadModal(true)}>
           + New Lead
@@ -278,7 +319,7 @@ export function AdminEnrollmentLeadsTab() {
       {/* Sub-nav */}
       <div className="border-b border-border">
         <div className="flex gap-0 overflow-x-auto">
-          {VIEWS.map(v => {
+          {VIEWS.map((v) => {
             const isActive = view === v.id;
             return (
               <button
@@ -303,8 +344,15 @@ export function AdminEnrollmentLeadsTab() {
       ) : activeIsError ? (
         <div className="rounded-xl border bg-card px-6 py-10 text-center">
           <p className="text-sm font-medium">Couldn't load leads.</p>
-          <p className="text-sm text-muted-foreground mt-1">Check your connection and try again.</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => refetchActiveLeads()}>
+          <p className="text-sm text-muted-foreground mt-1">
+            Check your connection and try again.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => refetchActiveLeads()}
+          >
             Try again
           </Button>
         </div>
@@ -341,7 +389,9 @@ export function AdminEnrollmentLeadsTab() {
               blocks={blocks}
               actions={actions}
               onOpenLead={openLead}
-              onManageAvailability={() => setSearchParams({ tab: 'availability' })}
+              onManageAvailability={() =>
+                setSearchParams({ tab: 'availability' })
+              }
               initialSelectedDate={dateParam}
               highlightedLeadId={highlightedLeadId}
             />
@@ -363,22 +413,29 @@ export function AdminEnrollmentLeadsTab() {
           lead={detailLead}
           onClose={closeDetail}
           actions={actions}
-          onEdit={l => setEditTargetId(l.lead_id)}
+          onEdit={(l) => setEditTargetId(l.lead_id)}
           onDeny={setDenyTarget}
-          onPickDate={l => setPickDateTargetId(l.lead_id)}
+          onPickDate={(l) => setPickDateTargetId(l.lead_id)}
           onResend={setResendTarget}
-          onDismiss={l => setPendingAction({ type: 'dismiss', lead: l })}
-          onArchive={l => setPendingAction({ type: 'archive', lead: l })}
+          onDismiss={(l) => setPendingAction({ type: 'dismiss', lead: l })}
+          onArchive={(l) => setPendingAction({ type: 'archive', lead: l })}
         />
       )}
 
       {/* Modals */}
       {pendingAction && (
-        <AlertDialog open onOpenChange={open => { if (!open) setPendingAction(null); }}>
+        <AlertDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setPendingAction(null);
+          }}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {pendingAction.type === 'dismiss' ? 'Dismiss lead?' : 'Archive this lead?'}
+                {pendingAction.type === 'dismiss'
+                  ? 'Dismiss lead?'
+                  : 'Archive this lead?'}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {pendingAction.type === 'dismiss'
@@ -389,7 +446,11 @@ export function AdminEnrollmentLeadsTab() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                className={pendingAction.type === 'dismiss' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
+                className={
+                  pendingAction.type === 'dismiss'
+                    ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                    : undefined
+                }
                 disabled={actingIds.has(pendingAction.lead.lead_id)}
                 onClick={() =>
                   pendingAction.type === 'dismiss'
@@ -404,19 +465,28 @@ export function AdminEnrollmentLeadsTab() {
         </AlertDialog>
       )}
       {resendTarget && (
-        <AlertDialog open onOpenChange={open => { if (!open) setResendTarget(null); }}>
+        <AlertDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setResendTarget(null);
+          }}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Resend booking link?</AlertDialogTitle>
               <AlertDialogDescription>
-                This re-sends the booking link and lets the family rebook. Their current appointment stays until they pick a new date.
+                This re-sends the booking link and lets the family rebook. Their
+                current appointment stays until they pick a new date.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 disabled={actions.busyLeadIds.has(resendTarget.lead_id)}
-                onClick={async () => { await actions.resendBookingLink(resendTarget); setResendTarget(null); }}
+                onClick={async () => {
+                  await actions.resendBookingLink(resendTarget);
+                  setResendTarget(null);
+                }}
               >
                 Resend booking link
               </AlertDialogAction>
@@ -427,14 +497,19 @@ export function AdminEnrollmentLeadsTab() {
       {denyTarget && (
         <DenyModal
           lead={denyTarget}
-          onConfirm={async (leadId, message) => { if (await actions.deny(leadId, message)) setDenyTarget(null); }}
+          onConfirm={async (leadId, message) => {
+            if (await actions.deny(leadId, message)) setDenyTarget(null);
+          }}
           onCancel={() => setDenyTarget(null)}
         />
       )}
       {pickDateTarget && (
         <PickDateModal
           lead={pickDateTarget}
-          onConfirm={async bookings => { if (await actions.bookAppointments(pickDateTarget, bookings)) setPickDateTargetId(null); }}
+          onConfirm={async (bookings) => {
+            if (await actions.bookAppointments(pickDateTarget, bookings))
+              setPickDateTargetId(null);
+          }}
           onCancel={() => setPickDateTargetId(null)}
         />
       )}
@@ -448,7 +523,9 @@ export function AdminEnrollmentLeadsTab() {
       {showNewLeadModal && (
         <NewLeadModal
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.enrollmentLeads(),
+            });
             setShowNewLeadModal(false);
           }}
           onCancel={() => setShowNewLeadModal(false)}

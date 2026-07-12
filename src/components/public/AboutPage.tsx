@@ -13,9 +13,13 @@ export function AboutPage() {
 
   return (
     <div>
-
       {/* ── HERO ── */}
-      <section style={{ backgroundColor: 'white', borderBottom: `1px solid ${V3.border}` }}>
+      <section
+        style={{
+          backgroundColor: 'white',
+          borderBottom: `1px solid ${V3.border}`,
+        }}
+      >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div
             className="grid md:grid-cols-2 md:items-stretch"
@@ -25,11 +29,18 @@ export function AboutPage() {
               <p className="v3-eyebrow mb-5">{a.eyebrow}</p>
               <h1
                 className="v3-h font-black mb-6"
-                style={{ fontSize: 'clamp(2.75rem, 6vw, 4.75rem)', color: V3.text, lineHeight: 1.05 }}
+                style={{
+                  fontSize: 'clamp(2.75rem, 6vw, 4.75rem)',
+                  color: V3.text,
+                  lineHeight: 1.05,
+                }}
               >
                 {a.heading}
               </h1>
-              <p className="text-base leading-relaxed" style={{ color: V3.muted, maxWidth: '38ch' }}>
+              <p
+                className="text-base leading-relaxed"
+                style={{ color: V3.muted, maxWidth: '38ch' }}
+              >
                 {a.sub}
               </p>
             </div>
@@ -49,13 +60,20 @@ export function AboutPage() {
         <div className="max-w-3xl mx-auto px-6 text-center">
           <p
             className="text-xs font-bold uppercase tracking-[0.2em] mb-6"
-            style={{ color: 'oklch(85% 0.055 20)', fontFamily: "'Nunito', sans-serif" }}
+            style={{
+              color: 'oklch(85% 0.055 20)',
+              fontFamily: "'Nunito', sans-serif",
+            }}
           >
             {a.missionEyebrow}
           </p>
           <blockquote
             className="v3-h font-black"
-            style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: 'white', lineHeight: 1.1 }}
+            style={{
+              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+              color: 'white',
+              lineHeight: 1.1,
+            }}
           >
             {a.missionQuote}
           </blockquote>
@@ -70,7 +88,11 @@ export function AboutPage() {
               <p className="v3-eyebrow mb-4">{a.approachEyebrow}</p>
               <h2
                 className="v3-h font-black mb-10"
-                style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: V3.text, lineHeight: 1.05 }}
+                style={{
+                  fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)',
+                  color: V3.text,
+                  lineHeight: 1.05,
+                }}
               >
                 {a.approachHeading}
               </h2>
@@ -87,10 +109,16 @@ export function AboutPage() {
                     {n}
                   </span>
                   <div>
-                    <h3 className="v3-h text-xl font-bold mb-2" style={{ color: V3.text }}>
+                    <h3
+                      className="v3-h text-xl font-bold mb-2"
+                      style={{ color: V3.text }}
+                    >
                       {title}
                     </h3>
-                    <p className="text-sm leading-relaxed" style={{ color: V3.muted }}>
+                    <p
+                      className="text-sm leading-relaxed"
+                      style={{ color: V3.muted }}
+                    >
                       {body}
                     </p>
                   </div>
@@ -122,12 +150,19 @@ export function AboutPage() {
         }}
       >
         {[
-          { src: '/photos/1-_MG_5182.jpg',          alt: 'Students in class' },
-          { src: '/photos/students-trophy-dojo.jpg', alt: 'LBMAA students with trophies' },
-          { src: '/photos/59-_MG_4959.jpg',          alt: 'LBMAA training floor' },
+          { src: '/photos/1-_MG_5182.jpg', alt: 'Students in class' },
+          {
+            src: '/photos/students-trophy-dojo.jpg',
+            alt: 'LBMAA students with trophies',
+          },
+          { src: '/photos/59-_MG_4959.jpg', alt: 'LBMAA training floor' },
         ].map(({ src, alt }) => (
           <div key={src} className="overflow-hidden bg-gray-200">
-            <ImageWithFallback src={src} alt={alt} className="w-full h-full object-cover" />
+            <ImageWithFallback
+              src={src}
+              alt={alt}
+              className="w-full h-full object-cover"
+            />
           </div>
         ))}
       </div>
@@ -147,11 +182,18 @@ export function AboutPage() {
               <p className="v3-eyebrow mb-4">{a.teachEyebrow}</p>
               <h2
                 className="v3-h font-black mb-5"
-                style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: V3.text, lineHeight: 1.05 }}
+                style={{
+                  fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)',
+                  color: V3.text,
+                  lineHeight: 1.05,
+                }}
               >
                 {a.teachHeading}
               </h2>
-              <p className="text-[0.95rem] leading-relaxed mb-7" style={{ color: V3.muted }}>
+              <p
+                className="text-[0.95rem] leading-relaxed mb-7"
+                style={{ color: V3.muted }}
+              >
                 {a.teachBody}
               </p>
               <ul className="grid grid-cols-2 gap-y-2.5 gap-x-6">
@@ -166,7 +208,10 @@ export function AboutPage() {
                         marginTop: '6px',
                       }}
                     />
-                    <span className="text-sm leading-snug" style={{ color: V3.muted }}>
+                    <span
+                      className="text-sm leading-snug"
+                      style={{ color: V3.muted }}
+                    >
                       {d}
                     </span>
                   </li>
@@ -183,7 +228,11 @@ export function AboutPage() {
           <p className="v3-eyebrow mb-4">{a.valuesEyebrow}</p>
           <h2
             className="v3-h font-black mb-10"
-            style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: V3.text, lineHeight: 1.05 }}
+            style={{
+              fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)',
+              color: V3.text,
+              lineHeight: 1.05,
+            }}
           >
             {a.valuesHeading}
           </h2>
@@ -204,7 +253,10 @@ export function AboutPage() {
                 >
                   {label}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: V3.muted }}>
+                <p
+                  className="text-sm leading-relaxed"
+                  style={{ color: V3.muted }}
+                >
                   {desc}
                 </p>
               </div>
@@ -227,7 +279,11 @@ export function AboutPage() {
                 <p className="v3-eyebrow mb-1">{a.foundationEyebrow}</p>
                 <h2
                   className="v3-h font-black"
-                  style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', color: V3.text, lineHeight: 1.05 }}
+                  style={{
+                    fontSize: 'clamp(1.5rem, 3vw, 2.25rem)',
+                    color: V3.text,
+                    lineHeight: 1.05,
+                  }}
                 >
                   {a.foundationHeading}
                 </h2>
@@ -257,13 +313,22 @@ export function AboutPage() {
                     />
                   </div>
                   <div className="p-7">
-                    <h3 className="v3-h text-xl font-bold mb-1" style={{ color: V3.text }}>
+                    <h3
+                      className="v3-h text-xl font-bold mb-1"
+                      style={{ color: V3.text }}
+                    >
                       {name}
                     </h3>
-                    <p className="text-sm font-semibold mb-4" style={{ color: V3.primary }}>
+                    <p
+                      className="text-sm font-semibold mb-4"
+                      style={{ color: V3.primary }}
+                    >
                       {role}
                     </p>
-                    <p className="text-sm leading-relaxed" style={{ color: V3.muted }}>
+                    <p
+                      className="text-sm leading-relaxed"
+                      style={{ color: V3.muted }}
+                    >
                       {bio}
                     </p>
                   </div>
@@ -273,7 +338,6 @@ export function AboutPage() {
           </div>
         </div>
       </section>
-
     </div>
   );
 }

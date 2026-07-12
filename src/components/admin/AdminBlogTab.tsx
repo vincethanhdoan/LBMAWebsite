@@ -4,12 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Label } from '../ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { toast } from 'sonner';
-import { Edit2, Trash2, MessageCircle, Send, Search, Loader2 } from 'lucide-react';
+import {
+  Edit2,
+  Trash2,
+  MessageCircle,
+  Send,
+  Search,
+  Loader2,
+} from 'lucide-react';
 import {
   useBlogPosts,
   useBlogComments,
@@ -52,7 +65,11 @@ function AdminBlogCommentSection({
   onCountLoaded?: (count: number) => void;
 }) {
   const [commentText, setCommentText] = useState('');
-  const [confirmState, setConfirmState] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
   const { data: rawComments = [] } = useBlogComments(postId);
   const createComment = useCreateBlogComment(postId);
   const deleteComment = useDeleteBlogComment(postId);
@@ -66,7 +83,9 @@ function AdminBlogCommentSection({
   }));
 
   const onCountLoadedRef = useRef(onCountLoaded);
-  useEffect(() => { onCountLoadedRef.current = onCountLoaded; });
+  useEffect(() => {
+    onCountLoadedRef.current = onCountLoaded;
+  });
   useEffect(() => {
     onCountLoadedRef.current?.(comments.length);
   }, [comments.length]);
@@ -77,7 +96,10 @@ function AdminBlogCommentSection({
       await createComment.mutateAsync({ body: commentText.trim() });
       setCommentText('');
     } catch (error) {
-      toast.error('Error adding comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error adding comment: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     }
   };
 
@@ -91,7 +113,10 @@ function AdminBlogCommentSection({
           await deleteComment.mutateAsync(commentId);
           toast.success('Comment deleted!');
         } catch (error) {
-          toast.error('Error deleting comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
+          toast.error(
+            'Error deleting comment: ' +
+              (error instanceof Error ? error.message : 'Unknown error'),
+          );
         }
       },
     });
@@ -104,7 +129,7 @@ function AdminBlogCommentSection({
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -115,7 +140,12 @@ function AdminBlogCommentSection({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
-                {comment.authorAvatarUrl && <AvatarImage src={comment.authorAvatarUrl} alt={comment.authorName} />}
+                {comment.authorAvatarUrl && (
+                  <AvatarImage
+                    src={comment.authorAvatarUrl}
+                    alt={comment.authorName}
+                  />
+                )}
                 <AvatarFallback className="text-xs">
                   {comment.authorName[0]}
                 </AvatarFallback>
@@ -167,18 +197,27 @@ function AdminBlogCommentSection({
   );
 }
 
-
 export function AdminBlogTab({ user: _user }: { user: User }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editBody, setEditBody] = useState('');
-  const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({});
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [expandedComments, setExpandedComments] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>(
+    {},
+  );
   const [saving, setSaving] = useState(false);
-  const [confirmState, setConfirmState] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(
+    null,
+  );
   const processedPostParam = useRef<string | null>(null);
 
   const { data: rawPosts = [], isLoading: loading } = useBlogPosts();
@@ -195,14 +234,15 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
     comments: [],
   }));
 
-  const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.body.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.authorName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPosts = posts.filter(
+    (post) =>
+      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.body.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.authorName.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const sortedPosts = [...filteredPosts].sort((a, b) =>
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  const sortedPosts = [...filteredPosts].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 
   // Deep link: `?post=<id>` clears any active search, scrolls to the post and
@@ -225,7 +265,7 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
     processedPostParam.current = deepLinkPostId;
 
     setSearchTerm('');
-    if (posts.some(p => p.id === deepLinkPostId)) {
+    if (posts.some((p) => p.id === deepLinkPostId)) {
       setHighlightedPostId(deepLinkPostId);
     }
 
@@ -234,7 +274,9 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
 
   useEffect(() => {
     if (!highlightedPostId) return;
-    document.getElementById('post-' + highlightedPostId)?.scrollIntoView({ block: 'center' });
+    document
+      .getElementById('post-' + highlightedPostId)
+      ?.scrollIntoView({ block: 'center' });
     const timer = setTimeout(() => setHighlightedPostId(null), 2000);
     return () => clearTimeout(timer);
   }, [highlightedPostId]);
@@ -255,7 +297,10 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
       setEditBody('');
       toast.success('Blog post updated!');
     } catch (error) {
-      toast.error('Error updating blog post: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error updating blog post: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     } finally {
       setSaving(false);
     }
@@ -264,14 +309,18 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
   const handleDelete = (id: string) => {
     setConfirmState({
       title: 'Delete blog post',
-      description: 'Are you sure you want to delete this blog post? This action cannot be undone.',
+      description:
+        'Are you sure you want to delete this blog post? This action cannot be undone.',
       onConfirm: async () => {
         setConfirmState(null);
         try {
           await deletePost.mutateAsync(id);
           toast.success('Blog post deleted!');
         } catch (error) {
-          toast.error('Error deleting blog post: ' + (error instanceof Error ? error.message : 'Unknown error'));
+          toast.error(
+            'Error deleting blog post: ' +
+              (error instanceof Error ? error.message : 'Unknown error'),
+          );
         }
       },
     });
@@ -290,14 +339,14 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
   const toggleComments = (postId: string) => {
     setExpandedComments({
       ...expandedComments,
-      [postId]: !expandedComments[postId]
+      [postId]: !expandedComments[postId],
     });
   };
 
@@ -336,13 +385,14 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
       </Card>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
+      <Dialog
+        open={!!editingPost}
+        onOpenChange={(open) => !open && setEditingPost(null)}
+      >
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Blog Post</DialogTitle>
-            <DialogDescription>
-              Update the blog post content
-            </DialogDescription>
+            <DialogDescription>Update the blog post content</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -364,7 +414,8 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
             </div>
             {editingPost && (
               <div className="text-sm text-muted-foreground">
-                Posted by {editingPost.authorName} on {formatDate(editingPost.createdAt)}
+                Posted by {editingPost.authorName} on{' '}
+                {formatDate(editingPost.createdAt)}
               </div>
             )}
           </div>
@@ -394,77 +445,91 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
         {sortedPosts.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-center text-muted-foreground">
-              {searchTerm ? 'No posts found matching your search.' : 'No blog posts yet.'}
+              {searchTerm
+                ? 'No posts found matching your search.'
+                : 'No blog posts yet.'}
             </CardContent>
           </Card>
         ) : (
           sortedPosts.map((post) => (
-          <Card
-            key={post.id}
-            id={`post-${post.id}`}
-            className={`transition-shadow duration-700 ${highlightedPostId === post.id ? 'ring-2 ring-primary' : ''}`}
-          >
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Avatar className="h-8 w-8">
-                      {post.authorAvatarUrl && <AvatarImage src={post.authorAvatarUrl} alt={post.authorName} />}
-                      <AvatarFallback>{post.authorName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{post.authorName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(post.createdAt)}
-                      </p>
+            <Card
+              key={post.id}
+              id={`post-${post.id}`}
+              className={`transition-shadow duration-700 ${highlightedPostId === post.id ? 'ring-2 ring-primary' : ''}`}
+            >
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Avatar className="h-8 w-8">
+                        {post.authorAvatarUrl && (
+                          <AvatarImage
+                            src={post.authorAvatarUrl}
+                            alt={post.authorName}
+                          />
+                        )}
+                        <AvatarFallback>{post.authorName[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{post.authorName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(post.createdAt)}
+                        </p>
+                      </div>
                     </div>
+                    <CardTitle>{post.title}</CardTitle>
                   </div>
-                  <CardTitle>{post.title}</CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditDialog(post)}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(post.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-foreground whitespace-pre-line">
+                  {post.body}
+                </p>
+
+                {/* Comments Section */}
+                <div className="border-t pt-4 space-y-4">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    onClick={() => openEditDialog(post)}
+                    onClick={() => toggleComments(post.id)}
+                    className="gap-2"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <MessageCircle className="w-4 h-4" />
+                    {commentCounts[post.id] !== undefined
+                      ? `${commentCounts[post.id]} ${commentCounts[post.id] === 1 ? 'Comment' : 'Comments'}`
+                      : 'Comments'}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(post.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+
+                  {expandedComments[post.id] && (
+                    <AdminBlogCommentSection
+                      postId={post.id}
+                      onCountLoaded={(count) =>
+                        setCommentCounts((prev) => ({
+                          ...prev,
+                          [post.id]: count,
+                        }))
+                      }
+                    />
+                  )}
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-foreground whitespace-pre-line">{post.body}</p>
-
-              {/* Comments Section */}
-              <div className="border-t pt-4 space-y-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleComments(post.id)}
-                  className="gap-2"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  {commentCounts[post.id] !== undefined
-                    ? `${commentCounts[post.id]} ${commentCounts[post.id] === 1 ? 'Comment' : 'Comments'}`
-                    : 'Comments'}
-                </Button>
-
-                {expandedComments[post.id] && (
-                  <AdminBlogCommentSection
-                    postId={post.id}
-                    onCountLoaded={(count) => setCommentCounts((prev) => ({ ...prev, [post.id]: count }))}
-                  />
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
           ))
         )}
       </div>
@@ -473,9 +538,10 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
       <Card className="bg-secondary border-primary/20">
         <CardContent className="pt-6">
           <p className="text-sm">
-            <strong>Admin Note:</strong> You can edit or delete any blog post or comment.
-            Use this power responsibly - only remove content that violates community guidelines.
-            When in doubt, reach out to the family directly first.
+            <strong>Admin Note:</strong> You can edit or delete any blog post or
+            comment. Use this power responsibly - only remove content that
+            violates community guidelines. When in doubt, reach out to the
+            family directly first.
           </p>
         </CardContent>
       </Card>

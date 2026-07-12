@@ -59,9 +59,11 @@ export function AppointmentsView({
 }): JSX.Element {
   const [segment, setSegment] = useState<'upcoming' | 'follow_up'>('upcoming');
   const [weekOffset, setWeekOffset] = useState(() =>
-    initialSelectedDate ? weekOffsetForDate(initialSelectedDate) ?? 0 : 0,
+    initialSelectedDate ? (weekOffsetForDate(initialSelectedDate) ?? 0) : 0,
   );
-  const [selectedDate, setSelectedDate] = useState<string | null>(initialSelectedDate);
+  const [selectedDate, setSelectedDate] = useState<string | null>(
+    initialSelectedDate,
+  );
 
   const todayKey = toLocalDateKey(new Date());
   const occurrences = getAppointmentOccurrences(leads);
@@ -81,7 +83,9 @@ export function AppointmentsView({
             <button
               onClick={() => setSegment('upcoming')}
               className={`px-3 py-1 rounded-md text-[13px] font-semibold ${
-                segment === 'upcoming' ? 'bg-card shadow-sm' : 'text-muted-foreground'
+                segment === 'upcoming'
+                  ? 'bg-card shadow-sm'
+                  : 'text-muted-foreground'
               }`}
             >
               Upcoming
@@ -89,7 +93,9 @@ export function AppointmentsView({
             <button
               onClick={() => setSegment('follow_up')}
               className={`px-3 py-1 rounded-md text-[13px] font-semibold inline-flex items-center gap-1.5 ${
-                segment === 'follow_up' ? 'bg-card shadow-sm' : 'text-muted-foreground'
+                segment === 'follow_up'
+                  ? 'bg-card shadow-sm'
+                  : 'text-muted-foreground'
               }`}
             >
               Needs follow-up
@@ -101,7 +107,11 @@ export function AppointmentsView({
             </button>
           </div>
         </div>
-        <Button variant="ghost" className="text-muted-foreground" onClick={onManageAvailability}>
+        <Button
+          variant="ghost"
+          className="text-muted-foreground"
+          onClick={onManageAvailability}
+        >
           Manage availability →
         </Button>
       </div>
@@ -166,11 +176,13 @@ function UpcomingSegment({
   onOpenLead: (leadId: string) => void;
   highlightedLeadId: string | null;
 }): JSX.Element {
-  const weekKeys = days.map(d => d.dateKey);
+  const weekKeys = days.map((d) => d.dateKey);
   const visible = occurrences.filter(
-    o =>
+    (o) =>
       o.dateKey >= todayKey &&
-      (selectedDate ? o.dateKey === selectedDate : weekKeys.includes(o.dateKey)),
+      (selectedDate
+        ? o.dateKey === selectedDate
+        : weekKeys.includes(o.dateKey)),
   );
 
   // occurrences arrive sorted by dateKey+time, so groups form in ascending order.
@@ -182,14 +194,17 @@ function UpcomingSegment({
   }
 
   const blockedDays = days.filter(
-    d =>
+    (d) =>
       d.isBlocked &&
       (!selectedDate || d.dateKey === selectedDate) &&
       !grouped.some(([k]) => k === d.dateKey),
   );
 
-  const hasAnyUpcoming = occurrences.some(o => o.dateKey >= todayKey);
-  const nextAfterWeek = nextOccurrenceAfter(occurrences, days[days.length - 1].dateKey);
+  const hasAnyUpcoming = occurrences.some((o) => o.dateKey >= todayKey);
+  const nextAfterWeek = nextOccurrenceAfter(
+    occurrences,
+    days[days.length - 1].dateKey,
+  );
 
   function jumpToNext() {
     if (!nextAfterWeek) return;
@@ -228,8 +243,15 @@ function UpcomingSegment({
       <div className="space-y-3">
         {grouped.map(([dateKey, occs]) => {
           const gh = formatGroupHeader(dateKey);
-          const prefix = gh.isToday ? 'Today · ' : gh.isTomorrow ? 'Tomorrow · ' : '';
-          const kidCount = occs.reduce((sum, o) => sum + occurrenceKidCount(o), 0);
+          const prefix = gh.isToday
+            ? 'Today · '
+            : gh.isTomorrow
+              ? 'Tomorrow · '
+              : '';
+          const kidCount = occs.reduce(
+            (sum, o) => sum + occurrenceKidCount(o),
+            0,
+          );
           return (
             <Surface key={dateKey}>
               <div className="px-4 py-2 bg-muted/40 text-[12px] font-semibold flex items-center gap-2">
@@ -241,7 +263,7 @@ function UpcomingSegment({
                   {kidCount} {kidCount === 1 ? 'kid' : 'kids'}
                 </span>
               </div>
-              {occs.map(o => (
+              {occs.map((o) => (
                 <OccurrenceRow
                   key={o.lead.lead_id + o.dateKey + (o.time ?? '')}
                   occurrence={o}
@@ -254,14 +276,17 @@ function UpcomingSegment({
           );
         })}
 
-        {blockedDays.map(d => {
-          const reason = blocks.find(b => b.start_date <= d.dateKey && b.end_date >= d.dateKey)?.reason;
+        {blockedDays.map((d) => {
+          const reason = blocks.find(
+            (b) => b.start_date <= d.dateKey && b.end_date >= d.dateKey,
+          )?.reason;
           return (
             <div
               key={d.dateKey}
               className="border border-dashed border-border rounded-xl px-4 py-3 text-[12px] text-muted-foreground bg-muted/30"
             >
-              Blocked {formatGroupHeader(d.dateKey).label} · {reason ?? 'No bookings'}
+              Blocked {formatGroupHeader(d.dateKey).label} ·{' '}
+              {reason ?? 'No bookings'}
             </div>
           );
         })}
@@ -269,19 +294,23 @@ function UpcomingSegment({
         {!hasAnyUpcoming ? (
           <div className="text-center py-10">
             <p className="text-[13px] text-muted-foreground">
-              No upcoming appointments. Approve a lead and send a booking invite to get started.
+              No upcoming appointments. Approve a lead and send a booking invite
+              to get started.
             </p>
           </div>
         ) : (
           grouped.length === 0 && (
             <div className="text-center py-10">
-              <p className="text-[13px] text-muted-foreground">No appointments this week.</p>
+              <p className="text-[13px] text-muted-foreground">
+                No appointments this week.
+              </p>
               {nextAfterWeek && (
                 <button
                   onClick={jumpToNext}
                   className="mt-2 text-[13px] font-semibold text-primary hover:underline"
                 >
-                  Next appointment: {formatDate(nextAfterWeek.dateKey + 'T12:00:00')} →
+                  Next appointment:{' '}
+                  {formatDate(nextAfterWeek.dateKey + 'T12:00:00')} →
                 </button>
               )}
             </div>
@@ -306,7 +335,9 @@ function OccurrenceRow({
   const { lead, booking } = occurrence;
   const phone = lead.phone;
   const unconfirmed = !occurrence.confirmed;
-  const daysUntil = daysUntilInPacific(new Date(occurrence.dateKey + 'T12:00:00'));
+  const daysUntil = daysUntilInPacific(
+    new Date(occurrence.dateKey + 'T12:00:00'),
+  );
   const callNow = unconfirmed && daysUntil >= 0 && daysUntil <= 2;
 
   return (
@@ -330,7 +361,13 @@ function OccurrenceRow({
           `Parent: ${lead.parent_name}${phone ? ' · ' + formatPhone(phone) : ''}`
         )
       }
-      badge={callNow ? undefined : <StatusBadge kind={occurrence.confirmed ? 'confirmed' : 'unconfirmed'} />}
+      badge={
+        callNow ? undefined : (
+          <StatusBadge
+            kind={occurrence.confirmed ? 'confirmed' : 'unconfirmed'}
+          />
+        )
+      }
       action={
         callNow ? (
           <Button
@@ -367,11 +404,13 @@ function FollowUpSegment({
       </p>
       {followUps.length === 0 ? (
         <div className="text-center py-10">
-          <p className="text-[13px] text-muted-foreground">Nothing to follow up.</p>
+          <p className="text-[13px] text-muted-foreground">
+            Nothing to follow up.
+          </p>
         </div>
       ) : (
         <Surface>
-          {followUps.map(item => (
+          {followUps.map((item) => (
             <FollowUpRow
               key={item.lead.lead_id}
               item={item}

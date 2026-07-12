@@ -9,7 +9,7 @@ const FAQ_SECTIONS = [
     items: [
       {
         q: 'Does my child need any prior experience?',
-        a: "None at all. Every student starts at the beginning. Our instructors meet each child where they are and work at their pace.",
+        a: 'None at all. Every student starts at the beginning. Our instructors meet each child where they are and work at their pace.',
       },
       {
         q: 'How does the free trial class work?',
@@ -42,7 +42,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'What if my child has special needs or learning differences?',
-        a: "Please talk to us before the trial class. Our instructors adapt their teaching to individual needs and we want every child to feel set up to succeed from day one.",
+        a: 'Please talk to us before the trial class. Our instructors adapt their teaching to individual needs and we want every child to feel set up to succeed from day one.',
       },
     ],
   },
@@ -59,7 +59,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: 'What if my child misses a class?',
-        a: "Life happens. Makeup options are available and can be managed through the parent portal. Just let us know.",
+        a: 'Life happens. Makeup options are available and can be managed through the parent portal. Just let us know.',
       },
     ],
   },
@@ -97,7 +97,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: "How do I stay informed about my child's progress?",
-        a: "Enrolled families get access to the parent portal, where you can view belt progress, read instructor feedback, and receive announcements directly.",
+        a: 'Enrolled families get access to the parent portal, where you can view belt progress, read instructor feedback, and receive announcements directly.',
       },
     ],
   },
@@ -110,7 +110,9 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         {q}
         <ChevronDown className="w-4 h-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
       </summary>
-      <p className="pb-4 text-sm text-muted-foreground leading-relaxed pr-6">{a}</p>
+      <p className="pb-4 text-sm text-muted-foreground leading-relaxed pr-6">
+        {a}
+      </p>
     </details>
   );
 }
@@ -123,11 +125,17 @@ export function FAQPageV2() {
       {/* ── PAGE HEADER ── */}
       <section className="py-14 border-b bg-slate-50">
         <div className="container mx-auto px-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">FAQ</p>
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Frequently asked questions.</h1>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">
+            FAQ
+          </p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+            Frequently asked questions.
+          </h1>
           <p className="text-muted-foreground text-base max-w-xl">
             Common questions from parents who are new to LBMAA. Don't see yours?{' '}
-            <span className="font-medium text-foreground">Call or message us anytime.</span>
+            <span className="font-medium text-foreground">
+              Call or message us anytime.
+            </span>
           </p>
         </div>
       </section>
@@ -140,7 +148,9 @@ export function FAQPageV2() {
               <div key={section.heading}>
                 <div className="flex items-center gap-3 mb-1">
                   <div className="w-5 h-0.5 bg-primary rounded-full flex-shrink-0" />
-                  <h2 className="text-base font-bold text-foreground">{section.heading}</h2>
+                  <h2 className="text-base font-bold text-foreground">
+                    {section.heading}
+                  </h2>
                 </div>
                 <div className="border-t border-border mt-3">
                   {section.items.map((item) => (
@@ -158,8 +168,8 @@ export function FAQPageV2() {
         <div className="container mx-auto px-6 max-w-2xl text-center">
           <h2 className="text-2xl font-bold mb-3">Still have questions?</h2>
           <p className="text-muted-foreground text-sm leading-relaxed mb-6">
-            We're a family-run school and we're happy to talk through anything — before you ever
-            step through the door. There's no sales pitch.
+            We're a family-run school and we're happy to talk through anything —
+            before you ever step through the door. There's no sales pitch.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm">
             <a

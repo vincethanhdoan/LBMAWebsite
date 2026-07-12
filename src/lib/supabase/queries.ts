@@ -74,7 +74,9 @@ export async function getAdminProfiles(): Promise<Profile[]> {
 // FAMILIES
 // ============================================
 
-export async function getFamilyByOwner(ownerUserId: string): Promise<Family | null> {
+export async function getFamilyByOwner(
+  ownerUserId: string,
+): Promise<Family | null> {
   const { data, error } = await supabase
     .from('families')
     .select(FAMILY_COLUMNS)
@@ -90,14 +92,18 @@ export type FamilyWithRelations = Family & {
   students: Student[];
 };
 
-export async function getFamilyWithRelations(familyId: string): Promise<FamilyWithRelations> {
+export async function getFamilyWithRelations(
+  familyId: string,
+): Promise<FamilyWithRelations> {
   const { data, error } = await supabase
     .from('families')
-    .select(`
+    .select(
+      `
       ${FAMILY_COLUMNS},
       guardians (${GUARDIAN_COLUMNS}),
       students (${STUDENT_COLUMNS})
-    `)
+    `,
+    )
     .eq('family_id', familyId)
     .single();
 
@@ -108,14 +114,18 @@ export async function getFamilyWithRelations(familyId: string): Promise<FamilyWi
 /**
  * Fetches all families with their guardians and students in a single query.
  */
-export async function getAllFamiliesWithRelations(): Promise<FamilyWithRelations[]> {
+export async function getAllFamiliesWithRelations(): Promise<
+  FamilyWithRelations[]
+> {
   const { data, error } = await supabase
     .from('families')
-    .select(`
+    .select(
+      `
       ${FAMILY_COLUMNS},
       guardians (${GUARDIAN_COLUMNS}),
       students (${STUDENT_COLUMNS})
-    `)
+    `,
+    )
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -126,7 +136,9 @@ export async function getAllFamiliesWithRelations(): Promise<FamilyWithRelations
 // GUARDIANS
 // ============================================
 
-export async function getGuardiansByFamily(familyId: string): Promise<Guardian[]> {
+export async function getGuardiansByFamily(
+  familyId: string,
+): Promise<Guardian[]> {
   const { data, error } = await supabase
     .from('guardians')
     .select(GUARDIAN_COLUMNS)
@@ -142,7 +154,9 @@ export async function getGuardiansByFamily(familyId: string): Promise<Guardian[]
 // STUDENTS
 // ============================================
 
-export async function getStudentsByFamily(familyId: string): Promise<Student[]> {
+export async function getStudentsByFamily(
+  familyId: string,
+): Promise<Student[]> {
   const { data, error } = await supabase
     .from('students')
     .select(STUDENT_COLUMNS)
@@ -173,13 +187,24 @@ export async function getAllStudents(): Promise<Student[]> {
  * Falls back gracefully if the profile fetch fails.
  */
 async function hydrateAuthorNames<T extends { author_user_id: string }>(
-  rows: T[]
-): Promise<(T & { profiles: { display_name: string | null; avatar_url: string | null } })[]> {
+  rows: T[],
+): Promise<
+  (T & {
+    profiles: { display_name: string | null; avatar_url: string | null };
+  })[]
+> {
   const authorIds = Array.from(
-    new Set(rows.map(r => r.author_user_id).filter((id): id is string => Boolean(id)))
+    new Set(
+      rows
+        .map((r) => r.author_user_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
   );
   if (authorIds.length === 0) {
-    return rows.map(r => ({ ...r, profiles: { display_name: null, avatar_url: null } }));
+    return rows.map((r) => ({
+      ...r,
+      profiles: { display_name: null, avatar_url: null },
+    }));
   }
   const { data: profiles } = await supabase
     .from('profiles')
@@ -187,9 +212,12 @@ async function hydrateAuthorNames<T extends { author_user_id: string }>(
     .in('user_id', authorIds);
 
   const profileById = new Map(
-    (profiles ?? []).map(p => [p.user_id as string, p as { display_name: string | null; avatar_url: string | null }])
+    (profiles ?? []).map((p) => [
+      p.user_id as string,
+      p as { display_name: string | null; avatar_url: string | null },
+    ]),
   );
-  return rows.map(r => ({
+  return rows.map((r) => ({
     ...r,
     profiles: {
       display_name: profileById.get(r.author_user_id)?.display_name ?? null,
@@ -202,7 +230,9 @@ async function hydrateAuthorNames<T extends { author_user_id: string }>(
 // ANNOUNCEMENTS
 // ============================================
 
-export async function getAnnouncements(): Promise<(Announcement & { profiles: { display_name: string | null } })[]> {
+export async function getAnnouncements(): Promise<
+  (Announcement & { profiles: { display_name: string | null } })[]
+> {
   const { data, error } = await supabase
     .from('announcements')
     .select(ANNOUNCEMENT_COLUMNS)
@@ -218,16 +248,20 @@ export type AnnouncementCommentWithAuthor = AnnouncementComment & {
   profiles: { display_name: string | null; avatar_url: string | null } | null;
 };
 
-export async function getAnnouncementComments(announcementId: string): Promise<AnnouncementCommentWithAuthor[]> {
+export async function getAnnouncementComments(
+  announcementId: string,
+): Promise<AnnouncementCommentWithAuthor[]> {
   const { data, error } = await supabase
     .from('announcement_comments')
-    .select(`
+    .select(
+      `
       ${ANNOUNCEMENT_COMMENT_COLUMNS},
       profiles!announcement_comments_author_user_id_fkey (
         display_name,
         avatar_url
       )
-    `)
+    `,
+    )
     .eq('announcement_id', announcementId)
     .order('created_at', { ascending: true });
 
@@ -239,7 +273,9 @@ export async function getAnnouncementComments(announcementId: string): Promise<A
 // BLOG POSTS
 // ============================================
 
-export async function getBlogPosts(): Promise<(BlogPost & { profiles: { display_name: string | null } })[]> {
+export async function getBlogPosts(): Promise<
+  (BlogPost & { profiles: { display_name: string | null } })[]
+> {
   const { data, error } = await supabase
     .from('blog_posts')
     .select(BLOG_POST_COLUMNS)
@@ -254,16 +290,20 @@ export type BlogCommentWithAuthor = BlogComment & {
   profiles: { display_name: string | null; avatar_url: string | null } | null;
 };
 
-export async function getBlogComments(postId: string): Promise<BlogCommentWithAuthor[]> {
+export async function getBlogComments(
+  postId: string,
+): Promise<BlogCommentWithAuthor[]> {
   const { data, error } = await supabase
     .from('blog_comments')
-    .select(`
+    .select(
+      `
       ${BLOG_COMMENT_COLUMNS},
       profiles!blog_comments_author_user_id_fkey (
         display_name,
         avatar_url
       )
-    `)
+    `,
+    )
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
 
@@ -277,7 +317,7 @@ export async function getBlogComments(postId: string): Promise<BlogCommentWithAu
  */
 export async function getCommentPostRef(
   referenceType: 'announcement_comment' | 'blog_comment',
-  commentId: string
+  commentId: string,
 ): Promise<{ tab: 'announcements' | 'blog'; postId: string } | null> {
   if (referenceType === 'announcement_comment') {
     const { data, error } = await supabase
@@ -312,13 +352,17 @@ export async function getGlobalConversation(): Promise<Conversation | null> {
   return data || null;
 }
 
-export async function getUserConversations(userId: string): Promise<Conversation[]> {
+export async function getUserConversations(
+  userId: string,
+): Promise<Conversation[]> {
   const { data, error } = await supabase
     .from('conversations')
-    .select(`
+    .select(
+      `
       ${CONVERSATION_COLUMNS},
       conversation_members!inner (${CONVERSATION_MEMBER_COLUMNS})
-    `)
+    `,
+    )
     .eq('conversation_members.user_id', userId)
     .order('updated_at', { ascending: false });
 
@@ -330,16 +374,20 @@ export type ConversationMemberWithProfile = ConversationMember & {
   profiles: { display_name: string | null; role: string | null } | null;
 };
 
-export async function getConversationMembers(conversationId: string): Promise<ConversationMemberWithProfile[]> {
+export async function getConversationMembers(
+  conversationId: string,
+): Promise<ConversationMemberWithProfile[]> {
   const { data, error } = await supabase
     .from('conversation_members')
-    .select(`
+    .select(
+      `
       ${CONVERSATION_MEMBER_COLUMNS},
       profiles!conversation_members_user_id_fkey (
         display_name,
         role
       )
-    `)
+    `,
+    )
     .eq('conversation_id', conversationId);
 
   if (error) throw error;
@@ -347,14 +395,21 @@ export async function getConversationMembers(conversationId: string): Promise<Co
 }
 
 export type MessageWithMeta = Message & {
-  profiles: { display_name: string | null; role: string | null; avatar_url: string | null } | null;
+  profiles: {
+    display_name: string | null;
+    role: string | null;
+    avatar_url: string | null;
+  } | null;
   message_attachments: MessageAttachment[];
 };
 
-export async function getMessages(conversationId: string): Promise<MessageWithMeta[]> {
+export async function getMessages(
+  conversationId: string,
+): Promise<MessageWithMeta[]> {
   const { data, error } = await supabase
     .from('messages')
-    .select(`
+    .select(
+      `
       ${MESSAGE_COLUMNS},
       profiles!messages_author_user_id_fkey (
         display_name,
@@ -362,7 +417,8 @@ export async function getMessages(conversationId: string): Promise<MessageWithMe
         avatar_url
       ),
       message_attachments (${MESSAGE_ATTACHMENT_COLUMNS})
-    `)
+    `,
+    )
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
 
@@ -393,24 +449,34 @@ const ENROLLMENT_LEAD_SELECT = `
 `;
 
 function mapEnrollmentLeadRow(row: Record<string, unknown>): EnrollmentLead {
-  const notifications = (row.notifications ?? []) as EnrollmentLeadNotification[];
-  const byRecency = [...notifications].sort((a, b) => b.created_at.localeCompare(a.created_at));
-  const reminder = byRecency.find(n => n.type === 'reminder') ?? null;
-  const confirmation = byRecency.find(n => n.type === 'booking_confirmation') ?? null;
+  const notifications = (row.notifications ??
+    []) as EnrollmentLeadNotification[];
+  const byRecency = [...notifications].sort((a, b) =>
+    b.created_at.localeCompare(a.created_at),
+  );
+  const reminder = byRecency.find((n) => n.type === 'reminder') ?? null;
+  const confirmation =
+    byRecency.find((n) => n.type === 'booking_confirmation') ?? null;
   return {
     ...row,
     // message is nullable in the DB (admin-created leads have none) but typed
     // string; coalesce here so no consumer dereferences null.
     message: (row.message as string | null) ?? '',
     children: (row.children ?? []) as EnrollmentLeadChild[],
-    programBookings: (row.programBookings ?? []) as EnrollmentLeadProgramBooking[],
+    programBookings: (row.programBookings ??
+      []) as EnrollmentLeadProgramBooking[],
     reminderNotification: reminder,
     confirmationNotification: confirmation,
     notificationHistory: byRecency,
   } as EnrollmentLead;
 }
 
-const ACTIVE_LEAD_STATUSES = ['new', 'approved', 'appointment_scheduled', 'appointment_confirmed'];
+const ACTIVE_LEAD_STATUSES = [
+  'new',
+  'approved',
+  'appointment_scheduled',
+  'appointment_confirmed',
+];
 const TERMINAL_LEAD_STATUSES = ['enrolled', 'closed', 'denied'];
 
 export async function getActiveEnrollmentLeads(): Promise<EnrollmentLead[]> {
@@ -424,7 +490,8 @@ export async function getActiveEnrollmentLeads(): Promise<EnrollmentLead[]> {
   return (data ?? []).map(mapEnrollmentLeadRow);
 }
 
-export type TerminalLeadFilter = 'enrolled' | 'closed' | 'denied' | 'archived' | 'all_terminal';
+export type TerminalLeadFilter =
+  'enrolled' | 'closed' | 'denied' | 'archived' | 'all_terminal';
 
 export async function getTerminalEnrollmentLeads(opts: {
   filter: TerminalLeadFilter;
@@ -439,9 +506,10 @@ export async function getTerminalEnrollmentLeads(opts: {
     query = query.not('deleted_at', 'is', null);
   } else {
     query = query.is('deleted_at', null);
-    query = opts.filter === 'all_terminal'
-      ? query.in('status', TERMINAL_LEAD_STATUSES)
-      : query.eq('status', opts.filter);
+    query =
+      opts.filter === 'all_terminal'
+        ? query.in('status', TERMINAL_LEAD_STATUSES)
+        : query.eq('status', opts.filter);
   }
 
   const term = opts.search?.trim();
@@ -455,14 +523,17 @@ export async function getTerminalEnrollmentLeads(opts: {
       .select('lead_id')
       .ilike('name', `%${likeSafe}%`);
     if (childError) throw childError;
-    const childLeadIds = [...new Set((childMatches ?? []).map((c) => c.lead_id))];
+    const childLeadIds = [
+      ...new Set((childMatches ?? []).map((c) => c.lead_id)),
+    ];
     const orParts = [
       `parent_name.ilike."%${quoted}%"`,
       `parent_email.ilike."%${quoted}%"`,
       `student_name.ilike."%${quoted}%"`,
       `phone.ilike."%${quoted}%"`,
     ];
-    if (childLeadIds.length > 0) orParts.push(`lead_id.in.(${childLeadIds.join(',')})`);
+    if (childLeadIds.length > 0)
+      orParts.push(`lead_id.in.(${childLeadIds.join(',')})`);
     query = query.or(orParts.join(','));
   }
 
@@ -511,7 +582,9 @@ export async function getTerminalLeadCounts(): Promise<{
   };
 }
 
-export async function getEnrollmentLeadById(leadId: string): Promise<EnrollmentLead> {
+export async function getEnrollmentLeadById(
+  leadId: string,
+): Promise<EnrollmentLead> {
   const { data, error } = await supabase
     .from('enrollment_leads')
     .select(ENROLLMENT_LEAD_SELECT)
@@ -522,7 +595,14 @@ export async function getEnrollmentLeadById(leadId: string): Promise<EnrollmentL
   return mapEnrollmentLeadRow(data);
 }
 
-export async function findLeadsByEmail(email: string): Promise<Array<{ lead_id: string; parent_name: string; status: EnrollmentLead['status']; created_at: string }>> {
+export async function findLeadsByEmail(email: string): Promise<
+  Array<{
+    lead_id: string;
+    parent_name: string;
+    status: EnrollmentLead['status'];
+    created_at: string;
+  }>
+> {
   // Escape ILIKE wildcards so emails containing `_` or `%` match literally.
   const pattern = email.trim().replace(/[\\%_]/g, (c) => `\\${c}`);
   const { data, error } = await supabase
@@ -549,7 +629,9 @@ export async function getAllFeedbackTests(): Promise<FeedbackTest[]> {
   return data || [];
 }
 
-export async function getFeedbackTestsByFamily(familyId: string): Promise<FeedbackTest[]> {
+export async function getFeedbackTestsByFamily(
+  familyId: string,
+): Promise<FeedbackTest[]> {
   const { data: students, error: studentsError } = await supabase
     .from('students')
     .select('student_id')
@@ -569,11 +651,17 @@ export async function getFeedbackTestsByFamily(familyId: string): Promise<Feedba
   if (error) throw error;
 
   const testMap = new Map<string, FeedbackTest>();
-  for (const row of (data || []) as unknown as { test_id: string; feedback_tests: FeedbackTest | null }[]) {
-    if (row.feedback_tests) testMap.set(row.feedback_tests.test_id, row.feedback_tests);
+  for (const row of (data || []) as unknown as {
+    test_id: string;
+    feedback_tests: FeedbackTest | null;
+  }[]) {
+    if (row.feedback_tests)
+      testMap.set(row.feedback_tests.test_id, row.feedback_tests);
   }
 
-  return Array.from(testMap.values()).sort((a, b) => b.test_date.localeCompare(a.test_date));
+  return Array.from(testMap.values()).sort((a, b) =>
+    b.test_date.localeCompare(a.test_date),
+  );
 }
 
 // ============================================
@@ -584,21 +672,30 @@ export type FeedbackWithRelations = StudentFeedback & {
   profiles: { display_name: string | null } | null;
 };
 
-async function attachAuthorNames(rows: StudentFeedback[]): Promise<FeedbackWithRelations[]> {
+async function attachAuthorNames(
+  rows: StudentFeedback[],
+): Promise<FeedbackWithRelations[]> {
   if (rows.length === 0) return [];
   const authorIds = Array.from(new Set(rows.map((r) => r.author_user_id)));
   const { data: profiles } = await supabase
     .from('profiles')
     .select('user_id, display_name')
     .in('user_id', authorIds);
-  const nameMap = new Map((profiles || []).map((p) => [p.user_id as string, p.display_name as string | null]));
+  const nameMap = new Map(
+    (profiles || []).map((p) => [
+      p.user_id as string,
+      p.display_name as string | null,
+    ]),
+  );
   return rows.map((r) => ({
     ...r,
     profiles: { display_name: nameMap.get(r.author_user_id) ?? null },
   }));
 }
 
-export async function getStudentFeedbackByFamily(familyId: string): Promise<FeedbackWithRelations[]> {
+export async function getStudentFeedbackByFamily(
+  familyId: string,
+): Promise<FeedbackWithRelations[]> {
   const { data: students, error: studentsError } = await supabase
     .from('students')
     .select('student_id')
@@ -619,7 +716,9 @@ export async function getStudentFeedbackByFamily(familyId: string): Promise<Feed
   return attachAuthorNames(data || []);
 }
 
-export async function getAllStudentFeedback(): Promise<FeedbackWithRelations[]> {
+export async function getAllStudentFeedback(): Promise<
+  FeedbackWithRelations[]
+> {
   const { data, error } = await supabase
     .from('student_feedback')
     .select(STUDENT_FEEDBACK_COLUMNS)
@@ -643,7 +742,9 @@ export async function getReviews(): Promise<Review[]> {
   return data || [];
 }
 
-export async function getReviewByFamily(familyId: string): Promise<Review | null> {
+export async function getReviewByFamily(
+  familyId: string,
+): Promise<Review | null> {
   const { data, error } = await supabase
     .from('reviews')
     .select(REVIEW_COLUMNS)
@@ -657,13 +758,15 @@ export async function getReviewByFamily(familyId: string): Promise<Review | null
 export async function getUserReview(userId: string): Promise<Review | null> {
   const { data, error } = await supabase
     .from('reviews')
-    .select(`
+    .select(
+      `
       ${REVIEW_COLUMNS},
       families!reviews_family_id_fkey (
         family_id,
         primary_email
       )
-    `)
+    `,
+    )
     .eq('author_user_id', userId)
     .maybeSingle();
 
@@ -676,7 +779,7 @@ export async function getUserReview(userId: string): Promise<Review | null> {
 // ============================================
 
 export async function getAppointmentSlots(
-  programType?: 'little_dragons' | 'youth'
+  programType?: 'little_dragons' | 'youth',
 ): Promise<AppointmentSlot[]> {
   let query = supabase
     .from('appointment_slots')
@@ -693,13 +796,18 @@ export async function getAppointmentSlots(
   return data ?? [];
 }
 
-export async function getUpcomingBookableDates(slotId: string, weeksAhead = 20): Promise<string[]> {
+export async function getUpcomingBookableDates(
+  slotId: string,
+  weeksAhead = 20,
+): Promise<string[]> {
   const { data, error } = await supabase.rpc('get_upcoming_bookable_dates', {
     p_slot_id: slotId,
     p_weeks_ahead: weeksAhead,
-  })
-  if (error) throw error
-  return (data ?? []).map((row: { available_date: string }) => row.available_date)
+  });
+  if (error) throw error;
+  return (data ?? []).map(
+    (row: { available_date: string }) => row.available_date,
+  );
 }
 
 export async function getProgramBookingByToken(token: string): Promise<{
@@ -711,7 +819,9 @@ export async function getProgramBookingByToken(token: string): Promise<{
   parent_name: string;
   child_names: string[];
 } | null> {
-  const { data, error } = await supabase.rpc('get_program_booking_by_token', { p_token: token });
+  const { data, error } = await supabase.rpc('get_program_booking_by_token', {
+    p_token: token,
+  });
   if (error) throw error;
   return data?.[0] ?? null;
 }
@@ -733,18 +843,27 @@ export async function getBlockedDates(): Promise<BlockedDate[]> {
 // ADMIN NOTIFICATION SETTINGS
 // ============================================
 
-export async function getAdminNotificationSettings(): Promise<AdminNotificationSetting[]> {
-  const { data, error } = await supabase.rpc('get_admin_notification_settings')
-  if (error) throw error
-  return data ?? []
+export async function getAdminNotificationSettings(): Promise<
+  AdminNotificationSetting[]
+> {
+  const { data, error } = await supabase.rpc('get_admin_notification_settings');
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function getAdminEmails(): Promise<
-  { user_id: string; email: string; display_name: string; is_active: boolean; last_sign_in_at: string | null; invited_at: string | null }[]
+  {
+    user_id: string;
+    email: string;
+    display_name: string;
+    is_active: boolean;
+    last_sign_in_at: string | null;
+    invited_at: string | null;
+  }[]
 > {
-  const { data, error } = await supabase.rpc('get_admin_emails')
-  if (error) throw error
-  return data ?? []
+  const { data, error } = await supabase.rpc('get_admin_emails');
+  if (error) throw error;
+  return data ?? [];
 }
 
 // ============================================
@@ -784,7 +903,10 @@ export async function getSectionUnreadCounts(userId: string): Promise<{
   };
 }
 
-export async function getNewFeedbackCount(userId: string, familyId: string): Promise<number> {
+export async function getNewFeedbackCount(
+  userId: string,
+  familyId: string,
+): Promise<number> {
   const { data: lastSeen } = await supabase
     .from('user_section_last_seen')
     .select('last_seen_at')
@@ -823,7 +945,7 @@ export async function getUnreadNotificationCount(): Promise<number> {
 export async function getNotificationHistory(
   page: number,
   pageSize = 20,
-  filter?: 'leads' | 'comments'
+  filter?: 'leads' | 'comments',
 ): Promise<{ notifications: UserNotification[]; hasMore: boolean }> {
   const from = page * pageSize;
   let query = supabase
@@ -833,12 +955,18 @@ export async function getNotificationHistory(
   if (filter === 'leads') {
     query = query.eq('reference_type', 'enrollment_lead');
   } else if (filter === 'comments') {
-    query = query.in('reference_type', ['announcement_comment', 'blog_comment']);
+    query = query.in('reference_type', [
+      'announcement_comment',
+      'blog_comment',
+    ]);
   }
   const { data, error } = await query.range(from, from + pageSize);
   if (error) throw error;
   const rows = (data ?? []) as UserNotification[];
-  return { notifications: rows.slice(0, pageSize), hasMore: rows.length > pageSize };
+  return {
+    notifications: rows.slice(0, pageSize),
+    hasMore: rows.length > pageSize,
+  };
 }
 
 export async function getNotificationSummary(userId: string): Promise<{
@@ -860,44 +988,51 @@ export async function getNotificationSummary(userId: string): Promise<{
     lastSeen?.find((r) => r.section === 'blog')?.last_seen_at ??
     '1970-01-01T00:00:00Z';
 
-  const [messagesCount, annCount, annLatest, blogCount, blogLatest, notifsData, notifCount] =
-    await Promise.all([
-      getUnreadMessageCount(),
-      supabase
-        .from('announcements')
-        .select('announcement_id', { count: 'exact', head: true })
-        .gt('created_at', announcementsSince)
-        .neq('author_user_id', userId),
-      supabase
-        .from('announcements')
-        .select('title')
-        .gt('created_at', announcementsSince)
-        .neq('author_user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1),
-      supabase
-        .from('blog_posts')
-        .select('post_id', { count: 'exact', head: true })
-        .gt('created_at', blogSince)
-        .neq('author_user_id', userId),
-      supabase
-        .from('blog_posts')
-        .select('title')
-        .gt('created_at', blogSince)
-        .neq('author_user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1),
-      supabase
-        .from('user_notifications')
-        .select('*')
-        .eq('is_read', false)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('user_notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_read', false),
-    ]);
+  const [
+    messagesCount,
+    annCount,
+    annLatest,
+    blogCount,
+    blogLatest,
+    notifsData,
+    notifCount,
+  ] = await Promise.all([
+    getUnreadMessageCount(),
+    supabase
+      .from('announcements')
+      .select('announcement_id', { count: 'exact', head: true })
+      .gt('created_at', announcementsSince)
+      .neq('author_user_id', userId),
+    supabase
+      .from('announcements')
+      .select('title')
+      .gt('created_at', announcementsSince)
+      .neq('author_user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1),
+    supabase
+      .from('blog_posts')
+      .select('post_id', { count: 'exact', head: true })
+      .gt('created_at', blogSince)
+      .neq('author_user_id', userId),
+    supabase
+      .from('blog_posts')
+      .select('title')
+      .gt('created_at', blogSince)
+      .neq('author_user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1),
+    supabase
+      .from('user_notifications')
+      .select('*')
+      .eq('is_read', false)
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('user_notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_read', false),
+  ]);
 
   if (annCount.error) throw annCount.error;
   if (annLatest.error) throw annLatest.error;

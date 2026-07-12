@@ -12,14 +12,14 @@ export function Navbar({ onLogin }: { onLogin: () => void }) {
   const [scrolled, setScrolled] = useState(false);
 
   const NAV = [
-    { label: t.nav.home,        path: '/' },
-    { label: t.nav.about,       path: `${BASE}/about` },
-    { label: t.nav.programs,    path: `${BASE}/programs` },
-    { label: t.nav.facilities,  path: `${BASE}/facilities` },
+    { label: t.nav.home, path: '/' },
+    { label: t.nav.about, path: `${BASE}/about` },
+    { label: t.nav.programs, path: `${BASE}/programs` },
+    { label: t.nav.facilities, path: `${BASE}/facilities` },
     { label: t.nav.instructors, path: `${BASE}/instructors` },
-    { label: t.nav.reviews,     path: `${BASE}/reviews` },
-    { label: t.nav.faq,         path: `${BASE}/faq` },
-    { label: t.nav.contact,     path: `${BASE}/contact` },
+    { label: t.nav.reviews, path: `${BASE}/reviews` },
+    { label: t.nav.faq, path: `${BASE}/faq` },
+    { label: t.nav.contact, path: `${BASE}/contact` },
   ];
 
   useEffect(() => {
@@ -53,14 +53,17 @@ export function Navbar({ onLogin }: { onLogin: () => void }) {
       className="sticky top-0 z-50"
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-[72px]">
-
         {/* Brand */}
         <button
           onClick={() => goTo('/')}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity min-w-0 flex-shrink-0"
           aria-label="Los Banos Martial Arts Academy — home"
         >
-          <img src="/logo.png" alt="ERWCMAA Logo" className="h-11 w-auto flex-shrink-0" />
+          <img
+            src="/logo.png"
+            alt="ERWCMAA Logo"
+            className="h-11 w-auto flex-shrink-0"
+          />
           <div className="hidden sm:block">
             <div
               className="v3-h font-bold text-[19px] uppercase tracking-wide"
@@ -120,11 +123,13 @@ export function Navbar({ onLogin }: { onLogin: () => void }) {
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.color = V3.primary;
-              (e.currentTarget as HTMLButtonElement).style.borderColor = V3.primary;
+              (e.currentTarget as HTMLButtonElement).style.borderColor =
+                V3.primary;
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.color = V3.muted;
-              (e.currentTarget as HTMLButtonElement).style.borderColor = V3.border;
+              (e.currentTarget as HTMLButtonElement).style.borderColor =
+                V3.border;
             }}
           >
             {t.nav.switchLang}
@@ -147,12 +152,22 @@ export function Navbar({ onLogin }: { onLogin: () => void }) {
             {mobileOpen ? (
               <>
                 <X className="w-5 h-5" />
-                <span className="text-xs font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>{t.nav.close}</span>
+                <span
+                  className="text-xs font-semibold"
+                  style={{ fontFamily: "'Nunito', sans-serif" }}
+                >
+                  {t.nav.close}
+                </span>
               </>
             ) : (
               <>
                 <Menu className="w-5 h-5" />
-                <span className="text-xs font-semibold" style={{ fontFamily: "'Nunito', sans-serif" }}>{t.nav.menu}</span>
+                <span
+                  className="text-xs font-semibold"
+                  style={{ fontFamily: "'Nunito', sans-serif" }}
+                >
+                  {t.nav.menu}
+                </span>
               </>
             )}
           </button>
@@ -163,7 +178,10 @@ export function Navbar({ onLogin }: { onLogin: () => void }) {
       {mobileOpen && (
         <div
           className="lg:hidden"
-          style={{ borderTop: `1px solid ${V3.border}`, backgroundColor: 'white' }}
+          style={{
+            borderTop: `1px solid ${V3.border}`,
+            backgroundColor: 'white',
+          }}
         >
           <div className="max-w-7xl mx-auto px-6 py-3 flex flex-col gap-0.5">
             {NAV.map(({ label, path }) => (
@@ -174,7 +192,9 @@ export function Navbar({ onLogin }: { onLogin: () => void }) {
                 className="text-left px-3 min-h-[44px] flex items-center rounded-lg text-sm font-semibold transition-colors"
                 style={{
                   color: isActive(path) ? V3.primary : V3.text,
-                  backgroundColor: isActive(path) ? V3.primaryBg : 'transparent',
+                  backgroundColor: isActive(path)
+                    ? V3.primaryBg
+                    : 'transparent',
                 }}
               >
                 {label}
@@ -182,7 +202,10 @@ export function Navbar({ onLogin }: { onLogin: () => void }) {
             ))}
             <div className="pt-3 pb-1 flex flex-col gap-2">
               <button
-                onClick={() => { onLogin(); setMobileOpen(false); }}
+                onClick={() => {
+                  onLogin();
+                  setMobileOpen(false);
+                }}
                 className="v3-btn-primary w-full"
               >
                 {t.nav.parentLogin}

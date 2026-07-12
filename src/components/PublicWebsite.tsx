@@ -27,28 +27,28 @@ export function PublicWebsite() {
 
   return (
     <LanguageProvider>
-    <div className="v3-root min-h-screen flex flex-col">
-      <ScrollToTop />
-      <Navbar onLogin={() => setShowLogin(true)} />
+      <div className="v3-root min-h-screen flex flex-col">
+        <ScrollToTop />
+        <Navbar onLogin={() => setShowLogin(true)} />
 
-      <main className="flex-1">
-        <Routes>
-          <Route path="/"           element={<HomePage />} />
-          <Route path="about"       element={<AboutPage />} />
-          <Route path="facilities"  element={<FacilitiesPage />} />
-          <Route path="programs"    element={<ProgramsPage />} />
-          <Route path="instructors" element={<InstructorsPage />} />
-          <Route path="reviews"     element={<ReviewsPage />} />
-          <Route path="faq"         element={<FAQPage />} />
-          <Route path="contact"     element={<ContactPage />} />
-<Route path="*"           element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="facilities" element={<FacilitiesPage />} />
+            <Route path="programs" element={<ProgramsPage />} />
+            <Route path="instructors" element={<InstructorsPage />} />
+            <Route path="reviews" element={<ReviewsPage />} />
+            <Route path="faq" element={<FAQPage />} />
+            <Route path="contact" element={<ContactPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
 
-      <Footer />
+        <Footer />
 
-      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
-    </div>
+        {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+      </div>
     </LanguageProvider>
   );
 }

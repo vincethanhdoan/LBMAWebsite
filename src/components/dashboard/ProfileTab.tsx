@@ -1,24 +1,67 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { ConfirmDialog } from '../ui/confirm-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import { Switch } from '../ui/switch';
 import { Skeleton } from '../ui/skeleton';
-import { Plus, Edit2, User as UserIcon, Users, Home, Trash2, Star, Check, Loader2 } from 'lucide-react';
+import {
+  Plus,
+  Edit2,
+  User as UserIcon,
+  Users,
+  Home,
+  Trash2,
+  Star,
+  Check,
+  Loader2,
+} from 'lucide-react';
 import { useProfile } from '../../hooks/useProfile';
-import { createReview, updateProfile, updateReview, upsertUserNotificationPreferences, updateProfileAvatar } from '../../lib/supabase/mutations';
+import {
+  createReview,
+  updateProfile,
+  updateReview,
+  upsertUserNotificationPreferences,
+  updateProfileAvatar,
+} from '../../lib/supabase/mutations';
 import { PhotoUploader } from './PhotoUploader';
-import { uploadProfileImage, deleteProfileImage } from '../../lib/supabase/storage';
+import {
+  uploadProfileImage,
+  deleteProfileImage,
+} from '../../lib/supabase/storage';
 import { getUserNotificationPreferences } from '../../lib/supabase/queries';
 import { getInitials } from '../../lib/format';
-import type { User, Review, BeltLevel, Relationship, Rating } from '../../lib/types';
+import type {
+  User,
+  Review,
+  BeltLevel,
+  Relationship,
+  Rating,
+} from '../../lib/types';
 import { toast } from 'sonner';
 
 // Convert database types to UI types
@@ -52,10 +95,16 @@ const beltLevels = [
   'Green Belt',
   'Brown Belt',
   'Red Belt',
-  'Black Belt'
+  'Black Belt',
 ];
 
-export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; onRefreshUser: () => Promise<void> }) {
+export function ProfileTab({
+  user,
+  onRefreshUser,
+}: {
+  user: NonNullable<User>;
+  onRefreshUser: () => Promise<void>;
+}) {
   const {
     family,
     guardians: dbGuardians,
@@ -77,7 +126,11 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
   const [isAddingGuardian, setIsAddingGuardian] = useState(false);
   const [editingGuardian, setEditingGuardian] = useState<Guardian | null>(null);
   const [saving, setSaving] = useState(false);
-  const [confirmState, setConfirmState] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const defaultPrefs = {
     notify_messages: true,
@@ -96,7 +149,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
     dateOfBirth: '',
     beltLevel: 'White Belt',
     status: 'active',
-    notes: ''
+    notes: '',
   });
 
   const [newGuardian, setNewGuardian] = useState<Partial<Guardian>>({
@@ -105,7 +158,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
     email: '',
     phoneNumber: '',
     relationship: '',
-    isPrimaryContact: false
+    isPrimaryContact: false,
   });
 
   // Review state
@@ -161,7 +214,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
   }, []);
 
   // Convert database types to UI types
-  const guardians: Guardian[] = dbGuardians.map(g => ({
+  const guardians: Guardian[] = dbGuardians.map((g) => ({
     id: g.guardian_id,
     firstName: g.first_name,
     lastName: g.last_name,
@@ -171,7 +224,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
     isPrimaryContact: g.is_primary_contact,
   }));
 
-  const students: Student[] = dbStudents.map(s => ({
+  const students: Student[] = dbStudents.map((s) => ({
     id: s.student_id,
     firstName: s.first_name,
     lastName: s.last_name,
@@ -193,7 +246,9 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
   if (profileError || !family) {
     return (
       <div className="text-center py-12">
-        <p className="text-destructive">Error loading profile: {profileError || 'Family not found'}</p>
+        <p className="text-destructive">
+          Error loading profile: {profileError || 'Family not found'}
+        </p>
       </div>
     );
   }
@@ -203,7 +258,10 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
     return age;
@@ -222,7 +280,10 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
       toast.success('Family information saved!');
       setIsEditingFamily(false);
     } catch (error) {
-      toast.error('Error saving family information: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error saving family information: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     } finally {
       setSaving(false);
     }
@@ -239,20 +300,31 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
           notes: editingStudent.notes || null,
         };
         if (user.role !== 'family') {
-          studentUpdates.belt_level = (editingStudent.beltLevel || null) as BeltLevel | null;
+          studentUpdates.belt_level = (editingStudent.beltLevel ||
+            null) as BeltLevel | null;
           studentUpdates.status = editingStudent.status;
         }
         await updateStudent(editingStudent.id, studentUpdates);
         setEditingStudent(null);
       } else {
         // Add new student
-        if (newStudent.firstName && newStudent.lastName && newStudent.dateOfBirth) {
+        if (
+          newStudent.firstName &&
+          newStudent.lastName &&
+          newStudent.dateOfBirth
+        ) {
           await addStudent({
             first_name: newStudent.firstName,
             last_name: newStudent.lastName,
             date_of_birth: newStudent.dateOfBirth || null,
-            belt_level: user.role !== 'family' ? ((newStudent.beltLevel || null) as BeltLevel | null) : null,
-            status: user.role !== 'family' ? ((newStudent.status || 'active') as 'active' | 'inactive') : 'active',
+            belt_level:
+              user.role !== 'family'
+                ? ((newStudent.beltLevel || null) as BeltLevel | null)
+                : null,
+            status:
+              user.role !== 'family'
+                ? ((newStudent.status || 'active') as 'active' | 'inactive')
+                : 'active',
             notes: newStudent.notes || null,
             photo_url: null,
           });
@@ -262,14 +334,17 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             dateOfBirth: '',
             beltLevel: 'White Belt',
             status: 'active',
-            notes: ''
+            notes: '',
           });
           setIsAddingStudent(false);
         }
       }
       toast.success('Student saved!');
     } catch (error) {
-      toast.error('Error saving student: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error saving student: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     } finally {
       setSaving(false);
     }
@@ -284,7 +359,8 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
           last_name: editingGuardian.lastName,
           email: editingGuardian.email || null,
           phone_number: editingGuardian.phoneNumber || null,
-          relationship: (editingGuardian.relationship || null) as Relationship | null,
+          relationship: (editingGuardian.relationship ||
+            null) as Relationship | null,
           is_primary_contact: editingGuardian.isPrimaryContact,
         });
         if (editingGuardian.isPrimaryContact) {
@@ -302,7 +378,8 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             last_name: newGuardian.lastName,
             email: newGuardian.email || null,
             phone_number: newGuardian.phoneNumber || null,
-            relationship: (newGuardian.relationship || null) as Relationship | null,
+            relationship: (newGuardian.relationship ||
+              null) as Relationship | null,
             is_primary_contact: newGuardian.isPrimaryContact || false,
           });
           setNewGuardian({
@@ -311,14 +388,17 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             email: '',
             phoneNumber: '',
             relationship: '',
-            isPrimaryContact: false
+            isPrimaryContact: false,
           });
           setIsAddingGuardian(false);
         }
       }
       toast.success('Guardian saved!');
     } catch (error) {
-      toast.error('Error saving guardian: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error saving guardian: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     } finally {
       setSaving(false);
     }
@@ -349,8 +429,10 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
     setSaving(true);
     try {
       const updates = guardians
-        .map(g => {
-          const dbGuardian = dbGuardians.find(dbg => dbg.guardian_id === g.id);
+        .map((g) => {
+          const dbGuardian = dbGuardians.find(
+            (dbg) => dbg.guardian_id === g.id,
+          );
           if (!dbGuardian) return null;
           return updateGuardian(dbGuardian.guardian_id, {
             is_primary_contact: g.id === guardianId,
@@ -359,7 +441,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
         .filter((p): p is NonNullable<typeof p> => p !== null);
 
       await Promise.all(updates);
-      const newPrimary = guardians.find(g => g.id === guardianId);
+      const newPrimary = guardians.find((g) => g.id === guardianId);
       if (newPrimary) {
         await updateProfile(user.id, {
           display_name: `${newPrimary.firstName} ${newPrimary.lastName}`,
@@ -368,7 +450,10 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
       }
       toast.success('Primary guardian updated!');
     } catch (error) {
-      toast.error('Error updating primary guardian: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error updating primary guardian: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     } finally {
       setSaving(false);
     }
@@ -380,9 +465,11 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
       return;
     }
 
-    const guardian = guardians.find(g => g.id === guardianId);
+    const guardian = guardians.find((g) => g.id === guardianId);
     if (guardian?.isPrimaryContact) {
-      toast.error('Cannot remove the primary guardian. Please reassign primary first.');
+      toast.error(
+        'Cannot remove the primary guardian. Please reassign primary first.',
+      );
       return;
     }
 
@@ -396,7 +483,10 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
           await removeGuardian(guardianId);
           toast.success('Guardian removed.');
         } catch (error) {
-          toast.error('Error removing guardian: ' + (error instanceof Error ? error.message : 'Unknown error'));
+          toast.error(
+            'Error removing guardian: ' +
+              (error instanceof Error ? error.message : 'Unknown error'),
+          );
         } finally {
           setSaving(false);
         }
@@ -439,7 +529,10 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
       setIsEditingReview(false);
       toast.success('Review submitted! It will appear on the public website.');
     } catch (error) {
-      toast.error('Error saving review: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error(
+        'Error saving review: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      );
     } finally {
       setReviewLoading(false);
     }
@@ -466,7 +559,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
 
   async function handlePrefToggle(
     key: keyof typeof defaultPrefs,
-    value: boolean
+    value: boolean,
   ) {
     const updated = { ...prefs, [key]: value };
     setPrefs(updated);
@@ -481,10 +574,10 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
 
   const formatReviewDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
   };
 
@@ -546,7 +639,11 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
               <Home className="w-5 h-5" />
               <CardTitle>Family Information</CardTitle>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsEditingFamily(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditingFamily(true)}
+            >
               <Edit2 className="w-4 h-4 mr-2" />
               Edit
             </Button>
@@ -560,14 +657,22 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             </div>
             <div>
               <Label className="text-muted-foreground">Phone</Label>
-              <p>{guardians.find(g => g.isPrimaryContact)?.phoneNumber || guardians[0]?.phoneNumber || 'Not set'}</p>
+              <p>
+                {guardians.find((g) => g.isPrimaryContact)?.phoneNumber ||
+                  guardians[0]?.phoneNumber ||
+                  'Not set'}
+              </p>
             </div>
           </div>
           <div>
             <Label className="text-muted-foreground">Address</Label>
             <p>{family.address || 'Not set'}</p>
             {(family.city || family.state || family.zip) && (
-              <p>{[family.city, family.state, family.zip].filter(Boolean).join(', ')}</p>
+              <p>
+                {[family.city, family.state, family.zip]
+                  .filter(Boolean)
+                  .join(', ')}
+              </p>
             )}
           </div>
         </CardContent>
@@ -587,7 +692,12 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
               <Label>Address</Label>
               <Input
                 value={editingFamilyData.address}
-                onChange={(e) => setEditingFamilyData({ ...editingFamilyData, address: e.target.value })}
+                onChange={(e) =>
+                  setEditingFamilyData({
+                    ...editingFamilyData,
+                    address: e.target.value,
+                  })
+                }
                 placeholder="123 Main Street"
               />
             </div>
@@ -596,7 +706,12 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 <Label>City</Label>
                 <Input
                   value={editingFamilyData.city}
-                  onChange={(e) => setEditingFamilyData({ ...editingFamilyData, city: e.target.value })}
+                  onChange={(e) =>
+                    setEditingFamilyData({
+                      ...editingFamilyData,
+                      city: e.target.value,
+                    })
+                  }
                   placeholder="Los Banos"
                 />
               </div>
@@ -604,7 +719,12 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 <Label>State</Label>
                 <Input
                   value={editingFamilyData.state}
-                  onChange={(e) => setEditingFamilyData({ ...editingFamilyData, state: e.target.value })}
+                  onChange={(e) =>
+                    setEditingFamilyData({
+                      ...editingFamilyData,
+                      state: e.target.value,
+                    })
+                  }
                   placeholder="CA"
                   maxLength={2}
                 />
@@ -614,14 +734,23 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
               <Label>ZIP Code</Label>
               <Input
                 value={editingFamilyData.zip}
-                onChange={(e) => setEditingFamilyData({ ...editingFamilyData, zip: e.target.value })}
+                onChange={(e) =>
+                  setEditingFamilyData({
+                    ...editingFamilyData,
+                    zip: e.target.value,
+                  })
+                }
                 placeholder="93635"
                 maxLength={10}
               />
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsEditingFamily(false)} disabled={saving}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditingFamily(false)}
+              disabled={saving}
+            >
               Cancel
             </Button>
             <Button onClick={handleSaveFamily} disabled={saving}>
@@ -652,15 +781,20 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             </Button>
           </div>
           <CardDescription className="mt-2">
-            The primary guardian's name will be displayed on messages sent from this account
+            The primary guardian's name will be displayed on messages sent from
+            this account
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {guardians.map((guardian) => (
-            <div key={guardian.id} className="flex items-start gap-4 p-4 border rounded-lg">
+            <div
+              key={guardian.id}
+              className="flex items-start gap-4 p-4 border rounded-lg"
+            >
               <Avatar className="h-12 w-12">
                 <AvatarFallback>
-                  {guardian.firstName[0]}{guardian.lastName[0]}
+                  {guardian.firstName[0]}
+                  {guardian.lastName[0]}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
@@ -675,7 +809,9 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">{guardian.relationship}</p>
+                <p className="text-sm text-muted-foreground">
+                  {guardian.relationship}
+                </p>
                 <p className="text-sm">{guardian.email}</p>
                 <p className="text-sm">{guardian.phoneNumber}</p>
               </div>
@@ -739,14 +875,24 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                       <Label>First Name</Label>
                       <Input
                         value={newStudent.firstName}
-                        onChange={(e) => setNewStudent({ ...newStudent, firstName: e.target.value })}
+                        onChange={(e) =>
+                          setNewStudent({
+                            ...newStudent,
+                            firstName: e.target.value,
+                          })
+                        }
                       />
                     </div>
                     <div className="space-y-2">
                       <Label>Last Name</Label>
                       <Input
                         value={newStudent.lastName}
-                        onChange={(e) => setNewStudent({ ...newStudent, lastName: e.target.value })}
+                        onChange={(e) =>
+                          setNewStudent({
+                            ...newStudent,
+                            lastName: e.target.value,
+                          })
+                        }
                       />
                     </div>
                   </div>
@@ -755,7 +901,12 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                     <Input
                       type="date"
                       value={newStudent.dateOfBirth}
-                      onChange={(e) => setNewStudent({ ...newStudent, dateOfBirth: e.target.value })}
+                      onChange={(e) =>
+                        setNewStudent({
+                          ...newStudent,
+                          dateOfBirth: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   {user.role !== 'family' && (
@@ -763,7 +914,9 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                       <Label>Belt Level</Label>
                       <Select
                         value={newStudent.beltLevel}
-                        onValueChange={(value) => setNewStudent({ ...newStudent, beltLevel: value })}
+                        onValueChange={(value) =>
+                          setNewStudent({ ...newStudent, beltLevel: value })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -783,18 +936,27 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                     <Textarea
                       placeholder="Any additional information (allergies, preferences, etc.)"
                       value={newStudent.notes}
-                      onChange={(e) => setNewStudent({ ...newStudent, notes: e.target.value })}
+                      onChange={(e) =>
+                        setNewStudent({ ...newStudent, notes: e.target.value })
+                      }
                       className="min-h-[100px]"
                     />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsAddingStudent(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddingStudent(false)}
+                  >
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleSaveStudent}
-                    disabled={!newStudent.firstName || !newStudent.lastName || !newStudent.dateOfBirth}
+                    disabled={
+                      !newStudent.firstName ||
+                      !newStudent.lastName ||
+                      !newStudent.dateOfBirth
+                    }
                   >
                     Add Student
                   </Button>
@@ -813,7 +975,9 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                     fallback={`${student.firstName[0]}${student.lastName[0]}`}
                     size="lg"
                     layout="vertical"
-                    onUpload={(file) => handleUploadStudentPhoto(student.id, file)}
+                    onUpload={(file) =>
+                      handleUploadStudentPhoto(student.id, file)
+                    }
                     onRemove={() => handleRemoveStudentPhoto(student.id)}
                   />
                 </div>
@@ -823,7 +987,11 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                       <h3 className="font-semibold text-lg leading-tight">
                         {student.firstName} {student.lastName}
                       </h3>
-                      <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
+                      <Badge
+                        variant={
+                          student.status === 'active' ? 'default' : 'secondary'
+                        }
+                      >
                         {student.status}
                       </Badge>
                     </div>
@@ -837,14 +1005,17 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Age {calculateAge(student.dateOfBirth)} • Born {new Date(student.dateOfBirth).toLocaleDateString()}
+                    Age {calculateAge(student.dateOfBirth)} • Born{' '}
+                    {new Date(student.dateOfBirth).toLocaleDateString()}
                   </p>
                   <Badge className="bg-[#303030] text-background border-primary self-start">
                     {student.beltLevel}
                   </Badge>
                   {student.notes && (
                     <div className="mt-3 p-3 bg-secondary rounded-md">
-                      <Label className="text-xs text-muted-foreground">Notes</Label>
+                      <Label className="text-xs text-muted-foreground">
+                        Notes
+                      </Label>
                       <p className="text-sm mt-1">{student.notes}</p>
                     </div>
                   )}
@@ -856,13 +1027,14 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
       </Card>
 
       {/* Edit Student Dialog */}
-      <Dialog open={!!editingStudent} onOpenChange={(open) => !open && setEditingStudent(null)}>
+      <Dialog
+        open={!!editingStudent}
+        onOpenChange={(open) => !open && setEditingStudent(null)}
+      >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Edit Student</DialogTitle>
-            <DialogDescription>
-              Update student information
-            </DialogDescription>
+            <DialogDescription>Update student information</DialogDescription>
           </DialogHeader>
           {editingStudent && (
             <div className="space-y-4 py-4">
@@ -871,14 +1043,24 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                   <Label>First Name</Label>
                   <Input
                     value={editingStudent.firstName}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, firstName: e.target.value })}
+                    onChange={(e) =>
+                      setEditingStudent({
+                        ...editingStudent,
+                        firstName: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Last Name</Label>
                   <Input
                     value={editingStudent.lastName}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, lastName: e.target.value })}
+                    onChange={(e) =>
+                      setEditingStudent({
+                        ...editingStudent,
+                        lastName: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -887,7 +1069,12 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 <Input
                   type="date"
                   value={editingStudent.dateOfBirth}
-                  onChange={(e) => setEditingStudent({ ...editingStudent, dateOfBirth: e.target.value })}
+                  onChange={(e) =>
+                    setEditingStudent({
+                      ...editingStudent,
+                      dateOfBirth: e.target.value,
+                    })
+                  }
                 />
               </div>
               {user.role !== 'family' && (
@@ -896,7 +1083,12 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                     <Label>Belt Level</Label>
                     <Select
                       value={editingStudent.beltLevel}
-                      onValueChange={(value) => setEditingStudent({ ...editingStudent, beltLevel: value })}
+                      onValueChange={(value) =>
+                        setEditingStudent({
+                          ...editingStudent,
+                          beltLevel: value,
+                        })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -934,17 +1126,27 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 <Textarea
                   placeholder="Any additional information (allergies, preferences, etc.)"
                   value={editingStudent.notes}
-                  onChange={(e) => setEditingStudent({ ...editingStudent, notes: e.target.value })}
+                  onChange={(e) =>
+                    setEditingStudent({
+                      ...editingStudent,
+                      notes: e.target.value,
+                    })
+                  }
                   className="min-h-[100px]"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Student Photo</Label>
                 <PhotoUploader
-                  currentUrl={students.find(s => s.id === editingStudent.id)?.photoUrl ?? null}
+                  currentUrl={
+                    students.find((s) => s.id === editingStudent.id)
+                      ?.photoUrl ?? null
+                  }
                   fallback={`${editingStudent.firstName[0] ?? ''}${editingStudent.lastName[0] ?? ''}`}
                   size="sm"
-                  onUpload={(file) => handleUploadStudentPhoto(editingStudent.id, file)}
+                  onUpload={(file) =>
+                    handleUploadStudentPhoto(editingStudent.id, file)
+                  }
                   onRemove={() => handleRemoveStudentPhoto(editingStudent.id)}
                 />
               </div>
@@ -954,9 +1156,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             <Button variant="outline" onClick={() => setEditingStudent(null)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveStudent}>
-              Save Changes
-            </Button>
+            <Button onClick={handleSaveStudent}>Save Changes</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -976,14 +1176,21 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 <Label>First Name</Label>
                 <Input
                   value={newGuardian.firstName}
-                  onChange={(e) => setNewGuardian({ ...newGuardian, firstName: e.target.value })}
+                  onChange={(e) =>
+                    setNewGuardian({
+                      ...newGuardian,
+                      firstName: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="space-y-2">
                 <Label>Last Name</Label>
                 <Input
                   value={newGuardian.lastName}
-                  onChange={(e) => setNewGuardian({ ...newGuardian, lastName: e.target.value })}
+                  onChange={(e) =>
+                    setNewGuardian({ ...newGuardian, lastName: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -992,7 +1199,9 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
               <Input
                 type="email"
                 value={newGuardian.email}
-                onChange={(e) => setNewGuardian({ ...newGuardian, email: e.target.value })}
+                onChange={(e) =>
+                  setNewGuardian({ ...newGuardian, email: e.target.value })
+                }
               />
             </div>
             <div className="space-y-2">
@@ -1001,7 +1210,12 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 type="tel"
                 placeholder="(555) 123-4567"
                 value={newGuardian.phoneNumber}
-                onChange={(e) => setNewGuardian({ ...newGuardian, phoneNumber: e.target.value })}
+                onChange={(e) =>
+                  setNewGuardian({
+                    ...newGuardian,
+                    phoneNumber: e.target.value,
+                  })
+                }
               />
             </div>
             <div className="space-y-2">
@@ -1009,17 +1223,30 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
               <Input
                 placeholder="e.g., Father, Mother, Guardian"
                 value={newGuardian.relationship}
-                onChange={(e) => setNewGuardian({ ...newGuardian, relationship: e.target.value })}
+                onChange={(e) =>
+                  setNewGuardian({
+                    ...newGuardian,
+                    relationship: e.target.value,
+                  })
+                }
               />
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsAddingGuardian(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsAddingGuardian(false)}
+            >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSaveGuardian}
-              disabled={!newGuardian.firstName || !newGuardian.lastName || !newGuardian.email || !newGuardian.phoneNumber}
+              disabled={
+                !newGuardian.firstName ||
+                !newGuardian.lastName ||
+                !newGuardian.email ||
+                !newGuardian.phoneNumber
+              }
             >
               Add Guardian
             </Button>
@@ -1028,13 +1255,14 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
       </Dialog>
 
       {/* Edit Guardian Dialog */}
-      <Dialog open={!!editingGuardian} onOpenChange={(open) => !open && setEditingGuardian(null)}>
+      <Dialog
+        open={!!editingGuardian}
+        onOpenChange={(open) => !open && setEditingGuardian(null)}
+      >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Edit Guardian</DialogTitle>
-            <DialogDescription>
-              Update guardian information
-            </DialogDescription>
+            <DialogDescription>Update guardian information</DialogDescription>
           </DialogHeader>
           {editingGuardian && (
             <div className="space-y-4 py-4">
@@ -1043,14 +1271,24 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                   <Label>First Name</Label>
                   <Input
                     value={editingGuardian.firstName}
-                    onChange={(e) => setEditingGuardian({ ...editingGuardian, firstName: e.target.value })}
+                    onChange={(e) =>
+                      setEditingGuardian({
+                        ...editingGuardian,
+                        firstName: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Last Name</Label>
                   <Input
                     value={editingGuardian.lastName}
-                    onChange={(e) => setEditingGuardian({ ...editingGuardian, lastName: e.target.value })}
+                    onChange={(e) =>
+                      setEditingGuardian({
+                        ...editingGuardian,
+                        lastName: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -1059,7 +1297,12 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 <Input
                   type="email"
                   value={editingGuardian.email}
-                  onChange={(e) => setEditingGuardian({ ...editingGuardian, email: e.target.value })}
+                  onChange={(e) =>
+                    setEditingGuardian({
+                      ...editingGuardian,
+                      email: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -1067,14 +1310,24 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 <Input
                   type="tel"
                   value={editingGuardian.phoneNumber}
-                  onChange={(e) => setEditingGuardian({ ...editingGuardian, phoneNumber: e.target.value })}
+                  onChange={(e) =>
+                    setEditingGuardian({
+                      ...editingGuardian,
+                      phoneNumber: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="space-y-2">
                 <Label>Relationship</Label>
                 <Input
                   value={editingGuardian.relationship}
-                  onChange={(e) => setEditingGuardian({ ...editingGuardian, relationship: e.target.value })}
+                  onChange={(e) =>
+                    setEditingGuardian({
+                      ...editingGuardian,
+                      relationship: e.target.value,
+                    })
+                  }
                 />
               </div>
             </div>
@@ -1083,9 +1336,7 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             <Button variant="outline" onClick={() => setEditingGuardian(null)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveGuardian}>
-              Save Changes
-            </Button>
+            <Button onClick={handleSaveGuardian}>Save Changes</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1100,21 +1351,16 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 <CardTitle>Your Review</CardTitle>
               </div>
               {existingReview && !isEditingReview && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEditReview}
-                >
+                <Button variant="outline" size="sm" onClick={handleEditReview}>
                   <Edit2 className="w-4 h-4 mr-2" />
                   Edit Review
                 </Button>
               )}
             </div>
             <CardDescription>
-              {isAddingNewReview 
-                ? 'Share your family\'s experience at LBMAA with prospective families'
-                : 'Published on the public website'
-              }
+              {isAddingNewReview
+                ? "Share your family's experience at LBMAA with prospective families"
+                : 'Published on the public website'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1164,7 +1410,10 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                  <Button onClick={handleSaveReview} disabled={!reviewText.trim()}>
+                  <Button
+                    onClick={handleSaveReview}
+                    disabled={!reviewText.trim()}
+                  >
                     <Check className="w-4 h-4 mr-2" />
                     {isAddingNewReview ? 'Submit Review' : 'Save Changes'}
                   </Button>
@@ -1178,9 +1427,11 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 {/* Info */}
                 <div className="p-4 bg-secondary/50 rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> Your review will be published using your name "{user.displayName}" 
-                    and will appear publicly on the LBMAA website. Reviews help prospective families learn 
-                    about our academy and the positive impact we have on students and their families.
+                    <strong>Note:</strong> Your review will be published using
+                    your name "{user.displayName}" and will appear publicly on
+                    the LBMAA website. Reviews help prospective families learn
+                    about our academy and the positive impact we have on
+                    students and their families.
                   </p>
                 </div>
               </div>
@@ -1206,7 +1457,9 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                 </div>
 
                 <div className="p-4 bg-secondary/30 rounded-lg">
-                  <p className="text-sm whitespace-pre-wrap">{existingReview.review}</p>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {existingReview.review}
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -1214,14 +1467,14 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
                   <span>
                     {existingReview.updated_at
                       ? `Updated ${formatReviewDate(existingReview.updated_at)}`
-                      : `Posted ${formatReviewDate(existingReview.created_at)}`
-                    }
+                      : `Posted ${formatReviewDate(existingReview.created_at)}`}
                   </span>
                 </div>
 
                 <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
                   <p className="text-sm text-green-700 dark:text-green-400">
-                    ✓ Your review is live on the public website and helping prospective families learn about LBMAA!
+                    ✓ Your review is live on the public website and helping
+                    prospective families learn about LBMAA!
                   </p>
                 </div>
               </div>
@@ -1245,7 +1498,9 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
       <Card>
         <CardHeader>
           <CardTitle>Notification Preferences</CardTitle>
-          <CardDescription>Choose when you'd like to receive emails</CardDescription>
+          <CardDescription>
+            Choose when you'd like to receive emails
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {prefsLoading ? (
@@ -1256,22 +1511,54 @@ export function ProfileTab({ user, onRefreshUser }: { user: NonNullable<User>; o
             </div>
           ) : (
             <>
-              {([
-                { key: 'notify_messages' as const,        label: 'New Messages',           sub: 'Email me when I receive a message' },
-                { key: 'notify_announcements' as const,   label: 'Academy Announcements',  sub: 'Email me when a new announcement is posted' },
-                { key: 'notify_blog_posts' as const,      label: 'Blog Posts',             sub: 'Email me when a new blog post is published' },
-                { key: 'notify_comment_replies' as const, label: 'Replies to My Comments', sub: 'Email me when someone replies to a comment I left' },
-                { key: 'notify_post_comments' as const,   label: 'Comments on My Posts',   sub: 'Email me when someone comments on a blog post I wrote' },
-              ] as const).map(({ key, label, sub }) => (
-                <div key={key} className="flex items-center justify-between gap-4 py-1">
-                  <Label htmlFor={key} className="flex flex-col gap-0.5 cursor-pointer flex-1">
+              {(
+                [
+                  {
+                    key: 'notify_messages' as const,
+                    label: 'New Messages',
+                    sub: 'Email me when I receive a message',
+                  },
+                  {
+                    key: 'notify_announcements' as const,
+                    label: 'Academy Announcements',
+                    sub: 'Email me when a new announcement is posted',
+                  },
+                  {
+                    key: 'notify_blog_posts' as const,
+                    label: 'Blog Posts',
+                    sub: 'Email me when a new blog post is published',
+                  },
+                  {
+                    key: 'notify_comment_replies' as const,
+                    label: 'Replies to My Comments',
+                    sub: 'Email me when someone replies to a comment I left',
+                  },
+                  {
+                    key: 'notify_post_comments' as const,
+                    label: 'Comments on My Posts',
+                    sub: 'Email me when someone comments on a blog post I wrote',
+                  },
+                ] as const
+              ).map(({ key, label, sub }) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between gap-4 py-1"
+                >
+                  <Label
+                    htmlFor={key}
+                    className="flex flex-col gap-0.5 cursor-pointer flex-1"
+                  >
                     <span className="font-medium">{label}</span>
-                    <span className="text-xs text-muted-foreground font-normal">{sub}</span>
+                    <span className="text-xs text-muted-foreground font-normal">
+                      {sub}
+                    </span>
                   </Label>
                   <Switch
                     id={key}
                     checked={prefs[key]}
-                    onCheckedChange={(checked) => handlePrefToggle(key, checked)}
+                    onCheckedChange={(checked) =>
+                      handlePrefToggle(key, checked)
+                    }
                   />
                 </div>
               ))}

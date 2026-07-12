@@ -17,9 +17,14 @@ export function FacilitiesPage() {
 
   return (
     <div>
-
       {/* ── PAGE HERO ── */}
-      <section className="py-14" style={{ backgroundColor: 'white', borderBottom: `1px solid ${V3.border}` }}>
+      <section
+        className="py-14"
+        style={{
+          backgroundColor: 'white',
+          borderBottom: `1px solid ${V3.border}`,
+        }}
+      >
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <p className="v3-eyebrow mb-4">{f.eyebrow}</p>
           <h1
@@ -28,7 +33,10 @@ export function FacilitiesPage() {
           >
             {f.heading}
           </h1>
-          <p className="text-base leading-relaxed max-w-xl" style={{ color: V3.muted }}>
+          <p
+            className="text-base leading-relaxed max-w-xl"
+            style={{ color: V3.muted }}
+          >
             {f.sub}
           </p>
         </div>
@@ -53,7 +61,10 @@ export function FacilitiesPage() {
           <p className="v3-eyebrow mb-4">{f.featuresEyebrow}</p>
           <h2
             className="v3-h font-black leading-[1.0] mb-10"
-            style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: V3.text }}
+            style={{
+              fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)',
+              color: V3.text,
+            }}
           >
             {f.featuresHeading}
           </h2>
@@ -65,13 +76,23 @@ export function FacilitiesPage() {
                 className="py-6 pr-8"
                 style={{
                   borderTop: `1px solid ${V3.border}`,
-                  ...(i < 3 ? { borderTop: `2px solid ${i === 0 ? V3.primary : V3.border}` } : {}),
+                  ...(i < 3
+                    ? {
+                        borderTop: `2px solid ${i === 0 ? V3.primary : V3.border}`,
+                      }
+                    : {}),
                 }}
               >
-                <h3 className="v3-h text-base font-bold mb-2" style={{ color: V3.text }}>
+                <h3
+                  className="v3-h text-base font-bold mb-2"
+                  style={{ color: V3.text }}
+                >
                   {label}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: V3.muted }}>
+                <p
+                  className="text-sm leading-relaxed"
+                  style={{ color: V3.muted }}
+                >
                   {desc}
                 </p>
               </div>
@@ -86,20 +107,29 @@ export function FacilitiesPage() {
           <p className="v3-eyebrow mb-4">{f.galleryEyebrow}</p>
           <h2
             className="v3-h font-black leading-[1.0] mb-8"
-            style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: V3.text }}
+            style={{
+              fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)',
+              color: V3.text,
+            }}
           >
             {f.galleryHeading}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {GALLERY.map(({ src, alt }) => (
-              <div key={src} className="rounded-xl overflow-hidden aspect-square bg-gray-100">
-                <ImageWithFallback src={src} alt={alt} className="w-full h-full object-cover" />
+              <div
+                key={src}
+                className="rounded-xl overflow-hidden aspect-square bg-gray-100"
+              >
+                <ImageWithFallback
+                  src={src}
+                  alt={alt}
+                  className="w-full h-full object-cover"
+                />
               </div>
             ))}
           </div>
         </div>
       </section>
-
     </div>
   );
 }

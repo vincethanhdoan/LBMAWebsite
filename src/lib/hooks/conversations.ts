@@ -11,7 +11,10 @@ import { createMessage, markConversationAsRead } from '../supabase/mutations';
 import { queryKeys } from '../queryKeys';
 
 // Inlined from messages/helpers.ts to avoid lib→component import
-function isDirectConversationAllowed(currentUserRole: 'admin' | 'family', otherRole?: string | null) {
+function isDirectConversationAllowed(
+  currentUserRole: 'admin' | 'family',
+  otherRole?: string | null,
+) {
   if (!otherRole) return false;
   if (currentUserRole === 'family') return otherRole === 'admin';
   return otherRole === 'family' || otherRole === 'admin';
@@ -20,7 +23,7 @@ function isDirectConversationAllowed(currentUserRole: 'admin' | 'family', otherR
 function countUnread(
   messages: Array<{ author_user_id: string; created_at: string }>,
   userId: string,
-  lastReadAt?: string | null
+  lastReadAt?: string | null,
 ): number {
   return messages.filter((m) => {
     if (m.author_user_id === userId) return false;
@@ -49,7 +52,9 @@ type FetchUser = {
   role: 'admin' | 'family';
 };
 
-async function fetchConversationsForUser(user: FetchUser): Promise<ConversationsData> {
+async function fetchConversationsForUser(
+  user: FetchUser,
+): Promise<ConversationsData> {
   const [profiles, userConvs] = await Promise.all([
     getAllProfiles(),
     getUserConversations(user.id),
@@ -63,9 +68,10 @@ async function fetchConversationsForUser(user: FetchUser): Promise<Conversations
 
     if (conv.type === 'global') {
       const convMessages = await getMessages(conv.conversation_id);
-      const lastMsg = convMessages[convMessages.length - 1] as MessageWithMeta | undefined;
+      const lastMsg = convMessages[convMessages.length - 1] as
+        MessageWithMeta | undefined;
       const memberRecord = (conv as any).conversation_members?.find(
-        (m: any) => m.user_id === user.id
+        (m: any) => m.user_id === user.id,
       );
       const lastReadAt = memberRecord?.last_read_at ?? null;
       const unreadCount = countUnread(convMessages, user.id, lastReadAt);
@@ -87,15 +93,18 @@ async function fetchConversationsForUser(user: FetchUser): Promise<Conversations
     const otherMember = members.find((m) => m.user_id !== user.id);
     if (!otherMember) continue;
 
-    const otherProfile = profiles.find((p) => p.user_id === otherMember.user_id);
+    const otherProfile = profiles.find(
+      (p) => p.user_id === otherMember.user_id,
+    );
     if (!isDirectConversationAllowed(user.role, otherProfile?.role)) continue;
 
     allowedDirectIds.push(conv.conversation_id);
 
     const convMessages = await getMessages(conv.conversation_id);
-    const lastMsg = convMessages[convMessages.length - 1] as MessageWithMeta | undefined;
+    const lastMsg = convMessages[convMessages.length - 1] as
+      MessageWithMeta | undefined;
     const memberRecord = (conv as any).conversation_members?.find(
-      (m: any) => m.user_id === user.id
+      (m: any) => m.user_id === user.id,
     );
     const lastReadAt = memberRecord?.last_read_at ?? null;
     const unreadCount = countUnread(convMessages, user.id, lastReadAt);
@@ -152,8 +161,12 @@ export function useSendMessage(user: SendMessageUser) {
       }),
 
     onMutate: async ({ conversationId, body }) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.messages(conversationId) });
-      const snapshot = queryClient.getQueryData<MessageWithMeta[]>(queryKeys.messages(conversationId));
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.messages(conversationId),
+      });
+      const snapshot = queryClient.getQueryData<MessageWithMeta[]>(
+        queryKeys.messages(conversationId),
+      );
 
       const tempMessage = {
         message_id: `temp-${Date.now()}`,
@@ -162,13 +175,17 @@ export function useSendMessage(user: SendMessageUser) {
         body,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        profiles: { display_name: user.displayName, role: user.role, avatar_url: null },
+        profiles: {
+          display_name: user.displayName,
+          role: user.role,
+          avatar_url: null,
+        },
         message_attachments: [],
       } as MessageWithMeta;
 
       queryClient.setQueryData<MessageWithMeta[]>(
         queryKeys.messages(conversationId),
-        (old) => [...(old ?? []), tempMessage]
+        (old) => [...(old ?? []), tempMessage],
       );
 
       return { snapshot, conversationId };
@@ -176,14 +193,21 @@ export function useSendMessage(user: SendMessageUser) {
 
     onError: (_err, _vars, ctx) => {
       if (ctx) {
-        queryClient.setQueryData(queryKeys.messages(ctx.conversationId), ctx.snapshot);
+        queryClient.setQueryData(
+          queryKeys.messages(ctx.conversationId),
+          ctx.snapshot,
+        );
       }
       toast.error('Message failed to send');
     },
 
     onSettled: (_data, _err, vars) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.messages(vars.conversationId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.conversations(user.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.messages(vars.conversationId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.conversations(user.id),
+      });
     },
   });
 }
@@ -192,10 +216,15 @@ export function useMarkConversationRead(userId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (conversationId: string) => markConversationAsRead(conversationId, userId),
+    mutationFn: (conversationId: string) =>
+      markConversationAsRead(conversationId, userId),
     onMutate: async (conversationId) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.conversations(userId) });
-      const snapshot = queryClient.getQueryData<ConversationsData>(queryKeys.conversations(userId));
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.conversations(userId),
+      });
+      const snapshot = queryClient.getQueryData<ConversationsData>(
+        queryKeys.conversations(userId),
+      );
       queryClient.setQueryData<ConversationsData>(
         queryKeys.conversations(userId),
         (old) => {
@@ -203,10 +232,10 @@ export function useMarkConversationRead(userId: string) {
           return {
             ...old,
             conversations: old.conversations.map((c) =>
-              c.id === conversationId ? { ...c, unreadCount: 0 } : c
+              c.id === conversationId ? { ...c, unreadCount: 0 } : c,
             ),
           };
-        }
+        },
       );
       return { snapshot };
     },
@@ -216,8 +245,12 @@ export function useMarkConversationRead(userId: string) {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.conversations(userId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.sidebarCounts(userId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.conversations(userId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.sidebarCounts(userId),
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.homeCounts(userId) });
     },
   });

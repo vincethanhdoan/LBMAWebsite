@@ -1,10 +1,19 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { X, Mail, Lock, AlertCircle } from 'lucide-react';
-import { supabase, checkEmailHasAccountWithTimeout } from '../lib/supabase/client';
+import {
+  supabase,
+  checkEmailHasAccountWithTimeout,
+} from '../lib/supabase/client';
 import { Alert, AlertDescription } from './ui/alert';
 
 type LoginModalProps = {
@@ -20,7 +29,7 @@ export function LoginModal({ onClose }: LoginModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail) {
@@ -32,14 +41,15 @@ export function LoginModal({ onClose }: LoginModalProps) {
 
     try {
       const RPC_TIMEOUT_MS = 15000;
-      const { data: hasAccount, error: checkError } = await checkEmailHasAccountWithTimeout(normalizedEmail, RPC_TIMEOUT_MS);
+      const { data: hasAccount, error: checkError } =
+        await checkEmailHasAccountWithTimeout(normalizedEmail, RPC_TIMEOUT_MS);
 
       if (checkError) {
         const isTimeout = checkError.message?.includes('timed out');
         setError(
           isTimeout
             ? 'Verification is taking too long. Please check your connection and try again. If this continues, the server may need the Supabase migration that adds account verification.'
-            : 'Unable to verify account. Please try again.'
+            : 'Unable to verify account. Please try again.',
         );
         setLoading(false);
         return;
@@ -47,7 +57,7 @@ export function LoginModal({ onClose }: LoginModalProps) {
 
       if (!hasAccount) {
         setError(
-          'No account found for this email. Only enrolled families can sign in. Please contact the academy to get set up.'
+          'No account found for this email. Only enrolled families can sign in. Please contact the academy to get set up.',
         );
         setLoading(false);
         return;
@@ -87,10 +97,15 @@ export function LoginModal({ onClose }: LoginModalProps) {
         </Button>
 
         <CardHeader className="text-center">
-          <img src="/logo.png" alt="LBMAA Logo" className="mx-auto mb-4 h-16 w-auto" />
+          <img
+            src="/logo.png"
+            alt="LBMAA Logo"
+            className="mx-auto mb-4 h-16 w-auto"
+          />
           <CardTitle className="text-2xl">Member Portal Login</CardTitle>
           <CardDescription>
-            Enter your email to receive a secure login link. Only enrolled families and staff can sign in.
+            Enter your email to receive a secure login link. Only enrolled
+            families and staff can sign in.
           </CardDescription>
         </CardHeader>
 
@@ -105,7 +120,8 @@ export function LoginModal({ onClose }: LoginModalProps) {
                 We've sent a secure login link to <strong>{email}</strong>
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                Click the link in your email to sign in. The link will expire in 1 hour.
+                Click the link in your email to sign in. The link will expire in
+                1 hour.
               </p>
               <Button
                 variant="outline"
@@ -126,7 +142,7 @@ export function LoginModal({ onClose }: LoginModalProps) {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input
@@ -145,14 +161,21 @@ export function LoginModal({ onClose }: LoginModalProps) {
                 />
               </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={loading}
+              >
                 <Lock className="w-4 h-4 mr-2" />
                 {loading ? 'Sending...' : 'Send Magic Link'}
               </Button>
 
               <div className="space-y-3 pt-4 border-t">
                 <p className="text-sm text-muted-foreground text-center">
-                  <strong>No password needed!</strong> We'll send you a secure link to access your account. New to the academy? Contact us to get an account set up.
+                  <strong>No password needed!</strong> We'll send you a secure
+                  link to access your account. New to the academy? Contact us to
+                  get an account set up.
                 </p>
               </div>
             </form>
