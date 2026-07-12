@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Check, Clock, AlertCircle } from 'lucide-react';
 import type { EnrollmentLead, EnrollmentLeadNotification } from '../../../lib/types';
 import { formatDateConcise } from './leadDisplay';
@@ -102,17 +101,18 @@ function buildEntries(lead: EnrollmentLead): TimelineEntry[] {
   });
 }
 
-const COLLAPSED_ENTRY_COUNT = 3;
+// The panel gates the whole timeline behind one disclosure; the count on that
+// disclosure row comes from here so the two can never disagree.
+export function timelineEntryCount(lead: EnrollmentLead): number {
+  return buildEntries(lead).length;
+}
 
 export function LeadTimeline({ lead }: { lead: EnrollmentLead }) {
-  const [showAll, setShowAll] = useState(false);
   const entries = buildEntries(lead);
-  const visible = showAll ? entries : entries.slice(0, COLLAPSED_ENTRY_COUNT);
-  const hiddenCount = entries.length - visible.length;
 
   return (
     <ol className="flex flex-col gap-2.5">
-      {visible.map(entry => (
+      {entries.map(entry => (
         <li key={entry.key} className="flex items-start gap-2.5 text-xs">
           <span className="mt-1 w-1.5 h-1.5 rounded-full bg-muted-foreground/40 flex-shrink-0" />
           <div className="flex-1 min-w-0">
@@ -130,17 +130,6 @@ export function LeadTimeline({ lead }: { lead: EnrollmentLead }) {
           </div>
         </li>
       ))}
-      {hiddenCount > 0 && (
-        <li>
-          <button
-            type="button"
-            onClick={() => setShowAll(true)}
-            className="text-xs font-medium text-primary hover:underline"
-          >
-            Show all activity ({entries.length})
-          </button>
-        </li>
-      )}
     </ol>
   );
 }

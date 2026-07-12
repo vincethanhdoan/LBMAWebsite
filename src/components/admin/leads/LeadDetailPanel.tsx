@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Pencil, Check, MoreVertical, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Pencil, Check, MoreVertical, AlertCircle, Loader2, ChevronRight } from 'lucide-react';
 import { Button } from '../../ui/button';
 import {
   DropdownMenu,
@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu';
 import { StatusBadge } from './ui';
-import { LeadTimeline } from './LeadTimeline';
+import { LeadTimeline, timelineEntryCount } from './LeadTimeline';
 import { RecordOutcomeButton } from './RecordOutcomePopover';
 import {
   PROGRAM_LABELS,
@@ -17,7 +17,7 @@ import {
   formatTimeShort,
   effectiveConfirmationNotification,
 } from './leadDisplay';
-import { getAppointmentOccurrences } from './leadViews';
+import { childSummary, getAppointmentOccurrences } from './leadViews';
 import type { useLeadActions } from './useLeadActions';
 import { formatPhone } from '../../../lib/format';
 import { pacificTodayISO } from '../../../lib/pacificTime';
@@ -29,14 +29,6 @@ const ACTIVE_STATUSES: EnrollmentLead['status'][] = [
   'appointment_scheduled',
   'appointment_confirmed',
 ];
-
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-      {children}
-    </div>
-  );
-}
 
 function HeaderStatus({ lead }: { lead: EnrollmentLead }) {
   switch (lead.status) {
@@ -98,6 +90,7 @@ export function LeadDetailPanel({
   const [notesEditing, setNotesEditing] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
   const [notesError, setNotesError] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
 
   // Re-seed notes state when the shell swaps the displayed lead on a mounted
   // panel, so one lead's draft can never be shown for or saved onto another.
@@ -108,6 +101,7 @@ export function LeadDetailPanel({
     setNotesEditing(false);
     setNotesSaved(false);
     setNotesError(false);
+    setActivityOpen(false);
   }
 
   useEffect(() => {
@@ -182,33 +176,33 @@ export function LeadDetailPanel({
     }
   })();
 
+  // The visit is what staff opens the panel for; it renders as the hero card.
+  // Program and kids are supporting context; per-program status appears only
+  // when multiple bookings could disagree with the header badge.
   function renderBooking(booking: EnrollmentLeadProgramBooking) {
     const kids = lead.children?.filter(c => c.program_type === booking.program_type) ?? [];
     const booked =
       (booking.status === 'scheduled' || booking.status === 'confirmed') &&
       booking.appointment_date !== null;
+    const context = [
+      PROGRAM_LABELS[booking.program_type],
+      bookings.length > 1 && kids.length > 0
+        ? kids.map(c => `${c.name} · age ${c.age}`).join(', ')
+        : null,
+      bookings.length > 1 && booked
+        ? booking.status === 'confirmed' ? 'Confirmed' : 'Not confirmed'
+        : null,
+    ].filter(Boolean).join(' · ');
     return (
-      <div key={booking.booking_id} className="space-y-0.5">
-        <div className="text-[13px] font-medium">{PROGRAM_LABELS[booking.program_type]}</div>
-        {kids.length > 0 && (
-          <div className="text-[11px] text-muted-foreground">
-            {kids.map(c => `${c.name} · age ${c.age}`).join(', ')}
-          </div>
-        )}
+      <div key={booking.booking_id} className="rounded-lg border border-border bg-background px-3.5 py-2.5">
         {booked ? (
-          <div className="text-[13px]">
+          <div className="text-[15px] font-semibold leading-snug">
             {formatVisit(booking.appointment_date as string, booking.appointment_time)}
-            {/* With one booking the header badge already carries the status. */}
-            {bookings.length > 1 && (
-              <span className="text-muted-foreground">
-                {' · '}
-                {booking.status === 'confirmed' ? 'Confirmed' : 'Not confirmed'}
-              </span>
-            )}
           </div>
         ) : (
           <div className="text-[13px] text-muted-foreground">Invite sent, not booked yet</div>
         )}
+        <div className="text-[11px] text-muted-foreground mt-0.5">{context}</div>
       </div>
     );
   }
@@ -219,23 +213,14 @@ export function LeadDetailPanel({
       <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-card border-l border-border overflow-y-auto flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4 border-b border-border">
-          <div className="min-w-0 space-y-1.5">
+          <div className="min-w-0 space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[15px] font-semibold leading-tight">{lead.parent_name}</span>
               <HeaderStatus lead={lead} />
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-[11px] text-muted-foreground">
-                Inquired {formatDateConcise(lead.created_at)}
-              </span>
-              <button
-                type="button"
-                onClick={() => onEdit(lead)}
-                className="text-[11px] font-medium text-primary hover:underline"
-              >
-                Edit
-              </button>
-            </div>
+            {childSummary(lead) && (
+              <div className="text-[11px] text-muted-foreground">{childSummary(lead)}</div>
+            )}
           </div>
           <button
             type="button"
@@ -248,9 +233,67 @@ export function LeadDetailPanel({
         </div>
 
         <div className="flex-1 px-5 py-4 space-y-5">
+          {/* The visit comes first: it is what staff opens the panel to see. */}
+          {hasAppointmentSection && (
+            <div className="space-y-2">
+              {bookings.length > 0 ? (
+                bookings.map(renderBooking)
+              ) : (
+                <div className="rounded-lg border border-border bg-background px-3.5 py-2.5">
+                  <div className="text-[15px] font-semibold leading-snug">
+                    {formatVisit(lead.appointment_date as string, lead.appointment_time)}
+                  </div>
+                  {lead.student_name && (
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {lead.student_name}
+                      {lead.student_age !== null ? ` · age ${lead.student_age}` : ''}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Email state only when it still needs something from staff or family. */}
+              {lead.status === 'appointment_scheduled' && !confirmationEmail && (
+                <div className="text-[11px] flex items-center gap-2">
+                  <span className="text-muted-foreground">No confirmation email sent</span>
+                  <button
+                    type="button"
+                    onClick={() => actions.sendReminder(lead)}
+                    disabled={actions.sendingReminderId === lead.lead_id}
+                    className="font-medium text-primary hover:underline disabled:opacity-50"
+                  >
+                    {actions.sendingReminderId === lead.lead_id ? 'Sending…' : 'Send confirmation email'}
+                  </button>
+                </div>
+              )}
+              {lead.status === 'appointment_scheduled' &&
+                (confirmationEmail?.status === 'sent' || confirmationEmail?.status === 'queued') && (
+                  <div className="text-[11px] text-muted-foreground">
+                    {confirmationEmail.status === 'sent'
+                      ? `Confirmation email sent ${formatDateConcise(confirmationEmail.created_at)}, waiting on the family`
+                      : 'Confirmation email queued'}
+                  </div>
+                )}
+              {confirmationEmail?.status === 'failed' && (
+                <div className="text-[11px] flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-[#A01F23]">
+                    <AlertCircle className="w-3 h-3" />
+                    Confirmation email failed
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => actions.sendReminder(lead)}
+                    disabled={actions.sendingReminderId === lead.lead_id}
+                    className="font-medium text-primary hover:underline disabled:opacity-50"
+                  >
+                    {actions.sendingReminderId === lead.lead_id ? 'Sending…' : 'Retry'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Contact */}
-          <div className="space-y-1.5">
-            <SectionLabel>Contact</SectionLabel>
+          <div className="space-y-1">
             <a
               href={`mailto:${lead.parent_email}`}
               className="block text-[13px] text-primary hover:underline break-all"
@@ -262,81 +305,15 @@ export function LeadDetailPanel({
             )}
           </div>
 
-          {/* Message */}
+          {/* The family's inquiry message, quoted */}
           {lead.message && (
-            <div className="space-y-1.5">
-              <SectionLabel>Message</SectionLabel>
-              <p className="text-[13px] whitespace-pre-wrap leading-relaxed">{lead.message}</p>
-            </div>
-          )}
-
-          {/* Appointments */}
-          {hasAppointmentSection && (
-            <div className="space-y-2">
-              <SectionLabel>Appointments</SectionLabel>
-              {bookings.length > 0 ? (
-                bookings.map(renderBooking)
-              ) : (
-                <div className="space-y-0.5">
-                  {lead.student_name && (
-                    <div className="text-[11px] text-muted-foreground">
-                      {lead.student_name}
-                      {lead.student_age !== null ? ` · age ${lead.student_age}` : ''}
-                    </div>
-                  )}
-                  <div className="text-[13px]">
-                    {formatVisit(lead.appointment_date as string, lead.appointment_time)}
-                  </div>
-                </div>
-              )}
-              {!confirmationEmail &&
-                (lead.status === 'appointment_scheduled' || lead.status === 'appointment_confirmed') && (
-                  <div className="text-[11px] flex items-center gap-2">
-                    <span className="text-muted-foreground">No confirmation email sent</span>
-                    <button
-                      type="button"
-                      onClick={() => actions.sendReminder(lead)}
-                      disabled={actions.sendingReminderId === lead.lead_id}
-                      className="font-medium text-primary hover:underline disabled:opacity-50"
-                    >
-                      {actions.sendingReminderId === lead.lead_id ? 'Sending…' : 'Send confirmation email'}
-                    </button>
-                  </div>
-                )}
-              {confirmationEmail && (
-                <div className="text-[11px]">
-                  {confirmationEmail.status === 'sent' && (
-                    <span className="text-muted-foreground">
-                      Confirmation email sent · {formatDateConcise(confirmationEmail.created_at)}
-                    </span>
-                  )}
-                  {confirmationEmail.status === 'queued' && (
-                    <span className="text-muted-foreground">Confirmation email queued</span>
-                  )}
-                  {confirmationEmail.status === 'failed' && (
-                    <span className="flex items-center gap-2">
-                      <span className="flex items-center gap-1 text-[#A01F23]">
-                        <AlertCircle className="w-3 h-3" />
-                        Confirmation email failed
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => actions.sendReminder(lead)}
-                        disabled={actions.sendingReminderId === lead.lead_id}
-                        className="font-medium text-primary hover:underline disabled:opacity-50"
-                      >
-                        {actions.sendingReminderId === lead.lead_id ? 'Sending…' : 'Retry'}
-                      </button>
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+            <p className="text-[13px] text-muted-foreground whitespace-pre-wrap leading-relaxed border-l-2 border-border pl-3">
+              {lead.message}
+            </p>
           )}
 
           {/* Notes */}
           <div className="space-y-1.5">
-            <SectionLabel>Notes</SectionLabel>
             {notesEditing ? (
               <div className="space-y-2">
                 <textarea
@@ -396,17 +373,31 @@ export function LeadDetailPanel({
               <button
                 type="button"
                 onClick={openNotesEditor}
-                className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
               >
+                <Pencil className="w-3 h-3" />
                 Add a note
               </button>
             )}
           </div>
 
-          {/* Activity */}
-          <div className="space-y-2">
-            <SectionLabel>Activity</SectionLabel>
-            <LeadTimeline lead={lead} />
+          {/* Activity, collapsed to one row until asked for */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setActivityOpen(o => !o)}
+              className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronRight
+                className={`w-3.5 h-3.5 transition-transform ${activityOpen ? 'rotate-90' : ''}`}
+              />
+              Activity ({timelineEntryCount(lead)})
+            </button>
+            {activityOpen && (
+              <div className="mt-3 pl-1">
+                <LeadTimeline lead={lead} />
+              </div>
+            )}
           </div>
         </div>
 
@@ -465,6 +456,7 @@ export function LeadDetailPanel({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => onEdit(lead)}>Edit lead</DropdownMenuItem>
                 {(lead.status === 'enrolled' || lead.status === 'closed') && (
                   <DropdownMenuItem onSelect={reopen} disabled={updateStatus.isPending}>
                     Reopen
