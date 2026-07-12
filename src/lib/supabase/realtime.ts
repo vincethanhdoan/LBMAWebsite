@@ -248,7 +248,28 @@ export function subscribeToEnrollmentLeads(
         });
       },
     )
-    .subscribe();
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'enrollment_lead_children',
+      },
+      (payload) => {
+        callback({
+          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+          new: payload.new,
+          old: payload.old,
+        });
+      },
+    )
+    .subscribe((status) => {
+      // Refetch once on (re)connect so a dropped socket that missed events
+      // can never leave the lead list stale.
+      if (status === 'SUBSCRIBED') {
+        callback({ eventType: 'UPDATE' });
+      }
+    });
 
   return channel;
 }
