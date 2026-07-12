@@ -46,7 +46,9 @@ export function programBadgeClass(programType: string): string {
 // Null for ordinary weekly slots (no badge); otherwise the week-of-month label.
 export function frequencyBadgeLabel(slot: AppointmentSlot): string | null {
   if (slot.week_of_month == null) return null;
-  return WEEK_OPTIONS.find((o) => o.value === slot.week_of_month)?.label ?? null;
+  return (
+    WEEK_OPTIONS.find((o) => o.value === slot.week_of_month)?.label ?? null
+  );
 }
 
 // Sort order within a day: Every, 1st–4th, Last.
