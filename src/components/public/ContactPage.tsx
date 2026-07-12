@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, AlertCircle, X, Plus, MapPin } from 'lucide-react';
+import {
+  CheckCircle2,
+  AlertCircle,
+  X,
+  Plus,
+  MapPin,
+  Loader2,
+} from 'lucide-react';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -19,6 +26,13 @@ const CONTACT_INFO = [
 ];
 
 type ChildRow = { name: string; age: string };
+type FieldErrors = {
+  name?: string;
+  phone?: string;
+  email?: string;
+  childCount?: string;
+  children: Record<number, string>;
+};
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -43,6 +57,7 @@ export function ContactPage() {
   const [company, setCompany] = useState(''); // honeypot — humans never see or fill this
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({ children: {} });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const successRef = useRef<HTMLDivElement>(null);
 
@@ -60,16 +75,28 @@ export function ContactPage() {
 
   function addChild() {
     setChildren((prev) => [...prev, { name: '', age: '' }]);
+    setFieldErrors((prev) => ({ ...prev, childCount: undefined }));
   }
 
   function removeChild(i: number) {
     setChildren((prev) => prev.filter((_, idx) => idx !== i));
+    setFieldErrors((prev) => ({
+      ...prev,
+      childCount: undefined,
+      children: {},
+    }));
   }
 
   function updateChild(i: number, field: 'name' | 'age', value: string) {
     setChildren((prev) =>
       prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)),
     );
+    setFieldErrors((prev) => {
+      if (!prev.children[i]) return prev;
+      const nextChildren = { ...prev.children };
+      delete nextChildren[i];
+      return { ...prev, children: nextChildren };
+    });
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,20 +108,17 @@ export function ContactPage() {
       return;
     }
 
+    const errors: FieldErrors = { children: {} };
+
     const trimmedName = parentName.trim();
     if (trimmedName.length < 2 || trimmedName.length > 100) {
-      setSubmitError(ct.errName);
-      return;
+      errors.name = ct.errName;
     }
 
     if (!phone.trim()) {
-      setSubmitError(ct.errPhone);
-      return;
-    }
-
-    if (phone.length > 20 || !isValidUsPhone(phone)) {
-      setSubmitError(ct.errPhoneInvalid);
-      return;
+      errors.phone = ct.errPhone;
+    } else if (phone.length > 20 || !isValidUsPhone(phone)) {
+      errors.phone = ct.errPhoneInvalid;
     }
 
     const trimmedEmail = parentEmail.trim().toLowerCase();
@@ -103,28 +127,48 @@ export function ContactPage() {
       trimmedEmail.length > 254 ||
       !isValidEmail(trimmedEmail)
     ) {
-      setSubmitError(ct.errEmailInvalid);
-      return;
+      errors.email = ct.errEmailInvalid;
     }
 
     if (children.length < 1 || children.length > 6) {
-      setSubmitError(ct.errChildCount);
-      return;
+      errors.childCount = ct.errChildCount;
     }
 
-    for (const c of children) {
+    children.forEach((c, i) => {
       const childName = c.name.trim();
       if (!childName || childName.length > 60 || !c.age) {
-        setSubmitError(ct.errChildFields);
+        errors.children[i] = ct.errChildFields;
         return;
       }
       const age = Number(c.age);
       if (!Number.isInteger(age) || age < 4 || age > 17) {
-        setSubmitError(ct.errAgeRange);
-        return;
+        errors.children[i] = ct.errAgeRange;
       }
+    });
+
+    const hasErrors =
+      !!errors.name ||
+      !!errors.phone ||
+      !!errors.email ||
+      !!errors.childCount ||
+      Object.keys(errors.children).length > 0;
+
+    if (hasErrors) {
+      setFieldErrors(errors);
+      const firstInvalidId = errors.name
+        ? 'parentName'
+        : errors.phone
+          ? 'phone'
+          : errors.email
+            ? 'parentEmail'
+            : errors.childCount
+              ? 'child-name-0'
+              : `child-name-${Object.keys(errors.children)[0]}`;
+      document.getElementById(firstInvalidId)?.focus();
+      return;
     }
 
+    setFieldErrors({ children: {} });
     setIsSubmitting(true);
     const { data, error } = await submitEnrollmentLeadWithTimeout(
       {
@@ -277,13 +321,33 @@ export function ContactPage() {
                         id="parentName"
                         placeholder="Eduardo Guerra"
                         value={parentName}
-                        onChange={(e) => setParentName(e.target.value)}
+                        onChange={(e) => {
+                          setParentName(e.target.value);
+                          if (fieldErrors.name)
+                            setFieldErrors((prev) => ({
+                              ...prev,
+                              name: undefined,
+                            }));
+                        }}
                         disabled={isSubmitting}
                         required
                         maxLength={100}
                         className="min-h-[48px] text-base"
                         autoComplete="name"
+                        aria-invalid={!!fieldErrors.name}
+                        aria-describedby={
+                          fieldErrors.name ? 'parent-name-error' : undefined
+                        }
                       />
+                      {fieldErrors.name && (
+                        <p
+                          id="parent-name-error"
+                          className="mt-0.5 text-sm"
+                          style={{ color: '#dc2626' }}
+                        >
+                          {fieldErrors.name}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label
@@ -296,15 +360,35 @@ export function ContactPage() {
                       <Input
                         id="phone"
                         type="tel"
-                        placeholder="(408) 620-0252"
+                        placeholder="(209) 555-0123"
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        onChange={(e) => {
+                          setPhone(e.target.value);
+                          if (fieldErrors.phone)
+                            setFieldErrors((prev) => ({
+                              ...prev,
+                              phone: undefined,
+                            }));
+                        }}
                         disabled={isSubmitting}
                         required
                         maxLength={20}
                         className="min-h-[48px] text-base"
                         autoComplete="tel"
+                        aria-invalid={!!fieldErrors.phone}
+                        aria-describedby={
+                          fieldErrors.phone ? 'phone-error' : undefined
+                        }
                       />
+                      {fieldErrors.phone && (
+                        <p
+                          id="phone-error"
+                          className="mt-0.5 text-sm"
+                          style={{ color: '#dc2626' }}
+                        >
+                          {fieldErrors.phone}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -319,15 +403,35 @@ export function ContactPage() {
                     <Input
                       id="parentEmail"
                       type="email"
-                      placeholder="westcoastlosbanos@gmail.com"
+                      placeholder="name@email.com"
                       value={parentEmail}
-                      onChange={(e) => setParentEmail(e.target.value)}
+                      onChange={(e) => {
+                        setParentEmail(e.target.value);
+                        if (fieldErrors.email)
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            email: undefined,
+                          }));
+                      }}
                       disabled={isSubmitting}
                       required
                       maxLength={254}
                       className="min-h-[48px] text-base"
                       autoComplete="email"
+                      aria-invalid={!!fieldErrors.email}
+                      aria-describedby={
+                        fieldErrors.email ? 'email-error' : undefined
+                      }
                     />
+                    {fieldErrors.email && (
+                      <p
+                        id="email-error"
+                        className="mt-0.5 text-sm"
+                        style={{ color: '#dc2626' }}
+                      >
+                        {fieldErrors.email}
+                      </p>
+                    )}
                   </div>
 
                   {/* Children section */}
@@ -349,15 +453,27 @@ export function ContactPage() {
                       <p className="text-sm mt-1" style={{ color: V3.muted }}>
                         {ct.childrenSub}
                       </p>
+                      {fieldErrors.childCount && (
+                        <p
+                          id="child-count-error"
+                          className="mt-1 text-sm"
+                          style={{ color: '#dc2626' }}
+                        >
+                          {fieldErrors.childCount}
+                        </p>
+                      )}
                     </div>
 
                     {children.map((child, i) => {
                       const pl = programLabel(child.age);
+                      const rowError = fieldErrors.children[i];
                       return (
                         <div key={i} className="flex flex-col gap-1.5">
                           <div className="flex items-center gap-2">
                             <Input
+                              id={`child-name-${i}`}
                               placeholder={ct.childName}
+                              aria-label={`${ct.childName} ${i + 1}`}
                               value={child.name}
                               onChange={(e) =>
                                 updateChild(i, 'name', e.target.value)
@@ -366,12 +482,18 @@ export function ContactPage() {
                               required
                               maxLength={60}
                               className="min-h-[44px] flex-1 text-base bg-white"
+                              aria-invalid={!!rowError}
+                              aria-describedby={
+                                rowError ? `child-error-${i}` : undefined
+                              }
                             />
                             <Input
+                              id={`child-age-${i}`}
                               type="number"
                               min={4}
                               max={17}
                               placeholder={ct.age}
+                              aria-label={`${ct.ageLabel} ${i + 1}`}
                               value={child.age}
                               onChange={(e) =>
                                 updateChild(i, 'age', e.target.value)
@@ -379,6 +501,10 @@ export function ContactPage() {
                               disabled={isSubmitting}
                               required
                               className="min-h-[44px] w-20 text-base bg-white"
+                              aria-invalid={!!rowError}
+                              aria-describedby={
+                                rowError ? `child-error-${i}` : undefined
+                              }
                             />
                             {children.length > 1 && (
                               <button
@@ -401,6 +527,15 @@ export function ContactPage() {
                               style={{ color: pl.color }}
                             >
                               {pl.text}
+                            </p>
+                          )}
+                          {rowError && (
+                            <p
+                              id={`child-error-${i}`}
+                              className="text-sm pl-1"
+                              style={{ color: '#dc2626' }}
+                            >
+                              {rowError}
                             </p>
                           )}
                         </div>
@@ -443,7 +578,7 @@ export function ContactPage() {
                   </div>
 
                   {submitError && (
-                    <Alert variant="destructive">
+                    <Alert variant="destructive" role="alert">
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription>{submitError}</AlertDescription>
                     </Alert>
@@ -461,7 +596,14 @@ export function ContactPage() {
                         padding: '0.9rem 2rem',
                       }}
                     >
-                      {isSubmitting ? ct.submitting : ct.submit}
+                      {isSubmitting ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          {ct.submitting}
+                        </span>
+                      ) : (
+                        ct.submit
+                      )}
                     </button>
                     <p
                       className="text-sm text-center"

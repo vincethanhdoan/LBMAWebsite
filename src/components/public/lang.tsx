@@ -296,8 +296,9 @@ const EN = {
     childrenSub: 'We use age to place your child in the right program',
     childName: "Child's name",
     age: 'Age',
+    ageLabel: 'Age',
     addChild: 'Add another child',
-    notesLabel: 'Questions, Notes, or Medical Awareness',
+    notesLabel: 'Questions, notes, or anything we should know',
     notesOptional: '(optional)',
     notesPlaceholder:
       'Please share any questions, notes, or medical awareness information we should know so we can best support your child.',
@@ -834,8 +835,9 @@ const ES: T = {
     childrenSub: 'Usamos la edad para ubicar a tu hijo en el programa correcto',
     childName: 'Nombre del niño',
     age: 'Edad',
+    ageLabel: 'Edad',
     addChild: 'Agregar otro niño',
-    notesLabel: 'Preguntas, Notas o Información Médica',
+    notesLabel: 'Preguntas, notas o algo que debamos saber',
     notesOptional: '(opcional)',
     notesPlaceholder:
       'Por favor comparte cualquier pregunta, nota o información médica que debamos saber para apoyar mejor a tu hijo.',

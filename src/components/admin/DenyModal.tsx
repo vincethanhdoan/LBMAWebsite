@@ -54,7 +54,7 @@ export function DenyModal({ lead, onConfirm, onCancel }: DenyModalProps) {
     >
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Deny enrollment — {lead.parent_name}</DialogTitle>
+          <DialogTitle>Deny enrollment for {lead.parent_name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>

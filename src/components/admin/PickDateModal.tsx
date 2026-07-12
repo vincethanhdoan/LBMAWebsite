@@ -121,7 +121,7 @@ export function PickDateModal({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Pick appointment date — {lead.parent_name}
+              Pick appointment dates for {lead.parent_name}
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
@@ -148,7 +148,9 @@ export function PickDateModal({
     >
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Pick appointment dates — {lead.parent_name}</DialogTitle>
+          <DialogTitle>
+            Pick appointment dates for {lead.parent_name}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -177,7 +179,7 @@ export function PickDateModal({
                 </div>
                 {isBooked(booking) ? (
                   <p className="text-xs text-green-600 font-medium">
-                    ✓ Already booked
+                    Already booked
                     {booking.appointment_date
                       ? ` · ${new Date(booking.appointment_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
                       : ''}
@@ -198,7 +200,7 @@ export function PickDateModal({
                     />
                     {selection[booking.booking_id] && (
                       <p className="text-xs text-green-600 font-medium mt-2">
-                        ✓ Selected:{' '}
+                        Selected:{' '}
                         {new Date(
                           selection[booking.booking_id]!.date + 'T12:00:00',
                         ).toLocaleDateString('en-US', {

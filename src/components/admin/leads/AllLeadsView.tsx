@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type { EnrollmentLead } from '../../../lib/types';
 import type { TerminalLeadFilter } from '../../../lib/supabase/queries';
 import { Button } from '../../ui/button';
+import { Skeleton } from '../../ui/skeleton';
 import {
   useRestoreLead,
   useTerminalLeadCounts,
@@ -196,7 +197,7 @@ export function AllLeadsView({
               onClick={() =>
                 restoreLead.mutate(lead.lead_id, {
                   onError: () =>
-                    toast.error('Could not restore lead. Please try again.'),
+                    toast.error("Couldn't restore lead. Please try again."),
                 })
               }
             >
@@ -227,8 +228,10 @@ export function AllLeadsView({
   }
 
   const terminalLoading = showTerminal && terminalQuery.isLoading;
+  const terminalErrored =
+    showTerminal && terminalQuery.isError && !terminalLoading;
   const activeRows = showActive ? activeMatches : [];
-  const visibleTerminal = showTerminal && !terminalLoading ? terminalLeads : [];
+  const visibleTerminal = showTerminal && !terminalLoading && !terminalErrored ? terminalLeads : [];
   const hasAny = activeRows.length + visibleTerminal.length > 0;
   const searching = search.trim() !== '';
 
@@ -246,6 +249,7 @@ export function AllLeadsView({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email, phone, or student"
+          aria-label="Search leads"
           className="w-full pl-9 pr-10 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {search && (
@@ -266,6 +270,7 @@ export function AllLeadsView({
             key={f.id}
             type="button"
             onClick={() => setFilter(f.id)}
+            aria-pressed={filter === f.id}
             className={`text-[12px] font-semibold rounded-full px-3 py-1 transition-colors ${
               filter === f.id
                 ? 'bg-foreground text-background'
@@ -278,27 +283,55 @@ export function AllLeadsView({
       </div>
 
       {hasAny && (
-        <Surface>
+        <Surface
+          className={`transition-opacity ${terminalQuery.isFetching && !terminalLoading ? 'opacity-60' : ''}`}
+        >
           {activeRows.map(activeRow)}
           {visibleTerminal.map(terminalRow)}
         </Surface>
       )}
 
       {terminalLoading && (
-        <div className="space-y-2">
+        <div
+          className="bg-card border border-border rounded-xl shadow-sm overflow-hidden"
+          aria-hidden="true"
+        >
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-12 bg-muted rounded-xl animate-pulse" />
+            <div
+              key={i}
+              className="flex items-center gap-3 px-4 py-3 border-t border-border first:border-t-0"
+            >
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <Skeleton className="h-4 w-44" />
+                <Skeleton className="h-3 w-64" />
+              </div>
+              <Skeleton className="h-6 w-20 rounded-full flex-shrink-0" />
+              <div className="w-4 h-4 flex-shrink-0" />
+            </div>
           ))}
         </div>
       )}
 
-      {!hasAny && !terminalLoading && (
+      {terminalErrored && (
+        <div className="rounded-xl border bg-card px-6 py-8 text-center">
+          <p className="text-sm font-medium">Couldn't load leads.</p>
+          <button
+            type="button"
+            onClick={() => terminalQuery.refetch()}
+            className="mt-3 text-sm underline underline-offset-2"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {!hasAny && !terminalLoading && !terminalErrored && (
         <p className="py-8 text-center text-[13px] text-muted-foreground">
           {searching ? 'No leads match your search.' : 'Nothing here yet.'}
         </p>
       )}
 
-      {showTerminal && terminalQuery.hasNextPage && (
+      {showTerminal && !terminalErrored && terminalQuery.hasNextPage && (
         <div className="flex justify-center">
           <Button
             variant="outline"

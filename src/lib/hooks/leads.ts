@@ -25,7 +25,7 @@ import {
 import { queryKeys } from '../queryKeys';
 import type { EnrollmentLead } from '../types';
 import { deriveAttentionItems } from '../../components/admin/leads/leadViews';
-import { toLocalDateKey } from '../../components/admin/leads/leadDisplay';
+import { pacificTodayISO } from '../pacificTime';
 
 export function useActiveLeads() {
   return useQuery({
@@ -36,13 +36,9 @@ export function useActiveLeads() {
 
 export function useAttentionCount(): number {
   const { data } = useActiveLeads();
-  return deriveAttentionItems(
-    data ?? [],
-    toLocalDateKey(new Date()),
-    // Reading the clock each render is intentional: the count reflects current time.
-    // eslint-disable-next-line react-hooks/purity
-    Date.now(),
-  ).length;
+  // Reading the clock each render is intentional: the count reflects current time.
+  // eslint-disable-next-line react-hooks/purity
+  return deriveAttentionItems(data ?? [], pacificTodayISO(), Date.now()).length;
 }
 
 export function useTerminalLeads(filter: TerminalLeadFilter, search: string) {

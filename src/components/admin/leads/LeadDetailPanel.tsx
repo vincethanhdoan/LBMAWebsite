@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   X,
   Pencil,
@@ -126,14 +127,12 @@ export function LeadDetailPanel({
   }
 
   useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      // Radix dialogs stacked above the panel prevent default on the Esc that
-      // closed them; only an unclaimed Esc closes the panel itself.
-      if (e.key === 'Escape' && !e.defaultPrevented) onClose();
-    }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+    if (!notesSaved) return;
+    const t = setTimeout(() => setNotesSaved(false), 2500);
+    return () => clearTimeout(t);
+  }, [notesSaved]);
+
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const bookings = lead.programBookings ?? [];
   const hasAppointmentSection =
@@ -266,66 +265,126 @@ export function LeadDetailPanel({
   }
 
   return (
-    <>
-      <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-card border-l border-border overflow-y-auto flex flex-col">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4 border-b border-border">
-          <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[15px] font-semibold leading-tight">
-                {lead.parent_name}
-              </span>
-              <HeaderStatus lead={lead} />
-            </div>
-            {childSummary(lead) && (
-              <div className="text-[11px] text-muted-foreground">
-                {childSummary(lead)}
+    <DialogPrimitive.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 bg-black/20 z-40" />
+        <DialogPrimitive.Content
+          ref={panelRef}
+          tabIndex={-1}
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            panelRef.current?.focus();
+          }}
+          aria-describedby={undefined}
+          className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-card border-l border-border overflow-y-auto flex flex-col"
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4 border-b border-border">
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <DialogPrimitive.Title asChild>
+                  <span className="text-[15px] font-semibold leading-tight">
+                    {lead.parent_name}
+                  </span>
+                </DialogPrimitive.Title>
+                <HeaderStatus lead={lead} />
               </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex-1 px-5 py-4 space-y-5">
-          {/* The visit comes first: it is what staff opens the panel to see. */}
-          {hasAppointmentSection && (
-            <div className="space-y-2">
-              {bookings.length > 0 ? (
-                bookings.map(renderBooking)
-              ) : (
-                <div className="rounded-lg border border-border bg-background px-3.5 py-2.5">
-                  <div className="text-[15px] font-semibold leading-snug">
-                    {formatVisit(
-                      lead.appointment_date as string,
-                      lead.appointment_time,
-                    )}
-                  </div>
-                  {lead.student_name && (
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {lead.student_name}
-                      {lead.student_age !== null
-                        ? ` · age ${lead.student_age}`
-                        : ''}
-                    </div>
-                  )}
+              {childSummary(lead) && (
+                <div className="text-[11px] text-muted-foreground">
+                  {childSummary(lead)}
                 </div>
               )}
-              {/* Email state only when it still needs something from staff or family. */}
-              {lead.status === 'appointment_scheduled' &&
-                !confirmationEmail && (
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex-1 px-5 py-4 space-y-5">
+            {/* The visit comes first: it is what staff opens the panel to see. */}
+            {hasAppointmentSection && (
+              <div className="space-y-2">
+                {bookings.length > 0 ? (
+                  bookings.map(renderBooking)
+                ) : (
+                  <div className="rounded-lg border border-border bg-background px-3.5 py-2.5">
+                    <div className="text-[15px] font-semibold leading-snug">
+                      {formatVisit(
+                        lead.appointment_date as string,
+                        lead.appointment_time,
+                      )}
+                    </div>
+                    {lead.student_name && (
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        {lead.student_name}
+                        {lead.student_age !== null
+                          ? ` · age ${lead.student_age}`
+                          : ''}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* Email state only when it still needs something from staff or family. */}
+                {lead.status === 'appointment_scheduled' &&
+                  !confirmationEmail && (
+                    <div className="text-[11px] flex items-center gap-2">
+                      <span className="text-muted-foreground">
+                        {autoSendDateKey
+                          ? `Confirmation email will be sent ${formatDateConcise(autoSendDateKey + 'T12:00:00')}`
+                          : 'No confirmation email sent'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => actions.sendReminder(lead)}
+                        disabled={actions.sendingReminderId === lead.lead_id}
+                        className="font-medium text-primary hover:underline disabled:opacity-50"
+                      >
+                        {actions.sendingReminderId === lead.lead_id
+                          ? 'Sending…'
+                          : autoSendDateKey
+                            ? 'Send now'
+                            : 'Send confirmation email'}
+                      </button>
+                    </div>
+                  )}
+                {lead.status === 'appointment_scheduled' &&
+                  (confirmationEmail?.status === 'sent' ||
+                    confirmationEmail?.status === 'queued') && (
+                    <div className="text-[11px] flex items-center gap-2">
+                      <span className="text-muted-foreground">
+                        {confirmationEmail.status === 'sent'
+                          ? `Confirmation email sent ${formatDateConcise(confirmationEmail.created_at)}, waiting on the family`
+                          : 'Confirmation email queued'}
+                      </span>
+                      {confirmationEmail.status === 'sent' && (
+                        <button
+                          type="button"
+                          onClick={() => actions.sendReminder(lead)}
+                          disabled={actions.sendingReminderId === lead.lead_id}
+                          className="font-medium text-primary hover:underline disabled:opacity-50"
+                        >
+                          {actions.sendingReminderId === lead.lead_id
+                            ? 'Sending…'
+                            : 'Resend'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                {confirmationEmail?.status === 'failed' && (
                   <div className="text-[11px] flex items-center gap-2">
-                    <span className="text-muted-foreground">
-                      {autoSendDateKey
-                        ? `Confirmation email will be sent ${formatDateConcise(autoSendDateKey + 'T12:00:00')}`
-                        : 'No confirmation email sent'}
+                    <span className="flex items-center gap-1 text-[#A01F23]">
+                      <AlertCircle className="w-3 h-3" />
+                      Confirmation email failed
                     </span>
                     <button
                       type="button"
@@ -335,272 +394,230 @@ export function LeadDetailPanel({
                     >
                       {actions.sendingReminderId === lead.lead_id
                         ? 'Sending…'
-                        : autoSendDateKey
-                          ? 'Send now'
-                          : 'Send confirmation email'}
+                        : 'Retry'}
                     </button>
                   </div>
                 )}
-              {lead.status === 'appointment_scheduled' &&
-                (confirmationEmail?.status === 'sent' ||
-                  confirmationEmail?.status === 'queued') && (
-                  <div className="text-[11px] flex items-center gap-2">
-                    <span className="text-muted-foreground">
-                      {confirmationEmail.status === 'sent'
-                        ? `Confirmation email sent ${formatDateConcise(confirmationEmail.created_at)}, waiting on the family`
-                        : 'Confirmation email queued'}
-                    </span>
-                    {confirmationEmail.status === 'sent' && (
-                      <button
-                        type="button"
-                        onClick={() => actions.sendReminder(lead)}
-                        disabled={actions.sendingReminderId === lead.lead_id}
-                        className="font-medium text-primary hover:underline disabled:opacity-50"
-                      >
-                        {actions.sendingReminderId === lead.lead_id
-                          ? 'Sending…'
-                          : 'Resend'}
-                      </button>
-                    )}
-                  </div>
-                )}
-              {confirmationEmail?.status === 'failed' && (
-                <div className="text-[11px] flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-[#A01F23]">
-                    <AlertCircle className="w-3 h-3" />
-                    Confirmation email failed
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => actions.sendReminder(lead)}
-                    disabled={actions.sendingReminderId === lead.lead_id}
-                    className="font-medium text-primary hover:underline disabled:opacity-50"
-                  >
-                    {actions.sendingReminderId === lead.lead_id
-                      ? 'Sending…'
-                      : 'Retry'}
-                  </button>
+              </div>
+            )}
+
+            {/* Contact */}
+            <div className="space-y-1">
+              <a
+                href={`mailto:${lead.parent_email}`}
+                className="block text-[13px] text-primary hover:underline break-all"
+              >
+                {lead.parent_email}
+              </a>
+              {lead.phone && (
+                <div className="text-[13px] text-muted-foreground">
+                  {formatPhone(lead.phone)}
                 </div>
               )}
             </div>
-          )}
 
-          {/* Contact */}
-          <div className="space-y-1">
-            <a
-              href={`mailto:${lead.parent_email}`}
-              className="block text-[13px] text-primary hover:underline break-all"
-            >
-              {lead.parent_email}
-            </a>
-            {lead.phone && (
-              <div className="text-[13px] text-muted-foreground">
-                {formatPhone(lead.phone)}
-              </div>
+            {/* The family's inquiry message, quoted */}
+            {lead.message && (
+              <p className="text-[13px] text-muted-foreground whitespace-pre-wrap leading-relaxed border-l-2 border-border pl-3">
+                {lead.message}
+              </p>
             )}
-          </div>
 
-          {/* The family's inquiry message, quoted */}
-          {lead.message && (
-            <p className="text-[13px] text-muted-foreground whitespace-pre-wrap leading-relaxed border-l-2 border-border pl-3">
-              {lead.message}
-            </p>
-          )}
-
-          {/* Notes */}
-          <div className="space-y-1.5">
-            {notesEditing ? (
-              <div className="space-y-2">
-                <textarea
-                  autoFocus
-                  value={notesDraft}
-                  onChange={(e) => setNotesDraft(e.target.value)}
-                  rows={3}
-                  placeholder="Internal notes (only visible to admins)…"
-                  className="w-full text-[13px] px-3 py-2 border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/60"
-                />
-                {notesError && (
-                  <p className="text-[11px] text-destructive">
-                    {"Couldn't save, try again"}
-                  </p>
-                )}
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={saveNotes}
-                    disabled={updateNotes.isPending}
-                  >
-                    {updateNotes.isPending ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        Saving…
-                      </>
-                    ) : (
-                      'Save'
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-muted-foreground"
-                    onClick={() => {
-                      setNotesEditing(false);
-                      setNotesError(false);
-                      setNotesDraft(lead.admin_notes ?? '');
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : notesDraft.trim() ? (
-              <div className="flex items-start gap-2 group">
-                <p className="flex-1 text-[13px] text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {notesDraft}
-                </p>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {notesSaved && (
-                    <Check className="w-3.5 h-3.5 text-green-600" />
+            {/* Notes */}
+            <div className="space-y-1.5">
+              {notesEditing ? (
+                <div className="space-y-2">
+                  <textarea
+                    autoFocus
+                    value={notesDraft}
+                    onChange={(e) => setNotesDraft(e.target.value)}
+                    rows={3}
+                    placeholder="Internal notes (only visible to admins)…"
+                    className="w-full text-[13px] px-3 py-2 border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground/60"
+                  />
+                  {notesError && (
+                    <p className="text-[11px] text-destructive">
+                      {"Couldn't save notes. Please try again."}
+                    </p>
                   )}
-                  <button
-                    type="button"
-                    onClick={openNotesEditor}
-                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    aria-label="Edit notes"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={saveNotes}
+                      disabled={updateNotes.isPending}
+                    >
+                      {updateNotes.isPending ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Saving…
+                        </>
+                      ) : (
+                        'Save'
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-muted-foreground"
+                      onClick={() => {
+                        setNotesEditing(false);
+                        setNotesError(false);
+                        setNotesDraft(lead.admin_notes ?? '');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={openNotesEditor}
-                className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Pencil className="w-3 h-3" />
-                Add a note
-              </button>
-            )}
-          </div>
-
-          {/* Activity, collapsed to one row until asked for */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setActivityOpen((o) => !o)}
-              className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronRight
-                className={`w-3.5 h-3.5 transition-transform ${activityOpen ? 'rotate-90' : ''}`}
-              />
-              Activity ({buildTimelineEntries(lead).length})
-            </button>
-            {activityOpen && (
-              <div className="mt-3 pl-1">
-                <LeadTimeline lead={lead} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Action bar */}
-        <div className="sticky bottom-0 bg-card border-t border-border px-5 py-3 flex flex-wrap items-center gap-2">
-          {primaryAction && (
-            <Button
-              size="sm"
-              onClick={primaryAction.run}
-              disabled={busy || updateStatus.isPending}
-            >
-              {primaryAction.label}
-            </Button>
-          )}
-          {(lead.status === 'approved' ||
-            lead.status === 'appointment_scheduled' ||
-            lead.status === 'appointment_confirmed') && (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onPickDate(lead)}
-              >
-                Pick new date
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onResend(lead)}
-              >
-                Resend invites
-              </Button>
-            </>
-          )}
-          {hasPastAppointment && isActive && (
-            <RecordOutcomeButton lead={lead} onClosed={onClose} />
-          )}
-          {lead.status === 'new' && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-destructive border-destructive/40 hover:bg-destructive/5"
-              onClick={() => onDeny(lead)}
-            >
-              Deny
-            </Button>
-          )}
-          {isActive && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-muted-foreground"
-              disabled={closeLead.isPending}
-              onClick={() => closeLead.mutate(lead.lead_id)}
-            >
-              Close lead
-            </Button>
-          )}
-          <div className="ml-auto">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              ) : notesDraft.trim() ? (
+                <div className="flex items-start gap-2 group">
+                  <p className="flex-1 text-[13px] text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {notesDraft}
+                  </p>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {notesSaved && (
+                      <Check className="w-3.5 h-3.5 text-green-600" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={openNotesEditor}
+                      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      aria-label="Edit notes"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
                 <button
                   type="button"
-                  aria-label="More actions"
-                  className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={openNotesEditor}
+                  className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <MoreVertical className="w-4 h-4" />
+                  <Pencil className="w-3 h-3" />
+                  Add a note
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => onEdit(lead)}>
-                  Edit lead
-                </DropdownMenuItem>
-                {(lead.status === 'enrolled' || lead.status === 'closed') && (
-                  <DropdownMenuItem
-                    onSelect={reopen}
-                    disabled={updateStatus.isPending}
+              )}
+            </div>
+
+            {/* Activity, collapsed to one row until asked for */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setActivityOpen((o) => !o)}
+                className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronRight
+                  className={`w-3.5 h-3.5 transition-transform ${activityOpen ? 'rotate-90' : ''}`}
+                />
+                Activity ({buildTimelineEntries(lead).length})
+              </button>
+              {activityOpen && (
+                <div className="mt-3 pl-1">
+                  <LeadTimeline lead={lead} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Action bar */}
+          <div className="sticky bottom-0 bg-card border-t border-border px-5 py-3 flex flex-wrap items-center gap-2">
+            {primaryAction && (
+              <Button
+                size="sm"
+                onClick={primaryAction.run}
+                disabled={busy || updateStatus.isPending}
+              >
+                {primaryAction.label}
+              </Button>
+            )}
+            {(lead.status === 'approved' ||
+              lead.status === 'appointment_scheduled' ||
+              lead.status === 'appointment_confirmed') && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onPickDate(lead)}
+                >
+                  Pick new date
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onResend(lead)}
+                >
+                  Resend invites
+                </Button>
+              </>
+            )}
+            {hasPastAppointment && isActive && (
+              <RecordOutcomeButton lead={lead} onClosed={onClose} />
+            )}
+            {lead.status === 'new' && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-destructive border-destructive/40 hover:bg-destructive/5"
+                onClick={() => onDeny(lead)}
+              >
+                Deny
+              </Button>
+            )}
+            {isActive && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-muted-foreground"
+                disabled={closeLead.isPending}
+                onClick={() => closeLead.mutate(lead.lead_id)}
+              >
+                Close lead
+              </Button>
+            )}
+            <div className="ml-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="More actions"
+                    className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Reopen
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => onEdit(lead)}>
+                    Edit lead
                   </DropdownMenuItem>
-                )}
-                {lead.status === 'new' && (
+                  {(lead.status === 'enrolled' || lead.status === 'closed') && (
+                    <DropdownMenuItem
+                      onSelect={reopen}
+                      disabled={updateStatus.isPending}
+                    >
+                      Reopen
+                    </DropdownMenuItem>
+                  )}
+                  {lead.status === 'new' && (
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                      onSelect={() => onDismiss(lead)}
+                    >
+                      Dismiss silently
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                    onSelect={() => onDismiss(lead)}
+                    onSelect={() => onArchive(lead)}
                   >
-                    Dismiss silently
+                    Archive
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                  onSelect={() => onArchive(lead)}
-                >
-                  Archive
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </div>
-      </div>
-    </>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

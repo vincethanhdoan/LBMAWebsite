@@ -193,7 +193,6 @@ export type EnrollmentLead = {
   children: EnrollmentLeadChild[];
   programBookings: EnrollmentLeadProgramBooking[];
   reminderNotification: EnrollmentLeadNotification | null;
-  confirmationNotification: EnrollmentLeadNotification | null;
   notificationHistory: EnrollmentLeadNotification[];
 };
 

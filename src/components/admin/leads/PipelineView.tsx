@@ -142,7 +142,7 @@ function inquiryLine2(lead: EnrollmentLead, now: number): ReactNode {
     ) : (
       relativeAge(days)
     );
-  const snippet = lead.message.slice(0, 60);
+  const snippet = (lead.message ?? '').slice(0, 60);
   const message = snippet
     ? ` · "${snippet}${lead.message.length > 60 ? '…' : ''}"`
     : '';

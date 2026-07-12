@@ -20,6 +20,7 @@ import { RecordOutcomeButton } from './RecordOutcomePopover';
 import {
   PROGRAM_LABELS,
   formatDate,
+  formatDateConcise,
   formatGroupHeader,
   formatTimeShort,
   getWeekStart,
@@ -310,7 +311,7 @@ function UpcomingSegment({
                   className="mt-2 text-[13px] font-semibold text-primary hover:underline"
                 >
                   Next appointment:{' '}
-                  {formatDate(nextAfterWeek.dateKey + 'T12:00:00')} →
+                  {formatDateConcise(nextAfterWeek.dateKey + 'T12:00:00')} →
                 </button>
               )}
             </div>
