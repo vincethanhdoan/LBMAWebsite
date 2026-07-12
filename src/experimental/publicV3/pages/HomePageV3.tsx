@@ -39,7 +39,6 @@ const FILMSTRIP = [
 
 export function HomePageV3() {
   const navigate = useNavigate();
-  const goToTrial = () => navigate(`${BASE}/contact`);
 
   return (
     <div>

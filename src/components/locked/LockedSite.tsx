@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
-import { LanguageProvider, useLanguage } from '../public/lang';
+import { LanguageProvider } from '../public/LanguageProvider';
+import { useLanguage } from '../public/lang';
 import { ContactPage } from '../public/ContactPage';
 import { V3 } from '../public/design';
 import { UnderConstructionPage } from './UnderConstructionPage';

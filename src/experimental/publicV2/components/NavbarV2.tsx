@@ -35,6 +35,8 @@ export function NavbarV2({ onLogin }: NavbarV2Props) {
 
   // Close mobile menu on route change
   useEffect(() => {
+    // Prototype: resetting menu state on navigation alongside the scroll side effect; deriving is not worth it here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMobileOpen(false);
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [location.pathname]);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { LoginModal } from './LoginModal';
-import { LanguageProvider } from './public/lang';
+import { LanguageProvider } from './public/LanguageProvider';
 import { Navbar } from './public/Navbar';
 import { Footer } from './public/Footer';
 import { HomePage } from './public/HomePage';

@@ -1,6 +1,5 @@
-import { useNavigate } from 'react-router-dom';
 import { ImageWithFallback } from '../../../components/figma/ImageWithFallback';
-import { BASE, V3 } from '../design';
+import { V3 } from '../design';
 
 const INSTRUCTORS = [
   {
@@ -28,8 +27,6 @@ const CERTIFICATIONS = [
 ];
 
 export function InstructorsPageV3() {
-  const navigate = useNavigate();
-
   return (
     <div>
 

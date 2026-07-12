@@ -29,6 +29,8 @@ export function ContactPageV2() {
   // Sync message if intent param changes after mount
   useEffect(() => {
     if (isTrialIntent) {
+      // Prototype: prefills the message once when the trial intent param appears; deriving is not worth it here.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData((prev) => ({
         ...prev,
         message: prev.message || TRIAL_MESSAGE,

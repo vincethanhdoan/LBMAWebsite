@@ -1,5 +1,5 @@
 import { ImageWithFallback } from '../../../components/figma/ImageWithFallback';
-import { BASE, V3 } from '../design';
+import { V3 } from '../design';
 
 const FEATURES = [
   { label: 'Fully Padded Training Area',  desc: 'Floor-to-wall padding throughout the training floor for safe practice at every level.' },
