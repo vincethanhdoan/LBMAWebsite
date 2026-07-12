@@ -542,6 +542,9 @@ function mapEnrollmentLeadRow(row: Record<string, unknown>): EnrollmentLead {
   const confirmation = byRecency.find(n => n.type === 'booking_confirmation') ?? null;
   return {
     ...row,
+    // message is nullable in the DB (admin-created leads have none) but typed
+    // string; coalesce here so no consumer dereferences null.
+    message: (row.message as string | null) ?? '',
     children: (row.children ?? []) as EnrollmentLeadChild[],
     programBookings: (row.programBookings ?? []) as EnrollmentLeadProgramBooking[],
     reminderNotification: reminder,
