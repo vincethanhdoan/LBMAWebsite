@@ -4,8 +4,8 @@ const EMAIL_LABELS: Record<string, string> = {
   new_lead: 'Admin alert email',
   submission: 'Submission receipt',
   approval: 'Booking invite email',
-  booking_confirmation: 'Confirmation email',
-  reminder: 'Reminder email',
+  booking_confirmation: 'Booking receipt email',
+  reminder: 'Confirmation email',
   denial: 'Denial email',
 };
 

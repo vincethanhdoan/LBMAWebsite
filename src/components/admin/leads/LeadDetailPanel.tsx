@@ -17,6 +17,7 @@ import {
   formatDateConcise,
   formatTimeShort,
   effectiveConfirmationNotification,
+  toLocalDateKey,
 } from './leadDisplay';
 import { childSummary, getAppointmentOccurrences } from './leadViews';
 import type { useLeadActions } from './useLeadActions';
@@ -120,7 +121,19 @@ export function LeadDetailPanel({
   const confirmationEmail = effectiveConfirmationNotification(lead);
 
   const today = pacificTodayISO();
-  const hasPastAppointment = getAppointmentOccurrences([lead]).some(o => o.dateKey < today);
+  const occurrences = getAppointmentOccurrences([lead]);
+  const hasPastAppointment = occurrences.some(o => o.dateKey < today);
+
+  // The confirm-attendance email auto-sends 2 days before the visit (daily
+  // cron); until then the panel shows the scheduled date with a send-now option.
+  const autoSendDateKey = (() => {
+    const next = occurrences.find(o => o.dateKey >= today);
+    if (!next) return null;
+    const d = new Date(next.dateKey + 'T12:00:00');
+    d.setDate(d.getDate() - 2);
+    const key = toLocalDateKey(d);
+    return key > today ? key : null;
+  })();
   const isActive = ACTIVE_STATUSES.includes(lead.status);
   const busy = actions.busyLeadIds.has(lead.lead_id);
   const hasAppointmentDate =
@@ -255,14 +268,22 @@ export function LeadDetailPanel({
               {/* Email state only when it still needs something from staff or family. */}
               {lead.status === 'appointment_scheduled' && !confirmationEmail && (
                 <div className="text-[11px] flex items-center gap-2">
-                  <span className="text-muted-foreground">No confirmation email sent</span>
+                  <span className="text-muted-foreground">
+                    {autoSendDateKey
+                      ? `Confirmation email will be sent ${formatDateConcise(autoSendDateKey + 'T12:00:00')}`
+                      : 'No confirmation email sent'}
+                  </span>
                   <button
                     type="button"
                     onClick={() => actions.sendReminder(lead)}
                     disabled={actions.sendingReminderId === lead.lead_id}
                     className="font-medium text-primary hover:underline disabled:opacity-50"
                   >
-                    {actions.sendingReminderId === lead.lead_id ? 'Sending…' : 'Send confirmation email'}
+                    {actions.sendingReminderId === lead.lead_id
+                      ? 'Sending…'
+                      : autoSendDateKey
+                        ? 'Send now'
+                        : 'Send confirmation email'}
                   </button>
                 </div>
               )}

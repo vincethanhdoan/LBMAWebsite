@@ -26,17 +26,12 @@ export function formatProgramBookingStatus(booking: { status: string; appointmen
   return booking.status
 }
 
-// The family gets one confirmation email, queued either automatically on booking
-// (`booking_confirmation`) or by an admin pressing Send (`reminder`). Both count as
-// the same outbound email, so the UI reflects the single most recent notification by
-// created_at, regardless of status. Strict recency means a newer failed attempt is
-// surfaced (failed treatment + Retry) instead of being masked by an older sent one.
+// The confirm-attendance request is the `reminder` email, queued by the
+// 2-days-out cron or by an admin pressing Send. The `booking_confirmation`
+// email is only a booking receipt and carries no confirm link, so it never
+// counts as the confirmation email here.
 export function effectiveConfirmationNotification(lead: EnrollmentLead): EnrollmentLeadNotification | null {
-  const present = [lead.confirmationNotification, lead.reminderNotification].filter(
-    (n): n is EnrollmentLeadNotification => n !== null,
-  )
-  if (present.length === 0) return null
-  return present.sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+  return lead.reminderNotification
 }
 
 // ─── Search ────────────────────────────────────────────────────────────────
