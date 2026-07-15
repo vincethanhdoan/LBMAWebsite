@@ -532,25 +532,28 @@ async function handlePortalNotification(recordId: string): Promise<void> {
     .eq('queue_id', record.queue_id);
 }
 
+// Constant-time comparison to avoid leaking secret bytes via response timing.
+function safeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const ba = enc.encode(a);
+  const bb = enc.encode(b);
+  if (ba.length !== bb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ba.length; i++) diff |= ba[i] ^ bb[i];
+  return diff === 0;
+}
+
 function isAuthorized(authHeader: string | null): boolean {
   if (!authHeader?.startsWith('Bearer ')) return false;
   const token = authHeader.slice(7);
 
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (serviceRoleKey && token === serviceRoleKey) return true;
-
   const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
-  if (webhookSecret && token === webhookSecret) return true;
+  if (webhookSecret && safeEqual(token, webhookSecret)) return true;
 
-  // Accept any JWT issued by this Supabase project — avoids brittle env-var string comparison
-  try {
-    const payload = JSON.parse(
-      atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')),
-    );
-    return payload.iss === 'supabase' && payload.ref === 'qfyeguikxxwwxpxleqrr';
-  } catch {
-    return false;
-  }
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (serviceRoleKey && safeEqual(token, serviceRoleKey)) return true;
+
+  return false;
 }
 
 Deno.serve(async (req) => {
