@@ -6,6 +6,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
   'https://www.lbmartialarts.com',
+  ...(Deno.env.get('EXTRA_ALLOWED_ORIGINS') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
 ]);
 
 function corsHeaders(origin: string | null) {
