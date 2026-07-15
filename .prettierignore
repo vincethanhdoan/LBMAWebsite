@@ -10,3 +10,6 @@ docs
 .*
 tasks
 skills-lock.json
+
+playwright-report/
+test-results/

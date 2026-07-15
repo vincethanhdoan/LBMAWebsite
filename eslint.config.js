@@ -74,5 +74,15 @@ export default defineConfig([
       'react-hooks/purity': 'off',
     },
   },
+  // Test + e2e files: Node runtime, no component exports.
+  {
+    files: ['**/*.test.ts', 'e2e/**/*.ts', 'playwright.config.ts'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
   eslintConfigPrettier,
 ]);

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase/client';
-import type { User, Profile } from '../lib/types';
+import type { User, Profile, Family } from '../lib/types';
 import { FAMILY_COLUMNS, PROFILE_COLUMNS } from '../lib/supabase/selects';
+import { deriveAccess, type FetchOutcome } from '../lib/authAccess';
 
 type AccessState = 'ready' | 'needs_onboarding' | 'blocked';
 
@@ -131,49 +132,16 @@ export function useAuth() {
 
       if (seq !== loadSeqRef.current) return;
 
-      if (profileError) {
-        console.error('Error loading profile:', profileError);
-        setProfile(null);
-        setUser(null);
-        setAccessState('blocked');
-        setAccessMessage(
-          'Your account is not provisioned for the portal yet. Please contact the academy for an invitation.',
-        );
-        return;
-      }
-
-      if (!profileData) {
-        setProfile(null);
-        setUser(null);
-        setAccessState('blocked');
-        setAccessMessage(
-          'Your account is not provisioned for the portal yet. Please contact the academy for an invitation.',
-        );
-        return;
-      }
-
-      const resolvedProfile = profileData;
-      const role = resolvedProfile.role;
-      const isActive = resolvedProfile.is_active ?? true;
-      const nextUser = {
-        id: supabaseUser.id,
-        email: supabaseUser.email || '',
-        role,
-        displayName: resolvedProfile.display_name,
-        avatarUrl: resolvedProfile.avatar_url ?? null,
+      if (profileError) console.error('Error loading profile:', profileError);
+      const profileOutcome: FetchOutcome<Profile> = {
+        data: profileData ?? null,
+        error: !!profileError,
       };
 
-      if (!isActive) {
-        setProfile(resolvedProfile);
-        setUser(null);
-        setAccessState('blocked');
-        setAccessMessage(
-          'Your account has been deactivated. Please contact the academy for support.',
-        );
-        return;
-      }
-
-      if (role === 'family') {
+      let familyOutcome: FetchOutcome<Family> | undefined;
+      const activeProfile =
+        profileOutcome.data && (profileOutcome.data.is_active ?? true);
+      if (activeProfile && profileOutcome.data!.role === 'family') {
         const { data: familyData, error: familyError } = await supabase
           .from('families')
           .select(FAMILY_COLUMNS)
@@ -182,43 +150,23 @@ export function useAuth() {
 
         if (seq !== loadSeqRef.current) return;
 
-        if (familyError) {
+        if (familyError)
           console.error('Error checking family onboarding:', familyError);
-          setProfile(resolvedProfile);
-          setUser(nextUser);
-          setAccessState('blocked');
-          setAccessMessage(
-            'Unable to verify onboarding status. Please try again.',
-          );
-          return;
-        }
-
-        if (!familyData) {
-          setProfile(resolvedProfile);
-          setUser(nextUser);
-          setAccessState('needs_onboarding');
-          setAccessMessage(null);
-          return;
-        }
-
-        const accountStatus =
-          (familyData as { account_status?: string }).account_status ??
-          'active';
-        if (accountStatus !== 'active') {
-          setProfile(resolvedProfile);
-          setUser(null);
-          setAccessState('blocked');
-          setAccessMessage(
-            'Your family portal access is currently inactive. Please contact the academy.',
-          );
-          return;
-        }
+        familyOutcome = {
+          data: (familyData as Family) ?? null,
+          error: !!familyError,
+        };
       }
 
-      setProfile(resolvedProfile);
-      setUser(nextUser);
-      setAccessState('ready');
-      setAccessMessage(null);
+      const decision = deriveAccess(
+        { id: supabaseUser.id, email: supabaseUser.email ?? null },
+        profileOutcome,
+        familyOutcome,
+      );
+      setProfile(decision.profile);
+      setUser(decision.user);
+      setAccessState(decision.accessState);
+      setAccessMessage(decision.accessMessage);
     } catch (error) {
       if (seq !== loadSeqRef.current) return;
       console.error('Error in loadUserProfile:', error);
