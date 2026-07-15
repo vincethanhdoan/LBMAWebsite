@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "cross-env TZ=America/Los_Angeles vitest run",
-    "test:watch": "cross-env TZ=America/Los_Angeles vitest"
+    "test:watch": "cross-env TZ=America/Los_Angeles vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",
@@ -54,6 +55,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
