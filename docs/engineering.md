@@ -8,8 +8,10 @@ Work happens on feature branches, never directly on `main`. Open a pull request,
 quality gates below pass, and confirm the Vercel preview deployment looks right before merging.
 Merging to `main` triggers an automatic production deploy on Vercel.
 
-Automated enforcement of the gates in continuous integration is a later phase of the production
-program. Until it lands, contributors run the gates locally and confirm them on the pull request via
+Continuous integration enforces these gates. The `verify` job (typecheck, lint, format:check, build,
+unit tests) runs on every pull request and on pushes to `main`; a pull-request-only `e2e` job runs the
+Playwright smoke. `main` is branch-protected, so a pull request with a passing `verify` check is
+required to merge. Contributors can also run the gates locally and confirm them on the pull request via
 the checklist in `.github/pull_request_template.md`.
 
 ## Commit style
