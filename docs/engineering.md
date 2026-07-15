@@ -57,9 +57,17 @@ They are excluded from the tsconfig entry set (`exclude: ["src/components/ui"]`)
 lint rules in `eslint.config.js` because the generator's output false-positives on a few rules. Regenerate
 through the shadcn CLI rather than editing them directly.
 
-## Testing expectations
+## Testing
 
-There is no automated test suite yet. The plan is unit tests for logic-heavy modules and smoke
-end-to-end coverage of the critical flows (login, enrollment lead, appointment booking, messaging),
-arriving in Phase C of the production program. The quality gates above are already required on every
-change in the meantime.
+- **Unit tests (Vitest):** `npm run test` (watch: `npm run test:watch`). Tests live beside their
+  source as `src/**/*.test.ts` and cover pure logic only — date math (`pacificTime`), lead
+  derivation (`leadViews`, `leadDisplay`), formatting (`format`), and the access-state machine
+  (`authAccess`). The runner pins `TZ=America/Los_Angeles` so date logic is deterministic across
+  machines. Run in CI as the `Unit tests` step of the `verify` job.
+- **E2E smoke (Playwright):** `npm run test:e2e`. Specs live in `e2e/` and run against a production
+  build served by `vite preview`, pointed at the **staging** Supabase project. They cover
+  unauthenticated flows only: public pages load, the enrollment form validates and submits, and the
+  portal shows its login gate. Authenticated portal walkthroughs remain a manual owner check
+  (magic-link login is not automated). The contact-form smoke writes a real lead to staging
+  (disposable). Runs in CI as the PR-only `e2e` job, which needs the `STAGING_SUPABASE_URL` and
+  `STAGING_SUPABASE_ANON_KEY` repository secrets.
