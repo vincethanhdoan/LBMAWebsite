@@ -8,21 +8,9 @@ import {
   getAppointmentSlots,
 } from '../lib/supabase/queries';
 import { BookingCalendar } from '../components/shared/BookingCalendar';
-import { Button } from '../components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '../components/ui/dialog';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
+import { PROGRAM_LABELS } from '../lib/programs';
 import type { AppointmentSlot } from '../lib/types';
-
-const PROGRAM_LABELS: Record<string, string> = {
-  little_dragons: 'Little Dragons',
-  youth: 'Youth Program',
-};
 
 interface BookingInfo {
   booking_id: string;
@@ -46,7 +34,6 @@ export function BookingPage() {
   const [showReschedule, setShowReschedule] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [calendarKey, setCalendarKey] = useState(0);
-  const [cancelled, setCancelled] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -79,7 +66,7 @@ export function BookingPage() {
   useEffect(() => {
     if (
       !booking ||
-      !['pending', 'link_sent', 'scheduled', 'confirmed'].includes(
+      !['pending', 'link_sent', 'scheduled', 'confirmed', 'cancelled'].includes(
         booking.status,
       )
     )
@@ -113,7 +100,6 @@ export function BookingPage() {
           : prev,
       );
       setShowReschedule(false);
-      setCancelled(false);
     } catch (err) {
       if (err instanceof FunctionsHttpError) {
         const body = await err.context.json().catch(() => null);
@@ -141,21 +127,13 @@ export function BookingPage() {
         },
       );
       if (fnError) throw fnError;
+      // The server keeps the date/slot on the row for history; only the status
+      // changes. Mirror exactly that so a reload can't diverge from the server.
       setBooked(null);
-      setCancelled(true);
       setShowReschedule(false);
       setCancelDialogOpen(false);
       setCalendarKey((k) => k + 1);
-      setBooking((prev) =>
-        prev
-          ? {
-              ...prev,
-              status: 'cancelled',
-              appointment_date: null,
-              appointment_time: null,
-            }
-          : prev,
-      );
+      setBooking((prev) => (prev ? { ...prev, status: 'cancelled' } : prev));
     } catch {
       setCancelDialogOpen(false);
       setError("We couldn't cancel that just now. Please try again.");
@@ -168,6 +146,7 @@ export function BookingPage() {
     ? (PROGRAM_LABELS[booking.program_type] ?? booking.program_type)
     : '';
   const childList = booking?.child_names.join(' & ') ?? '';
+  const cancelled = booking?.status === 'cancelled' && !booked;
 
   if (loading) {
     return (
@@ -280,39 +259,16 @@ export function BookingPage() {
         )}
       </div>
 
-      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Cancel this appointment?</DialogTitle>
-            <DialogDescription>
-              If the time no longer works, you can reschedule instead and keep
-              your spot. Cancelling releases it for another family.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-2 pt-2">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCancelDialogOpen(false);
-                setShowReschedule(true);
-              }}
-              disabled={cancelling}
-            >
-              Reschedule instead
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleCancel}
-              disabled={cancelling}
-            >
-              {cancelling ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : null}
-              Cancel appointment
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={cancelDialogOpen}
+        title="Cancel this appointment?"
+        description="If the time no longer works, you can reschedule instead and keep your spot — close this and choose 'Need to reschedule?'. Cancelling releases the time for another family."
+        confirmLabel="Cancel appointment"
+        destructive
+        loading={cancelling}
+        onConfirm={handleCancel}
+        onCancel={() => setCancelDialogOpen(false)}
+      />
     </div>
   );
 }
