@@ -72,70 +72,121 @@ Deno.serve(async (req) => {
 
   const supabase = adminClient();
 
-  const { data: programBooking } = await supabase
+  // Resolve the token to its lead. The reminder email links one program's
+  // token, but Confirm should confirm every visit the family has booked.
+  const { data: tokenBooking } = await supabase
     .from('enrollment_lead_program_bookings')
-    .select('booking_id, lead_id, status, appointment_date, appointment_time')
+    .select('lead_id')
     .eq('booking_token', token)
     .single();
 
-  if (!programBooking)
+  if (!tokenBooking)
     return new Response('Invalid token', { status: 404, headers: cors });
 
-  if (programBooking.status === 'confirmed') {
-    return new Response(
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+  }).format(new Date());
+
+  const { data: leadBookings } = await supabase
+    .from('enrollment_lead_program_bookings')
+    .select(
+      'booking_id, status, program_type, appointment_date, appointment_time',
+    )
+    .eq('lead_id', tokenBooking.lead_id);
+
+  const bookings = leadBookings ?? [];
+  const scheduledFuture = bookings.filter(
+    (b) =>
+      b.status === 'scheduled' &&
+      b.appointment_date &&
+      b.appointment_date >= today,
+  );
+  const confirmedFuture = bookings.filter(
+    (b) =>
+      b.status === 'confirmed' &&
+      b.appointment_date &&
+      b.appointment_date >= today,
+  );
+  const anyFutureBooked = bookings.some(
+    (b) =>
+      (b.status === 'scheduled' || b.status === 'confirmed') &&
+      b.appointment_date &&
+      b.appointment_date >= today,
+  );
+
+  const toAppointments = (
+    rows: Array<{
+      program_type: string;
+      appointment_date: string | null;
+      appointment_time: string | null;
+    }>,
+  ) =>
+    [...rows]
+      .sort((a, b) =>
+        (a.appointment_date ?? '').localeCompare(b.appointment_date ?? ''),
+      )
+      .map((b) => ({
+        program_type: b.program_type,
+        appointment_date: b.appointment_date,
+        appointment_time: b.appointment_time,
+      }));
+
+  const okResponse = (
+    extra: Record<string, unknown>,
+    appts: ReturnType<typeof toAppointments>,
+  ) =>
+    new Response(
       JSON.stringify({
         ok: true,
-        already_confirmed: true,
-        appointment_date: programBooking.appointment_date,
-        appointment_time: programBooking.appointment_time,
+        appointments: appts,
+        appointment_date: appts[0]?.appointment_date ?? null,
+        appointment_time: appts[0]?.appointment_time ?? null,
+        ...extra,
       }),
       { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } },
     );
-  }
 
-  if (programBooking.status !== 'scheduled') {
+  // Nothing left to confirm in the future.
+  if (scheduledFuture.length === 0) {
+    if (confirmedFuture.length > 0) {
+      return okResponse(
+        { already_confirmed: true },
+        toAppointments(confirmedFuture),
+      );
+    }
+    if (!anyFutureBooked && bookings.length > 0) {
+      // Every booked visit is in the past.
+      const pastBooked = bookings.filter(
+        (b) =>
+          (b.status === 'scheduled' || b.status === 'confirmed') &&
+          b.appointment_date,
+      );
+      return okResponse(
+        { past: true, already_confirmed: false },
+        toAppointments(pastBooked),
+      );
+    }
     return new Response('Cannot confirm from current status', {
       status: 422,
       headers: cors,
     });
   }
 
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Los_Angeles',
-  }).format(new Date());
-  if (
-    programBooking.appointment_date &&
-    programBooking.appointment_date < today
-  ) {
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        past: true,
-        already_confirmed: false,
-        appointment_date: programBooking.appointment_date,
-        appointment_time: programBooking.appointment_time,
-      }),
-      { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } },
-    );
-  }
-
   const { error } = await supabase
     .from('enrollment_lead_program_bookings')
     .update({ status: 'confirmed', updated_by: null })
-    .eq('booking_id', programBooking.booking_id);
+    .in(
+      'booking_id',
+      scheduledFuture.map((b) => b.booking_id),
+    );
 
   if (error)
     return new Response('Confirmation failed', { status: 500, headers: cors });
 
-  await recalculateLeadStatus(supabase, programBooking.lead_id);
+  await recalculateLeadStatus(supabase, tokenBooking.lead_id);
 
-  return new Response(
-    JSON.stringify({
-      ok: true,
-      already_confirmed: false,
-      appointment_date: programBooking.appointment_date,
-      appointment_time: programBooking.appointment_time,
-    }),
-    { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } },
+  return okResponse(
+    { already_confirmed: false },
+    toAppointments([...scheduledFuture, ...confirmedFuture]),
   );
 });

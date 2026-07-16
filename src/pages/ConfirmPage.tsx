@@ -2,21 +2,32 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader2, CheckCircle2, CalendarX2, AlertTriangle } from 'lucide-react';
 
+interface Appointment {
+  program_type: string;
+  appointment_date: string | null;
+  appointment_time: string | null;
+}
+
 interface ConfirmResult {
   ok: boolean;
   already_confirmed: boolean;
   past?: boolean;
+  appointments?: Appointment[];
   appointment_date: string | null;
   appointment_time: string | null;
 }
 
 const CONFIRM_TIMEOUT_MS = 12000;
 
+const PROGRAM_LABELS: Record<string, string> = {
+  little_dragons: 'Little Dragons',
+  youth: 'Youth Program',
+};
+
 type ConfirmOutcome =
   | {
       state: 'confirmed' | 'already' | 'past';
-      date: string | null;
-      time: string | null;
+      appointments: Appointment[];
     }
   | { state: 'invalid' | 'error' };
 
@@ -25,8 +36,7 @@ export function ConfirmPage() {
   const [state, setState] = useState<
     'loading' | 'confirmed' | 'already' | 'past' | 'invalid' | 'error'
   >(token ? 'loading' : 'invalid');
-  const [apptDate, setApptDate] = useState<string | null>(null);
-  const [apptTime, setApptTime] = useState<string | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const hasFired = useRef(false);
 
   const runConfirm = useCallback(async (): Promise<ConfirmOutcome> => {
@@ -53,13 +63,19 @@ export function ConfirmPage() {
       if (!res.ok) return { state: 'error' };
 
       const result = (await res.json()) as ConfirmResult;
-      const date = result.appointment_date;
-      const time = result.appointment_time;
-      if (result.past) return { state: 'past', date, time };
+      const appts = result.appointments?.length
+        ? result.appointments
+        : [
+            {
+              program_type: '',
+              appointment_date: result.appointment_date,
+              appointment_time: result.appointment_time,
+            },
+          ];
+      if (result.past) return { state: 'past', appointments: appts };
       return {
         state: result.already_confirmed ? 'already' : 'confirmed',
-        date,
-        time,
+        appointments: appts,
       };
     } catch {
       clearTimeout(timeoutId);
@@ -68,9 +84,8 @@ export function ConfirmPage() {
   }, [token]);
 
   const applyOutcome = useCallback((outcome: ConfirmOutcome) => {
-    if ('date' in outcome) {
-      setApptDate(outcome.date);
-      setApptTime(outcome.time);
+    if ('appointments' in outcome) {
+      setAppointments(outcome.appointments);
     }
     setState(outcome.state);
   }, []);
@@ -97,6 +112,34 @@ export function ConfirmPage() {
       hour: 'numeric',
       minute: '2-digit',
     });
+  }
+
+  const datedAppointments = appointments.filter((a) => a.appointment_date);
+  const firstDate = datedAppointments[0]?.appointment_date ?? null;
+  const multiple = datedAppointments.length > 1;
+
+  function appointmentList() {
+    return (
+      <div className="space-y-2 text-left">
+        {datedAppointments.map((a, i) => (
+          <div key={i} className="rounded-lg border p-4">
+            {a.program_type && PROGRAM_LABELS[a.program_type] && (
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                {PROGRAM_LABELS[a.program_type]}
+              </p>
+            )}
+            <p className="font-semibold text-base">
+              {formatDate(a.appointment_date)}
+            </p>
+            {a.appointment_time && (
+              <p className="text-muted-foreground text-sm">
+                {formatTime(a.appointment_time)}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (state === 'loading') {
@@ -178,9 +221,11 @@ export function ConfirmPage() {
             Already confirmed
           </h1>
           <p className="text-muted-foreground text-sm">
-            You've already confirmed your attendance — see you on{' '}
-            {formatDate(apptDate)}!
+            {multiple
+              ? "You've already confirmed your visits — we're looking forward to seeing you on both days."
+              : `You've already confirmed your attendance — see you on ${formatDate(firstDate)}!`}
           </p>
+          {multiple && appointmentList()}
         </div>
       </div>
     );
@@ -232,16 +277,12 @@ export function ConfirmPage() {
         >
           You're confirmed!
         </h1>
-        {apptDate && (
-          <div className="rounded-lg border p-5 text-left space-y-1">
-            <p className="font-semibold text-base">{formatDate(apptDate)}</p>
-            {apptTime && (
-              <p className="text-muted-foreground text-sm">
-                {formatTime(apptTime)}
-              </p>
-            )}
-          </div>
+        {multiple && (
+          <p className="text-muted-foreground text-sm">
+            Both of your visits are confirmed — we can't wait to meet you.
+          </p>
         )}
+        {datedAppointments.length > 0 && appointmentList()}
         <p className="text-muted-foreground text-sm">
           See you then! — LBMAA Team
         </p>
