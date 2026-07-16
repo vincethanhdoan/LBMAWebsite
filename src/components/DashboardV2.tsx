@@ -27,6 +27,7 @@ import { FeedbackTab } from './dashboard/FeedbackTab';
 import { ProfileTab } from './dashboard/ProfileTab';
 import { ErrorBoundary } from './ErrorBoundary';
 import { TabErrorFallback } from './ErrorFallbacks';
+import { reportError } from '../lib/monitoring/sentry';
 import { useSidebarCounts } from '../lib/hooks/notifications';
 import { useRealtimeInvalidation } from '../lib/hooks/useRealtimeInvalidation';
 import { markSectionSeen } from '../lib/supabase/mutations';
@@ -271,7 +272,11 @@ export function DashboardV2({
         <main
           className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}
         >
-          <ErrorBoundary fallback={TabErrorFallback} resetKey={activeTab}>
+          <ErrorBoundary
+            fallback={TabErrorFallback}
+            resetKey={activeTab}
+            onError={reportError}
+          >
             {activeTab === 'home' && (
               <HomeTab
                 user={user}

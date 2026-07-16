@@ -33,6 +33,7 @@ import { AdminSettingsTab } from './admin/settings/AdminSettingsTab';
 import { AdminTeamTab } from './admin/AdminTeamTab';
 import { ErrorBoundary } from './ErrorBoundary';
 import { TabErrorFallback } from './ErrorFallbacks';
+import { reportError } from '../lib/monitoring/sentry';
 import { useSidebarCounts } from '../lib/hooks/notifications';
 import { useAttentionCount } from '../lib/hooks/leads';
 import { useRealtimeInvalidation } from '../lib/hooks/useRealtimeInvalidation';
@@ -361,7 +362,11 @@ export function AdminDashboardV2({
         <main
           className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}
         >
-          <ErrorBoundary fallback={TabErrorFallback} resetKey={activeTab}>
+          <ErrorBoundary
+            fallback={TabErrorFallback}
+            resetKey={activeTab}
+            onError={reportError}
+          >
             {activeTab === 'notifications' && (
               <AdminNotificationsTab userId={user.id} userEmail={user.email} />
             )}
