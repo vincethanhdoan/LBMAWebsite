@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { SignedAvatarImage } from '../SignedAvatarImage';
 import { Button } from '../ui/button';
 import { Camera, Loader2, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '../ui/confirm-dialog';
@@ -11,7 +12,7 @@ import {
 } from '../../lib/supabase/storage';
 
 type PhotoUploaderProps = {
-  currentUrl: string | null;
+  path: string | null;
   fallback: string;
   onUpload: (file: File) => Promise<void>;
   onRemove: () => Promise<void>;
@@ -27,7 +28,7 @@ const sizeClasses: Record<NonNullable<PhotoUploaderProps['size']>, string> = {
 };
 
 export function PhotoUploader({
-  currentUrl,
+  path,
   fallback,
   onUpload,
   onRemove,
@@ -88,8 +89,8 @@ export function PhotoUploader({
       }
     >
       <div className="relative group">
-        <Avatar key={currentUrl ?? 'no-image'} className={sizeClasses[size]}>
-          {currentUrl && <AvatarImage src={currentUrl} alt="Profile photo" />}
+        <Avatar key={path ?? 'no-image'} className={sizeClasses[size]}>
+          <SignedAvatarImage path={path} alt="Profile photo" />
           <AvatarFallback className="text-lg bg-sidebar-primary text-sidebar-primary-foreground font-semibold">
             {fallback}
           </AvatarFallback>
@@ -133,7 +134,7 @@ export function PhotoUploader({
             Upload Photo
           </Button>
         )}
-        {currentUrl && !disabled && (
+        {path && !disabled && (
           <Button
             type="button"
             variant="ghost"

@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { SignedAvatarImage } from '../SignedAvatarImage';
+import { SignedImage } from '../SignedImage';
 import { MessageCircle, Send, Pin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { markSectionSeen } from '../../lib/supabase/mutations';
+import { ANNOUNCEMENT_IMAGES_BUCKET } from '../../lib/supabase/storagePaths';
 import {
   useAnnouncements,
   useAnnouncementComments,
@@ -130,12 +132,10 @@ function AnnouncementCommentSection({
           )}
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              {comment.authorAvatarUrl && (
-                <AvatarImage
-                  src={comment.authorAvatarUrl}
-                  alt={comment.authorName}
-                />
-              )}
+              <SignedAvatarImage
+                path={comment.authorAvatarUrl ?? null}
+                alt={comment.authorName}
+              />
               <AvatarFallback className="text-xs">
                 {comment.authorName[0]}
               </AvatarFallback>
@@ -309,12 +309,10 @@ export function AnnouncementsTab({ user: _user }: { user: User }) {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <Avatar className="h-8 w-8">
-                        {announcement.authorAvatarUrl && (
-                          <AvatarImage
-                            src={announcement.authorAvatarUrl}
-                            alt={announcement.authorName}
-                          />
-                        )}
+                        <SignedAvatarImage
+                          path={announcement.authorAvatarUrl ?? null}
+                          alt={announcement.authorName}
+                        />
                         <AvatarFallback>
                           {announcement.authorName[0]}
                         </AvatarFallback>
@@ -344,8 +342,9 @@ export function AnnouncementsTab({ user: _user }: { user: User }) {
                 </p>
 
                 {announcement.imageUrl && (
-                  <ImageWithFallback
-                    src={announcement.imageUrl}
+                  <SignedImage
+                    path={announcement.imageUrl ?? null}
+                    bucket={ANNOUNCEMENT_IMAGES_BUCKET}
                     alt={announcement.title}
                     className="w-full max-w-2xl rounded-lg"
                   />

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { SignedAvatarImage } from '../SignedAvatarImage';
 import { MessageSquare, Calendar, User, Award } from 'lucide-react';
 import {
   getFamilyByOwner,
@@ -144,12 +145,10 @@ export function FeedbackTab({ user }: FeedbackTabProps) {
               <CardHeader>
                 <div className="flex items-center gap-4">
                   <Avatar className="h-12 w-12">
-                    {student.photo_url && (
-                      <AvatarImage
-                        src={student.photo_url}
-                        alt={`${student.first_name} ${student.last_name}`}
-                      />
-                    )}
+                    <SignedAvatarImage
+                      path={student.photo_url}
+                      alt={`${student.first_name} ${student.last_name}`}
+                    />
                     <AvatarFallback className="text-lg bg-primary/10 text-primary">
                       {getInitials(
                         `${student.first_name} ${student.last_name}`,

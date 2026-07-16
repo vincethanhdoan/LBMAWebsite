@@ -1,4 +1,8 @@
 import { supabase } from './client';
+import {
+  PROFILE_PICTURES_BUCKET,
+  ANNOUNCEMENT_IMAGES_BUCKET,
+} from './storagePaths';
 
 const BUCKET_NAME = 'message-attachments';
 
@@ -82,8 +86,6 @@ export const MAX_FILE_SIZE_MB = 10;
 // PROFILE PICTURES
 // ============================================
 
-const PROFILE_PICTURES_BUCKET = 'profile-pictures';
-
 export const MAX_PROFILE_IMAGE_SIZE_MB = 10;
 export const ACCEPTED_IMAGE_TYPES = [
   'image/jpeg',
@@ -91,13 +93,6 @@ export const ACCEPTED_IMAGE_TYPES = [
   'image/webp',
   'image/gif',
 ];
-
-function getProfilePublicUrl(path: string): string {
-  const { data } = supabase.storage
-    .from(PROFILE_PICTURES_BUCKET)
-    .getPublicUrl(path);
-  return data.publicUrl;
-}
 
 export async function uploadProfileImage(
   path: string,
@@ -107,7 +102,40 @@ export async function uploadProfileImage(
     .from(PROFILE_PICTURES_BUCKET)
     .upload(path, file, { cacheControl: '3600', upsert: true });
   if (error) throw error;
-  return getProfilePublicUrl(path) + '?t=' + Date.now();
+  return path;
+}
+
+export async function getProfileSignedUrl(
+  path: string,
+  expiresIn = 3600,
+): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(PROFILE_PICTURES_BUCKET)
+    .createSignedUrl(path, expiresIn);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+export async function uploadAnnouncementImage(
+  path: string,
+  file: File,
+): Promise<string> {
+  const { error } = await supabase.storage
+    .from(ANNOUNCEMENT_IMAGES_BUCKET)
+    .upload(path, file, { cacheControl: '3600', upsert: true });
+  if (error) throw error;
+  return path;
+}
+
+export async function getAnnouncementSignedUrl(
+  path: string,
+  expiresIn = 3600,
+): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(ANNOUNCEMENT_IMAGES_BUCKET)
+    .createSignedUrl(path, expiresIn);
+  if (error) throw error;
+  return data.signedUrl;
 }
 
 export async function deleteProfileImage(path: string): Promise<void> {

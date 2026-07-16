@@ -15,7 +15,8 @@ import {
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { SignedAvatarImage } from '../SignedAvatarImage';
 import {
   Dialog,
   DialogContent,
@@ -387,12 +388,10 @@ export function AdminTeamTab({
                     className={`flex items-center gap-3 px-4 sm:px-6 py-4 ${isYou ? 'bg-accent/50' : ''} ${!admin.is_active ? 'opacity-60' : ''}`}
                   >
                     <Avatar className="h-9 w-9 shrink-0">
-                      {admin.avatar_url && (
-                        <AvatarImage
-                          src={admin.avatar_url}
-                          alt={admin.display_name}
-                        />
-                      )}
+                      <SignedAvatarImage
+                        path={admin.avatar_url}
+                        alt={admin.display_name}
+                      />
                       <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
                         {getInitials(admin.display_name)}
                       </AvatarFallback>

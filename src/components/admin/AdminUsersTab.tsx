@@ -12,7 +12,8 @@ import {
   TableRow,
 } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { SignedAvatarImage } from '../SignedAvatarImage';
 import {
   Dialog,
   DialogContent,
@@ -411,12 +412,10 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Avatar className="h-8 w-8">
-                                {familyAvatarUrl && (
-                                  <AvatarImage
-                                    src={familyAvatarUrl}
-                                    alt={family.primaryContact}
-                                  />
-                                )}
+                                <SignedAvatarImage
+                                  path={familyAvatarUrl ?? null}
+                                  alt={family.primaryContact}
+                                />
                                 <AvatarFallback>
                                   {family.primaryContact
                                     .split(' ')
@@ -566,12 +565,10 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
-                              {student.photoUrl && (
-                                <AvatarImage
-                                  src={student.photoUrl}
-                                  alt={student.studentName}
-                                />
-                              )}
+                              <SignedAvatarImage
+                                path={student.photoUrl}
+                                alt={student.studentName}
+                              />
                               <AvatarFallback>
                                 {student.studentName
                                   .split(' ')
@@ -886,12 +883,10 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            {student.photoUrl && (
-                              <AvatarImage
-                                src={student.photoUrl}
-                                alt={student.studentName}
-                              />
-                            )}
+                            <SignedAvatarImage
+                              path={student.photoUrl}
+                              alt={student.studentName}
+                            />
                             <AvatarFallback className="text-xs">
                               {student.firstName[0]}
                               {student.lastName[0]}
