@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase/client';
 import type { User, Profile, Family } from '../lib/types';
 import { FAMILY_COLUMNS, PROFILE_COLUMNS } from '../lib/supabase/selects';
 import { deriveAccess, type FetchOutcome } from '../lib/authAccess';
+import { setMonitoringUser } from '../lib/monitoring/sentry';
 
 type AccessState = 'ready' | 'needs_onboarding' | 'blocked';
 
@@ -121,6 +122,13 @@ export function useAuth() {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Tags error reports with the opaque user id only — never email, name or
+  // role. Keyed on the id so every path that resolves or clears the user
+  // (init, auth state change, sign-out) is covered by one place.
+  useEffect(() => {
+    setMonitoringUser(user?.id ?? null);
+  }, [user?.id]);
 
   const loadUserProfile = async (supabaseUser: SupabaseUser, seq: number) => {
     try {

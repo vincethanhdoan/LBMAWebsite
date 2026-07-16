@@ -23,6 +23,9 @@ import { useAuth } from './hooks/useAuth';
 import { Alert, AlertDescription } from './components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { RootErrorFallback } from './components/ErrorFallbacks';
+import { reportError } from './lib/monitoring/sentry';
 
 function ProtectedRoute({
   children,
@@ -204,7 +207,12 @@ export default function App() {
   return (
     <QueryProvider>
       <BrowserRouter>
-        <AppRoutes />
+        <ErrorBoundary
+          fallback={() => <RootErrorFallback />}
+          onError={reportError}
+        >
+          <AppRoutes />
+        </ErrorBoundary>
         <Toaster richColors position="top-right" />
       </BrowserRouter>
     </QueryProvider>
