@@ -29,9 +29,11 @@ export default defineConfig({
       : []),
   ],
   build: {
-    // 'hidden' emits maps for upload but omits the sourceMappingURL comment,
-    // so source is never served to browsers.
-    sourcemap: 'hidden',
+    // Emit source maps ONLY when the Sentry plugin runs (token present), since
+    // that same build uploads them and then deletes them from the output. Without
+    // the token there is no uploader and no deleter, so emitting maps would ship
+    // full source to the public. 'hidden' also omits the sourceMappingURL comment.
+    sourcemap: sentryAuthToken ? 'hidden' : false,
   },
   test: {
     environment: 'node',
