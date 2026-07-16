@@ -4,10 +4,11 @@ import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { SignedAvatarImage } from '../SignedAvatarImage';
+import { SignedImage } from '../SignedImage';
 import { MessageCircle, Send, Pin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { markSectionSeen } from '../../lib/supabase/mutations';
+import { ANNOUNCEMENT_IMAGES_BUCKET } from '../../lib/supabase/storagePaths';
 import {
   useAnnouncements,
   useAnnouncementComments,
@@ -341,8 +342,9 @@ export function AnnouncementsTab({ user: _user }: { user: User }) {
                 </p>
 
                 {announcement.imageUrl && (
-                  <ImageWithFallback
-                    src={announcement.imageUrl}
+                  <SignedImage
+                    path={announcement.imageUrl ?? null}
+                    bucket={ANNOUNCEMENT_IMAGES_BUCKET}
                     alt={announcement.title}
                     className="w-full max-w-2xl rounded-lg"
                   />

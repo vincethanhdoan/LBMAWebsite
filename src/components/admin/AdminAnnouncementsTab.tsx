@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { SignedAvatarImage } from '../SignedAvatarImage';
+import { SignedImage } from '../SignedImage';
 import { toast } from 'sonner';
 import {
   useAnnouncements,
@@ -36,7 +37,8 @@ import {
   useDeleteAnnouncement,
   useCreateAnnouncementComment,
 } from '../../lib/hooks/announcements';
-import { supabase } from '../../lib/supabase/client';
+import { uploadAnnouncementImage } from '../../lib/supabase/storage';
+import { ANNOUNCEMENT_IMAGES_BUCKET } from '../../lib/supabase/storagePaths';
 
 type User = {
   id: string;
@@ -167,7 +169,8 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
     useState<Announcement | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newBody, setNewBody] = useState('');
-  const [selectedImage, setSelectedImage] = useState<string>('');
+  const [imagePath, setImagePath] = useState<string>('');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmState, setConfirmState] = useState<{
@@ -187,6 +190,14 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
     null,
   );
   const processedPostParam = useRef<string | null>(null);
+
+  // Revoke the previous object URL whenever a new one replaces it, and on
+  // unmount, so picked-file previews don't leak blob URLs.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const { data: rawAnnouncements = [], isLoading: loading } =
     useAnnouncements();
@@ -256,7 +267,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
         title: newTitle.trim(),
         body: newBody.trim(),
         is_pinned: false,
-        image_url: selectedImage || null,
+        image_url: imagePath || null,
       });
       resetForm();
       setIsCreateDialogOpen(false);
@@ -281,7 +292,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
           title: newTitle.trim(),
           body: newBody.trim(),
           is_pinned: editingAnnouncement.isPinned,
-          image_url: selectedImage || null,
+          image_url: imagePath || null,
         },
       });
       resetForm();
@@ -350,14 +361,16 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
   const resetForm = () => {
     setNewTitle('');
     setNewBody('');
-    setSelectedImage('');
+    setImagePath('');
+    setPreviewUrl(null);
   };
 
   const openEditDialog = (announcement: Announcement) => {
     setEditingAnnouncement(announcement);
     setNewTitle(announcement.title);
     setNewBody(announcement.body);
-    setSelectedImage(announcement.imageUrl ?? '');
+    setImagePath(announcement.imageUrl ?? '');
+    setPreviewUrl(null);
   };
 
   const handleImageUpload = () => {
@@ -380,23 +393,19 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       return;
     }
 
+    setPreviewUrl(URL.createObjectURL(file));
     setUploadingImage(true);
     try {
       const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-      const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage
-        .from('announcement-images')
-        .upload(path, file, { cacheControl: '3600', upsert: false });
-      if (error) throw error;
-      const { data: urlData } = supabase.storage
-        .from('announcement-images')
-        .getPublicUrl(path);
-      setSelectedImage(urlData.publicUrl);
+      const storagePath = `${user.id}/${Date.now()}.${ext}`;
+      const path = await uploadAnnouncementImage(storagePath, file);
+      setImagePath(path);
     } catch (err) {
       toast.error(
         'Image upload failed: ' +
           (err instanceof Error ? err.message : 'Unknown error'),
       );
+      setPreviewUrl(null);
     } finally {
       setUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -424,17 +433,29 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
         className="hidden"
         onChange={handleImageFileChange}
       />
-      {selectedImage ? (
+      {previewUrl || imagePath ? (
         <div className="space-y-2">
-          <img
-            src={selectedImage}
-            alt="Preview"
-            className="w-full max-h-48 object-cover rounded-md border"
-          />
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="w-full max-h-48 object-cover rounded-md border"
+            />
+          ) : (
+            <SignedImage
+              path={imagePath}
+              bucket={ANNOUNCEMENT_IMAGES_BUCKET}
+              alt="Preview"
+              className="w-full max-h-48 object-cover rounded-md border"
+            />
+          )}
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setSelectedImage('')}
+            onClick={() => {
+              setImagePath('');
+              setPreviewUrl(null);
+            }}
             className="gap-1 text-destructive hover:text-destructive"
           >
             <X className="w-3 h-3" /> Remove image
@@ -481,7 +502,13 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
           <Plus className="w-4 h-4 mr-2" />
           New Announcement
         </Button>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog
+          open={isCreateDialogOpen}
+          onOpenChange={(open) => {
+            setIsCreateDialogOpen(open);
+            if (!open) setPreviewUrl(null);
+          }}
+        >
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Create Announcement</DialogTitle>
@@ -537,7 +564,12 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
       {/* Edit Dialog */}
       <Dialog
         open={!!editingAnnouncement}
-        onOpenChange={(open) => !open && setEditingAnnouncement(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingAnnouncement(null);
+            setPreviewUrl(null);
+          }
+        }}
       >
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -562,17 +594,7 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
                 className="min-h-[200px]"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Image (Optional)</Label>
-              <Button
-                variant="outline"
-                onClick={handleImageUpload}
-                className="w-full"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Image
-              </Button>
-            </div>
+            <ImageUploadField />
           </div>
           <div className="flex justify-end gap-2">
             <Button
@@ -678,9 +700,10 @@ export function AdminAnnouncementsTab({ user }: { user: User }) {
             </CardHeader>
             <CardContent className="space-y-3">
               {announcement.imageUrl && (
-                <img
-                  src={announcement.imageUrl}
-                  alt=""
+                <SignedImage
+                  path={announcement.imageUrl ?? null}
+                  bucket={ANNOUNCEMENT_IMAGES_BUCKET}
+                  alt={announcement.title}
                   className="w-full max-h-64 object-cover rounded-md"
                 />
               )}
