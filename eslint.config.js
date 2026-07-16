@@ -74,9 +74,14 @@ export default defineConfig([
       'react-hooks/purity': 'off',
     },
   },
-  // Test + e2e files: Node runtime, no component exports.
+  // Test + e2e files, and Node-executed config: Node runtime, no component exports.
   {
-    files: ['**/*.test.ts', 'e2e/**/*.ts', 'playwright.config.ts'],
+    files: [
+      '**/*.test.ts',
+      'e2e/**/*.ts',
+      'playwright.config.ts',
+      'vite.config.js',
+    ],
     languageOptions: {
       globals: { ...globals.node },
     },

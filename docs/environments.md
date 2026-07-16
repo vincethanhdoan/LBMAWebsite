@@ -25,6 +25,20 @@ The frontend reads exactly two variables: `VITE_SUPABASE_URL` and `VITE_SUPABASE
 
 Keys live in each project's dashboard (Settings → API). Never commit the `service_role` key.
 
+## Sentry error reporting and source maps
+
+- `VITE_SENTRY_DSN` — Sentry project DSN. Set on Vercel Production and Preview. Absent
+  locally, which disables reporting.
+- `VITE_SENTRY_ENVIRONMENT` — `production` on the Production target, `preview` on Preview.
+  Tags events so they can be filtered.
+- `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` — build-time only, Vercel Production +
+  Preview. Enable source map upload. Never `VITE_`-prefixed: they must not reach the client
+  bundle.
+
+Source maps upload from the **Vercel** build, not GitHub Actions: `@sentry/vite-plugin` in
+`vite.config.js` only activates when `SENTRY_AUTH_TOKEN` is present, and that token is set in
+Vercel env vars only. CI builds run without it and silently skip upload.
+
 ## Migrations
 
 Production is the source of truth for the schema; its migration history is not linearly
