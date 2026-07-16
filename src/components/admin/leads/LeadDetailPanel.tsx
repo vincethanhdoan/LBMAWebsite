@@ -28,7 +28,11 @@ import {
   effectiveConfirmationNotification,
   toLocalDateKey,
 } from './leadDisplay';
-import { childSummary, getAppointmentOccurrences } from './leadViews';
+import {
+  childSummary,
+  deriveLeadStatusFromBookings,
+  getAppointmentOccurrences,
+} from './leadViews';
 import type { useLeadActions } from './useLeadActions';
 import { formatPhone } from '../../../lib/format';
 import { pacificTodayISO } from '../../../lib/pacificTime';
@@ -157,9 +161,6 @@ export function LeadDetailPanel({
   })();
   const isActive = ACTIVE_STATUSES.includes(lead.status);
   const busy = actions.busyLeadIds.has(lead.lead_id);
-  const hasAppointmentDate =
-    lead.appointment_date !== null ||
-    bookings.some((b) => b.appointment_date !== null);
 
   function openNotesEditor() {
     setNotesSaved(false);
@@ -189,11 +190,17 @@ export function LeadDetailPanel({
     );
   }
 
+  // Recompute the reopened status from the bookings themselves (cancelled ones
+  // don't count) so a reopened lead can't claim an appointment it no longer
+  // has. Legacy leads without program bookings keep the old date-based guess.
   function reopen() {
-    updateStatus.mutate({
-      leadId: lead.lead_id,
-      status: hasAppointmentDate ? 'appointment_confirmed' : 'approved',
-    });
+    const status =
+      bookings.length > 0
+        ? deriveLeadStatusFromBookings(bookings)
+        : lead.appointment_date !== null
+          ? 'appointment_confirmed'
+          : 'approved';
+    updateStatus.mutate({ leadId: lead.lead_id, status });
   }
 
   const primaryAction: { label: string; run: () => void } | null = (() => {
@@ -251,7 +258,7 @@ export function LeadDetailPanel({
           </div>
         ) : cancelled ? (
           <div className="text-[13px] text-muted-foreground">
-            Visit cancelled — booking link still active
+            Visit cancelled, booking link still active
           </div>
         ) : (
           <div className="text-[13px] text-muted-foreground">

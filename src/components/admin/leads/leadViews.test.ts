@@ -12,6 +12,7 @@ import {
   nextOccurrenceAfter,
   daysSince,
   leadAwaitingBooking,
+  deriveLeadStatusFromBookings,
   STALE_INVITE_DAYS,
 } from './leadViews';
 
@@ -387,5 +388,56 @@ describe('leadAwaitingBooking', () => {
         makeLead({ programBookings: [], appointment_date: '2026-07-20' }),
       ),
     ).toBe(false);
+  });
+});
+
+describe('deriveLeadStatusFromBookings', () => {
+  it('returns appointment_confirmed when every active booking is confirmed', () => {
+    expect(
+      deriveLeadStatusFromBookings([
+        makeBooking({ status: 'confirmed' }),
+        makeBooking({ booking_id: 'b2', status: 'confirmed' }),
+      ]),
+    ).toBe('appointment_confirmed');
+  });
+
+  it('returns appointment_scheduled when active bookings are scheduled or confirmed', () => {
+    expect(
+      deriveLeadStatusFromBookings([
+        makeBooking({ status: 'scheduled' }),
+        makeBooking({ booking_id: 'b2', status: 'confirmed' }),
+      ]),
+    ).toBe('appointment_scheduled');
+  });
+
+  it('ignores cancelled bookings when others are live', () => {
+    expect(
+      deriveLeadStatusFromBookings([
+        makeBooking({ status: 'cancelled' }),
+        makeBooking({ booking_id: 'b2', status: 'confirmed' }),
+      ]),
+    ).toBe('appointment_confirmed');
+  });
+
+  it('returns approved when any active booking is still unbooked', () => {
+    expect(
+      deriveLeadStatusFromBookings([
+        makeBooking({ status: 'link_sent', appointment_date: null }),
+        makeBooking({ booking_id: 'b2', status: 'confirmed' }),
+      ]),
+    ).toBe('approved');
+  });
+
+  it('returns approved when every booking is cancelled', () => {
+    expect(
+      deriveLeadStatusFromBookings([
+        makeBooking({ status: 'cancelled' }),
+        makeBooking({ booking_id: 'b2', status: 'cancelled' }),
+      ]),
+    ).toBe('approved');
+  });
+
+  it('returns approved when there are no bookings at all', () => {
+    expect(deriveLeadStatusFromBookings([])).toBe('approved');
   });
 });

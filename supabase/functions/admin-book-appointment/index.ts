@@ -89,12 +89,19 @@ Deno.serve(async (req) => {
 
   const { data: lead } = await supabase
     .from('enrollment_leads')
-    .select('lead_id, parent_email')
+    .select('lead_id, status, parent_email')
     .eq('lead_id', programBooking.lead_id)
     .single();
 
   if (!lead)
     return new Response('Lead not found', { status: 404, headers: cors });
+
+  if (lead.status === 'denied' || lead.status === 'closed') {
+    return new Response(
+      JSON.stringify({ error: 'Reopen this lead before booking a visit.' }),
+      { status: 422, headers: { ...cors, 'Content-Type': 'application/json' } },
+    );
+  }
 
   const { data: slot } = await supabase
     .from('appointment_slots')
