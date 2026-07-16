@@ -284,7 +284,9 @@ export type UserNotification = {
     | 'post_comment'
     | 'new_lead'
     | 'appointment_booked'
-    | 'appointment_confirmed';
+    | 'appointment_confirmed'
+    | 'appointment_rescheduled'
+    | 'appointment_cancelled';
   reference_id: string;
   reference_type: 'announcement_comment' | 'blog_comment' | 'enrollment_lead';
   actor_display_name: string | null;
