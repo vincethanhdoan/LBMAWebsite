@@ -54,7 +54,6 @@ export function ContactPage() {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [children, setChildren] = useState<ChildRow[]>([{ name: '', age: '' }]);
-  const [company, setCompany] = useState(''); // honeypot — humans never see or fill this
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({ children: {} });
@@ -102,11 +101,6 @@ export function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
-
-    if (company) {
-      setSubmitted(true);
-      return;
-    }
 
     const errors: FieldErrors = { children: {} };
 
@@ -285,28 +279,6 @@ export function ContactPage() {
                   noValidate
                   className="flex flex-col gap-6"
                 >
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: 'absolute',
-                      left: '-9999px',
-                      width: '1px',
-                      height: '1px',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <label htmlFor="company">Company</label>
-                    <input
-                      id="company"
-                      name="company"
-                      type="text"
-                      tabIndex={-1}
-                      autoComplete="off"
-                      value={company}
-                      onChange={(e) => setCompany(e.target.value)}
-                    />
-                  </div>
-
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
                       <Label
