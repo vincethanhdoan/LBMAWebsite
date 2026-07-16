@@ -67,6 +67,23 @@ describe('scrubText', () => {
     );
   });
 
+  it('redacts token-suffixed and bare code params, keeping the name', () => {
+    expect(
+      scrubText('#access_token=a&provider_token=b&provider_refresh_token=c'),
+    ).toBe(
+      '#access_token=[redacted-token]&provider_token=[redacted-token]&provider_refresh_token=[redacted-token]',
+    );
+    expect(scrubText('#id_token=a&csrf_token=b')).toBe(
+      '#id_token=[redacted-token]&csrf_token=[redacted-token]',
+    );
+  });
+
+  it('keeps params whose names merely contain code as a substring', () => {
+    expect(scrubText('/?error=access_denied&error_code=otp_expired')).toBe(
+      '/?error=access_denied&error_code=otp_expired',
+    );
+  });
+
   it('leaves UUIDs intact so records stay correlatable', () => {
     expect(scrubText('no lead for 550e8400-e29b-41d4-a716-446655440000')).toBe(
       'no lead for 550e8400-e29b-41d4-a716-446655440000',

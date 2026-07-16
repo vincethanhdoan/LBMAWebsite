@@ -1,8 +1,12 @@
 // Credential-bearing query parameters (magic-link OTPs, OAuth codes, session
 // tokens). The value is redacted; the name is kept because it is useful for
 // debugging and is not itself a secret.
+// The name is matched by shape, not by a fixed list, so provider_token,
+// id_token and csrf_token are covered without naming each one. Requiring the
+// name to *end* in `token` (or be exactly `code`) is what keeps `error_code`
+// and other merely-code-suffixed params readable as debug data.
 const SENSITIVE_PARAM =
-  /\b(token_hash|access_token|refresh_token|token|code)=[^&\s"'#]+/gi;
+  /(?<![\w-])((?:[\w-]*token(?:_hash)?)|code)=[^&\s"'#]+/gi;
 // parent@example.com, and the percent-encoded form URLSearchParams produces.
 const EMAIL = /[A-Za-z0-9._%+-]+(?:@|%40)[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 // Captured (not consumed) so scrubText can hold UUIDs out of the digit rules:
