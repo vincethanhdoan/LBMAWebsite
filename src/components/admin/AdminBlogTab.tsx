@@ -13,7 +13,8 @@ import {
 } from '../ui/dialog';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Label } from '../ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { SignedAvatarImage } from '../SignedAvatarImage';
 import { toast } from 'sonner';
 import {
   Edit2,
@@ -140,12 +141,10 @@ function AdminBlogCommentSection({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
-                {comment.authorAvatarUrl && (
-                  <AvatarImage
-                    src={comment.authorAvatarUrl}
-                    alt={comment.authorName}
-                  />
-                )}
+                <SignedAvatarImage
+                  path={comment.authorAvatarUrl ?? null}
+                  alt={comment.authorName}
+                />
                 <AvatarFallback className="text-xs">
                   {comment.authorName[0]}
                 </AvatarFallback>
@@ -462,12 +461,10 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <Avatar className="h-8 w-8">
-                        {post.authorAvatarUrl && (
-                          <AvatarImage
-                            src={post.authorAvatarUrl}
-                            alt={post.authorName}
-                          />
-                        )}
+                        <SignedAvatarImage
+                          path={post.authorAvatarUrl ?? null}
+                          alt={post.authorName}
+                        />
                         <AvatarFallback>{post.authorName[0]}</AvatarFallback>
                       </Avatar>
                       <div>

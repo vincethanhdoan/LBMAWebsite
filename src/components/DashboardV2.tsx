@@ -16,7 +16,8 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from './ui/sidebar';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { SignedAvatarImage } from './SignedAvatarImage';
 import { Button } from './ui/button';
 import { HomeTab } from './dashboard/HomeTab';
 import { AnnouncementsTab } from './dashboard/AnnouncementsTab';
@@ -180,9 +181,10 @@ export function DashboardV2({
           <div className="px-2 group-data-[collapsible=icon]:hidden">
             <div className="flex items-center gap-2 rounded-lg px-2 py-2">
               <Avatar className="h-8 w-8 shrink-0">
-                {user.avatarUrl && (
-                  <AvatarImage src={user.avatarUrl} alt={user.displayName} />
-                )}
+                <SignedAvatarImage
+                  path={user.avatarUrl}
+                  alt={user.displayName}
+                />
                 <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
                   {getInitials(user.displayName)}
                 </AvatarFallback>
@@ -226,9 +228,10 @@ export function DashboardV2({
               aria-label="Profile"
             >
               <Avatar className="h-8 w-8">
-                {user.avatarUrl && (
-                  <AvatarImage src={user.avatarUrl} alt={user.displayName} />
-                )}
+                <SignedAvatarImage
+                  path={user.avatarUrl}
+                  alt={user.displayName}
+                />
                 <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
                   {getInitials(user.displayName)}
                 </AvatarFallback>

@@ -13,6 +13,7 @@ import {
 } from '../ui/table';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { SignedAvatarImage } from '../SignedAvatarImage';
 import {
   Dialog,
   DialogContent,
@@ -411,12 +412,10 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Avatar className="h-8 w-8">
-                                {familyAvatarUrl && (
-                                  <AvatarImage
-                                    src={familyAvatarUrl}
-                                    alt={family.primaryContact}
-                                  />
-                                )}
+                                <SignedAvatarImage
+                                  path={familyAvatarUrl ?? null}
+                                  alt={family.primaryContact}
+                                />
                                 <AvatarFallback>
                                   {family.primaryContact
                                     .split(' ')

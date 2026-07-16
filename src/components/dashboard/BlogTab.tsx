@@ -10,7 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { SignedAvatarImage } from '../SignedAvatarImage';
 import { Plus, MessageCircle, Send, Pin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { markSectionSeen } from '../../lib/supabase/mutations';
@@ -137,12 +138,10 @@ function BlogCommentSection({
           )}
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              {comment.authorAvatarUrl && (
-                <AvatarImage
-                  src={comment.authorAvatarUrl}
-                  alt={comment.authorName}
-                />
-              )}
+              <SignedAvatarImage
+                path={comment.authorAvatarUrl ?? null}
+                alt={comment.authorName}
+              />
               <AvatarFallback className="text-xs">
                 {comment.authorName[0]}
               </AvatarFallback>
@@ -392,12 +391,10 @@ export function BlogTab({ user }: { user: User }) {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <Avatar className="h-8 w-8">
-                        {post.authorAvatarUrl && (
-                          <AvatarImage
-                            src={post.authorAvatarUrl}
-                            alt={post.authorName}
-                          />
-                        )}
+                        <SignedAvatarImage
+                          path={post.authorAvatarUrl ?? null}
+                          alt={post.authorName}
+                        />
                         <AvatarFallback>{post.authorName[0]}</AvatarFallback>
                       </Avatar>
                       <div>

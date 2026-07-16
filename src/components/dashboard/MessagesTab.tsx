@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { SignedAvatarImage } from '../SignedAvatarImage';
 import { Badge } from '../ui/badge';
 import {
   Send,
@@ -510,13 +511,12 @@ export function MessagesTab({ user }: MessagesTabProps) {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <Avatar className="h-10 w-10 flex-shrink-0">
-                          {conversation.avatarUrl &&
-                            conversation.type === 'direct' && (
-                              <AvatarImage
-                                src={conversation.avatarUrl}
-                                alt={conversation.name}
-                              />
-                            )}
+                          {conversation.type === 'direct' && (
+                            <SignedAvatarImage
+                              path={conversation.avatarUrl ?? null}
+                              alt={conversation.name}
+                            />
+                          )}
                           <AvatarFallback>
                             {conversation.type === 'group' ? (
                               <UsersIcon className="w-5 h-5" />
@@ -566,13 +566,12 @@ export function MessagesTab({ user }: MessagesTabProps) {
         <CardHeader className="border-b shrink-0 !pb-3">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              {selectedConversation?.avatarUrl &&
-                selectedConversation.type === 'direct' && (
-                  <AvatarImage
-                    src={selectedConversation.avatarUrl}
-                    alt={selectedConversation.name}
-                  />
-                )}
+              {selectedConversation?.type === 'direct' && (
+                <SignedAvatarImage
+                  path={selectedConversation.avatarUrl ?? null}
+                  alt={selectedConversation.name}
+                />
+              )}
               <AvatarFallback>
                 {selectedConversation?.type === 'group' ? (
                   <UsersIcon className="w-5 h-5" />
@@ -653,12 +652,10 @@ export function MessagesTab({ user }: MessagesTabProps) {
                               <div className="w-7 flex-shrink-0 self-end">
                                 {isLastInGroup ? (
                                   <Avatar className="h-7 w-7">
-                                    {message.authorAvatarUrl && (
-                                      <AvatarImage
-                                        src={message.authorAvatarUrl}
-                                        alt={message.authorName}
-                                      />
-                                    )}
+                                    <SignedAvatarImage
+                                      path={message.authorAvatarUrl}
+                                      alt={message.authorName}
+                                    />
                                     <AvatarFallback className="text-xs">
                                       {message.authorName[0]}
                                     </AvatarFallback>
@@ -832,9 +829,9 @@ export function MessagesTab({ user }: MessagesTabProps) {
                     <div className="p-4 space-y-4">
                       <div className="flex items-start gap-3">
                         <Avatar className="h-10 w-10 flex-shrink-0">
-                          {profile?.avatar_url && (
-                            <AvatarImage src={profile.avatar_url} />
-                          )}
+                          <SignedAvatarImage
+                            path={profile?.avatar_url ?? null}
+                          />
                           <AvatarFallback className="text-sm font-bold bg-secondary text-primary">
                             {(profile?.display_name || '?')[0]}
                           </AvatarFallback>
@@ -937,9 +934,7 @@ export function MessagesTab({ user }: MessagesTabProps) {
                               }`}
                             >
                               <Avatar className="h-8 w-8 flex-shrink-0">
-                                {member.avatarUrl && (
-                                  <AvatarImage src={member.avatarUrl} />
-                                )}
+                                <SignedAvatarImage path={member.avatarUrl} />
                                 <AvatarFallback
                                   className={`text-xs font-bold ${member.role === 'admin' ? 'bg-secondary text-primary' : 'bg-muted'}`}
                                 >
