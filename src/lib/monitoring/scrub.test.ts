@@ -84,9 +84,27 @@ describe('scrubText', () => {
     );
   });
 
+  it('redacts emails before the digit rules, not as a phone number', () => {
+    expect(scrubText('2095550134@example.com')).toBe('[redacted-email]');
+    expect(scrubText('from 2095550134@example.com ok')).toBe(
+      'from [redacted-email] ok',
+    );
+  });
+
   it('leaves UUIDs intact so records stay correlatable', () => {
     expect(scrubText('no lead for 550e8400-e29b-41d4-a716-446655440000')).toBe(
       'no lead for 550e8400-e29b-41d4-a716-446655440000',
+    );
+  });
+
+  it('redacts a phone adjacent to a UUID without leaking at the boundary', () => {
+    expect(
+      scrubText('lead 550e8400-e29b-41d4-a716-446655440000 phone 2095550134'),
+    ).toBe('lead 550e8400-e29b-41d4-a716-446655440000 phone [redacted-phone]');
+    expect(
+      scrubText('2095550134 550e8400-e29b-41d4-a716-446655440000 2095550134'),
+    ).toBe(
+      '[redacted-phone] 550e8400-e29b-41d4-a716-446655440000 [redacted-phone]',
     );
   });
 
