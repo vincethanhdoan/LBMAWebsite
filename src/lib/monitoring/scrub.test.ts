@@ -174,6 +174,104 @@ describe('scrubEvent', () => {
     expect(out.breadcrumbs[1].data.status_code).toBe(400);
   });
 
+  it('scrubs an auth token out of the request Referer header', () => {
+    const event = {
+      request: {
+        url: 'https://x.test/dashboard',
+        headers: {
+          Referer: 'https://x.test/auth/callback?token_hash=pkce_abc123',
+          'User-Agent': 'Mozilla/5.0',
+        },
+      },
+    };
+
+    const out = scrubEvent(event);
+
+    expect(out.request.headers.Referer).toBe(
+      'https://x.test/auth/callback?token_hash=[redacted-token]',
+    );
+    expect(out.request.headers['User-Agent']).toBe('Mozilla/5.0');
+  });
+
+  it('scrubs string values nested anywhere under request', () => {
+    const event = {
+      request: { data: { body: { email: 'parent@example.com' } } },
+    };
+
+    const out = scrubEvent(event);
+
+    expect(out.request.data.body.email).toBe('[redacted-email]');
+  });
+
+  it('scrubs console breadcrumb data.arguments, including nested objects', () => {
+    const event = {
+      breadcrumbs: [
+        {
+          category: 'console',
+          level: 'error',
+          message: 'Error setting session from magic link: AuthApiError',
+          data: {
+            arguments: [
+              'Error setting session from magic link:',
+              {
+                message: 'invalid token_hash=pkce_abc123',
+                context: { email: 'parent@example.com' },
+                status: 401,
+              },
+            ],
+            logger: 'console',
+          },
+        },
+      ],
+    };
+
+    const out = scrubEvent(event);
+
+    const args = out.breadcrumbs[0].data.arguments;
+    expect(args[0]).toBe('Error setting session from magic link:');
+    expect(args[1]).toStrictEqual({
+      message: 'invalid token_hash=[redacted-token]',
+      context: { email: '[redacted-email]' },
+      status: 401,
+    });
+    expect(out.breadcrumbs[0].data.logger).toBe('console');
+  });
+
+  it('does not mangle non-string values while walking', () => {
+    const event = {
+      breadcrumbs: [
+        {
+          data: {
+            arguments: [null, undefined, true, 42, { n: null }],
+            status_code: 400,
+          },
+        },
+      ],
+    };
+
+    const out = scrubEvent(event);
+
+    expect(out.breadcrumbs[0].data.arguments).toStrictEqual([
+      null,
+      undefined,
+      true,
+      42,
+      { n: null },
+    ]);
+    expect(out.breadcrumbs[0].data.status_code).toBe(400);
+  });
+
+  it('terminates on a cyclic data object', () => {
+    const cyclic: Record<string, unknown> = { email: 'parent@example.com' };
+    cyclic.self = cyclic;
+    const event = { breadcrumbs: [{ data: { arguments: [cyclic] } }] };
+
+    const out = scrubEvent(event);
+
+    expect(cyclic.email).toBe('[redacted-email]');
+    expect(out.breadcrumbs[0].data.arguments[0]).toBe(cyclic);
+  });
+
   it('tolerates an event with no optional fields', () => {
     expect(scrubEvent({})).toStrictEqual({});
   });
