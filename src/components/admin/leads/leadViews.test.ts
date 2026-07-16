@@ -108,6 +108,25 @@ describe('getAppointmentOccurrences', () => {
       [],
     );
   });
+
+  it('excludes cancelled bookings from upcoming visits', () => {
+    const lead = makeLead({
+      programBookings: [
+        makeBooking({
+          booking_id: 'b1',
+          appointment_date: '2026-07-20',
+          status: 'cancelled',
+        }),
+        makeBooking({
+          booking_id: 'b2',
+          appointment_date: '2026-07-22',
+          status: 'scheduled',
+        }),
+      ],
+    });
+    const occ = getAppointmentOccurrences([lead]);
+    expect(occ.map((o) => o.dateKey)).toEqual(['2026-07-22']);
+  });
 });
 
 describe('daysSince', () => {

@@ -8,6 +8,15 @@ import {
   getAppointmentSlots,
 } from '../lib/supabase/queries';
 import { BookingCalendar } from '../components/shared/BookingCalendar';
+import { Button } from '../components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../components/ui/dialog';
 import type { AppointmentSlot } from '../lib/types';
 
 const PROGRAM_LABELS: Record<string, string> = {
@@ -37,6 +46,9 @@ export function BookingPage() {
   const [showReschedule, setShowReschedule] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [calendarKey, setCalendarKey] = useState(0);
+  const [cancelled, setCancelled] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -101,6 +113,7 @@ export function BookingPage() {
           : prev,
       );
       setShowReschedule(false);
+      setCancelled(false);
     } catch (err) {
       if (err instanceof FunctionsHttpError) {
         const body = await err.context.json().catch(() => null);
@@ -113,6 +126,41 @@ export function BookingPage() {
       setError('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleCancel() {
+    if (!token) return;
+    setCancelling(true);
+    try {
+      setError(null);
+      const { error: fnError } = await supabase.functions.invoke(
+        'book-appointment',
+        {
+          body: { token, action: 'cancel' },
+        },
+      );
+      if (fnError) throw fnError;
+      setBooked(null);
+      setCancelled(true);
+      setShowReschedule(false);
+      setCancelDialogOpen(false);
+      setCalendarKey((k) => k + 1);
+      setBooking((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 'cancelled',
+              appointment_date: null,
+              appointment_time: null,
+            }
+          : prev,
+      );
+    } catch {
+      setCancelDialogOpen(false);
+      setError("We couldn't cancel that just now. Please try again.");
+    } finally {
+      setCancelling(false);
     }
   }
 
@@ -181,12 +229,20 @@ export function BookingPage() {
                 </p>
               )}
             </div>
-            <button
-              onClick={() => setShowReschedule(true)}
-              className="text-sm text-primary hover:underline"
-            >
-              Need to reschedule?
-            </button>
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => setShowReschedule(true)}
+                className="text-sm text-primary hover:underline"
+              >
+                Need to reschedule?
+              </button>
+              <button
+                onClick={() => setCancelDialogOpen(true)}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Cancel appointment
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -197,6 +253,18 @@ export function BookingPage() {
               >
                 ← Back
               </button>
+            )}
+            {cancelled && (
+              <div className="border border-border rounded-xl p-5 bg-muted/30">
+                <p className="font-semibold mb-1">
+                  Your appointment has been cancelled.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  We're sorry to miss you this time. Whenever you're ready, pick
+                  a new date below — we'd still love to have {childList} in for
+                  a class.
+                </p>
+              </div>
             )}
             <BookingCalendar
               key={calendarKey}
@@ -211,6 +279,40 @@ export function BookingPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cancel this appointment?</DialogTitle>
+            <DialogDescription>
+              If the time no longer works, you can reschedule instead and keep
+              your spot. Cancelling releases it for another family.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 pt-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setCancelDialogOpen(false);
+                setShowReschedule(true);
+              }}
+              disabled={cancelling}
+            >
+              Reschedule instead
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancel}
+              disabled={cancelling}
+            >
+              {cancelling ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              Cancel appointment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
