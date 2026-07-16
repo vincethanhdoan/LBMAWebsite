@@ -5,10 +5,7 @@ import type {
 
 // ─── Program booking helpers ───────────────────────────────────────────────
 
-export const PROGRAM_LABELS: Record<string, string> = {
-  little_dragons: 'Little Dragons',
-  youth: 'Youth Program',
-};
+export { PROGRAM_LABELS } from '../../../lib/programs';
 
 export const PROGRAM_BADGE_STYLES: Record<string, string> = {
   little_dragons: 'bg-amber-50 text-amber-700 border border-amber-200',

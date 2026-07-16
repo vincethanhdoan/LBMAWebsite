@@ -9,6 +9,10 @@ export function notificationTitle(n: UserNotification): string {
       return `Appointment booked — ${actor}`;
     case 'appointment_confirmed':
       return `Appointment confirmed — ${actor}`;
+    case 'appointment_rescheduled':
+      return `Appointment rescheduled — ${actor}`;
+    case 'appointment_cancelled':
+      return `Appointment cancelled — ${actor}`;
     case 'comment_reply':
       return `${actor} replied to your comment`;
     case 'post_comment':

@@ -106,7 +106,10 @@ export const STALE_INVITE_DAYS = 5;
 export const STALE_INQUIRY_DAYS = 3;
 
 export function daysSince(iso: string, nowMs: number): number {
-  return Math.floor((nowMs - new Date(iso).getTime()) / 86_400_000);
+  return Math.max(
+    0,
+    Math.floor((nowMs - new Date(iso).getTime()) / 86_400_000),
+  );
 }
 
 // Priority order: call_to_confirm, record_outcome, email_failed, stale_invite.
@@ -142,8 +145,11 @@ export function deriveAttentionItems(
     const sentAt = lead.approval_email_sent_at ?? lead.approved_at;
     if (!sentAt) continue;
     const hasBooked =
-      lead.programBookings?.some((b) => b.appointment_date) ||
-      lead.appointment_date !== null;
+      lead.programBookings?.some(
+        (b) =>
+          b.appointment_date &&
+          (b.status === 'scheduled' || b.status === 'confirmed'),
+      ) || lead.appointment_date !== null;
     if (hasBooked) continue;
     const daysWaiting = daysSince(sentAt, nowMs);
     if (daysWaiting >= STALE_INVITE_DAYS)
@@ -214,4 +220,15 @@ export function nextOccurrenceAfter(
   dateKey: string,
 ): AppointmentOccurrence | null {
   return occurrences.find((o) => o.dateKey > dateKey) ?? null;
+}
+
+// A lead is still awaiting a booking when any program has no live visit yet.
+// A cancelled booking keeps its date for history, so a dated-but-cancelled
+// program still counts as needing a (re)booking.
+export function leadAwaitingBooking(lead: EnrollmentLead): boolean {
+  return lead.programBookings?.length
+    ? lead.programBookings.some(
+        (b) => !b.appointment_date || b.status === 'cancelled',
+      )
+    : lead.appointment_date === null;
 }

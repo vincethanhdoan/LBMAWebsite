@@ -2,6 +2,7 @@
 // Public endpoint — auth is the booking_token on enrollment_lead_program_bookings.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { recalculateLeadStatus } from '../_shared/leadStatus.ts';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
@@ -32,38 +33,7 @@ function adminClient() {
   );
 }
 
-async function recalculateLeadStatus(
-  supabase: ReturnType<typeof adminClient>,
-  leadId: string,
-): Promise<boolean> {
-  const { data: bookings } = await supabase
-    .from('enrollment_lead_program_bookings')
-    .select('status')
-    .eq('lead_id', leadId);
-
-  if (!bookings || bookings.length === 0) return false;
-
-  const statuses = bookings.map((b: { status: string }) => b.status);
-  const allScheduledOrConfirmed = statuses.every(
-    (s: string) => s === 'scheduled' || s === 'confirmed',
-  );
-  const allConfirmed = statuses.every((s: string) => s === 'confirmed');
-
-  const leadStatus = allConfirmed
-    ? 'appointment_confirmed'
-    : allScheduledOrConfirmed
-      ? 'appointment_scheduled'
-      : 'approved';
-
-  await supabase
-    .from('enrollment_leads')
-    .update({ status: leadStatus })
-    .eq('lead_id', leadId);
-
-  return allScheduledOrConfirmed;
-}
-
-const BOOKABLE_STATUSES = ['link_sent', 'scheduled', 'confirmed'];
+const BOOKABLE_STATUSES = ['link_sent', 'scheduled', 'confirmed', 'cancelled'];
 
 Deno.serve(async (req) => {
   const cors = corsHeaders(req.headers.get('Origin'));
@@ -72,9 +42,9 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST')
     return new Response('Method not allowed', { status: 405 });
 
-  const { token, slotId, appointmentDate } = await req.json();
-  if (!token || !slotId || !appointmentDate) {
-    return new Response('Missing token, slotId, or appointmentDate', {
+  const { token, slotId, appointmentDate, action } = await req.json();
+  if (!token) {
+    return new Response('Missing token', {
       status: 400,
       headers: cors,
     });
@@ -94,6 +64,39 @@ Deno.serve(async (req) => {
       status: 404,
       headers: cors,
     });
+
+  // Cancel path — the family drops a scheduled/confirmed visit. Date and slot
+  // stay on the row for history; only scheduled/confirmed rows hold a slot, so
+  // cancelling frees it for others to book.
+  if (action === 'cancel') {
+    if (!['scheduled', 'confirmed'].includes(programBooking.status)) {
+      return new Response('This appointment can no longer be cancelled', {
+        status: 422,
+        headers: cors,
+      });
+    }
+    const { error: cancelError } = await supabase
+      .from('enrollment_lead_program_bookings')
+      .update({ status: 'cancelled', updated_by: null })
+      .eq('booking_id', programBooking.booking_id);
+    if (cancelError)
+      return new Response('Cancellation failed', {
+        status: 500,
+        headers: cors,
+      });
+    await recalculateLeadStatus(supabase, programBooking.lead_id);
+    return new Response(JSON.stringify({ ok: true, status: 'cancelled' }), {
+      status: 200,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!slotId || !appointmentDate) {
+    return new Response('Missing slotId or appointmentDate', {
+      status: 400,
+      headers: cors,
+    });
+  }
   if (!BOOKABLE_STATUSES.includes(programBooking.status)) {
     return new Response('This booking link is no longer valid', {
       status: 422,
