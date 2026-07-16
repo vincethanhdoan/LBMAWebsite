@@ -213,7 +213,7 @@ export type EnrollmentLeadProgramBooking = {
   appointment_slot_id: string | null;
   appointment_date: string | null;
   appointment_time: string | null;
-  status: 'pending' | 'link_sent' | 'scheduled' | 'confirmed';
+  status: 'pending' | 'link_sent' | 'scheduled' | 'confirmed' | 'cancelled';
   created_at: string;
 };
 
