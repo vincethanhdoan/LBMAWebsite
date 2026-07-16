@@ -5,6 +5,7 @@ import { formatPhone } from '../../../lib/format';
 import {
   childSummary,
   daysSince,
+  leadAwaitingBooking,
   STALE_INQUIRY_DAYS,
   STALE_INVITE_DAYS,
 } from './leadViews';
@@ -44,13 +45,7 @@ export function PipelineView({
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
 
   const invited = leads
-    .filter(
-      (lead) =>
-        lead.status === 'approved' &&
-        (lead.programBookings?.length
-          ? lead.programBookings.some((b) => !b.appointment_date)
-          : !lead.appointment_date),
-    )
+    .filter((lead) => lead.status === 'approved' && leadAwaitingBooking(lead))
     .sort((a, b) => inviteSentDate(a).localeCompare(inviteSentDate(b)));
 
   return (

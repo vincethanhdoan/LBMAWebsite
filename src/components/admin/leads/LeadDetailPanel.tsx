@@ -223,6 +223,7 @@ export function LeadDetailPanel({
     const booked =
       (booking.status === 'scheduled' || booking.status === 'confirmed') &&
       booking.appointment_date !== null;
+    const cancelled = booking.status === 'cancelled';
     const context = [
       PROGRAM_LABELS[booking.program_type],
       bookings.length > 1 && kids.length > 0
@@ -247,6 +248,10 @@ export function LeadDetailPanel({
               booking.appointment_date as string,
               booking.appointment_time,
             )}
+          </div>
+        ) : cancelled ? (
+          <div className="text-[13px] text-muted-foreground">
+            Visit cancelled — booking link still active
           </div>
         ) : (
           <div className="text-[13px] text-muted-foreground">

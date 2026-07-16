@@ -11,6 +11,7 @@ import {
   buildWeekDays,
   nextOccurrenceAfter,
   daysSince,
+  leadAwaitingBooking,
   STALE_INVITE_DAYS,
 } from './leadViews';
 
@@ -264,6 +265,22 @@ describe('deriveAttentionItems', () => {
     expect(items[0].reason).toBe('stale_invite');
   });
 
+  it('raises stale_invite when the only booking was cancelled (keeps its date)', () => {
+    const sentAt = new Date(
+      nowMs - (STALE_INVITE_DAYS + 1) * 86_400_000,
+    ).toISOString();
+    const lead = makeLead({
+      status: 'approved',
+      approval_email_sent_at: sentAt,
+      programBookings: [
+        makeBooking({ appointment_date: '2026-07-20', status: 'cancelled' }),
+      ],
+    });
+    const items = deriveAttentionItems([lead], '2026-07-15', nowMs);
+    expect(items).toHaveLength(1);
+    expect(items[0].reason).toBe('stale_invite');
+  });
+
   it('keeps only the highest-priority reason per lead', () => {
     // A lead both due-to-confirm and email-failed → call_to_confirm wins.
     const lead = makeLead({
@@ -328,5 +345,47 @@ describe('nextOccurrenceAfter', () => {
     const occ = getAppointmentOccurrences([lead]);
     expect(nextOccurrenceAfter(occ, '2026-07-16')?.dateKey).toBe('2026-07-20');
     expect(nextOccurrenceAfter(occ, '2026-07-20')).toBeNull();
+  });
+});
+
+describe('leadAwaitingBooking', () => {
+  it('is false when every program has a live dated booking', () => {
+    const lead = makeLead({
+      programBookings: [
+        makeBooking({ appointment_date: '2026-07-20', status: 'scheduled' }),
+      ],
+    });
+    expect(leadAwaitingBooking(lead)).toBe(false);
+  });
+
+  it('is true when a program booking was cancelled but keeps its date', () => {
+    const lead = makeLead({
+      programBookings: [
+        makeBooking({ appointment_date: '2026-07-20', status: 'cancelled' }),
+      ],
+    });
+    expect(leadAwaitingBooking(lead)).toBe(true);
+  });
+
+  it('is true when a program has no date yet', () => {
+    const lead = makeLead({
+      programBookings: [
+        makeBooking({ appointment_date: null, status: 'link_sent' }),
+      ],
+    });
+    expect(leadAwaitingBooking(lead)).toBe(true);
+  });
+
+  it('falls back to the legacy lead-level appointment when there are no bookings', () => {
+    expect(
+      leadAwaitingBooking(
+        makeLead({ programBookings: [], appointment_date: null }),
+      ),
+    ).toBe(true);
+    expect(
+      leadAwaitingBooking(
+        makeLead({ programBookings: [], appointment_date: '2026-07-20' }),
+      ),
+    ).toBe(false);
   });
 });
