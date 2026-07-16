@@ -25,6 +25,8 @@ import { BlogTab } from './dashboard/BlogTab';
 import { MessagesTab } from './dashboard/MessagesTab';
 import { FeedbackTab } from './dashboard/FeedbackTab';
 import { ProfileTab } from './dashboard/ProfileTab';
+import { ErrorBoundary } from './ErrorBoundary';
+import { TabErrorFallback } from './ErrorFallbacks';
 import { useSidebarCounts } from '../lib/hooks/notifications';
 import { useRealtimeInvalidation } from '../lib/hooks/useRealtimeInvalidation';
 import { markSectionSeen } from '../lib/supabase/mutations';
@@ -269,19 +271,21 @@ export function DashboardV2({
         <main
           className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}
         >
-          {activeTab === 'home' && (
-            <HomeTab
-              user={user}
-              onNavigate={(tab) => setActiveTab(tab as TabId)}
-            />
-          )}
-          {activeTab === 'announcements' && <AnnouncementsTab user={user} />}
-          {activeTab === 'blog' && <BlogTab user={user} />}
-          {activeTab === 'messages' && <MessagesTab user={user} />}
-          {activeTab === 'feedback' && <FeedbackTab user={user} />}
-          {activeTab === 'profile' && (
-            <ProfileTab user={user} onRefreshUser={onRefreshUser} />
-          )}
+          <ErrorBoundary fallback={TabErrorFallback} resetKey={activeTab}>
+            {activeTab === 'home' && (
+              <HomeTab
+                user={user}
+                onNavigate={(tab) => setActiveTab(tab as TabId)}
+              />
+            )}
+            {activeTab === 'announcements' && <AnnouncementsTab user={user} />}
+            {activeTab === 'blog' && <BlogTab user={user} />}
+            {activeTab === 'messages' && <MessagesTab user={user} />}
+            {activeTab === 'feedback' && <FeedbackTab user={user} />}
+            {activeTab === 'profile' && (
+              <ProfileTab user={user} onRefreshUser={onRefreshUser} />
+            )}
+          </ErrorBoundary>
         </main>
       </SidebarInset>
     </SidebarProvider>

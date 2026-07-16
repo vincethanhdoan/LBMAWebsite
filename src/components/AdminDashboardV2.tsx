@@ -31,6 +31,8 @@ import { AdminEnrollmentLeadsTab } from './admin/AdminEnrollmentLeadsTab';
 import { AdminAvailabilitySettings } from './admin/AdminAvailabilitySettings';
 import { AdminSettingsTab } from './admin/settings/AdminSettingsTab';
 import { AdminTeamTab } from './admin/AdminTeamTab';
+import { ErrorBoundary } from './ErrorBoundary';
+import { TabErrorFallback } from './ErrorFallbacks';
 import { useSidebarCounts } from '../lib/hooks/notifications';
 import { useAttentionCount } from '../lib/hooks/leads';
 import { useRealtimeInvalidation } from '../lib/hooks/useRealtimeInvalidation';
@@ -359,24 +361,26 @@ export function AdminDashboardV2({
         <main
           className={`flex-1 ${activeTab === 'messages' ? 'overflow-hidden p-6' : 'overflow-auto p-6'}`}
         >
-          {activeTab === 'notifications' && (
-            <AdminNotificationsTab userId={user.id} userEmail={user.email} />
-          )}
-          {activeTab === 'announcements' && (
-            <AdminAnnouncementsTab user={user} />
-          )}
-          {activeTab === 'blog' && <AdminBlogTab user={user} />}
-          {activeTab === 'messages' && <AdminMessagesTab user={user} />}
-          {activeTab === 'families' && <AdminUsersTab user={user} />}
-          {activeTab === 'feedback' && <AdminFeedbackTab />}
-          {activeTab === 'leads' && <AdminEnrollmentLeadsTab />}
-          {activeTab === 'availability' && <AdminAvailabilitySettings />}
-          {activeTab === 'settings' && (
-            <AdminSettingsTab user={user} onRefreshUser={onRefreshUser} />
-          )}
-          {activeTab === 'team' && isOwner && (
-            <AdminTeamTab user={user} onRefreshUser={onRefreshUser} />
-          )}
+          <ErrorBoundary fallback={TabErrorFallback} resetKey={activeTab}>
+            {activeTab === 'notifications' && (
+              <AdminNotificationsTab userId={user.id} userEmail={user.email} />
+            )}
+            {activeTab === 'announcements' && (
+              <AdminAnnouncementsTab user={user} />
+            )}
+            {activeTab === 'blog' && <AdminBlogTab user={user} />}
+            {activeTab === 'messages' && <AdminMessagesTab user={user} />}
+            {activeTab === 'families' && <AdminUsersTab user={user} />}
+            {activeTab === 'feedback' && <AdminFeedbackTab />}
+            {activeTab === 'leads' && <AdminEnrollmentLeadsTab />}
+            {activeTab === 'availability' && <AdminAvailabilitySettings />}
+            {activeTab === 'settings' && (
+              <AdminSettingsTab user={user} onRefreshUser={onRefreshUser} />
+            )}
+            {activeTab === 'team' && isOwner && (
+              <AdminTeamTab user={user} onRefreshUser={onRefreshUser} />
+            )}
+          </ErrorBoundary>
         </main>
       </SidebarInset>
     </SidebarProvider>
