@@ -10,6 +10,7 @@ import {
   deriveAttentionItems,
   buildWeekDays,
   nextOccurrenceAfter,
+  daysSince,
   STALE_INVITE_DAYS,
 } from './leadViews';
 
@@ -106,6 +107,20 @@ describe('getAppointmentOccurrences', () => {
     expect(getAppointmentOccurrences([makeLead({ status: 'new' })])).toEqual(
       [],
     );
+  });
+});
+
+describe('daysSince', () => {
+  it('clamps to zero when the timestamp is slightly in the future', () => {
+    const nowMs = new Date('2026-07-15T12:00:00Z').getTime();
+    const future = new Date(nowMs + 500).toISOString();
+    expect(daysSince(future, nowMs)).toBe(0);
+  });
+
+  it('counts whole elapsed days for past timestamps', () => {
+    const nowMs = new Date('2026-07-15T12:00:00Z').getTime();
+    const past = new Date(nowMs - 3 * 86_400_000).toISOString();
+    expect(daysSince(past, nowMs)).toBe(3);
   });
 });
 

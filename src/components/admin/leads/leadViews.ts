@@ -106,7 +106,10 @@ export const STALE_INVITE_DAYS = 5;
 export const STALE_INQUIRY_DAYS = 3;
 
 export function daysSince(iso: string, nowMs: number): number {
-  return Math.floor((nowMs - new Date(iso).getTime()) / 86_400_000);
+  return Math.max(
+    0,
+    Math.floor((nowMs - new Date(iso).getTime()) / 86_400_000),
+  );
 }
 
 // Priority order: call_to_confirm, record_outcome, email_failed, stale_invite.
