@@ -1,11 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getProfileSignedUrl,
-  getProfileSignedUrls,
   getAnnouncementSignedUrl,
 } from '../supabase/storage';
 import {
-  PROFILE_PICTURES_BUCKET,
   ANNOUNCEMENT_IMAGES_BUCKET,
   publicUrlToPath,
 } from '../supabase/storagePaths';
@@ -32,26 +30,4 @@ export function useSignedUrl(
     gcTime: CACHE_MS,
   });
   return data ?? null;
-}
-
-/** Batch resolver for lists; returns a path -> signed URL map. */
-export function useSignedUrls(
-  values: (string | null)[],
-  bucket: string,
-): Record<string, string> {
-  const paths = Array.from(
-    new Set(
-      values
-        .map((v) => publicUrlToPath(v, bucket))
-        .filter((p): p is string => !!p),
-    ),
-  ).sort();
-  const { data } = useQuery({
-    queryKey: ['signed-urls', bucket, paths],
-    queryFn: () => getProfileSignedUrls(paths),
-    enabled: paths.length > 0 && bucket === PROFILE_PICTURES_BUCKET,
-    staleTime: CACHE_MS,
-    gcTime: CACHE_MS,
-  });
-  return data ?? {};
 }

@@ -116,22 +116,6 @@ export async function getProfileSignedUrl(
   return data.signedUrl;
 }
 
-export async function getProfileSignedUrls(
-  paths: string[],
-  expiresIn = 3600,
-): Promise<Record<string, string>> {
-  if (paths.length === 0) return {};
-  const { data, error } = await supabase.storage
-    .from(PROFILE_PICTURES_BUCKET)
-    .createSignedUrls(paths, expiresIn);
-  if (error) throw error;
-  const out: Record<string, string> = {};
-  for (const item of data ?? []) {
-    if (item.signedUrl && item.path) out[item.path] = item.signedUrl;
-  }
-  return out;
-}
-
 export async function uploadAnnouncementImage(
   path: string,
   file: File,
