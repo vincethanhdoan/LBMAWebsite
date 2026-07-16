@@ -120,7 +120,7 @@ export function WeekCard({
                   )}
                   {!hasKids && !day.isBlocked && (
                     <span className="text-muted-foreground/30 font-normal">
-                      —
+                      -
                     </span>
                   )}
                 </div>

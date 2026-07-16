@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
   if (!lead)
     return new Response('Lead not found', { status: 404, headers: cors });
 
-  // Fetch program bookings (new flow) — may be empty for legacy leads
+  // Fetch program bookings (new flow); may be empty for legacy leads
   const { data: programBookings } = await supabase
     .from('enrollment_lead_program_bookings')
     .select('booking_id, program_type, booking_token, status')

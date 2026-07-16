@@ -120,7 +120,7 @@ export function AdminTeamTab({
       return {
         user_id: p.user_id,
         display_name: p.display_name,
-        email: emailRow?.email ?? '—',
+        email: emailRow?.email ?? '-',
         avatar_url: p.avatar_url,
         is_owner: p.is_owner,
         is_active: p.is_active,

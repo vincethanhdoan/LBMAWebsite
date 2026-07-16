@@ -157,9 +157,9 @@ async function markEnrollmentFailed(
 async function handleEnrollmentNotification(recordId: string): Promise<void> {
   const supabase = adminClient();
 
-  // Re-read the authoritative row from the DB. The webhook body is untrusted —
-  // this endpoint is reachable with the public anon key — so we never send based
-  // on request-supplied content. Only 'queued' rows are sent, which also makes
+  // Re-read the authoritative row from the DB. The webhook body is untrusted
+  // (this endpoint is reachable with the public anon key), so we never send
+  // based on request-supplied content. Only 'queued' rows are sent, which also makes
   // delivery idempotent against duplicate or replayed webhook deliveries.
   const { data: record } = await supabase
     .from('enrollment_lead_notifications')
@@ -216,7 +216,7 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         admins && admins.length > 0
           ? admins.map((a: { email: string }) => a.email)
           : [record.recipient_email];
-      subject = `New enrollment inquiry — ${lead.parent_name}`;
+      subject = `New enrollment inquiry from ${lead.parent_name}`;
       html = enrollmentNotificationHtml(enrichedLead, adminUrl, LOGO_URL);
       const results = await Promise.allSettled(
         recipients.map((to: string) => sendEmail(to, subject, html)),
@@ -232,7 +232,7 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         await markEnrollmentFailed(
           supabase,
           record.notification_id,
-          `Failed recipients — ${failures.join('; ')}`,
+          `Failed recipients: ${failures.join('; ')}`,
         );
         throw new Error(
           `new_lead fan-out failed for ${failures.length} of ${recipients.length} recipients`,
@@ -254,7 +254,7 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         .select('booking_id, program_type, booking_token')
         .eq('lead_id', record.lead_id);
 
-      subject = 'Your enrollment request — book your appointment';
+      subject = 'Your enrollment request has been approved';
 
       if (programBookings && programBookings.length > 0) {
         const programs = await Promise.all(
@@ -311,8 +311,8 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
       }
       subject =
         appointments.length > 1
-          ? 'Appointments confirmed — LBMAA'
-          : 'Appointment confirmed — LBMAA';
+          ? 'Your LBMAA appointments are confirmed'
+          : 'Your LBMAA appointment is confirmed';
       html = bookingConfirmationHtml(lead.parent_name, appointments, LOGO_URL);
       break;
     }
@@ -436,7 +436,7 @@ async function handleMessageNotification(recordId: string): Promise<void> {
 
   await sendEmail(
     user.email,
-    `New message from ${senderName} — LBMAA Portal`,
+    `New message from ${senderName} in the LBMAA Portal`,
     messagingNotificationHtml(senderName, portalUrl, LOGO_URL),
   );
 }
@@ -467,7 +467,7 @@ async function handlePortalNotification(recordId: string): Promise<void> {
 
   switch (record.type) {
     case 'announcement':
-      subject = 'New announcement — LBMAA';
+      subject = 'New announcement from LBMAA';
       html = announcementNotificationHtml(
         record.payload.title ?? '',
         record.payload.body ?? '',
@@ -476,7 +476,7 @@ async function handlePortalNotification(recordId: string): Promise<void> {
       );
       break;
     case 'blog_post':
-      subject = `New post from ${record.payload.author_name ?? 'a member'} — LBMAA`;
+      subject = `New post from ${record.payload.author_name ?? 'a member'} in the LBMAA Parent Blog`;
       html = blogPostNotificationHtml(
         record.payload.title ?? '',
         record.payload.author_name ?? 'A member',
@@ -485,7 +485,7 @@ async function handlePortalNotification(recordId: string): Promise<void> {
       );
       break;
     case 'comment_reply':
-      subject = `${record.payload.replier_name ?? 'Someone'} replied to your comment — LBMAA`;
+      subject = `${record.payload.replier_name ?? 'Someone'} replied to your comment in the LBMAA Portal`;
       html = commentReplyHtml(
         record.payload.replier_name ?? 'Someone',
         record.payload.original_snippet ?? '',
@@ -494,7 +494,7 @@ async function handlePortalNotification(recordId: string): Promise<void> {
       );
       break;
     case 'post_comment':
-      subject = 'New comment on your post — LBMAA';
+      subject = 'New comment on your post in the LBMAA Portal';
       html = postCommentHtml(
         record.payload.commenter_name ?? 'Someone',
         record.payload.post_title ?? 'your post',

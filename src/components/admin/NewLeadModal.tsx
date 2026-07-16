@@ -119,7 +119,7 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
         setDuplicateWarning(null);
       }
     } catch {
-      // Advisory only — a failed check never blocks creation.
+      // Advisory only; a failed check never blocks creation.
     }
   }
 
@@ -225,7 +225,7 @@ export function NewLeadModal({ onSuccess, onCancel }: NewLeadModalProps) {
     if (failedProgram) {
       setCreatedLead(updatedLead);
       toast.error(
-        `${failedProgram} appointment could not be booked — the other bookings were saved. Please try again.`,
+        `${failedProgram} appointment could not be booked. The other bookings were saved. Please try again.`,
       );
       return;
     }

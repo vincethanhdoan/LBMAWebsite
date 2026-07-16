@@ -4,15 +4,15 @@ export function notificationTitle(n: UserNotification): string {
   const actor = n.actor_display_name ?? 'Someone';
   switch (n.type) {
     case 'new_lead':
-      return `New enrollment lead — ${actor}`;
+      return `New enrollment lead from ${actor}`;
     case 'appointment_booked':
-      return `Appointment booked — ${actor}`;
+      return `${actor} booked an appointment`;
     case 'appointment_confirmed':
-      return `Appointment confirmed — ${actor}`;
+      return `${actor} confirmed their appointment`;
     case 'appointment_rescheduled':
-      return `Appointment rescheduled — ${actor}`;
+      return `${actor} rescheduled their appointment`;
     case 'appointment_cancelled':
-      return `Appointment cancelled — ${actor}`;
+      return `${actor} cancelled their appointment`;
     case 'comment_reply':
       return `${actor} replied to your comment`;
     case 'post_comment':

@@ -84,7 +84,7 @@ export interface PortalEmailQueueRecord {
 
 export interface AppointmentInfo {
   programLabel: string;
-  childNames: string; // e.g. "Emma & Lily" — empty string if no children records
+  childNames: string; // e.g. "Emma & Lily"; empty string if no children records
   date: string; // formatted, e.g. "Monday, April 28, 2026"
   appointmentDate: string; // raw 'YYYY-MM-DD', for day-count math
   time: string; // formatted, e.g. "4:00 PM"

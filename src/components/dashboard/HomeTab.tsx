@@ -205,7 +205,7 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
         <CardContent>
           {notifications.length === 0 ? (
             <p className="text-sm text-muted-foreground py-2">
-              You're all caught up — nothing new right now.
+              You're all caught up. Nothing new right now.
             </p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
