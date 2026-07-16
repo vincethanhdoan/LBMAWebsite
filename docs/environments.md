@@ -39,6 +39,13 @@ Source maps upload from the **Vercel** build, not GitHub Actions: `@sentry/vite-
 `vite.config.js` only activates when `SENTRY_AUTH_TOKEN` is present, and that token is set in
 Vercel env vars only. CI builds run without it and silently skip upload.
 
+`build.sourcemap: 'hidden'` generates maps without emitting a `sourceMappingURL` comment, so
+shipped JS never points at them. On Vercel builds (where the plugin runs), the plugin's
+`sourcemaps.filesToDeleteAfterUpload` option also deletes the `.js.map` files from
+`dist/assets/` once the Sentry upload completes, so they never land in the deployed output.
+Local and CI builds skip the plugin entirely and leave the `.map` files in `dist/`, which is
+fine since that output is never deployed.
+
 ## Migrations
 
 Production is the source of truth for the schema; its migration history is not linearly

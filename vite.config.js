@@ -17,6 +17,13 @@ export default defineConfig({
             authToken: sentryAuthToken,
             org: process.env.SENTRY_ORG,
             project: process.env.SENTRY_PROJECT,
+            // Maps are uploaded to Sentry for stack-trace resolution, then removed
+            // from the build output so they're never publicly fetchable. Scoped to
+            // dist/assets (glob runs from the build's cwd, i.e. the repo root) so
+            // it never touches node_modules' own .map files.
+            sourcemaps: {
+              filesToDeleteAfterUpload: ['dist/assets/**/*.js.map'],
+            },
           }),
         ]
       : []),
