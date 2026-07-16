@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader2, CheckCircle2, CalendarX2, AlertTriangle } from 'lucide-react';
+import { PROGRAM_LABELS } from '../lib/programs';
 
 interface Appointment {
   program_type: string;
@@ -12,17 +13,10 @@ interface ConfirmResult {
   ok: boolean;
   already_confirmed: boolean;
   past?: boolean;
-  appointments?: Appointment[];
-  appointment_date: string | null;
-  appointment_time: string | null;
+  appointments: Appointment[];
 }
 
 const CONFIRM_TIMEOUT_MS = 12000;
-
-const PROGRAM_LABELS: Record<string, string> = {
-  little_dragons: 'Little Dragons',
-  youth: 'Youth Program',
-};
 
 type ConfirmOutcome =
   | {
@@ -63,15 +57,7 @@ export function ConfirmPage() {
       if (!res.ok) return { state: 'error' };
 
       const result = (await res.json()) as ConfirmResult;
-      const appts = result.appointments?.length
-        ? result.appointments
-        : [
-            {
-              program_type: '',
-              appointment_date: result.appointment_date,
-              appointment_time: result.appointment_time,
-            },
-          ];
+      const appts = result.appointments ?? [];
       if (result.past) return { state: 'past', appointments: appts };
       return {
         state: result.already_confirmed ? 'already' : 'confirmed',
