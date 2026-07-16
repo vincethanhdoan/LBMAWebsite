@@ -6,7 +6,8 @@ import {
   CardTitle,
 } from '../ui/card';
 import { Button } from '../ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { SignedAvatarImage } from '../SignedAvatarImage';
 import { Badge } from '../ui/badge';
 import {
   Bell,
@@ -263,12 +264,10 @@ export function HomeTab({ user, onNavigate }: HomeTabProps) {
                   <CardHeader>
                     <div className="flex items-start gap-4">
                       <Avatar className="h-12 w-12">
-                        {student.photoUrl && (
-                          <AvatarImage
-                            src={student.photoUrl}
-                            alt={student.name}
-                          />
-                        )}
+                        <SignedAvatarImage
+                          path={student.photoUrl}
+                          alt={student.name}
+                        />
                         <AvatarFallback className="text-lg">
                           {getInitials(student.name)}
                         </AvatarFallback>

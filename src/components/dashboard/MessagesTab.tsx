@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 import { SignedAvatarImage } from '../SignedAvatarImage';
 import { Badge } from '../ui/badge';
 import {
@@ -865,9 +865,9 @@ export function MessagesTab({ user }: MessagesTabProps) {
                               >
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-7 w-7 flex-shrink-0">
-                                    {student.photo_url && (
-                                      <AvatarImage src={student.photo_url} />
-                                    )}
+                                    <SignedAvatarImage
+                                      path={student.photo_url}
+                                    />
                                     <AvatarFallback className="text-xs">
                                       {student.first_name[0]}
                                       {student.last_name[0]}

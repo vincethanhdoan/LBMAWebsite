@@ -65,7 +65,7 @@ export function ProfileSection({ user, onRefreshUser }: ProfileSectionProps) {
         </CardHeader>
         <CardContent>
           <PhotoUploader
-            currentUrl={user.avatarUrl}
+            path={user.avatarUrl}
             fallback={user.displayName?.[0] ?? '?'}
             onUpload={async (file) => {
               const path = `profiles/${user.id}/avatar`;

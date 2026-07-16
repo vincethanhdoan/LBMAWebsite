@@ -606,7 +606,7 @@ export function ProfileTab({
         </CardHeader>
         <CardContent>
           <PhotoUploader
-            currentUrl={user.avatarUrl}
+            path={user.avatarUrl}
             fallback={getInitials(user.displayName ?? '?')}
             onUpload={async (file) => {
               const path = `profiles/${user.id}/avatar`;
@@ -971,7 +971,7 @@ export function ProfileTab({
               <div className="grid grid-cols-[108px_1fr]">
                 <div className="flex flex-col items-center justify-center gap-2 px-3 py-4 border-r border-border">
                   <PhotoUploader
-                    currentUrl={student.photoUrl}
+                    path={student.photoUrl}
                     fallback={`${student.firstName[0]}${student.lastName[0]}`}
                     size="lg"
                     layout="vertical"
@@ -1138,7 +1138,7 @@ export function ProfileTab({
               <div className="space-y-2">
                 <Label>Student Photo</Label>
                 <PhotoUploader
-                  currentUrl={
+                  path={
                     students.find((s) => s.id === editingStudent.id)
                       ?.photoUrl ?? null
                   }
