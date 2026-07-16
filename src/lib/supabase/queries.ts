@@ -789,10 +789,12 @@ export async function getAppointmentSlots(
 export async function getUpcomingBookableDates(
   slotId: string,
   weeksAhead = 20,
+  includeToday = false,
 ): Promise<string[]> {
   const { data, error } = await supabase.rpc('get_upcoming_bookable_dates', {
     p_slot_id: slotId,
     p_weeks_ahead: weeksAhead,
+    p_include_today: includeToday,
   });
   if (error) throw error;
   return (data ?? []).map(

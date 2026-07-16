@@ -17,6 +17,7 @@ interface BookingCalendarProps {
   onConfirm: (slotId: string, date: string) => Promise<void>;
   submitting: boolean;
   confirmLabel?: string;
+  allowToday?: boolean;
 }
 
 function toDateKey(date: Date): string {
@@ -38,6 +39,7 @@ export function BookingCalendar({
   onConfirm,
   submitting,
   confirmLabel = 'Confirm Booking',
+  allowToday = false,
 }: BookingCalendarProps) {
   const [availableMap, setAvailableMap] = useState<Map<string, DateOption[]>>(
     new Map(),
@@ -53,7 +55,7 @@ export function BookingCalendar({
     let cancelled = false;
     Promise.all(
       slots.map((s) =>
-        getUpcomingBookableDates(s.slot_id).then((dates) => ({
+        getUpcomingBookableDates(s.slot_id, 20, allowToday).then((dates) => ({
           slot: s,
           dates,
         })),

@@ -196,6 +196,7 @@ export function PickDateModal({
                       }}
                       submitting={false}
                       confirmLabel="Select this date"
+                      allowToday
                     />
                     {selection[booking.booking_id] && (
                       <p className="text-xs text-green-600 font-medium mt-2">
