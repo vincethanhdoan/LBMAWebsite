@@ -1,6 +1,7 @@
 // supabase/functions/admin-book-appointment/index.ts
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { recalculateLeadStatus } from '../_shared/leadStatus.ts';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
@@ -29,37 +30,6 @@ function adminClient() {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     { auth: { persistSession: false } },
   );
-}
-
-async function recalculateLeadStatus(
-  supabase: ReturnType<typeof adminClient>,
-  leadId: string,
-): Promise<boolean> {
-  const { data: bookings } = await supabase
-    .from('enrollment_lead_program_bookings')
-    .select('status')
-    .eq('lead_id', leadId);
-
-  if (!bookings || bookings.length === 0) return false;
-
-  const statuses = bookings.map((b: { status: string }) => b.status);
-  const allScheduledOrConfirmed = statuses.every(
-    (s: string) => s === 'scheduled' || s === 'confirmed',
-  );
-  const allConfirmed = statuses.every((s: string) => s === 'confirmed');
-
-  const leadStatus = allConfirmed
-    ? 'appointment_confirmed'
-    : allScheduledOrConfirmed
-      ? 'appointment_scheduled'
-      : 'approved';
-
-  await supabase
-    .from('enrollment_leads')
-    .update({ status: leadStatus })
-    .eq('lead_id', leadId);
-
-  return allScheduledOrConfirmed;
 }
 
 Deno.serve(async (req) => {

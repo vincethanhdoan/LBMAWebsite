@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { recalculateLeadStatus } from '../_shared/leadStatus.ts';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
@@ -29,37 +30,6 @@ function adminClient() {
   );
 }
 
-async function recalculateLeadStatus(
-  supabase: ReturnType<typeof adminClient>,
-  leadId: string,
-): Promise<boolean> {
-  const { data: bookings } = await supabase
-    .from('enrollment_lead_program_bookings')
-    .select('status')
-    .eq('lead_id', leadId);
-
-  if (!bookings || bookings.length === 0) return false;
-
-  const statuses = bookings.map((b: { status: string }) => b.status);
-  const allScheduledOrConfirmed = statuses.every(
-    (s: string) => s === 'scheduled' || s === 'confirmed',
-  );
-  const allConfirmed = statuses.every((s: string) => s === 'confirmed');
-
-  const leadStatus = allConfirmed
-    ? 'appointment_confirmed'
-    : allScheduledOrConfirmed
-      ? 'appointment_scheduled'
-      : 'approved';
-
-  await supabase
-    .from('enrollment_leads')
-    .update({ status: leadStatus })
-    .eq('lead_id', leadId);
-
-  return allScheduledOrConfirmed;
-}
-
 Deno.serve(async (req) => {
   const cors = corsHeaders(req.headers.get('Origin'));
 
@@ -87,14 +57,19 @@ Deno.serve(async (req) => {
     timeZone: 'America/Los_Angeles',
   }).format(new Date());
 
-  const { data: leadBookings } = await supabase
+  const { data: leadBookings, error: readError } = await supabase
     .from('enrollment_lead_program_bookings')
     .select(
       'booking_id, status, program_type, appointment_date, appointment_time',
     )
     .eq('lead_id', tokenBooking.lead_id);
 
-  const bookings = leadBookings ?? [];
+  if (readError)
+    return new Response('Lookup failed', { status: 500, headers: cors });
+
+  // Only active (non-cancelled) bookings drive the confirm decision. A
+  // cancelled row keeps its date for history but is not a visit to confirm.
+  const bookings = (leadBookings ?? []).filter((b) => b.status !== 'cancelled');
   const scheduledFuture = bookings.filter(
     (b) =>
       b.status === 'scheduled' &&
@@ -104,12 +79,6 @@ Deno.serve(async (req) => {
   const confirmedFuture = bookings.filter(
     (b) =>
       b.status === 'confirmed' &&
-      b.appointment_date &&
-      b.appointment_date >= today,
-  );
-  const anyFutureBooked = bookings.some(
-    (b) =>
-      (b.status === 'scheduled' || b.status === 'confirmed') &&
       b.appointment_date &&
       b.appointment_date >= today,
   );
@@ -154,18 +123,21 @@ Deno.serve(async (req) => {
         toAppointments(confirmedFuture),
       );
     }
-    if (!anyFutureBooked && bookings.length > 0) {
-      // Every booked visit is in the past.
-      const pastBooked = bookings.filter(
-        (b) =>
-          (b.status === 'scheduled' || b.status === 'confirmed') &&
-          b.appointment_date,
-      );
+    // Every dated visit is in the past — offer a reschedule. Only reachable
+    // when a past scheduled/confirmed visit actually exists.
+    const pastBooked = bookings.filter(
+      (b) =>
+        (b.status === 'scheduled' || b.status === 'confirmed') &&
+        b.appointment_date &&
+        b.appointment_date < today,
+    );
+    if (pastBooked.length > 0) {
       return okResponse(
         { past: true, already_confirmed: false },
         toAppointments(pastBooked),
       );
     }
+    // No live visit to confirm (all cancelled, or link never booked a date).
     return new Response('Cannot confirm from current status', {
       status: 422,
       headers: cors,
@@ -183,7 +155,12 @@ Deno.serve(async (req) => {
   if (error)
     return new Response('Confirmation failed', { status: 500, headers: cors });
 
-  await recalculateLeadStatus(supabase, tokenBooking.lead_id);
+  // Reflect the confirm on the already-fetched set so recalc skips a re-query.
+  const confirmedIds = new Set(scheduledFuture.map((b) => b.booking_id));
+  const updatedBookings = (leadBookings ?? []).map((b) =>
+    confirmedIds.has(b.booking_id) ? { ...b, status: 'confirmed' } : b,
+  );
+  await recalculateLeadStatus(supabase, tokenBooking.lead_id, updatedBookings);
 
   return okResponse(
     { already_confirmed: false },
