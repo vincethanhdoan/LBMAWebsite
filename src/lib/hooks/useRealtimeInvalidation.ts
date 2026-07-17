@@ -28,6 +28,19 @@ export function useRealtimeInvalidation(
   useEffect(() => {
     if (!userId) return;
 
+    const invalidateNotifications = () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.notificationSummary(userId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.homeCounts(userId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.sidebarCounts(userId),
+      });
+      queryClient.invalidateQueries({ queryKey: ['notification-history'] });
+    };
+
     const channels = [
       subscribeToAnnouncements(() => {
         queryClient.invalidateQueries({ queryKey: queryKeys.announcements() });
@@ -118,21 +131,18 @@ export function useRealtimeInvalidation(
         queryClient.invalidateQueries({ queryKey: queryKeys.admins() });
         queryClient.invalidateQueries({ queryKey: queryKeys.adminEmails() });
         const changedId = (n as any)?.user_id ?? (o as any)?.user_id;
-        if (changedId === userId) selfProfileChangeRef.current?.();
+        // No row means a reconnect refetch: the missed change could have been
+        // ours (e.g. deactivation), so re-verify our own access too.
+        if (changedId === userId || changedId === undefined) {
+          selfProfileChangeRef.current?.();
+        }
       }),
 
-      subscribeToUserNotifications(userId, () => {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.notificationSummary(userId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.homeCounts(userId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.sidebarCounts(userId),
-        });
-        queryClient.invalidateQueries({ queryKey: ['notification-history'] });
-      }),
+      subscribeToUserNotifications(
+        userId,
+        () => invalidateNotifications(),
+        () => invalidateNotifications(),
+      ),
     ];
 
     return () => {
