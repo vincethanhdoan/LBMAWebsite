@@ -11,7 +11,7 @@ import { createMessage, markConversationAsRead } from '../supabase/mutations';
 import { queryKeys } from '../queryKeys';
 
 // Inlined from messages/helpers.ts to avoid lib→component import
-function isDirectConversationAllowed(
+export function isDirectConversationAllowed(
   currentUserRole: 'admin' | 'family',
   otherRole?: string | null,
 ) {
@@ -20,7 +20,7 @@ function isDirectConversationAllowed(
   return otherRole === 'family' || otherRole === 'admin';
 }
 
-function countUnread(
+export function countUnread(
   messages: Array<{ author_user_id: string; created_at: string }>,
   userId: string,
   lastReadAt?: string | null,
