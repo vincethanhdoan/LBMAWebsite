@@ -80,35 +80,22 @@ type StatusKind =
   | 'denied'
   | 'new';
 
+const SUCCESS_BADGE =
+  'bg-status-success-bg text-status-success-fg border-status-success-border';
+const NEUTRAL_BADGE =
+  'bg-status-neutral-bg text-status-neutral-fg border-status-neutral-border';
+
 const BADGE: Record<StatusKind, { label: string; cls: string }> = {
-  confirmed: {
-    label: 'Confirmed',
-    cls: 'bg-status-success-bg text-status-success-fg border-status-success-border',
-  },
+  confirmed: { label: 'Confirmed', cls: SUCCESS_BADGE },
   unconfirmed: {
     label: 'Not confirmed',
     cls: 'bg-status-warning-bg text-status-warning-fg border-status-warning-border',
   },
-  attended: {
-    label: 'Attended',
-    cls: 'bg-status-success-bg text-status-success-fg border-status-success-border',
-  },
-  no_show: {
-    label: 'No-show',
-    cls: 'bg-status-neutral-bg text-status-neutral-fg border-status-neutral-border',
-  },
-  closed: {
-    label: 'Closed',
-    cls: 'bg-status-neutral-bg text-status-neutral-fg border-status-neutral-border',
-  },
-  denied: {
-    label: 'Denied',
-    cls: 'bg-status-neutral-bg text-status-neutral-fg border-status-neutral-border',
-  },
-  new: {
-    label: 'New',
-    cls: 'bg-status-neutral-bg text-status-neutral-fg border-status-neutral-border',
-  },
+  attended: { label: 'Attended', cls: SUCCESS_BADGE },
+  no_show: { label: 'No-show', cls: NEUTRAL_BADGE },
+  closed: { label: 'Closed', cls: NEUTRAL_BADGE },
+  denied: { label: 'Denied', cls: NEUTRAL_BADGE },
+  new: { label: 'New', cls: NEUTRAL_BADGE },
 };
 
 export function StatusBadge({ kind }: { kind: StatusKind }) {

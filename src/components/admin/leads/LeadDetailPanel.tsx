@@ -500,7 +500,7 @@ export function LeadDetailPanel({
                   </p>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {notesSaved && (
-                      <Check className="w-3.5 h-3.5 text-green-600" />
+                      <Check className="w-3.5 h-3.5 text-status-success-fg" />
                     )}
                     <button
                       type="button"
