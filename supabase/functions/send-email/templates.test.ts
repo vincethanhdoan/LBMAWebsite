@@ -39,20 +39,15 @@ Deno.test('STRIPE: flat 4px red, no gradient', () => {
   assertNotEquals(hasGradient, true);
 });
 
-Deno.test(
-  'makeHeader: Option C, flex row, logo left, school name right',
-  () => {
-    const html = messagingNotificationHtml(
-      'Alice',
-      'https://example.com',
-      LOGO,
-    );
-    assertStringIncludes(html, 'display:flex');
-    assertStringIncludes(html, 'Los Banos Martial Arts Academy');
-    const hasCenteredLogo = html.includes('margin:0 auto 8px');
-    assertNotEquals(hasCenteredLogo, true);
-  },
-);
+Deno.test('makeHeader: table row, logo left, school name right', () => {
+  const html = messagingNotificationHtml('Alice', 'https://example.com', LOGO);
+  const logoIdx = html.indexOf(`<img src="${LOGO}"`);
+  const nameIdx = html.indexOf('Los Banos Martial Arts Academy');
+  assertEquals(logoIdx > -1, true);
+  assertEquals(logoIdx < nameIdx, true);
+  const hasCenteredLogo = html.includes('margin:0 auto 8px');
+  assertNotEquals(hasCenteredLogo, true);
+});
 
 Deno.test(
   'makeHeader: no "Member Family Portal" sub-label on family email',
