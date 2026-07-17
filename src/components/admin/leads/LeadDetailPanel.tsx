@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu';
-import { StatusBadge } from './ui';
+import { ActionButton, StatusBadge } from './ui';
 import { LeadTimeline } from './LeadTimeline';
 import { buildTimelineEntries } from './timelineEntries';
 import { RecordOutcomeButton } from './RecordOutcomePopover';
@@ -532,47 +532,40 @@ export function LeadDetailPanel({
           {/* Action bar */}
           <div className="sticky bottom-0 bg-card border-t border-border px-5 py-3 flex flex-wrap items-center gap-2">
             {primaryAction && (
-              <Button
-                size="sm"
+              <ActionButton
                 onClick={primaryAction.run}
                 disabled={busy || updateStatus.isPending}
               >
                 {primaryAction.label}
-              </Button>
+              </ActionButton>
             )}
             {(lead.status === 'approved' ||
               lead.status === 'appointment_scheduled' ||
               lead.status === 'appointment_confirmed') && (
               <>
-                <Button
-                  size="sm"
+                <ActionButton
                   variant="outline"
                   onClick={() => onPickDate(lead)}
                 >
                   Pick new date
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onResend(lead)}
-                >
+                </ActionButton>
+                <ActionButton variant="outline" onClick={() => onResend(lead)}>
                   Resend invites
-                </Button>
+                </ActionButton>
               </>
             )}
             {hasPastAppointment && isActive && (
               <RecordOutcomeButton lead={lead} onClosed={onClose} />
             )}
             {isActive && (
-              <Button
-                size="sm"
+              <ActionButton
                 variant="outline"
                 className="text-muted-foreground"
                 disabled={closeLead.isPending}
                 onClick={() => closeLead.mutate(lead.lead_id)}
               >
                 Close lead
-              </Button>
+              </ActionButton>
             )}
             <div className="ml-auto">
               <DropdownMenu>

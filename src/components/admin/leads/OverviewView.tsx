@@ -1,7 +1,6 @@
 import type { JSX, ReactNode } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import type { BlockedDate, EnrollmentLead } from '../../../lib/types';
-import { Button } from '../../ui/button';
 import { formatPhone, relativeDayLabel } from '../../../lib/format';
 import {
   buildWeekDays,
@@ -12,7 +11,13 @@ import {
   nextOccurrenceAfter,
 } from './leadViews';
 import type { AttentionItem } from './leadViews';
-import { LeadRow, SectionHeader, StatusBadge, Surface } from './ui';
+import {
+  ActionButton,
+  LeadRow,
+  SectionHeader,
+  StatusBadge,
+  Surface,
+} from './ui';
 import { RecordOutcomeButton } from './RecordOutcomePopover';
 import { formatDate, formatTimeShort, toLocalDateKey } from './leadDisplay';
 import { pacificTodayISO } from '../../../lib/pacificTime';
@@ -201,14 +206,12 @@ export function OverviewView({
                   line2={snippet ? `${age} · ${snippet}` : age}
                   onOpen={() => onOpenLead(lead.lead_id)}
                   action={
-                    <Button
-                      size="sm"
-                      className="min-h-[44px]"
+                    <ActionButton
                       disabled={actions.busyLeadIds.has(lead.lead_id)}
                       onClick={() => actions.approve(lead)}
                     >
                       Approve
-                    </Button>
+                    </ActionButton>
                   }
                 />
               );
@@ -250,15 +253,13 @@ function AttentionRow({
       </>
     );
     action = (
-      <Button
-        size="sm"
+      <ActionButton
         variant="outline"
-        className="min-h-[44px]"
         disabled={busy}
         onClick={() => actions.markConfirmed(lead)}
       >
         Mark confirmed
-      </Button>
+      </ActionButton>
     );
   } else if (item.reason === 'record_outcome') {
     const { followUp } = item;
@@ -268,15 +269,13 @@ function AttentionRow({
   } else if (item.reason === 'email_failed') {
     line2 = 'Confirmation email failed';
     action = (
-      <Button
-        size="sm"
+      <ActionButton
         variant="outline"
-        className="min-h-[44px]"
         disabled={actions.sendingReminderId === lead.lead_id}
         onClick={() => actions.sendReminder(lead)}
       >
         Retry email
-      </Button>
+      </ActionButton>
     );
   } else {
     const { daysWaiting } = item;
@@ -284,15 +283,13 @@ function AttentionRow({
       lead.phone ? ` · ${formatPhone(lead.phone)}` : ''
     }`;
     action = (
-      <Button
-        size="sm"
+      <ActionButton
         variant="outline"
-        className="min-h-[44px]"
         disabled={busy}
         onClick={() => actions.resendBookingLink(lead)}
       >
         Resend invite
-      </Button>
+      </ActionButton>
     );
   }
 
