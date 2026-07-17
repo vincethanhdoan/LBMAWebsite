@@ -5,6 +5,7 @@ import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { SignedAvatarImage } from '../SignedAvatarImage';
+import { LoadErrorCard } from '../shared/LoadErrorCard';
 import { Badge } from '../ui/badge';
 import {
   Send,
@@ -98,7 +99,13 @@ export function MessagesTab({ user }: MessagesTabProps) {
     string | null
   >(null);
 
-  const { data: convData, isLoading: loading } = useConversations(user);
+  const {
+    data: convData,
+    isLoading: loading,
+    isError: loadFailed,
+    error: loadError,
+    refetch: reloadConversations,
+  } = useConversations(user);
   const conversations: FormattedConversation[] = useMemo(
     () => convData?.conversations ?? [],
     [convData],
@@ -417,6 +424,16 @@ export function MessagesTab({ user }: MessagesTabProps) {
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <LoadErrorCard
+        title="Unable to load messages"
+        error={loadError}
+        onRetry={() => reloadConversations()}
+      />
     );
   }
 

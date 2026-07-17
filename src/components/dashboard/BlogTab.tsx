@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { LoadErrorCard } from '../shared/LoadErrorCard';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -247,7 +248,13 @@ export function BlogTab({ user }: { user: User }) {
   );
   const [saving, setSaving] = useState(false);
 
-  const { data: rawPosts = [], isLoading: loading } = useBlogPosts();
+  const {
+    data: rawPosts = [],
+    isLoading: loading,
+    isError: loadFailed,
+    error: loadError,
+    refetch: reloadPosts,
+  } = useBlogPosts();
   const createPost = useCreateBlogPost();
 
   useEffect(() => {
@@ -307,6 +314,16 @@ export function BlogTab({ user }: { user: User }) {
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <LoadErrorCard
+        title="Unable to load blog posts"
+        error={loadError}
+        onRetry={() => reloadPosts()}
+      />
     );
   }
 

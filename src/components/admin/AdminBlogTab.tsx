@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { LoadErrorCard } from '../shared/LoadErrorCard';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -219,7 +220,13 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
   );
   const processedPostParam = useRef<string | null>(null);
 
-  const { data: rawPosts = [], isLoading: loading } = useBlogPosts();
+  const {
+    data: rawPosts = [],
+    isLoading: loading,
+    isError: loadFailed,
+    error: loadError,
+    refetch: reloadPosts,
+  } = useBlogPosts();
   const updatePost = useUpdateBlogPost();
   const deletePost = useDeleteBlogPost();
 
@@ -354,6 +361,16 @@ export function AdminBlogTab({ user: _user }: { user: User }) {
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <LoadErrorCard
+        title="Unable to load blog posts"
+        error={loadError}
+        onRetry={() => reloadPosts()}
+      />
     );
   }
 
