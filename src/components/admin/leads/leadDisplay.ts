@@ -47,7 +47,7 @@ export function leadMatchesSearch(
 
 export const STATUS_LABELS: Record<EnrollmentLead['status'], string> = {
   new: 'New',
-  approved: 'Approved',
+  approved: 'Invited',
   appointment_scheduled: 'Awaiting confirmation',
   appointment_confirmed: 'Confirmed',
   denied: 'Denied',

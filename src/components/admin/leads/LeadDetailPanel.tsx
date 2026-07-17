@@ -14,6 +14,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu';
 import { StatusBadge } from './ui';
@@ -562,16 +563,6 @@ export function LeadDetailPanel({
             {hasPastAppointment && isActive && (
               <RecordOutcomeButton lead={lead} onClosed={onClose} />
             )}
-            {lead.status === 'new' && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-destructive border-destructive/40 hover:bg-destructive/5"
-                onClick={() => onDeny(lead)}
-              >
-                Deny
-              </Button>
-            )}
             {isActive && (
               <Button
                 size="sm"
@@ -609,13 +600,23 @@ export function LeadDetailPanel({
                     </DropdownMenuItem>
                   )}
                   {lead.status === 'new' && (
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                      onSelect={() => onDismiss(lead)}
-                    >
-                      Dismiss silently
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        onSelect={() => onDeny(lead)}
+                      >
+                        Deny…
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        onSelect={() => onDismiss(lead)}
+                      >
+                        Deny silently
+                      </DropdownMenuItem>
+                    </>
                   )}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
                     onSelect={() => onDelete(lead)}
