@@ -110,6 +110,16 @@ const navGroups: {
   },
 ];
 
+// Temporarily hidden from the sidebar while unused (no enrolled families yet).
+// Tabs stay reachable by direct URL; remove ids here to restore them.
+const hiddenTabs = new Set<AdminTabId>([
+  'announcements',
+  'blog',
+  'messages',
+  'families',
+  'feedback',
+]);
+
 function getTabLabel(id: AdminTabId): string {
   if (id === 'settings') return 'Settings';
   for (const group of navGroups) {
@@ -175,14 +185,18 @@ export function AdminDashboardV2({
 
         {/* ── Grouped navigation ── */}
         <SidebarContent className="py-2 [scrollbar-width:thin] [scrollbar-color:rgba(250,249,246,0.25)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sidebar-foreground/25 [&::-webkit-scrollbar-thumb]:rounded-full">
-          {navGroups.map((group) => (
-            <SidebarGroup key={group.label}>
-              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {group.items
-                    .filter((item) => !item.ownerOnly || isOwner)
-                    .map(({ id, label, icon: Icon }) => (
+          {navGroups.map((group) => {
+            const visibleItems = group.items.filter(
+              (item) =>
+                !hiddenTabs.has(item.id) && (!item.ownerOnly || isOwner),
+            );
+            if (visibleItems.length === 0) return null;
+            return (
+              <SidebarGroup key={group.label}>
+                <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {visibleItems.map(({ id, label, icon: Icon }) => (
                       <SidebarMenuItem key={id}>
                         <SidebarMenuButton
                           isActive={activeTab === id}
@@ -248,10 +262,11 @@ export function AdminDashboardV2({
                         )}
                       </SidebarMenuItem>
                     ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          })}
         </SidebarContent>
 
         {/* ── User footer ── */}
