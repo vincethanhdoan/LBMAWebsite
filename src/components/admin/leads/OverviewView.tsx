@@ -151,7 +151,7 @@ export function OverviewView({
             />
           ) : totalKids === 0 ? (
             <div className="px-4 py-3 text-[13px] text-muted-foreground">
-              No appointments scheduled this week.
+              No upcoming appointments.
             </div>
           ) : null}
         </Surface>
