@@ -1,3 +1,5 @@
+> **Superseded in part (2026-07-16).** The R1-R3 requirements remain binding in intent, but implementation references here are outdated: migrations were rebaselined on 2026-07-10 (numbered files now in `supabase/migrations_archive/`), and deactivation (R3) is enforced via `profiles.is_active` checked by `is_admin`/`is_owner`, not `students.status`. See `CLAUDE.md` for the current model.
+
 # LBMAA MVP Requirement-to-Feature Matrix (Frozen)
 
 Last updated: 2026-02-26
