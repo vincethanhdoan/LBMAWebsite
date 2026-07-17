@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { SignedAvatarImage } from '../SignedAvatarImage';
+import { LoadErrorCard } from '../shared/LoadErrorCard';
 import { SignedImage } from '../SignedImage';
 import { MessageCircle, Send, Pin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -237,8 +238,13 @@ export function AnnouncementsTab({ user: _user }: { user: User }) {
     {},
   );
 
-  const { data: rawAnnouncements = [], isLoading: loading } =
-    useAnnouncements();
+  const {
+    data: rawAnnouncements = [],
+    isLoading: loading,
+    isError: loadFailed,
+    error: loadError,
+    refetch: reloadAnnouncements,
+  } = useAnnouncements();
 
   useEffect(() => {
     markSectionSeen('announcements').catch(console.error);
@@ -274,6 +280,16 @@ export function AnnouncementsTab({ user: _user }: { user: User }) {
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <LoadErrorCard
+        title="Unable to load announcements"
+        error={loadError}
+        onRetry={() => reloadAnnouncements()}
+      />
     );
   }
 

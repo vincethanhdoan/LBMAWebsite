@@ -32,7 +32,12 @@ export function subscribeToAnnouncements(
         });
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      // Refetch on (re)connect — a dropped socket doesn't replay missed events.
+      if (status === 'SUBSCRIBED') {
+        callback({ eventType: 'UPDATE' });
+      }
+    });
 
   return channel;
 }
@@ -61,7 +66,12 @@ export function subscribeToAllAnnouncementComments(
         });
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      // Refetch on (re)connect — a dropped socket doesn't replay missed events.
+      if (status === 'SUBSCRIBED') {
+        callback({ eventType: 'UPDATE' });
+      }
+    });
 
   return channel;
 }
@@ -94,7 +104,12 @@ export function subscribeToBlogPosts(
         });
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      // Refetch on (re)connect — a dropped socket doesn't replay missed events.
+      if (status === 'SUBSCRIBED') {
+        callback({ eventType: 'UPDATE' });
+      }
+    });
 
   return channel;
 }
@@ -123,7 +138,12 @@ export function subscribeToAllBlogComments(
         });
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      // Refetch on (re)connect — a dropped socket doesn't replay missed events.
+      if (status === 'SUBSCRIBED') {
+        callback({ eventType: 'UPDATE' });
+      }
+    });
 
   return channel;
 }
@@ -156,7 +176,12 @@ export function subscribeToConversations(
         });
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      // Refetch on (re)connect — a dropped socket doesn't replay missed events.
+      if (status === 'SUBSCRIBED') {
+        callback({ eventType: 'UPDATE' });
+      }
+    });
 
   return channel;
 }
@@ -185,7 +210,12 @@ export function subscribeToAllMessages(
         });
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      // Refetch on (re)connect — a dropped socket doesn't replay missed events.
+      if (status === 'SUBSCRIBED') {
+        callback({ eventType: 'UPDATE' });
+      }
+    });
 
   return channel;
 }
@@ -302,7 +332,12 @@ export function subscribeToAdminProfiles(
         });
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      // Refetch on (re)connect — a dropped socket doesn't replay missed events.
+      if (status === 'SUBSCRIBED') {
+        callback({ eventType: 'UPDATE' });
+      }
+    });
 
   return channel;
 }
@@ -314,6 +349,7 @@ export function subscribeToAdminProfiles(
 export function subscribeToUserNotifications(
   userId: string,
   onNewNotification: (notification: UserNotification) => void,
+  onReconnect?: () => void,
 ): RealtimeChannel {
   return supabase
     .channel(`user_notifications:${userId}`)
@@ -327,7 +363,10 @@ export function subscribeToUserNotifications(
       },
       (payload) => onNewNotification(payload.new as UserNotification),
     )
-    .subscribe();
+    .subscribe((status) => {
+      // Refetch on (re)connect — a dropped socket doesn't replay missed events.
+      if (status === 'SUBSCRIBED') onReconnect?.();
+    });
 }
 
 // ============================================

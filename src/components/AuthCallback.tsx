@@ -21,6 +21,9 @@ export function AuthCallback() {
         if (error) setError(error.message);
         // On success, onAuthStateChange fires in useAuth which sets user state.
         // AppRoutes detects user at /auth/callback and redirects to /dashboard.
+      })
+      .catch(() => {
+        setError('Something went wrong signing you in. Please try again.');
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

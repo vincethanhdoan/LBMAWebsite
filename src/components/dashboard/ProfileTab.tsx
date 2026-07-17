@@ -1005,8 +1005,11 @@ export function ProfileTab({
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Age {calculateAge(student.dateOfBirth)} • Born{' '}
-                    {new Date(student.dateOfBirth).toLocaleDateString()}
+                    {student.dateOfBirth
+                      ? `Age ${calculateAge(student.dateOfBirth)} • Born ${new Date(
+                          student.dateOfBirth,
+                        ).toLocaleDateString()}`
+                      : 'Date of birth not set'}
                   </p>
                   <Badge className="bg-[#303030] text-background border-primary self-start">
                     {student.beltLevel}
