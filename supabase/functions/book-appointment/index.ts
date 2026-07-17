@@ -1,5 +1,5 @@
 // supabase/functions/book-appointment/index.ts
-// Public endpoint — auth is the booking_token on enrollment_lead_program_bookings.
+// Public endpoint; auth is the booking_token on enrollment_lead_program_bookings.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { recalculateLeadStatus } from '../_shared/leadStatus.ts';
@@ -65,7 +65,25 @@ Deno.serve(async (req) => {
       headers: cors,
     });
 
-  // Cancel path — the family drops a scheduled/confirmed visit. Date and slot
+  const { data: lead } = await supabase
+    .from('enrollment_leads')
+    .select('lead_id, status, parent_email, parent_name')
+    .eq('lead_id', programBooking.lead_id)
+    .single();
+
+  if (!lead)
+    return new Response('Lead not found', { status: 404, headers: cors });
+
+  // A denied or closed lead's links are dead, even though its cancelled
+  // bookings would otherwise be rebookable.
+  if (lead.status === 'denied' || lead.status === 'closed') {
+    return new Response('This booking link is no longer valid', {
+      status: 422,
+      headers: cors,
+    });
+  }
+
+  // Cancel path: the family drops a scheduled/confirmed visit. Date and slot
   // stay on the row for history; only scheduled/confirmed rows hold a slot, so
   // cancelling frees it for others to book.
   if (action === 'cancel') {
@@ -103,15 +121,6 @@ Deno.serve(async (req) => {
       headers: cors,
     });
   }
-
-  const { data: lead } = await supabase
-    .from('enrollment_leads')
-    .select('lead_id, parent_email, parent_name')
-    .eq('lead_id', programBooking.lead_id)
-    .single();
-
-  if (!lead)
-    return new Response('Lead not found', { status: 404, headers: cors });
 
   // Validate slot
   const { data: slot } = await supabase

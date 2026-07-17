@@ -43,24 +43,27 @@ export function BookingPage() {
       setLoading(false);
       return;
     }
-    getProgramBookingByToken(token).then((data) => {
-      if (!data) {
-        setError('This booking link is no longer valid.');
-        setLoading(false);
-        return;
-      }
-      setBooking(data as BookingInfo);
-      if (
-        ['scheduled', 'confirmed'].includes(data.status) &&
-        data.appointment_date
-      ) {
-        setBooked({
-          date: data.appointment_date,
-          time: data.appointment_time ?? '',
-        });
-      }
-      setLoading(false);
-    });
+    getProgramBookingByToken(token)
+      .then((data) => {
+        if (!data) {
+          setError('This booking link is no longer valid.');
+          return;
+        }
+        setBooking(data as BookingInfo);
+        if (
+          ['scheduled', 'confirmed'].includes(data.status) &&
+          data.appointment_date
+        ) {
+          setBooked({
+            date: data.appointment_date,
+            time: data.appointment_time ?? '',
+          });
+        }
+      })
+      // A malformed token makes the RPC reject (uuid cast); without this the
+      // parent would be left on a blank page.
+      .catch(() => setError('This booking link is no longer valid.'))
+      .finally(() => setLoading(false));
   }, [token]);
 
   useEffect(() => {
@@ -240,8 +243,8 @@ export function BookingPage() {
                 </p>
                 <p className="text-sm text-muted-foreground">
                   We're sorry to miss you this time. Whenever you're ready, pick
-                  a new date below — we'd still love to have {childList} in for
-                  a class.
+                  a new date below. We'd still love to have {childList} in for a
+                  class.
                 </p>
               </div>
             )}
@@ -262,7 +265,7 @@ export function BookingPage() {
       <ConfirmDialog
         open={cancelDialogOpen}
         title="Cancel this appointment?"
-        description="If the time no longer works, you can reschedule instead and keep your spot — close this and choose 'Need to reschedule?'. Cancelling releases the time for another family."
+        description="If the time no longer works, you can reschedule instead and keep your spot. Close this and choose 'Need to reschedule?'. Cancelling releases the time for another family."
         confirmLabel="Cancel appointment"
         destructive
         loading={cancelling}

@@ -73,7 +73,7 @@ export type FollowUpItem = {
 };
 
 // A lead needs follow-up when its last booked visit is in the past and no
-// future visit exists — staff still has to record whether they came in.
+// future visit exists; staff still has to record whether they came in.
 // Recording the outcome makes the lead terminal, so it drops out of here.
 export function deriveFollowUps(
   leads: EnrollmentLead[],
@@ -220,6 +220,21 @@ export function nextOccurrenceAfter(
   dateKey: string,
 ): AppointmentOccurrence | null {
   return occurrences.find((o) => o.dateKey > dateKey) ?? null;
+}
+
+// Client-side mirror of the shared recalculateLeadStatus rule used by the
+// booking edge functions: cancelled bookings don't count, and a lead is only
+// scheduled/confirmed when every active booking is.
+export function deriveLeadStatusFromBookings(
+  bookings: EnrollmentLeadProgramBooking[],
+): 'approved' | 'appointment_scheduled' | 'appointment_confirmed' {
+  const active = bookings.filter((b) => b.status !== 'cancelled');
+  if (active.length === 0) return 'approved';
+  if (active.every((b) => b.status === 'confirmed'))
+    return 'appointment_confirmed';
+  if (active.every((b) => b.status === 'scheduled' || b.status === 'confirmed'))
+    return 'appointment_scheduled';
+  return 'approved';
 }
 
 // A lead is still awaiting a booking when any program has no live visit yet.

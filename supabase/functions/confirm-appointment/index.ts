@@ -53,6 +53,18 @@ Deno.serve(async (req) => {
   if (!tokenBooking)
     return new Response('Invalid token', { status: 404, headers: cors });
 
+  // A denied or closed lead's links are dead, even though its cancelled
+  // bookings would otherwise be rebookable.
+  const { data: lead } = await supabase
+    .from('enrollment_leads')
+    .select('status')
+    .eq('lead_id', tokenBooking.lead_id)
+    .single();
+
+  if (!lead || lead.status === 'denied' || lead.status === 'closed') {
+    return new Response('Invalid token', { status: 404, headers: cors });
+  }
+
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Los_Angeles',
   }).format(new Date());
@@ -123,7 +135,7 @@ Deno.serve(async (req) => {
         toAppointments(confirmedFuture),
       );
     }
-    // Every dated visit is in the past — offer a reschedule. Only reachable
+    // Every dated visit is in the past, so offer a reschedule. Only reachable
     // when a past scheduled/confirmed visit actually exists.
     const pastBooked = bookings.filter(
       (b) =>
