@@ -33,6 +33,7 @@ import { AppointmentsView } from './leads/AppointmentsView';
 import { AllLeadsView, type AllLeadsFilter } from './leads/AllLeadsView';
 import { LeadDetailPanel } from './leads/LeadDetailPanel';
 import { LeadsContentSkeleton } from './leads/LeadsSkeleton';
+import { ErrorCard } from './leads/ui';
 
 type LeadView = 'overview' | 'pipeline' | 'appointments' | 'all';
 
@@ -325,20 +326,10 @@ export function AdminEnrollmentLeadsTab() {
       {activeLoading ? (
         <LeadsContentSkeleton />
       ) : activeIsError ? (
-        <div className="rounded-xl border bg-card px-6 py-10 text-center">
-          <p className="text-sm font-medium">Couldn't load leads.</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Check your connection and try again.
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-4"
-            onClick={() => refetchActiveLeads()}
-          >
-            Try again
-          </Button>
-        </div>
+        <ErrorCard
+          message="Couldn't load leads."
+          onRetry={() => refetchActiveLeads()}
+        />
       ) : (
         <>
           {view === 'overview' && (

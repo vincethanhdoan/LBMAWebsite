@@ -1,5 +1,4 @@
 import type { JSX, ReactNode } from 'react';
-import { CheckCircle2 } from 'lucide-react';
 import type { BlockedDate, EnrollmentLead } from '../../../lib/types';
 import { formatPhone, relativeDayLabel } from '../../../lib/format';
 import {
@@ -13,6 +12,7 @@ import {
 import type { AttentionItem } from './leadViews';
 import {
   ActionButton,
+  EmptyState,
   LeadRow,
   SectionHeader,
   StatusBadge,
@@ -76,13 +76,11 @@ export function OverviewView({
 
   if (allEmpty) {
     return (
-      <div className="flex flex-col items-center justify-center text-center py-16">
-        <CheckCircle2 className="w-10 h-10 text-muted-foreground/50" />
-        <p className="mt-3 text-[15px] font-semibold">All caught up.</p>
-        <p className="mt-1 text-[13px] text-muted-foreground">
-          New inquiries and appointments will appear here.
-        </p>
-      </div>
+      <EmptyState
+        variant="celebrate"
+        headline="All caught up."
+        message="New inquiries and appointments will appear here."
+      />
     );
   }
 

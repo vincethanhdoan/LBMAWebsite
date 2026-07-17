@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { CheckCircle2, ChevronRight, X } from 'lucide-react';
 import { Button } from '../../ui/button';
+import { Skeleton } from '../../ui/skeleton';
 
 // Shared 48px-min touch target for leads action buttons (list rows, detail
 // panel action bar, record-outcome trigger). Keeps every inline lead action at
@@ -186,6 +187,116 @@ export function LeadRow({
         {action}
       </div>
       <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+    </div>
+  );
+}
+
+// One placeholder row, shaped to match LeadRow (two text lines, a trailing
+// badge, and a chevron-sized spacer). Compose several inside a Surface to
+// stand in for a loading list.
+export function LeadRowSkeleton() {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 border-t border-border first:border-t-0">
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <Skeleton className="h-4 w-44" />
+        <Skeleton className="h-3 w-64" />
+      </div>
+      <Skeleton className="h-6 w-20 rounded-full flex-shrink-0" />
+      <div className="w-4 h-4 flex-shrink-0" />
+    </div>
+  );
+}
+
+export function ErrorCard({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="rounded-xl border bg-card px-6 py-10 text-center">
+      <p className="text-sm font-medium">{message}</p>
+      <p className="text-sm text-muted-foreground mt-1">
+        Check your connection and try again.
+      </p>
+      <Button variant="outline" size="sm" className="mt-4" onClick={onRetry}>
+        Try again
+      </Button>
+    </div>
+  );
+}
+
+type PillTone = 'neutral' | 'warning' | 'primary';
+
+const PILL_TONE: Record<PillTone, string> = {
+  neutral: 'bg-muted text-muted-foreground',
+  warning: 'bg-status-warning-bg text-status-warning-fg',
+  primary: 'bg-primary text-primary-foreground',
+};
+
+// Small rounded label. Pass onDismiss to add a trailing clear button (the
+// filter-chip case); otherwise it renders as a plain status/count chip.
+export function Pill({
+  tone = 'neutral',
+  onDismiss,
+  dismissLabel,
+  children,
+}: {
+  tone?: PillTone;
+  onDismiss?: () => void;
+  dismissLabel?: string;
+  children: ReactNode;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[11px] font-semibold rounded-full ${
+        onDismiss ? 'pl-3 pr-1.5 py-1' : 'px-2 py-0.5'
+      } ${PILL_TONE[tone]}`}
+    >
+      {children}
+      {onDismiss && (
+        <button
+          type="button"
+          aria-label={dismissLabel}
+          onClick={onDismiss}
+          className="inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-foreground/10"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </span>
+  );
+}
+
+// Empty-list placeholder. `plain` is a muted one-liner (optionally with an
+// action beneath it); `celebrate` adds an icon and headline for the
+// nothing-left-to-do state.
+export function EmptyState({
+  variant = 'plain',
+  message,
+  headline,
+  action,
+}: {
+  variant?: 'plain' | 'celebrate';
+  message: string;
+  headline?: string;
+  action?: ReactNode;
+}) {
+  if (variant === 'celebrate') {
+    return (
+      <div className="flex flex-col items-center justify-center text-center py-16">
+        <CheckCircle2 className="w-10 h-10 text-muted-foreground/50" />
+        <p className="mt-3 text-[15px] font-semibold">{headline}</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">{message}</p>
+        {action}
+      </div>
+    );
+  }
+  return (
+    <div className="py-8 text-center">
+      <p className="text-[13px] text-muted-foreground">{message}</p>
+      {action}
     </div>
   );
 }

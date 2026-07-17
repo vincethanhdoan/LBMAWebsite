@@ -9,19 +9,20 @@ import {
   STALE_INVITE_DAYS,
 } from './leadViews';
 import { PROGRAM_LABELS } from './leadDisplay';
-import { ActionButton, LeadRow, SectionHeader, Surface } from './ui';
+import {
+  ActionButton,
+  EmptyState,
+  LeadRow,
+  Pill,
+  SectionHeader,
+  Surface,
+} from './ui';
 import type { useLeadActions } from './useLeadActions';
 
 function relativeAge(days: number): string {
   if (days <= 0) return 'today';
   if (days === 1) return 'yesterday';
   return `${days} days ago`;
-}
-
-function EmptySection({ text }: { text: string }): JSX.Element {
-  return (
-    <p className="py-8 text-center text-[13px] text-muted-foreground">{text}</p>
-  );
 }
 
 export function PipelineView({
@@ -58,7 +59,7 @@ export function PipelineView({
           hint="approve to send a booking invite"
         />
         {newInquiries.length === 0 ? (
-          <EmptySection text="No new inquiries. Website inquiries appear here." />
+          <EmptyState message="No new inquiries. Website inquiries appear here." />
         ) : (
           <Surface>
             {newInquiries.map((lead) => (
@@ -90,7 +91,7 @@ export function PipelineView({
           count={invited.length}
         />
         {invited.length === 0 ? (
-          <EmptySection text="No one is waiting to book." />
+          <EmptyState message="No one is waiting to book." />
         ) : (
           <Surface>
             {invited.map((lead) => (
@@ -177,17 +178,7 @@ function InvitedRow({
 
   const chipLabel =
     days === 0 ? 'today' : `${days} ${days === 1 ? 'day' : 'days'}`;
-  const badge = (
-    <span
-      className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${
-        stale
-          ? 'bg-status-warning-bg text-status-warning-fg'
-          : 'bg-muted text-muted-foreground'
-      }`}
-    >
-      {chipLabel}
-    </span>
-  );
+  const badge = <Pill tone={stale ? 'warning' : 'neutral'}>{chipLabel}</Pill>;
 
   return (
     <LeadRow
