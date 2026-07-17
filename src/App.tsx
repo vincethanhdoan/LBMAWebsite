@@ -11,7 +11,6 @@ import { QueryProvider } from './providers/QueryProvider';
 import { FamilyOnboarding } from './components/onboarding/FamilyOnboarding';
 import { DashboardV2 } from './components/DashboardV2';
 import { AdminDashboardV2 } from './components/AdminDashboardV2';
-import { PublicWebsiteV2 } from './experimental/publicV2/PublicWebsiteV2';
 import { LockedSite } from './components/locked/LockedSite';
 import { PortalLoginPage } from './components/locked/PortalLoginPage';
 import { BookingPage } from './pages/BookingPage';
@@ -190,7 +189,6 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route path="/experimental/public/*" element={<PublicWebsiteV2 />} />
         <Route path="/portal" element={<PortalLoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/book/:token" element={<BookingPage />} />
