@@ -391,7 +391,7 @@ export function LeadDetailPanel({
                   )}
                 {confirmationEmail?.status === 'failed' && (
                   <div className="text-[11px] flex items-center gap-2">
-                    <span className="flex items-center gap-1 text-[#A01F23]">
+                    <span className="flex items-center gap-1 text-status-danger-fg">
                       <AlertCircle className="w-3 h-3" />
                       Confirmation email failed
                     </span>

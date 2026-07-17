@@ -82,31 +82,31 @@ type StatusKind =
 const BADGE: Record<StatusKind, { label: string; cls: string }> = {
   confirmed: {
     label: 'Confirmed',
-    cls: 'bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]',
+    cls: 'bg-status-success-bg text-status-success-fg border-status-success-border',
   },
   unconfirmed: {
     label: 'Not confirmed',
-    cls: 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]',
+    cls: 'bg-status-warning-bg text-status-warning-fg border-status-warning-border',
   },
   attended: {
     label: 'Attended',
-    cls: 'bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]',
+    cls: 'bg-status-success-bg text-status-success-fg border-status-success-border',
   },
   no_show: {
     label: 'No-show',
-    cls: 'bg-[#F1F0EF] text-[#6B6866] border-[#E8E6E3]',
+    cls: 'bg-status-neutral-bg text-status-neutral-fg border-status-neutral-border',
   },
   closed: {
     label: 'Closed',
-    cls: 'bg-[#F1F0EF] text-[#6B6866] border-[#E8E6E3]',
+    cls: 'bg-status-neutral-bg text-status-neutral-fg border-status-neutral-border',
   },
   denied: {
     label: 'Denied',
-    cls: 'bg-[#F1F0EF] text-[#6B6866] border-[#E8E6E3]',
+    cls: 'bg-status-neutral-bg text-status-neutral-fg border-status-neutral-border',
   },
   new: {
     label: 'New',
-    cls: 'bg-[#F4F4F5] text-[#3F3F46] border-[#E4E4E7]',
+    cls: 'bg-status-neutral-bg text-status-neutral-fg border-status-neutral-border',
   },
 };
 

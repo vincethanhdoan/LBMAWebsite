@@ -353,7 +353,7 @@ function OccurrenceRow({
       titleMeta={booking ? PROGRAM_LABELS[booking.program_type] : undefined}
       line2={
         callNow ? (
-          <span className="text-[#A01F23] font-bold">
+          <span className="text-status-danger-fg font-bold">
             Not confirmed, call {lead.parent_name}
             {phone ? ' · ' + formatPhone(phone) : ''}
           </span>

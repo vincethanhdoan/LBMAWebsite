@@ -118,7 +118,9 @@ function inquiryLine2(lead: EnrollmentLead, now: number): ReactNode {
   const days = daysSince(lead.created_at, now);
   const timePart =
     days >= STALE_INQUIRY_DAYS ? (
-      <span className="text-[#92400E] font-bold">Waiting {days} days</span>
+      <span className="text-status-warning-fg font-bold">
+        Waiting {days} days
+      </span>
     ) : (
       relativeAge(days)
     );
@@ -163,7 +165,7 @@ function InvitedRow({
 
   const line2: ReactNode = stale ? (
     <>
-      <span className="text-[#92400E] font-bold">
+      <span className="text-status-warning-fg font-bold">
         Invite sent {days} days ago, hasn't booked.
       </span>
       {lead.phone ? ' ' + formatPhone(lead.phone) : ''}
@@ -178,7 +180,9 @@ function InvitedRow({
   const badge = (
     <span
       className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${
-        stale ? 'bg-[#FEF3C7] text-[#92400E]' : 'bg-muted text-muted-foreground'
+        stale
+          ? 'bg-status-warning-bg text-status-warning-fg'
+          : 'bg-muted text-muted-foreground'
       }`}
     >
       {chipLabel}
