@@ -201,10 +201,20 @@ export function MessagesTab({ user }: MessagesTabProps) {
     scrollToBottom();
   }, [rawMessages, selectedConversationId]);
 
-  // Mark conversation as read when selected or when new messages arrive
+  // Mark conversation as read when selected or when new messages arrive,
+  // but only while the browser tab is visible — a message arriving while
+  // the tab is backgrounded keeps its unread badge until the user returns.
   useEffect(() => {
     if (!selectedConversationId || loading) return;
-    markRead(selectedConversationId);
+    const markIfVisible = () => {
+      if (document.visibilityState === 'visible') {
+        markRead(selectedConversationId);
+      }
+    };
+    markIfVisible();
+    document.addEventListener('visibilitychange', markIfVisible);
+    return () =>
+      document.removeEventListener('visibilitychange', markIfVisible);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversationId, loading, rawMessages.length]);
 
