@@ -117,7 +117,7 @@ export function OverviewView({
                 highlighted={highlightedLeadId === o.lead.lead_id}
                 leading={
                   <span className="text-[13px] font-semibold w-16 flex-shrink-0">
-                    {o.time ? formatTimeShort(o.time) : '—'}
+                    {o.time ? formatTimeShort(o.time) : '-'}
                   </span>
                 }
                 title={childSummary(o.lead) || o.lead.parent_name}

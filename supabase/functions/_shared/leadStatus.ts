@@ -11,7 +11,7 @@ type BookingStatus = { status: string };
 // callers use that to send the booking-confirmation email.
 //
 // Pass `bookings` to reuse an already-fetched, up-to-date set and skip the
-// query — the caller is responsible for reflecting any writes it just made.
+// query; the caller is responsible for reflecting any writes it just made.
 export async function recalculateLeadStatus(
   supabase: SupabaseClient,
   leadId: string,

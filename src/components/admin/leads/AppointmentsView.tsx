@@ -346,7 +346,7 @@ function OccurrenceRow({
       highlighted={highlightedLeadId === lead.lead_id}
       leading={
         <span className="text-[13px] font-semibold w-16 flex-shrink-0">
-          {occurrence.time ? formatTimeShort(occurrence.time) : '—'}
+          {occurrence.time ? formatTimeShort(occurrence.time) : '-'}
         </span>
       }
       title={childSummary(lead) || lead.parent_name}

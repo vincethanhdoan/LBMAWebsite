@@ -429,7 +429,7 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
                             </div>
                           </TableCell>
                           <TableCell>{family.primaryEmail}</TableCell>
-                          <TableCell>{family.phoneNumber ?? '—'}</TableCell>
+                          <TableCell>{family.phoneNumber ?? '-'}</TableCell>
                           <TableCell>
                             <Badge variant="secondary">
                               {family.studentCount}{' '}
@@ -837,8 +837,8 @@ export function AdminUsersTab({ user: _user }: { user: NonNullable<User> }) {
                           <p className="text-sm text-muted-foreground">
                             {guardian.relationship}
                           </p>
-                          <p className="text-sm">{guardian.email ?? '—'}</p>
-                          <p className="text-sm">{guardian.phone ?? '—'}</p>
+                          <p className="text-sm">{guardian.email ?? '-'}</p>
+                          <p className="text-sm">{guardian.phone ?? '-'}</p>
                           <div className="flex gap-2">
                             <Button
                               size="sm"

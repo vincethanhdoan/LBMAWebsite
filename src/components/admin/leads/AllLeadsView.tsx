@@ -110,7 +110,7 @@ export function AllLeadsView({
     [showActive, activeLeads, search],
   );
 
-  // Next booked visit on or after today, per active lead — occurrences come back
+  // Next booked visit on or after today, per active lead; occurrences come back
   // sorted ascending, so the first future one is the soonest.
   const nextUpcomingByLead = useMemo(() => {
     const todayKey = toLocalDateKey(new Date());
@@ -123,7 +123,7 @@ export function AllLeadsView({
   }, [activeLeads]);
 
   // A loaded lead is a possible duplicate when its email matches an
-  // earlier-created loaded lead — the first occurrence of each email is never flagged.
+  // earlier-created loaded lead; the first occurrence of each email is never flagged.
   const duplicateLeadIds = useMemo(() => {
     const loaded = [...activeLeads, ...terminalLeads];
     const earliestByEmail = new Map<string, string>();

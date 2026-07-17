@@ -601,7 +601,7 @@ export function FeedbackTab() {
                                     onClick={() => {
                                       setAddStudentId(s.student_id);
                                       setStudentSearchQuery(
-                                        `${s.first_name} ${s.last_name}${s.belt_level ? ` — ${s.belt_level}` : ''}`,
+                                        `${s.first_name} ${s.last_name}${s.belt_level ? ` (${s.belt_level})` : ''}`,
                                       );
                                       setStudentPickerOpen(false);
                                     }}
@@ -610,7 +610,7 @@ export function FeedbackTab() {
                                     {s.belt_level && (
                                       <span className="text-muted-foreground">
                                         {' '}
-                                        — {s.belt_level}
+                                        ({s.belt_level})
                                       </span>
                                     )}
                                   </button>

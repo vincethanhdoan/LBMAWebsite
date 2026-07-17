@@ -80,7 +80,7 @@ export function enrollmentNotificationHtml(
       ? lead.children
           .map(
             (c) =>
-              `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Child</td><td style="padding:4px 0;color:#555;">${escHtml(c.name)}, age ${c.age} — ${PROGRAM_LABELS[c.program_type] ?? c.program_type}</td></tr>`,
+              `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Child</td><td style="padding:4px 0;color:#555;">${escHtml(c.name)}, age ${c.age} (${PROGRAM_LABELS[c.program_type] ?? c.program_type})</td></tr>`,
           )
           .join('')
       : lead.student_name
@@ -116,7 +116,7 @@ export function messagingNotificationHtml(
       <strong>${escHtml(senderName)}</strong> sent you a message in the LBMAA portal.
     </p>
     ${ctaButton(portalUrl, 'Read Message')}
-    <p style="margin:0 0 18px;font-size:12px;color:#595959;text-align:center;">Reply directly in the portal — do not reply to this email.</p>
+    <p style="margin:0 0 18px;font-size:12px;color:#595959;text-align:center;">Reply directly in the portal. Please do not reply to this email.</p>
   `,
     logoUrl,
     subtitle,
@@ -137,7 +137,7 @@ export function multiProgramApprovalEmailHtml(
     .map(
       (p) => `
     <div style="margin-bottom:20px;">
-      <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1a1a2e;">${escHtml(p.programLabel)}${p.childNames ? ` — ${escHtml(p.childNames)}` : ''}</p>
+      <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1a1a2e;">${escHtml(p.programLabel)}${p.childNames ? ` for ${escHtml(p.childNames)}` : ''}</p>
       ${ctaButton(p.bookingUrl, `Book ${escHtml(p.programLabel)} Intro`)}
     </div>
   `,
@@ -194,7 +194,7 @@ export function denialEmailHtml(
     'Thank you for your interest in LBMAA. Unfortunately, we are unable to accommodate your enrollment request at this time.';
   return wrap(
     `
-    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Your enrollment inquiry — LBMAA</p>
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Your enrollment inquiry</p>
     <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">Hi ${escHtml(lead.parent_name)},</p>
     <p style="margin:0 0 22px;color:#555;font-size:13px;line-height:1.65;">${escHtml(message)}</p>
   `,
@@ -214,7 +214,7 @@ export function bookingConfirmationHtml(
       (a) => `
     <div style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
-        ${escHtml(a.programLabel)}${a.childNames ? ` — ${escHtml(a.childNames)}` : ''}
+        ${escHtml(a.programLabel)}${a.childNames ? ` · ${escHtml(a.childNames)}` : ''}
       </div>
       <div style="font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(a.date)}</div>
       <div style="font-size:13px;color:#555;margin-top:4px;">${escHtml(a.time)}</div>
@@ -259,7 +259,7 @@ export function reminderEmailHtml(
       (a) => `
     <div style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
-        ${escHtml(a.programLabel)}${a.childNames ? ` — ${escHtml(a.childNames)}` : ''}
+        ${escHtml(a.programLabel)}${a.childNames ? ` · ${escHtml(a.childNames)}` : ''}
       </div>
       <div style="font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(a.date)}</div>
       <div style="font-size:13px;color:#555;margin-top:4px;">${escHtml(a.time)}</div>
@@ -277,8 +277,8 @@ export function reminderEmailHtml(
       : `Reminder: your LBMAA appointment is ${whenPhrase}`;
   const intro =
     appointments.length > 1
-      ? 'just a reminder — your intro appointments are coming up:'
-      : 'just a reminder — your intro appointment is coming up:';
+      ? 'just a reminder that your intro appointments are coming up:'
+      : 'just a reminder that your intro appointment is coming up:';
 
   return wrap(
     `
@@ -302,7 +302,7 @@ export function submissionConfirmationHtml(
     <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Thank you for your interest in LBMAA!</p>
     <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">
       Hi ${escHtml(lead.parent_name)}, we received your enrollment inquiry and will review it shortly.
-      You can expect to hear back from us within 1–2 business days.
+      You can expect to hear back from us within 1-2 business days.
     </p>
     <div style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 20px;">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#595959;margin-bottom:8px;">Your inquiry details</div>
@@ -313,7 +313,7 @@ export function submissionConfirmationHtml(
             ? lead.children
                 .map(
                   (c) =>
-                    `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;width:110px;">Child</td><td style="padding:4px 0;color:#555;">${escHtml(c.name)}, age ${c.age} — ${PROGRAM_LABELS[c.program_type] ?? c.program_type}</td></tr>`,
+                    `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;width:110px;">Child</td><td style="padding:4px 0;color:#555;">${escHtml(c.name)}, age ${c.age} (${PROGRAM_LABELS[c.program_type] ?? c.program_type})</td></tr>`,
                 )
                 .join('')
             : lead.student_name
@@ -328,7 +328,7 @@ export function submissionConfirmationHtml(
       We look forward to meeting your family. In the meantime, feel free to reach us at
       <a href="mailto:westcoastlosbanos@gmail.com" style="color:#A01F23;text-decoration:none;">westcoastlosbanos@gmail.com</a>.
     </p>
-    <p style="margin:0;font-size:13px;color:#555;">— The LBMAA Team</p>
+    <p style="margin:0;font-size:13px;color:#555;">The LBMAA Team</p>
   `,
     logoUrl,
     subtitle,

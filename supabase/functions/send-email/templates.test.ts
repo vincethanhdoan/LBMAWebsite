@@ -40,7 +40,7 @@ Deno.test('STRIPE: flat 4px red, no gradient', () => {
 });
 
 Deno.test(
-  'makeHeader: Option C — flex row, logo left, school name right',
+  'makeHeader: Option C, flex row, logo left, school name right',
   () => {
     const html = messagingNotificationHtml(
       'Alice',
@@ -139,7 +139,7 @@ const multi: AppointmentInfo[] = [
 ];
 
 Deno.test(
-  'bookingConfirmationHtml — single: contains date, time, program, child, reschedule link',
+  'bookingConfirmationHtml single: contains date, time, program, child, reschedule link',
   () => {
     const html = bookingConfirmationHtml('Eduardo Guerra', single);
     assertEquals(html.includes('Eduardo Guerra'), true);
@@ -152,7 +152,7 @@ Deno.test(
 );
 
 Deno.test(
-  'bookingConfirmationHtml — multi: contains all programs, dates, times',
+  'bookingConfirmationHtml multi: contains all programs, dates, times',
   () => {
     const html = bookingConfirmationHtml('Eduardo Guerra', multi);
     assertEquals(html.includes('Little Dragons'), true);
@@ -168,7 +168,7 @@ Deno.test(
 );
 
 Deno.test(
-  'reminderEmailHtml — contains all appointments, confirm button, reschedule links',
+  'reminderEmailHtml: contains all appointments, confirm button, reschedule links',
   () => {
     const html = reminderEmailHtml(
       'Eduardo Guerra',
@@ -190,7 +190,7 @@ Deno.test(
   },
 );
 
-Deno.test('reminderEmailHtml — heading reflects the given when-phrase', () => {
+Deno.test('reminderEmailHtml: heading reflects the given when-phrase', () => {
   assertStringIncludes(
     reminderEmailHtml(
       'Jane',
@@ -224,7 +224,7 @@ const LEAD_WITH_CHILDREN = {
 };
 
 Deno.test(
-  'enrollmentNotificationHtml — shows each child name, age, and program',
+  'enrollmentNotificationHtml: shows each child name, age, and program',
   () => {
     const html = enrollmentNotificationHtml(
       LEAD_WITH_CHILDREN,
@@ -241,7 +241,7 @@ Deno.test(
 );
 
 Deno.test(
-  'enrollmentNotificationHtml — falls back to legacy student_name when children absent',
+  'enrollmentNotificationHtml: falls back to legacy student_name when children absent',
   () => {
     const html = enrollmentNotificationHtml(
       DUMMY_LEAD,
@@ -256,7 +256,7 @@ Deno.test(
 // ── submissionConfirmationHtml: children, phone, message ──────────────────
 
 Deno.test(
-  'submissionConfirmationHtml — shows children, phone, and message',
+  'submissionConfirmationHtml: shows children, phone, and message',
   () => {
     const lead = {
       ...DUMMY_LEAD,
@@ -276,7 +276,7 @@ Deno.test(
 );
 
 Deno.test(
-  'submissionConfirmationHtml — falls back to legacy student_name when children absent',
+  'submissionConfirmationHtml: falls back to legacy student_name when children absent',
   () => {
     const html = submissionConfirmationHtml(DUMMY_LEAD, LOGO);
     assertEquals(html.includes('Sam'), true);

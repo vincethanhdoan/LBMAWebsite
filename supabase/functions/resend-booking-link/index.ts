@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Insert approval notification — send-email handler uses multiProgramApprovalEmailHtml for
+  // Insert approval notification; the send-email handler uses multiProgramApprovalEmailHtml for
   // new-flow leads and approvalEmailHtml for legacy leads automatically
   const { error: notifError } = await supabase
     .from('enrollment_lead_notifications')

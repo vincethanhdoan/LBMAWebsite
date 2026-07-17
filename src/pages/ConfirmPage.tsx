@@ -153,8 +153,8 @@ export function ConfirmPage() {
             Something went wrong
           </h1>
           <p className="text-muted-foreground text-sm">
-            We couldn't reach our system just now. Don't worry — your
-            appointment hasn't been affected. Please try again in a moment.
+            We couldn't reach our system just now. Don't worry, your appointment
+            hasn't been affected. Please try again in a moment.
           </p>
           <button
             type="button"
@@ -166,7 +166,7 @@ export function ConfirmPage() {
           >
             Try again
           </button>
-          <p className="text-xs text-muted-foreground">— LBMAA Team</p>
+          <p className="text-xs text-muted-foreground">The LBMAA Team</p>
         </div>
       </div>
     );
@@ -208,8 +208,8 @@ export function ConfirmPage() {
           </h1>
           <p className="text-muted-foreground text-sm">
             {multiple
-              ? "You've already confirmed your visits — we're looking forward to seeing you on both days."
-              : `You've already confirmed your attendance — see you on ${formatDate(firstDate)}!`}
+              ? "You've already confirmed your visits. We're looking forward to seeing you on both days."
+              : `You've already confirmed your attendance. See you on ${formatDate(firstDate)}!`}
           </p>
           {multiple && appointmentList()}
         </div>
@@ -242,7 +242,7 @@ export function ConfirmPage() {
           >
             Reschedule
           </a>
-          <p className="text-xs text-muted-foreground">— LBMAA Team</p>
+          <p className="text-xs text-muted-foreground">The LBMAA Team</p>
         </div>
       </div>
     );
@@ -265,13 +265,11 @@ export function ConfirmPage() {
         </h1>
         {multiple && (
           <p className="text-muted-foreground text-sm">
-            Both of your visits are confirmed — we can't wait to meet you.
+            Both of your visits are confirmed. We can't wait to meet you.
           </p>
         )}
         {datedAppointments.length > 0 && appointmentList()}
-        <p className="text-muted-foreground text-sm">
-          See you then! — LBMAA Team
-        </p>
+        <p className="text-muted-foreground text-sm">See you then!</p>
         <p className="text-xs text-muted-foreground">
           Los Banos Martial Arts Academy · Los Banos, CA
         </p>

@@ -109,7 +109,7 @@ export function PickDateModal({
   ).length;
   const anyPicked = pickedCount > 0;
 
-  // Legacy lead fallback — no program bookings
+  // Legacy lead fallback: no program bookings
   if (!fetching && programBookings.length === 0) {
     return (
       <Dialog
