@@ -158,7 +158,8 @@ export function LeadRow({
         }
       }}
       className={`flex items-center gap-3 px-4 py-3 border-t border-border first:border-t-0 cursor-pointer
-        hover:bg-muted/40 focus-visible:outline-none focus-visible:bg-muted/40 transition-colors
+        hover:bg-muted/40 focus-visible:outline-none focus-visible:bg-muted/40
+        focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:ring-inset transition-colors
         ${highlighted ? 'ring-2 ring-primary ring-inset' : ''} ${dimmed ? 'opacity-60' : ''}`}
     >
       {leading}
@@ -186,7 +187,7 @@ export function LeadRow({
         {badge}
         {action}
       </div>
-      <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+      <ChevronRight className="w-4 h-4 text-muted-foreground/60 flex-shrink-0" />
     </div>
   );
 }
@@ -216,8 +217,8 @@ export function ErrorCard({
 }) {
   return (
     <div className="rounded-xl border bg-card px-6 py-10 text-center">
-      <p className="text-sm font-medium">{message}</p>
-      <p className="text-sm text-muted-foreground mt-1">
+      <p className="text-[15px] font-medium">{message}</p>
+      <p className="text-[13px] text-muted-foreground mt-1">
         Check your connection and try again.
       </p>
       <Button variant="outline" size="sm" className="mt-4" onClick={onRetry}>

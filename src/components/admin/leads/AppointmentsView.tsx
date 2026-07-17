@@ -254,7 +254,7 @@ function UpcomingSegment({
           );
           return (
             <Surface key={dateKey}>
-              <div className="px-4 py-2 bg-muted/40 text-[12px] font-semibold flex items-center gap-2">
+              <div className="px-4 py-2 bg-muted/40 text-[13px] font-semibold flex items-center gap-2">
                 <span>
                   {prefix}
                   {gh.label}
@@ -283,7 +283,7 @@ function UpcomingSegment({
           return (
             <div
               key={d.dateKey}
-              className="border border-dashed border-border rounded-xl px-4 py-3 text-[12px] text-muted-foreground bg-muted/30"
+              className="border border-dashed border-border rounded-xl px-4 py-3 text-[13px] text-muted-foreground bg-muted/30"
             >
               Blocked {formatGroupHeader(d.dateKey).label} ·{' '}
               {reason ?? 'No bookings'}
@@ -348,7 +348,7 @@ function OccurrenceRow({
       titleMeta={booking ? PROGRAM_LABELS[booking.program_type] : undefined}
       line2={
         callNow ? (
-          <span className="text-status-danger-fg font-bold">
+          <span className="text-[13px] text-status-danger-fg font-bold">
             Not confirmed, call {lead.parent_name}
             {phone ? ' · ' + formatPhone(phone) : ''}
           </span>

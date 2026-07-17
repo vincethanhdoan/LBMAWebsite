@@ -50,7 +50,7 @@ export function LeadTimeline({ lead }: { lead: EnrollmentLead }) {
   return (
     <ol className="flex flex-col gap-2.5">
       {entries.map((entry) => (
-        <li key={entry.key} className="flex items-start gap-2.5 text-xs">
+        <li key={entry.key} className="flex items-start gap-2.5 text-[13px]">
           <span className="mt-1 w-1.5 h-1.5 rounded-full bg-muted-foreground/40 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center flex-wrap gap-x-2 gap-y-1">

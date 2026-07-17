@@ -78,6 +78,16 @@ function HeaderStatus({ lead }: { lead: EnrollmentLead }) {
   }
 }
 
+// Quiet group label for the drawer body. Lighter than the page-level
+// SectionHeader: a small uppercase micro-label, no counts or borders.
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      {children}
+    </div>
+  );
+}
+
 function formatVisit(date: string, time: string | null): string {
   const d = new Date(date + 'T12:00:00');
   const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
@@ -411,7 +421,8 @@ export function LeadDetailPanel({
             )}
 
             {/* Contact */}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
+              <SectionLabel>Contact</SectionLabel>
               <a
                 href={`mailto:${lead.parent_email}`}
                 className="block text-[13px] text-primary hover:underline break-all"
@@ -427,13 +438,17 @@ export function LeadDetailPanel({
 
             {/* The family's inquiry message, quoted */}
             {lead.message && (
-              <p className="text-[13px] text-muted-foreground whitespace-pre-wrap leading-relaxed border-l-2 border-border pl-3">
-                {lead.message}
-              </p>
+              <div className="space-y-1.5">
+                <SectionLabel>Inquiry message</SectionLabel>
+                <p className="text-[13px] text-muted-foreground whitespace-pre-wrap leading-relaxed border-l-2 border-border pl-3">
+                  {lead.message}
+                </p>
+              </div>
             )}
 
             {/* Notes */}
             <div className="space-y-1.5">
+              <SectionLabel>Notes</SectionLabel>
               {notesEditing ? (
                 <div className="space-y-2">
                   <textarea
@@ -490,10 +505,10 @@ export function LeadDetailPanel({
                     <button
                       type="button"
                       onClick={openNotesEditor}
-                      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      aria-label="Edit notes"
+                      className="flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
+                      <Pencil className="w-3 h-3" />
+                      Edit notes
                     </button>
                   </div>
                 </div>

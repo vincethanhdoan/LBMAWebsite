@@ -225,7 +225,7 @@ export function AllLeadsView({
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email, phone, or student"
           aria-label="Search leads"
-          className="w-full pl-9 pr-10 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full pl-9 pr-10 py-2 text-[13px] border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {search && (
           <button
@@ -246,7 +246,7 @@ export function AllLeadsView({
             type="button"
             onClick={() => setFilter(f.id)}
             aria-pressed={filter === f.id}
-            className={`text-[12px] font-semibold rounded-full px-3 py-1 transition-colors ${
+            className={`text-[13px] font-semibold rounded-full px-3 py-1 transition-colors ${
               filter === f.id
                 ? 'bg-foreground text-background'
                 : 'bg-muted text-muted-foreground hover:text-foreground'

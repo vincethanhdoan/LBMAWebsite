@@ -242,7 +242,7 @@ function AttentionRow({
     const { occurrence } = item;
     line2 = (
       <>
-        <span className="text-status-danger-fg font-bold">
+        <span className="text-[13px] text-status-danger-fg font-bold">
           {relativeDayLabel(occurrence.dateKey)}
           {occurrence.time ? ` ${formatTimeShort(occurrence.time)}` : ''}, not
           confirmed

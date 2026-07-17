@@ -98,7 +98,7 @@ export function WeekCard({
                 } ${day.isBlocked ? 'bg-[repeating-linear-gradient(-45deg,#F1F0EF_0_4px,transparent_4px_8px)]' : ''}`}
               >
                 <div
-                  className={`text-[9px] font-bold tracking-widest ${day.isToday ? 'text-primary' : 'text-muted-foreground/70'}`}
+                  className={`text-[11px] font-bold tracking-widest ${day.isToday ? 'text-primary' : 'text-muted-foreground/70'}`}
                 >
                   {day.dayName}
                 </div>
