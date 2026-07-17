@@ -78,7 +78,7 @@ export function DashboardV2({
   const unreadAnnouncements = counts?.unreadAnnouncements ?? 0;
   const unreadBlog = counts?.unreadBlog ?? 0;
 
-  useRealtimeInvalidation(user.id);
+  useRealtimeInvalidation(user.id, onRefreshUser);
 
   return (
     <SidebarProvider>
