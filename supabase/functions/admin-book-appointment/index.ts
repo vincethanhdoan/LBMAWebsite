@@ -196,9 +196,20 @@ Deno.serve(async (req) => {
     return new Response('Booking failed', { status: 500, headers: cors });
   }
 
-  const allBooked = await recalculateLeadStatus(supabase, lead.lead_id);
+  await recalculateLeadStatus(supabase, lead.lead_id);
 
-  if (allBooked) {
+  // Confirm what was just booked, even if other programs are still pending.
+  // The email renders every currently booked appointment at send time, so a
+  // single queued row covers back-to-back bookings without duplicate emails.
+  const { data: queuedConfirmation } = await supabase
+    .from('enrollment_lead_notifications')
+    .select('notification_id')
+    .eq('lead_id', lead.lead_id)
+    .eq('type', 'booking_confirmation')
+    .eq('status', 'queued')
+    .maybeSingle();
+
+  if (!queuedConfirmation) {
     const { error: notifError } = await supabase
       .from('enrollment_lead_notifications')
       .insert({

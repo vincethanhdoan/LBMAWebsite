@@ -6,9 +6,7 @@ type BookingStatus = { status: string };
 
 // Recomputes enrollment_leads.status from a lead's program bookings, counting
 // only ACTIVE (non-cancelled) bookings. A cancelled booking must not drag a
-// lead back to 'approved' while another visit is still live. Returns true when
-// the lead is fully booked (every active booking is scheduled or confirmed);
-// callers use that to send the booking-confirmation email.
+// lead back to 'approved' while another visit is still live.
 //
 // Pass `bookings` to reuse an already-fetched, up-to-date set and skip the
 // query; the caller is responsible for reflecting any writes it just made.
@@ -16,7 +14,7 @@ export async function recalculateLeadStatus(
   supabase: SupabaseClient,
   leadId: string,
   bookings?: BookingStatus[],
-): Promise<boolean> {
+): Promise<void> {
   let rows = bookings;
   if (!rows) {
     const { data } = await supabase
@@ -26,7 +24,7 @@ export async function recalculateLeadStatus(
     rows = data ?? [];
   }
 
-  if (rows.length === 0) return false;
+  if (rows.length === 0) return;
 
   const active = rows.filter((b) => b.status !== 'cancelled');
   const allScheduledOrConfirmed =
@@ -45,6 +43,4 @@ export async function recalculateLeadStatus(
     .from('enrollment_leads')
     .update({ status: leadStatus })
     .eq('lead_id', leadId);
-
-  return allScheduledOrConfirmed;
 }
