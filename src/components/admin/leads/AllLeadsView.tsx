@@ -4,7 +4,6 @@ import { Loader2, Search, X } from 'lucide-react';
 import type { EnrollmentLead } from '../../../lib/types';
 import type { TerminalLeadFilter } from '../../../lib/supabase/queries';
 import { Button } from '../../ui/button';
-import { Skeleton } from '../../ui/skeleton';
 import {
   useTerminalLeadCounts,
   useTerminalLeads,
@@ -16,7 +15,14 @@ import {
   toLocalDateKey,
 } from './leadDisplay';
 import { childSummary, getAppointmentOccurrences } from './leadViews';
-import { LeadRow, StatusBadge, Surface } from './ui';
+import {
+  EmptyState,
+  ErrorCard,
+  LeadRow,
+  LeadRowSkeleton,
+  StatusBadge,
+  Surface,
+} from './ui';
 
 export type AllLeadsFilter =
   'everyone' | 'active' | 'attended' | 'no_show' | 'closed' | 'denied';
@@ -219,7 +225,7 @@ export function AllLeadsView({
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email, phone, or student"
           aria-label="Search leads"
-          className="w-full pl-9 pr-10 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full pl-9 pr-10 py-2 text-[13px] border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {search && (
           <button
@@ -240,7 +246,7 @@ export function AllLeadsView({
             type="button"
             onClick={() => setFilter(f.id)}
             aria-pressed={filter === f.id}
-            className={`text-[12px] font-semibold rounded-full px-3 py-1 transition-colors ${
+            className={`text-[13px] font-semibold rounded-full px-3 py-1 transition-colors ${
               filter === f.id
                 ? 'bg-foreground text-background'
                 : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -261,43 +267,28 @@ export function AllLeadsView({
       )}
 
       {terminalLoading && (
-        <div
-          className="bg-card border border-border rounded-xl shadow-sm overflow-hidden"
-          aria-hidden="true"
-        >
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 px-4 py-3 border-t border-border first:border-t-0"
-            >
-              <div className="flex-1 min-w-0 space-y-1.5">
-                <Skeleton className="h-4 w-44" />
-                <Skeleton className="h-3 w-64" />
-              </div>
-              <Skeleton className="h-6 w-20 rounded-full flex-shrink-0" />
-              <div className="w-4 h-4 flex-shrink-0" />
-            </div>
-          ))}
+        <div aria-hidden="true">
+          <Surface>
+            {[0, 1, 2].map((i) => (
+              <LeadRowSkeleton key={i} />
+            ))}
+          </Surface>
         </div>
       )}
 
       {terminalErrored && (
-        <div className="rounded-xl border bg-card px-6 py-8 text-center">
-          <p className="text-sm font-medium">Couldn't load leads.</p>
-          <button
-            type="button"
-            onClick={() => terminalQuery.refetch()}
-            className="mt-3 text-sm underline underline-offset-2"
-          >
-            Try again
-          </button>
-        </div>
+        <ErrorCard
+          message="Couldn't load leads."
+          onRetry={() => terminalQuery.refetch()}
+        />
       )}
 
       {!hasAny && !terminalLoading && !terminalErrored && (
-        <p className="py-8 text-center text-[13px] text-muted-foreground">
-          {searching ? 'No leads match your search.' : 'Nothing here yet.'}
-        </p>
+        <EmptyState
+          message={
+            searching ? 'No leads match your search.' : 'Nothing here yet.'
+          }
+        />
       )}
 
       {showTerminal && !terminalErrored && terminalQuery.hasNextPage && (

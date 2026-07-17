@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { JSX } from 'react';
-import { X } from 'lucide-react';
 import type { BlockedDate, EnrollmentLead } from '../../../lib/types';
 import { Button } from '../../ui/button';
 import { formatPhone } from '../../../lib/format';
@@ -15,7 +14,14 @@ import {
 } from './leadViews';
 import type { AppointmentOccurrence, FollowUpItem } from './leadViews';
 import { WeekCard } from './WeekCard';
-import { ActionButton, LeadRow, StatusBadge, Surface } from './ui';
+import {
+  ActionButton,
+  EmptyState,
+  LeadRow,
+  Pill,
+  StatusBadge,
+  Surface,
+} from './ui';
 import { RecordOutcomeButton } from './RecordOutcomePopover';
 import {
   PROGRAM_LABELS,
@@ -101,9 +107,7 @@ export function AppointmentsView({
             >
               Needs follow-up
               {followUps.length > 0 && (
-                <span className="bg-primary text-primary-foreground text-[11px] font-bold rounded-full px-1.5">
-                  {followUps.length}
-                </span>
+                <Pill tone="primary">{followUps.length}</Pill>
               )}
             </button>
           </div>
@@ -228,16 +232,12 @@ function UpcomingSegment({
       />
 
       {selectedDate && (
-        <div className="inline-flex items-center gap-1 bg-muted rounded-full pl-3 pr-1.5 py-1 text-[12px]">
-          <span>Showing {formatGroupHeader(selectedDate).label}</span>
-          <button
-            aria-label="Clear day filter"
-            onClick={() => onSelectDate(null)}
-            className="inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-foreground/10"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        </div>
+        <Pill
+          onDismiss={() => onSelectDate(null)}
+          dismissLabel="Clear day filter"
+        >
+          Showing {formatGroupHeader(selectedDate).label}
+        </Pill>
       )}
 
       <div className="space-y-3">
@@ -254,7 +254,7 @@ function UpcomingSegment({
           );
           return (
             <Surface key={dateKey}>
-              <div className="px-4 py-2 bg-muted/40 text-[12px] font-semibold flex items-center gap-2">
+              <div className="px-4 py-2 bg-muted/40 text-[13px] font-semibold flex items-center gap-2">
                 <span>
                   {prefix}
                   {gh.label}
@@ -283,7 +283,7 @@ function UpcomingSegment({
           return (
             <div
               key={d.dateKey}
-              className="border border-dashed border-border rounded-xl px-4 py-3 text-[12px] text-muted-foreground bg-muted/30"
+              className="border border-dashed border-border rounded-xl px-4 py-3 text-[13px] text-muted-foreground bg-muted/30"
             >
               Blocked {formatGroupHeader(d.dateKey).label} ·{' '}
               {reason ?? 'No bookings'}
@@ -292,28 +292,23 @@ function UpcomingSegment({
         })}
 
         {!hasAnyUpcoming ? (
-          <div className="text-center py-10">
-            <p className="text-[13px] text-muted-foreground">
-              No upcoming appointments. Approve a lead and send a booking invite
-              to get started.
-            </p>
-          </div>
+          <EmptyState message="No upcoming appointments. Approve a lead and send a booking invite to get started." />
         ) : (
           grouped.length === 0 && (
-            <div className="text-center py-10">
-              <p className="text-[13px] text-muted-foreground">
-                No appointments this week.
-              </p>
-              {nextAfterWeek && (
-                <button
-                  onClick={jumpToNext}
-                  className="mt-2 text-[13px] font-semibold text-primary hover:underline"
-                >
-                  Next appointment:{' '}
-                  {formatDateConcise(nextAfterWeek.dateKey + 'T12:00:00')} →
-                </button>
-              )}
-            </div>
+            <EmptyState
+              message="No appointments this week."
+              action={
+                nextAfterWeek && (
+                  <button
+                    onClick={jumpToNext}
+                    className="mt-2 text-[13px] font-semibold text-primary hover:underline"
+                  >
+                    Next appointment:{' '}
+                    {formatDateConcise(nextAfterWeek.dateKey + 'T12:00:00')} →
+                  </button>
+                )
+              }
+            />
           )
         )}
       </div>
@@ -353,7 +348,7 @@ function OccurrenceRow({
       titleMeta={booking ? PROGRAM_LABELS[booking.program_type] : undefined}
       line2={
         callNow ? (
-          <span className="text-[#A01F23] font-bold">
+          <span className="text-[13px] text-status-danger-fg font-bold">
             Not confirmed, call {lead.parent_name}
             {phone ? ' · ' + formatPhone(phone) : ''}
           </span>
@@ -399,11 +394,7 @@ function FollowUpSegment({
         Appointments that came and went with no outcome recorded.
       </p>
       {followUps.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-[13px] text-muted-foreground">
-            Nothing to follow up.
-          </p>
-        </div>
+        <EmptyState message="Nothing to follow up." />
       ) : (
         <Surface>
           {followUps.map((item) => (

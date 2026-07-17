@@ -37,11 +37,11 @@ export function WeekCard({
             </span>
             {formatWeekRange(getWeekStart(weekOffset))}
             <span className="inline-flex items-center gap-1 ml-2.5 text-[11px]">
-              <span className="w-2 h-2 rounded-sm bg-[#15803D]" />
+              <span className="w-2 h-2 rounded-sm bg-status-success-fg" />
               {confirmedKids} confirmed
             </span>
             <span className="inline-flex items-center gap-1 ml-2 text-[11px]">
-              <span className="w-2 h-2 rounded-sm bg-[#D97706]" />
+              <span className="w-2 h-2 rounded-sm bg-status-warning-fg" />
               {unconfirmedKids} not confirmed
             </span>
           </div>
@@ -98,7 +98,7 @@ export function WeekCard({
                 } ${day.isBlocked ? 'bg-[repeating-linear-gradient(-45deg,#F1F0EF_0_4px,transparent_4px_8px)]' : ''}`}
               >
                 <div
-                  className={`text-[9px] font-bold tracking-widest ${day.isToday ? 'text-primary' : 'text-muted-foreground/70'}`}
+                  className={`text-[11px] font-bold tracking-widest ${day.isToday ? 'text-primary' : 'text-muted-foreground/70'}`}
                 >
                   {day.dayName}
                 </div>
@@ -109,12 +109,12 @@ export function WeekCard({
                 </div>
                 <div className="min-h-[16px] text-[11px] font-bold space-x-1">
                   {day.confirmedKids > 0 && (
-                    <span className="inline-block rounded-full px-1.5 bg-[#F0FDF4] text-[#15803D]">
+                    <span className="inline-block rounded-full px-1.5 bg-status-success-bg text-status-success-fg">
                       {day.confirmedKids}
                     </span>
                   )}
                   {day.unconfirmedKids > 0 && (
-                    <span className="inline-block rounded-full px-1.5 bg-[#FEF3C7] text-[#92400E]">
+                    <span className="inline-block rounded-full px-1.5 bg-status-warning-bg text-status-warning-fg">
                       {day.unconfirmedKids}
                     </span>
                   )}
