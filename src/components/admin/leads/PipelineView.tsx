@@ -1,6 +1,5 @@
 import type { JSX, ReactNode } from 'react';
 import type { EnrollmentLead } from '../../../lib/types';
-import { Button } from '../../ui/button';
 import { formatPhone } from '../../../lib/format';
 import {
   childSummary,
@@ -10,7 +9,7 @@ import {
   STALE_INVITE_DAYS,
 } from './leadViews';
 import { PROGRAM_LABELS } from './leadDisplay';
-import { LeadRow, SectionHeader, Surface } from './ui';
+import { ActionButton, LeadRow, SectionHeader, Surface } from './ui';
 import type { useLeadActions } from './useLeadActions';
 
 function relativeAge(days: number): string {
@@ -30,14 +29,12 @@ export function PipelineView({
   now,
   actions,
   onOpenLead,
-  onDeny,
   highlightedLeadId,
 }: {
   leads: EnrollmentLead[];
   now: number;
   actions: ReturnType<typeof useLeadActions>;
   onOpenLead: (leadId: string) => void;
-  onDeny: (lead: EnrollmentLead) => void;
   highlightedLeadId: string | null;
 }): JSX.Element {
   const newInquiries = leads
@@ -74,24 +71,12 @@ export function PipelineView({
                 line2={inquiryLine2(lead, now)}
                 onOpen={() => onOpenLead(lead.lead_id)}
                 action={
-                  <>
-                    <Button
-                      size="sm"
-                      className="min-h-[44px]"
-                      disabled={actions.busyLeadIds.has(lead.lead_id)}
-                      onClick={() => actions.approve(lead)}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="min-h-[44px] text-muted-foreground"
-                      onClick={() => onDeny(lead)}
-                    >
-                      Deny
-                    </Button>
-                  </>
+                  <ActionButton
+                    disabled={actions.busyLeadIds.has(lead.lead_id)}
+                    onClick={() => actions.approve(lead)}
+                  >
+                    Approve
+                  </ActionButton>
                 }
               />
             ))}
@@ -210,15 +195,13 @@ function InvitedRow({
       badge={badge}
       action={
         stale ? (
-          <Button
-            size="sm"
+          <ActionButton
             variant="outline"
-            className="min-h-[44px]"
             disabled={actions.busyLeadIds.has(lead.lead_id)}
             onClick={() => actions.resendBookingLink(lead)}
           >
             Resend invite
-          </Button>
+          </ActionButton>
         ) : undefined
       }
       onOpen={() => onOpenLead(lead.lead_id)}

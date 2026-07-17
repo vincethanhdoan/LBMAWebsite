@@ -254,9 +254,9 @@ export function AdminEnrollmentLeadsTab() {
     setActingIds((s) => withId(s, lead.lead_id));
     try {
       await dismissLead.mutateAsync(lead.lead_id);
-      toast.success('Lead dismissed');
+      toast.success('Lead denied');
     } catch {
-      toast.error('Failed to dismiss lead');
+      toast.error('Failed to deny lead');
     } finally {
       setActingIds((s) => withoutId(s, lead.lead_id));
       setPendingAction(null);
@@ -301,7 +301,7 @@ export function AdminEnrollmentLeadsTab() {
 
       {/* Sub-nav */}
       <div className="border-b border-border">
-        <div className="flex gap-0 overflow-x-auto">
+        <div className="flex gap-0 overflow-x-auto -mb-px">
           {VIEWS.map((v) => {
             const isActive = view === v.id;
             return (
@@ -311,7 +311,7 @@ export function AdminEnrollmentLeadsTab() {
                 aria-current={isActive ? 'page' : undefined}
                 className={`px-4 py-2.5 text-[13px] whitespace-nowrap border-b-2 transition-colors ${
                   isActive
-                    ? 'border-primary text-primary font-semibold -mb-px'
+                    ? 'border-primary text-primary font-semibold'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -348,7 +348,6 @@ export function AdminEnrollmentLeadsTab() {
               now={now}
               actions={actions}
               onOpenLead={openLead}
-              onDeny={setDenyTarget}
               onGoToAppointments={goToAppointments}
               onGoToPipeline={() => goToView('pipeline')}
               highlightedLeadId={highlightedLeadId}
@@ -361,7 +360,6 @@ export function AdminEnrollmentLeadsTab() {
               now={now}
               actions={actions}
               onOpenLead={openLead}
-              onDeny={setDenyTarget}
               highlightedLeadId={highlightedLeadId}
             />
           )}
@@ -417,7 +415,7 @@ export function AdminEnrollmentLeadsTab() {
             <AlertDialogHeader>
               <AlertDialogTitle>
                 {pendingAction.type === 'dismiss'
-                  ? 'Dismiss lead?'
+                  ? 'Deny silently?'
                   : 'Delete this lead?'}
               </AlertDialogTitle>
               <AlertDialogDescription>
@@ -438,7 +436,7 @@ export function AdminEnrollmentLeadsTab() {
                 }
               >
                 {pendingAction.type === 'dismiss'
-                  ? 'Dismiss'
+                  ? 'Deny silently'
                   : 'Delete permanently'}
               </AlertDialogAction>
             </AlertDialogFooter>

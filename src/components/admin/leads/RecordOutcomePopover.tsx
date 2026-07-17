@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
 import { Button } from '../../ui/button';
+import { ActionButton } from './ui';
 import { useCloseLead, useRecordAttendance } from '../../../lib/hooks/leads';
 import type { EnrollmentLead } from '../../../lib/types';
 
@@ -44,14 +45,9 @@ export function RecordOutcomeButton({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          size="sm"
-          variant="outline"
-          className="min-h-[36px]"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <ActionButton variant="outline" onClick={(e) => e.stopPropagation()}>
           Record outcome
-        </Button>
+        </ActionButton>
       </PopoverTrigger>
       <PopoverContent
         align="end"

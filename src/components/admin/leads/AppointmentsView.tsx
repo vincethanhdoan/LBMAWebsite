@@ -15,7 +15,7 @@ import {
 } from './leadViews';
 import type { AppointmentOccurrence, FollowUpItem } from './leadViews';
 import { WeekCard } from './WeekCard';
-import { LeadRow, StatusBadge, Surface } from './ui';
+import { ActionButton, LeadRow, StatusBadge, Surface } from './ui';
 import { RecordOutcomeButton } from './RecordOutcomePopover';
 import {
   PROGRAM_LABELS,
@@ -370,15 +370,13 @@ function OccurrenceRow({
       }
       action={
         callNow ? (
-          <Button
-            size="sm"
+          <ActionButton
             variant="outline"
-            className="min-h-[44px]"
             disabled={actions.busyLeadIds.has(lead.lead_id)}
             onClick={() => actions.markConfirmed(lead)}
           >
             Mark confirmed
-          </Button>
+          </ActionButton>
         ) : undefined
       }
       onOpen={() => onOpenLead(lead.lead_id)}

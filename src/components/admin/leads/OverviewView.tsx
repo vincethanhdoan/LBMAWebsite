@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import type { JSX, ReactNode } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import type { BlockedDate, EnrollmentLead } from '../../../lib/types';
-import { Button } from '../../ui/button';
 import { formatPhone, relativeDayLabel } from '../../../lib/format';
 import {
   buildWeekDays,
@@ -13,8 +11,13 @@ import {
   nextOccurrenceAfter,
 } from './leadViews';
 import type { AttentionItem } from './leadViews';
-import { WeekCard } from './WeekCard';
-import { LeadRow, SectionHeader, StatusBadge, Surface } from './ui';
+import {
+  ActionButton,
+  LeadRow,
+  SectionHeader,
+  StatusBadge,
+  Surface,
+} from './ui';
 import { RecordOutcomeButton } from './RecordOutcomePopover';
 import { formatDate, formatTimeShort, toLocalDateKey } from './leadDisplay';
 import { pacificTodayISO } from '../../../lib/pacificTime';
@@ -33,7 +36,6 @@ export function OverviewView({
   now,
   actions,
   onOpenLead,
-  onDeny,
   onGoToAppointments,
   onGoToPipeline,
   highlightedLeadId,
@@ -43,19 +45,19 @@ export function OverviewView({
   now: number;
   actions: ReturnType<typeof useLeadActions>;
   onOpenLead: (leadId: string) => void;
-  onDeny: (lead: EnrollmentLead) => void;
   onGoToAppointments: (dateKey?: string) => void;
   onGoToPipeline: () => void;
   highlightedLeadId: string | null;
 }): JSX.Element {
-  const [weekOffset, setWeekOffset] = useState(0);
   const todayKey = toLocalDateKey(new Date());
 
   const occurrences = getAppointmentOccurrences(leads);
-  const days = buildWeekDays(occurrences, weekOffset, todayKey, blocks);
-  const confirmedKids = days.reduce((sum, d) => sum + d.confirmedKids, 0);
+  const days = buildWeekDays(occurrences, 0, todayKey, blocks);
   const unconfirmedKids = days.reduce((sum, d) => sum + d.unconfirmedKids, 0);
-  const totalKids = confirmedKids + unconfirmedKids;
+  const totalKids = days.reduce(
+    (sum, d) => sum + d.confirmedKids + d.unconfirmedKids,
+    0,
+  );
 
   const todayOccurrences = occurrences.filter((o) => o.dateKey === todayKey);
   const nextUpcoming = nextOccurrenceAfter(occurrences, todayKey);
@@ -98,17 +100,16 @@ export function OverviewView({
             </button>
           }
         />
-        <WeekCard
-          days={days}
-          weekOffset={weekOffset}
-          onWeekOffsetChange={setWeekOffset}
-          selectedDate={null}
-          onSelectDate={(d) => d && onGoToAppointments(d)}
-          totalKids={totalKids}
-          confirmedKids={confirmedKids}
-          unconfirmedKids={unconfirmedKids}
-          showTodayButton={false}
-        >
+        <Surface>
+          {totalKids > 0 && (
+            <div className="px-4 py-3 text-[13px] text-muted-foreground">
+              <span className="text-foreground font-semibold">
+                {totalKids} {totalKids === 1 ? 'kid' : 'kids'}
+              </span>{' '}
+              scheduled this week
+              {unconfirmedKids > 0 && ` · ${unconfirmedKids} not confirmed`}
+            </div>
+          )}
           {todayOccurrences.length > 0 ? (
             todayOccurrences.map((o) => (
               <LeadRow
@@ -126,7 +127,7 @@ export function OverviewView({
                     kind={o.confirmed ? 'confirmed' : 'unconfirmed'}
                   />
                 }
-                onOpen={() => onOpenLead(o.lead.lead_id)}
+                onOpen={() => onGoToAppointments(o.dateKey)}
               />
             ))
           ) : nextUpcoming ? (
@@ -146,10 +147,14 @@ export function OverviewView({
                   kind={nextUpcoming.confirmed ? 'confirmed' : 'unconfirmed'}
                 />
               }
-              onOpen={() => onOpenLead(nextUpcoming.lead.lead_id)}
+              onOpen={() => onGoToAppointments(nextUpcoming.dateKey)}
             />
+          ) : totalKids === 0 ? (
+            <div className="px-4 py-3 text-[13px] text-muted-foreground">
+              No upcoming appointments.
+            </div>
           ) : null}
-        </WeekCard>
+        </Surface>
       </section>
 
       {attentionItems.length > 0 && (
@@ -201,24 +206,12 @@ export function OverviewView({
                   line2={snippet ? `${age} · ${snippet}` : age}
                   onOpen={() => onOpenLead(lead.lead_id)}
                   action={
-                    <>
-                      <Button
-                        size="sm"
-                        className="min-h-[44px]"
-                        disabled={actions.busyLeadIds.has(lead.lead_id)}
-                        onClick={() => actions.approve(lead)}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="min-h-[44px] text-muted-foreground"
-                        onClick={() => onDeny(lead)}
-                      >
-                        Deny
-                      </Button>
-                    </>
+                    <ActionButton
+                      disabled={actions.busyLeadIds.has(lead.lead_id)}
+                      onClick={() => actions.approve(lead)}
+                    >
+                      Approve
+                    </ActionButton>
                   }
                 />
               );
@@ -260,15 +253,13 @@ function AttentionRow({
       </>
     );
     action = (
-      <Button
-        size="sm"
+      <ActionButton
         variant="outline"
-        className="min-h-[44px]"
         disabled={busy}
         onClick={() => actions.markConfirmed(lead)}
       >
         Mark confirmed
-      </Button>
+      </ActionButton>
     );
   } else if (item.reason === 'record_outcome') {
     const { followUp } = item;
@@ -278,15 +269,13 @@ function AttentionRow({
   } else if (item.reason === 'email_failed') {
     line2 = 'Confirmation email failed';
     action = (
-      <Button
-        size="sm"
+      <ActionButton
         variant="outline"
-        className="min-h-[44px]"
         disabled={actions.sendingReminderId === lead.lead_id}
         onClick={() => actions.sendReminder(lead)}
       >
         Retry email
-      </Button>
+      </ActionButton>
     );
   } else {
     const { daysWaiting } = item;
@@ -294,15 +283,13 @@ function AttentionRow({
       lead.phone ? ` · ${formatPhone(lead.phone)}` : ''
     }`;
     action = (
-      <Button
-        size="sm"
+      <ActionButton
         variant="outline"
-        className="min-h-[44px]"
         disabled={busy}
         onClick={() => actions.resendBookingLink(lead)}
       >
         Resend invite
-      </Button>
+      </ActionButton>
     );
   }
 

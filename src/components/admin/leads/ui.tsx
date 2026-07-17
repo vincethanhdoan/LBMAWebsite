@@ -1,5 +1,22 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { Button } from '../../ui/button';
+
+// Shared 48px-min touch target for leads action buttons (list rows, detail
+// panel action bar, record-outcome trigger). Keeps every inline lead action at
+// one tap-friendly size.
+export function ActionButton({
+  className,
+  ...props
+}: ComponentProps<typeof Button>) {
+  return (
+    <Button
+      size="sm"
+      className={`min-h-12${className ? ` ${className}` : ''}`}
+      {...props}
+    />
+  );
+}
 
 export function Surface({
   children,
@@ -89,7 +106,7 @@ const BADGE: Record<StatusKind, { label: string; cls: string }> = {
   },
   new: {
     label: 'New',
-    cls: 'bg-[#FFF0F0] text-[#A01F23] border-[rgba(160,31,35,0.2)]',
+    cls: 'bg-[#F4F4F5] text-[#3F3F46] border-[#E4E4E7]',
   },
 };
 
