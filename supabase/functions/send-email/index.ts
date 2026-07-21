@@ -87,11 +87,15 @@ async function getLeadAppointments(
   leadId: string,
   appUrl: string,
 ): Promise<AppointmentInfo[]> {
+  const pacificToday = new Date().toLocaleDateString('en-CA', {
+    timeZone: 'America/Los_Angeles',
+  });
   const { data: bookings } = await supabase
     .from('enrollment_lead_program_bookings')
     .select('program_type, booking_token, appointment_date, appointment_time')
     .eq('lead_id', leadId)
     .not('appointment_date', 'is', null)
+    .gte('appointment_date', pacificToday)
     .order('appointment_date', { ascending: true });
 
   if (!bookings || bookings.length === 0) return [];
@@ -329,17 +333,11 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         );
         return;
       }
-      const pacificToday = new Date().toLocaleDateString('en-CA', {
-        timeZone: 'America/Los_Angeles',
-      });
-      const upcoming =
-        appointments.find((a) => a.appointmentDate >= pacificToday) ??
-        appointments[appointments.length - 1];
-      const firstToken = upcoming.bookingToken ?? lead.booking_token;
+      const firstToken = appointments[0]?.bookingToken ?? lead.booking_token;
       const reminderConfirmUrl = firstToken
         ? `${appUrl}/confirm/${firstToken}`
         : appUrl;
-      const whenPhrase = daysUntilPhrase(upcoming.appointmentDate);
+      const whenPhrase = daysUntilPhrase(appointments[0].appointmentDate);
       subject =
         appointments.length > 1
           ? `Reminder: your LBMAA appointments are ${whenPhrase}`
