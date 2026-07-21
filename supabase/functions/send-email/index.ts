@@ -329,11 +329,17 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         );
         return;
       }
-      const firstToken = appointments[0]?.bookingToken ?? lead.booking_token;
+      const pacificToday = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'America/Los_Angeles',
+      });
+      const upcoming =
+        appointments.find((a) => a.appointmentDate >= pacificToday) ??
+        appointments[appointments.length - 1];
+      const firstToken = upcoming.bookingToken ?? lead.booking_token;
       const reminderConfirmUrl = firstToken
         ? `${appUrl}/confirm/${firstToken}`
         : appUrl;
-      const whenPhrase = daysUntilPhrase(appointments[0].appointmentDate);
+      const whenPhrase = daysUntilPhrase(upcoming.appointmentDate);
       subject =
         appointments.length > 1
           ? `Reminder: your LBMAA appointments are ${whenPhrase}`
