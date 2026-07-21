@@ -72,18 +72,22 @@ export type FollowUpItem = {
   lastPastDateKey: string;
 };
 
-// A lead needs follow-up when its last booked visit is in the past and no
-// future visit exists; staff still has to record whether they came in.
-// Recording the outcome makes the lead terminal, so it drops out of here.
+// A lead needs follow-up when its last booked visit has passed and no future
+// visit exists; staff still has to record whether they came in. Recording the
+// outcome makes the lead terminal, so it drops out of here. `nowKey` is the
+// current Pacific instant (`YYYY-MM-DDTHH:MM:SS`); a visit counts as passed the
+// moment its start time is behind now, not only after the whole day ends.
 export function deriveFollowUps(
   leads: EnrollmentLead[],
-  todayKey: string,
+  nowKey: string,
 ): FollowUpItem[] {
+  const startKey = (o: AppointmentOccurrence) =>
+    o.dateKey + 'T' + (o.time ?? '23:59:59');
   const items: FollowUpItem[] = [];
   for (const lead of leads) {
     const occ = getAppointmentOccurrences([lead]);
     if (occ.length === 0) continue;
-    if (occ.some((o) => o.dateKey >= todayKey)) continue;
+    if (occ.some((o) => startKey(o) >= nowKey)) continue;
     const lastPastDateKey = occ[occ.length - 1].dateKey;
     items.push({ lead, lastPastDateKey });
   }
@@ -116,7 +120,7 @@ export function daysSince(iso: string, nowMs: number): number {
 // One attention row per lead; the highest-priority reason wins.
 export function deriveAttentionItems(
   leads: EnrollmentLead[],
-  todayKey: string,
+  nowKey: string,
   nowMs: number,
 ): AttentionItem[] {
   const items: AttentionItem[] = [];
@@ -132,7 +136,7 @@ export function deriveAttentionItems(
     if (days >= 0 && days <= 2)
       push({ reason: 'call_to_confirm', lead: o.lead, occurrence: o });
   }
-  for (const followUp of deriveFollowUps(leads, todayKey)) {
+  for (const followUp of deriveFollowUps(leads, nowKey)) {
     push({ reason: 'record_outcome', lead: followUp.lead, followUp });
   }
   for (const lead of leads) {

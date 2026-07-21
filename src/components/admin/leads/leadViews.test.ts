@@ -204,9 +204,60 @@ describe('deriveFollowUps', () => {
         makeBooking({ appointment_date: '2026-07-20', status: 'confirmed' }),
       ],
     });
-    const items = deriveFollowUps([past, future], '2026-07-15');
+    const items = deriveFollowUps([past, future], '2026-07-15T12:00:00');
     expect(items.map((i) => i.lead.lead_id)).toEqual(['past']);
     expect(items[0].lastPastDateKey).toBe('2026-07-10');
+  });
+
+  it('flags a visit whose start time has passed earlier today', () => {
+    const lead = makeLead({
+      lead_id: 'earlier',
+      programBookings: [
+        makeBooking({
+          appointment_date: '2026-07-15',
+          appointment_time: '09:00:00',
+        }),
+      ],
+    });
+    const items = deriveFollowUps([lead], '2026-07-15T12:00:00');
+    expect(items.map((i) => i.lead.lead_id)).toEqual(['earlier']);
+    expect(items[0].lastPastDateKey).toBe('2026-07-15');
+  });
+
+  it('does not flag a visit still to come later today', () => {
+    const lead = makeLead({
+      programBookings: [
+        makeBooking({
+          appointment_date: '2026-07-15',
+          appointment_time: '17:00:00',
+        }),
+      ],
+    });
+    expect(deriveFollowUps([lead], '2026-07-15T12:00:00')).toEqual([]);
+  });
+
+  it('treats a visit still in progress at its exact start time as upcoming', () => {
+    const lead = makeLead({
+      programBookings: [
+        makeBooking({
+          appointment_date: '2026-07-15',
+          appointment_time: '12:00:00',
+        }),
+      ],
+    });
+    expect(deriveFollowUps([lead], '2026-07-15T12:00:00')).toEqual([]);
+  });
+
+  it('falls back to whole-day behavior when a visit has no time', () => {
+    const lead = makeLead({
+      programBookings: [
+        makeBooking({ appointment_date: '2026-07-15', appointment_time: null }),
+      ],
+    });
+    // Same-day, no time: upcoming through the whole day...
+    expect(deriveFollowUps([lead], '2026-07-15T12:00:00')).toEqual([]);
+    // ...and needs follow-up the next day.
+    expect(deriveFollowUps([lead], '2026-07-16T09:00:00')).toHaveLength(1);
   });
 });
 
@@ -227,7 +278,7 @@ describe('deriveAttentionItems', () => {
         makeBooking({ appointment_date: '2026-07-16', status: 'scheduled' }),
       ],
     });
-    const items = deriveAttentionItems([lead], '2026-07-15', nowMs);
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
     expect(items).toHaveLength(1);
     expect(items[0].reason).toBe('call_to_confirm');
   });
@@ -247,7 +298,7 @@ describe('deriveAttentionItems', () => {
     });
     const items = deriveAttentionItems(
       [farOut, confirmed],
-      '2026-07-15',
+      '2026-07-15T12:00:00',
       nowMs,
     );
     expect(items.find((i) => i.reason === 'call_to_confirm')).toBeUndefined();
@@ -261,7 +312,7 @@ describe('deriveAttentionItems', () => {
       status: 'approved',
       approval_email_sent_at: sentAt,
     });
-    const items = deriveAttentionItems([lead], '2026-07-15', nowMs);
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
     expect(items).toHaveLength(1);
     expect(items[0].reason).toBe('stale_invite');
   });
@@ -277,7 +328,7 @@ describe('deriveAttentionItems', () => {
         makeBooking({ appointment_date: '2026-07-20', status: 'cancelled' }),
       ],
     });
-    const items = deriveAttentionItems([lead], '2026-07-15', nowMs);
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
     expect(items).toHaveLength(1);
     expect(items[0].reason).toBe('stale_invite');
   });
@@ -296,7 +347,7 @@ describe('deriveAttentionItems', () => {
         created_at: '2026-07-14T00:00:00Z',
       },
     });
-    const items = deriveAttentionItems([lead], '2026-07-15', nowMs);
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
     expect(items).toHaveLength(1);
     expect(items[0].reason).toBe('call_to_confirm');
   });
