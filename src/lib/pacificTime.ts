@@ -6,6 +6,25 @@ export function pacificTodayISO(): string {
   );
 }
 
+// Current Pacific instant as a sortable `YYYY-MM-DDTHH:MM:SS` string. Because
+// booked visits store their date and time as Pacific wall-clock too, string
+// comparison against this key answers "has this visit passed?" with no offset
+// or DST math.
+export function pacificNowKey(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: PACIFIC_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((p) => p.type === type)!.value;
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`;
+}
+
 export function daysUntilInPacific(date: Date): number {
   // Compare pure calendar dates via UTC midnights — immune to DST because
   // UTC has no transitions. `date` carries the intended calendar date in

@@ -20,7 +20,7 @@ import {
 } from './ui';
 import { RecordOutcomeButton } from './RecordOutcomePopover';
 import { formatDate, formatTimeShort, toLocalDateKey } from './leadDisplay';
-import { pacificTodayISO } from '../../../lib/pacificTime';
+import { pacificNowKey } from '../../../lib/pacificTime';
 import type { useLeadActions } from './useLeadActions';
 
 function inquiryAge(createdAt: string, now: number): string {
@@ -62,7 +62,7 @@ export function OverviewView({
   const todayOccurrences = occurrences.filter((o) => o.dateKey === todayKey);
   const nextUpcoming = nextOccurrenceAfter(occurrences, todayKey);
 
-  const attentionItems = deriveAttentionItems(leads, pacificTodayISO(), now);
+  const attentionItems = deriveAttentionItems(leads, pacificNowKey(), now);
 
   const newLeads = leads
     .filter((l) => l.status === 'new')

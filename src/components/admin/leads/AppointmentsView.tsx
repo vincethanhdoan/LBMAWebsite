@@ -3,7 +3,7 @@ import type { JSX } from 'react';
 import type { BlockedDate, EnrollmentLead } from '../../../lib/types';
 import { Button } from '../../ui/button';
 import { formatPhone } from '../../../lib/format';
-import { daysUntilInPacific } from '../../../lib/pacificTime';
+import { daysUntilInPacific, pacificNowKey } from '../../../lib/pacificTime';
 import {
   buildWeekDays,
   childSummary,
@@ -74,7 +74,7 @@ export function AppointmentsView({
 
   const todayKey = toLocalDateKey(new Date());
   const occurrences = getAppointmentOccurrences(leads);
-  const followUps = deriveFollowUps(leads, todayKey);
+  const followUps = deriveFollowUps(leads, pacificNowKey());
 
   const days = buildWeekDays(occurrences, weekOffset, todayKey, blocks);
   const confirmedKids = days.reduce((sum, d) => sum + d.confirmedKids, 0);
