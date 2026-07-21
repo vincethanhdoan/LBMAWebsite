@@ -87,11 +87,15 @@ async function getLeadAppointments(
   leadId: string,
   appUrl: string,
 ): Promise<AppointmentInfo[]> {
+  const pacificToday = new Date().toLocaleDateString('en-CA', {
+    timeZone: 'America/Los_Angeles',
+  });
   const { data: bookings } = await supabase
     .from('enrollment_lead_program_bookings')
     .select('program_type, booking_token, appointment_date, appointment_time')
     .eq('lead_id', leadId)
     .not('appointment_date', 'is', null)
+    .gte('appointment_date', pacificToday)
     .order('appointment_date', { ascending: true });
 
   if (!bookings || bookings.length === 0) return [];
