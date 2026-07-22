@@ -181,12 +181,10 @@ function UpcomingSegment({
   highlightedLeadId: string | null;
 }): JSX.Element {
   const weekKeys = days.map((d) => d.dateKey);
-  const visible = occurrences.filter(
-    (o) =>
-      o.dateKey >= todayKey &&
-      (selectedDate
-        ? o.dateKey === selectedDate
-        : weekKeys.includes(o.dateKey)),
+  const visible = occurrences.filter((o) =>
+    selectedDate
+      ? o.dateKey === selectedDate
+      : o.dateKey >= todayKey && weekKeys.includes(o.dateKey),
   );
 
   // occurrences arrive sorted by dateKey+time, so groups form in ascending order.
