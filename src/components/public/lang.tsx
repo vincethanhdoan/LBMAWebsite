@@ -346,6 +346,7 @@ const EN = {
     getInTouch: 'Get In Touch',
     bookTrial: 'Book a Trial Class',
     copyright: '© 2026 Los Banos Martial Arts Academy',
+    serving: 'Serving Los Banos, Dos Palos, Santa Nella, and Gustine.',
     programLinks: [
       'Little Dragons (Ages 4–7)',
       'Youth Program (Ages 8–17)',
@@ -888,6 +889,7 @@ const ES: T = {
     getInTouch: 'Contáctanos',
     bookTrial: 'Reservar Clase de Prueba',
     copyright: '© 2026 Los Banos Martial Arts Academy',
+    serving: 'Sirviendo a Los Banos, Dos Palos, Santa Nella y Gustine.',
     programLinks: [
       'Pequeños Dragones (Edades 4–7)',
       'Programa Juvenil (Edades 8–17)',

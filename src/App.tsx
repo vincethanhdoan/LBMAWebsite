@@ -11,8 +11,8 @@ import { QueryProvider } from './providers/QueryProvider';
 import { FamilyOnboarding } from './components/onboarding/FamilyOnboarding';
 import { DashboardV2 } from './components/DashboardV2';
 import { AdminDashboardV2 } from './components/AdminDashboardV2';
-import { LockedSite } from './components/locked/LockedSite';
-import { PortalLoginPage } from './components/locked/PortalLoginPage';
+import { ContactSite } from './components/public/ContactSite';
+import { PortalLoginPage } from './components/public/PortalLoginPage';
 import { BookingPage } from './pages/BookingPage';
 import { ConfirmPage } from './pages/ConfirmPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -122,7 +122,7 @@ function AppRoutes() {
                   </Alert>
                 </div>
               )}
-              <LockedSite />
+              <ContactSite />
             </>
           }
         />
