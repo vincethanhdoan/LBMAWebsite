@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { LoginModal } from '../LoginModal';
-import { V3 } from '../public/design';
-import '../public/public-website.css';
+import { V3 } from './design';
+import './public-website.css';
 
 export function PortalLoginPage() {
   const navigate = useNavigate();
