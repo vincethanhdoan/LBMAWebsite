@@ -229,15 +229,6 @@ function UpcomingSegment({
         showTodayButton
       />
 
-      {selectedDate && (
-        <Pill
-          onDismiss={() => onSelectDate(null)}
-          dismissLabel="Clear day filter"
-        >
-          Showing {formatGroupHeader(selectedDate).label}
-        </Pill>
-      )}
-
       <div className="space-y-3">
         {grouped.map(([dateKey, occs]) => {
           const gh = formatGroupHeader(dateKey);
