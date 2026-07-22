@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { CheckCircle2, ChevronRight } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Skeleton } from '../../ui/skeleton';
 
@@ -223,36 +223,19 @@ const PILL_TONE: Record<PillTone, string> = {
   primary: 'bg-primary text-primary-foreground',
 };
 
-// Small rounded label. Pass onDismiss to add a trailing clear button (the
-// filter-chip case); otherwise it renders as a plain status/count chip.
+// Small rounded label used as a status/count chip.
 export function Pill({
   tone = 'neutral',
-  onDismiss,
-  dismissLabel,
   children,
 }: {
   tone?: PillTone;
-  onDismiss?: () => void;
-  dismissLabel?: string;
   children: ReactNode;
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[11px] font-semibold rounded-full ${
-        onDismiss ? 'pl-3 pr-1.5 py-1' : 'px-2 py-0.5'
-      } ${PILL_TONE[tone]}`}
+      className={`inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2 py-0.5 ${PILL_TONE[tone]}`}
     >
       {children}
-      {onDismiss && (
-        <button
-          type="button"
-          aria-label={dismissLabel}
-          onClick={onDismiss}
-          className="inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-foreground/10"
-        >
-          <X className="w-3 h-3" />
-        </button>
-      )}
     </span>
   );
 }
