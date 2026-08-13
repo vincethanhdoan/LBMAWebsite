@@ -20,8 +20,8 @@ const CONTACT_INFO = [
   { label: 'Phone', value: '(408) 620-0252', href: 'tel:+14086200252' },
   {
     label: 'Email',
-    value: 'westcoastlosbanos@gmail.com',
-    href: 'mailto:westcoastlosbanos@gmail.com',
+    value: 'LosBanosMartialArts@gmail.com',
+    href: 'mailto:LosBanosMartialArts@gmail.com',
   },
 ];
 

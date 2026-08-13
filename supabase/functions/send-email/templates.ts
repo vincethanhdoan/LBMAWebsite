@@ -42,7 +42,7 @@ function makeHeader(logoUrl?: string, subtitle?: string): string {
 
 const FOOTER = `
   <p style="margin:0;font-size:12px;color:#595959;line-height:1.6;text-align:center;">
-    Questions? <a href="mailto:westcoastlosbanos@gmail.com" style="color:#A01F23;text-decoration:underline;">westcoastlosbanos@gmail.com</a>
+    Questions? <a href="mailto:LosBanosMartialArts@gmail.com" style="color:#A01F23;text-decoration:underline;">LosBanosMartialArts@gmail.com</a>
     or <a href="tel:+14086200252" style="color:#A01F23;text-decoration:underline;">(408) 620-0252</a><br />1209 South 6th St Suite E, Los Banos, CA
   </p>
 `;
@@ -326,7 +326,7 @@ export function submissionConfirmationHtml(
     </div>
     <p style="margin:0 0 18px;font-size:13px;color:#555;line-height:1.65;">
       We look forward to meeting your family. In the meantime, feel free to reach us at
-      <a href="mailto:westcoastlosbanos@gmail.com" style="color:#A01F23;text-decoration:none;">westcoastlosbanos@gmail.com</a>.
+      <a href="mailto:LosBanosMartialArts@gmail.com" style="color:#A01F23;text-decoration:none;">LosBanosMartialArts@gmail.com</a>.
     </p>
     <p style="margin:0;font-size:13px;color:#555;">The LBMAA Team</p>
   `,
