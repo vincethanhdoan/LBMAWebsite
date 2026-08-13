@@ -119,10 +119,10 @@ export function Footer() {
                 (408) 620-0252
               </a>
               <a
-                href="mailto:westcoastlosbanos@gmail.com"
+                href="mailto:LosBanosMartialArts@gmail.com"
                 className="transition-colors hover:text-white"
               >
-                westcoastlosbanos@gmail.com
+                LosBanosMartialArts@gmail.com
               </a>
               <p>
                 1209 South 6th Street Suite E<br />

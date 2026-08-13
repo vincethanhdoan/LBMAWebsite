@@ -180,10 +180,10 @@ export function TermsPage() {
               Los Banos Martial Arts Academy
               <br />
               <a
-                href="mailto:westcoastlosbanos@gmail.com"
+                href="mailto:LosBanosMartialArts@gmail.com"
                 className="text-foreground underline underline-offset-2 hover:text-primary transition-colors"
               >
-                westcoastlosbanos@gmail.com
+                LosBanosMartialArts@gmail.com
               </a>
             </p>
           </section>

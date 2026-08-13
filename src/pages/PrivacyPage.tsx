@@ -88,10 +88,10 @@ export function PrivacyPage() {
               and practices, please do not use our Services. If you still have
               any questions or concerns, please contact us at{' '}
               <a
-                href="mailto:westcoastlosbanos@gmail.com"
+                href="mailto:LosBanosMartialArts@gmail.com"
                 className="text-foreground underline underline-offset-2 hover:text-primary transition-colors"
               >
-                westcoastlosbanos@gmail.com
+                LosBanosMartialArts@gmail.com
               </a>
               .
             </p>
@@ -688,10 +688,10 @@ export function PrivacyPage() {
               If you have questions or comments about your privacy rights, you
               may email us at{' '}
               <a
-                href="mailto:westcoastlosbanos@gmail.com"
+                href="mailto:LosBanosMartialArts@gmail.com"
                 className="text-foreground underline underline-offset-2 hover:text-primary transition-colors"
               >
-                westcoastlosbanos@gmail.com
+                LosBanosMartialArts@gmail.com
               </a>
               .
             </p>
@@ -1036,10 +1036,10 @@ export function PrivacyPage() {
               </a>
               , by emailing us at{' '}
               <a
-                href="mailto:westcoastlosbanos@gmail.com"
+                href="mailto:LosBanosMartialArts@gmail.com"
                 className="text-foreground underline underline-offset-2 hover:text-primary transition-colors"
               >
-                westcoastlosbanos@gmail.com
+                LosBanosMartialArts@gmail.com
               </a>
               , by calling us at{' '}
               <a
@@ -1086,10 +1086,10 @@ export function PrivacyPage() {
               action regarding your request, you may appeal our decision by
               emailing us at{' '}
               <a
-                href="mailto:westcoastlosbanos@gmail.com"
+                href="mailto:LosBanosMartialArts@gmail.com"
                 className="text-foreground underline underline-offset-2 hover:text-primary transition-colors"
               >
-                westcoastlosbanos@gmail.com
+                LosBanosMartialArts@gmail.com
               </a>
               . We will inform you in writing of any action taken or not taken
               in response to the appeal, including a written explanation of the
@@ -1157,10 +1157,10 @@ export function PrivacyPage() {
               If you have questions or comments about this notice, you may email
               us at{' '}
               <a
-                href="mailto:westcoastlosbanos@gmail.com"
+                href="mailto:LosBanosMartialArts@gmail.com"
                 className="text-foreground underline underline-offset-2 hover:text-primary transition-colors"
               >
-                westcoastlosbanos@gmail.com
+                LosBanosMartialArts@gmail.com
               </a>{' '}
               or contact us by post at:
             </p>
