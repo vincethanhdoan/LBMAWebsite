@@ -60,6 +60,7 @@ export function PickDateModal({
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [selection, setSelection] = useState<Selection>({});
+  const [changing, setChanging] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
 
   const programBookings: EnrollmentLeadProgramBooking[] =
@@ -87,7 +88,7 @@ export function PickDateModal({
 
   async function handleConfirm() {
     const picked = programBookings
-      .filter((b) => !isBooked(b) && selection[b.booking_id])
+      .filter((b) => selection[b.booking_id])
       .map((b) => ({
         programBookingId: b.booking_id,
         slotId: selection[b.booking_id]!.slotId,
@@ -105,7 +106,7 @@ export function PickDateModal({
   }
 
   const pickedCount = programBookings.filter(
-    (b) => !isBooked(b) && selection[b.booking_id],
+    (b) => selection[b.booking_id],
   ).length;
   const anyPicked = pickedCount > 0;
 
@@ -177,15 +178,47 @@ export function PickDateModal({
                       .join(' & ')}
                   </span>
                 </div>
-                {isBooked(booking) ? (
-                  <p className="text-xs text-green-600 font-medium">
-                    Already booked
-                    {booking.appointment_date
-                      ? ` · ${new Date(booking.appointment_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
-                      : ''}
-                  </p>
+                {isBooked(booking) && !changing[booking.booking_id] ? (
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-green-600 font-medium">
+                      Booked
+                      {booking.appointment_date
+                        ? ` · ${new Date(booking.appointment_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
+                        : ''}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setChanging((prev) => ({
+                          ...prev,
+                          [booking.booking_id]: true,
+                        }))
+                      }
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      Change date
+                    </button>
+                  </div>
                 ) : (
                   <>
+                    {isBooked(booking) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setChanging((prev) => ({
+                            ...prev,
+                            [booking.booking_id]: false,
+                          }));
+                          setSelection((prev) => ({
+                            ...prev,
+                            [booking.booking_id]: null,
+                          }));
+                        }}
+                        className="text-xs font-medium text-muted-foreground hover:text-foreground mb-2"
+                      >
+                        Keep current date
+                      </button>
+                    )}
                     <BookingCalendar
                       slots={slotMap[booking.program_type] ?? []}
                       onConfirm={async (slotId, date) => {

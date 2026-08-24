@@ -102,6 +102,8 @@ export function AdminEnrollmentLeadsTab() {
 
   const [denyTarget, setDenyTarget] = useState<EnrollmentLead | null>(null);
   const [resendTarget, setResendTarget] = useState<EnrollmentLead | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] =
+    useState<EnrollmentLead | null>(null);
   const [pickDateTargetId, setPickDateTargetId] = useState<string | null>(null);
   const [editTargetId, setEditTargetId] = useState<string | null>(null);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
@@ -231,9 +233,14 @@ export function AdminEnrollmentLeadsTab() {
     (fallbackLead && fallbackLead.lead_id === detailLeadId
       ? fallbackLead
       : null);
-  const pickDateTarget = pickDateTargetId
-    ? (activeLeads.find((l) => l.lead_id === pickDateTargetId) ?? null)
+  const livePickDateTarget = pickDateTargetId
+    ? (allLoadedLeads.find((l) => l.lead_id === pickDateTargetId) ?? null)
     : null;
+  const pickDateTarget =
+    livePickDateTarget ??
+    (fallbackLead && fallbackLead.lead_id === pickDateTargetId
+      ? fallbackLead
+      : null);
   const liveEditTarget = editTargetId
     ? (allLoadedLeads.find((l) => l.lead_id === editTargetId) ?? null)
     : null;
@@ -389,6 +396,7 @@ export function AdminEnrollmentLeadsTab() {
           onDeny={setDenyTarget}
           onPickDate={(l) => setPickDateTargetId(l.lead_id)}
           onResend={setResendTarget}
+          onRescheduleLink={setRescheduleTarget}
           onDismiss={(l) => setPendingAction({ type: 'dismiss', lead: l })}
           onDelete={(l) => setPendingAction({ type: 'delete', lead: l })}
         />
@@ -459,6 +467,37 @@ export function AdminEnrollmentLeadsTab() {
                 }}
               >
                 Resend booking link
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      {rescheduleTarget && (
+        <AlertDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setRescheduleTarget(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Send reschedule link?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This emails the family that we missed them at their visit and
+                includes their link to pick a new time. The lead reopens once
+                they book.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={actions.busyLeadIds.has(rescheduleTarget.lead_id)}
+                onClick={async () => {
+                  await actions.sendRescheduleLink(rescheduleTarget);
+                  setRescheduleTarget(null);
+                }}
+              >
+                Send reschedule link
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

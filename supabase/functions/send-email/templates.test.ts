@@ -9,6 +9,7 @@ import {
   messagingNotificationHtml,
   bookingConfirmationHtml,
   reminderEmailHtml,
+  rescheduleEmailHtml,
   submissionConfirmationHtml,
 } from './templates.ts';
 import type { AppointmentInfo } from './types.ts';
@@ -205,6 +206,47 @@ Deno.test('reminderEmailHtml: heading reflects the given when-phrase', () => {
     'appointments are in 5 days',
   );
 });
+
+Deno.test(
+  'rescheduleEmailHtml single: apology copy and one generic rebook CTA',
+  () => {
+    const html = rescheduleEmailHtml('Eduardo Guerra', [
+      {
+        programLabel: 'Little Dragons',
+        childNames: 'Emma',
+        bookingUrl: 'https://lbmaa.com/book/abc123',
+      },
+    ]);
+    assertStringIncludes(html, 'Eduardo Guerra');
+    assertStringIncludes(html, 'sorry we missed you');
+    assertStringIncludes(html, 'https://lbmaa.com/book/abc123');
+    assertStringIncludes(html, 'Pick a New Time');
+    assertEquals(html.includes('Rebook'), false);
+  },
+);
+
+Deno.test(
+  'rescheduleEmailHtml multi: one labeled rebook CTA per program',
+  () => {
+    const html = rescheduleEmailHtml('Eduardo Guerra', [
+      {
+        programLabel: 'Little Dragons',
+        childNames: 'Emma & Lily',
+        bookingUrl: 'https://lbmaa.com/book/abc123',
+      },
+      {
+        programLabel: 'Youth Program',
+        childNames: 'Jake',
+        bookingUrl: 'https://lbmaa.com/book/def456',
+      },
+    ]);
+    assertStringIncludes(html, 'Rebook Little Dragons Intro');
+    assertStringIncludes(html, 'Rebook Youth Program Intro');
+    assertStringIncludes(html, 'Emma &amp; Lily');
+    assertStringIncludes(html, 'https://lbmaa.com/book/abc123');
+    assertStringIncludes(html, 'https://lbmaa.com/book/def456');
+  },
+);
 
 // ── enrollmentNotificationHtml: children ──────────────────────────────────
 

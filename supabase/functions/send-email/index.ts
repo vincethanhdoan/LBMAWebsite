@@ -15,6 +15,7 @@ import {
   messagingNotificationHtml,
   approvalEmailHtml,
   multiProgramApprovalEmailHtml,
+  rescheduleEmailHtml,
   denialEmailHtml,
   bookingConfirmationHtml,
   reminderEmailHtml,
@@ -147,6 +148,44 @@ async function getLeadAppointments(
   );
 }
 
+// Per-program booking links for emails whose CTA is "book (or rebook) your
+// visit": one entry per program booking, with the children it covers.
+async function getProgramBookingLinks(
+  supabase: ReturnType<typeof adminClient>,
+  leadId: string,
+): Promise<
+  Array<{
+    programLabel: string;
+    childNames: string;
+    bookingToken: string | null;
+  }>
+> {
+  const { data: programBookings } = await supabase
+    .from('enrollment_lead_program_bookings')
+    .select('program_type, booking_token')
+    .eq('lead_id', leadId);
+
+  if (!programBookings || programBookings.length === 0) return [];
+
+  return Promise.all(
+    programBookings.map(
+      async (b: { program_type: string; booking_token: string | null }) => {
+        const { data: children } = await supabase
+          .from('enrollment_lead_children')
+          .select('name')
+          .eq('lead_id', leadId)
+          .eq('program_type', b.program_type);
+        return {
+          programLabel: PROGRAM_LABELS[b.program_type] ?? b.program_type,
+          childNames:
+            children?.map((c: { name: string }) => c.name).join(' & ') ?? '',
+          bookingToken: b.booking_token,
+        };
+      },
+    ),
+  );
+}
+
 async function markEnrollmentFailed(
   supabase: ReturnType<typeof adminClient>,
   notificationId: string,
@@ -253,47 +292,51 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
       html = submissionConfirmationHtml(enrichedLead, LOGO_URL);
       break;
     case 'approval': {
-      const { data: programBookings } = await supabase
-        .from('enrollment_lead_program_bookings')
-        .select('booking_id, program_type, booking_token')
-        .eq('lead_id', record.lead_id);
+      const programs = await getProgramBookingLinks(supabase, record.lead_id);
 
       subject = 'Your enrollment request has been approved';
 
-      if (programBookings && programBookings.length > 0) {
-        const programs = await Promise.all(
-          programBookings.map(
-            async (b: {
-              booking_id: string;
-              program_type: string;
-              booking_token: string | null;
-            }) => {
-              const { data: children } = await supabase
-                .from('enrollment_lead_children')
-                .select('name')
-                .eq('lead_id', record.lead_id)
-                .eq('program_type', b.program_type);
-              const childNames =
-                children?.map((c: { name: string }) => c.name).join(' & ') ??
-                '';
-              return {
-                programLabel: PROGRAM_LABELS[b.program_type] ?? b.program_type,
-                childNames,
-                bookingUrl: b.booking_token
-                  ? `${appUrl}/book/${b.booking_token}`
-                  : appUrl,
-              };
-            },
-          ),
-        );
+      if (programs.length > 0) {
         html = multiProgramApprovalEmailHtml(
           lead.parent_name,
-          programs,
+          programs.map((p) => ({
+            programLabel: p.programLabel,
+            childNames: p.childNames,
+            bookingUrl: p.bookingToken
+              ? `${appUrl}/book/${p.bookingToken}`
+              : appUrl,
+          })),
           LOGO_URL,
         );
       } else {
         html = approvalEmailHtml(lead, bookingUrl, LOGO_URL);
       }
+      break;
+    }
+    case 'reschedule': {
+      const linked = (await getProgramBookingLinks(supabase, record.lead_id))
+        .filter((p) => p.bookingToken)
+        .map((p) => ({
+          programLabel: p.programLabel,
+          childNames: p.childNames,
+          bookingUrl: `${appUrl}/book/${p.bookingToken}`,
+        }));
+      // Legacy leads keep a single lead-level token instead of program rows.
+      const programs =
+        linked.length > 0
+          ? linked
+          : lead.booking_token
+            ? [{ programLabel: '', childNames: '', bookingUrl }]
+            : [];
+      if (programs.length === 0) {
+        console.warn(
+          '[send-email] reschedule: no booking links for lead',
+          record.lead_id,
+        );
+        return;
+      }
+      subject = "Sorry we missed you! Let's reschedule your visit";
+      html = rescheduleEmailHtml(lead.parent_name, programs, LOGO_URL);
       break;
     }
     case 'denial':

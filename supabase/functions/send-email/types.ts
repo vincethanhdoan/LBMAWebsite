@@ -19,7 +19,8 @@ export interface EnrollmentLeadNotificationRecord {
     | 'approval'
     | 'denial'
     | 'booking_confirmation'
-    | 'reminder';
+    | 'reminder'
+    | 'reschedule';
   status: string;
   created_at: string;
 }

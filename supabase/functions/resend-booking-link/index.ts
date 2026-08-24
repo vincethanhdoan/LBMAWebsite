@@ -71,9 +71,15 @@ Deno.serve(async (req) => {
   if (!isAdmin)
     return new Response('Forbidden', { status: 403, headers: cors });
 
-  const { leadId } = await req.json();
+  const { leadId, intent } = await req.json();
   if (!leadId)
     return new Response('Missing leadId', { status: 400, headers: cors });
+  // 'reschedule' sends the sorry-we-missed-you email and is also allowed for
+  // no-show leads; the default resend re-sends the original booking invite.
+  const reschedule = intent === 'reschedule';
+  const allowedStatuses = reschedule
+    ? [...RESENDABLE_STATUSES, 'no_show']
+    : RESENDABLE_STATUSES;
 
   const { data: lead } = await supabase
     .from('enrollment_leads')
@@ -83,7 +89,7 @@ Deno.serve(async (req) => {
 
   if (!lead)
     return new Response('Lead not found', { status: 404, headers: cors });
-  if (!RESENDABLE_STATUSES.includes(lead.status)) {
+  if (!allowedStatuses.includes(lead.status)) {
     return new Response('Lead is not in a resendable state', {
       status: 422,
       headers: cors,
@@ -107,15 +113,15 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Insert approval notification; the send-email handler uses multiProgramApprovalEmailHtml for
-  // new-flow leads and approvalEmailHtml for legacy leads automatically
+  // The send-email handler renders per-program booking links for new-flow
+  // leads and falls back to the legacy lead-level token automatically.
   const { error: notifError } = await supabase
     .from('enrollment_lead_notifications')
     .insert({
       lead_id: leadId,
       recipient_email: lead.parent_email,
       channel: 'email',
-      type: 'approval',
+      type: reschedule ? 'reschedule' : 'approval',
       status: 'queued',
     });
 
