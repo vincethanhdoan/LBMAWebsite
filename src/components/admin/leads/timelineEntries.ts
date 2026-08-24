@@ -10,6 +10,7 @@ const EMAIL_LABELS: Record<string, string> = {
   booking_confirmation: 'Booking receipt email',
   reminder: 'Confirmation email',
   denial: 'Denial email',
+  reschedule: 'Reschedule email',
 };
 
 export type TimelineEntry = {

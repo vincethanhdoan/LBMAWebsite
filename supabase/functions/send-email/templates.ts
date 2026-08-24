@@ -161,6 +161,48 @@ export function multiProgramApprovalEmailHtml(
   );
 }
 
+export function rescheduleEmailHtml(
+  parentName: string,
+  programs: Array<{
+    programLabel: string;
+    childNames: string;
+    bookingUrl: string;
+  }>,
+  logoUrl?: string,
+  subtitle?: string,
+): string {
+  const sections =
+    programs.length === 1
+      ? ctaButton(programs[0].bookingUrl, 'Pick a New Time')
+      : programs
+          .map(
+            (p) => `
+    <div style="margin-bottom:20px;">
+      <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1a1a2e;">${escHtml(p.programLabel)}${p.childNames ? ` for ${escHtml(p.childNames)}` : ''}</p>
+      ${ctaButton(p.bookingUrl, `Rebook ${escHtml(p.programLabel)} Intro`)}
+    </div>
+  `,
+          )
+          .join('');
+
+  return wrap(
+    `
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">We're sorry we missed you!</p>
+    <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">
+      Hi ${escHtml(parentName)}, we're sorry we missed you at your scheduled visit.
+      We'd still love to welcome your family to Los Banos Martial Arts Academy.
+      Use the ${programs.length > 1 ? 'buttons' : 'button'} below to pick a new time that works for you.
+    </p>
+    ${sections}
+    <p style="margin:0 0 18px;font-size:12px;color:#595959;text-align:center;">
+      ${programs.length > 1 ? 'Each booking link is unique to your inquiry. Do not share them.' : 'This booking link is unique to your inquiry. Do not share it.'}
+    </p>
+  `,
+    logoUrl,
+    subtitle,
+  );
+}
+
 export function approvalEmailHtml(
   lead: EnrollmentLead,
   bookingUrl: string,

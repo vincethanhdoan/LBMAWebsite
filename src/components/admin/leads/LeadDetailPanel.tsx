@@ -103,6 +103,7 @@ export function LeadDetailPanel({
   onDeny,
   onPickDate,
   onResend,
+  onRescheduleLink,
   onDismiss,
   onDelete,
 }: {
@@ -113,6 +114,7 @@ export function LeadDetailPanel({
   onDeny: (lead: EnrollmentLead) => void;
   onPickDate: (lead: EnrollmentLead) => void;
   onResend: (lead: EnrollmentLead) => void;
+  onRescheduleLink: (lead: EnrollmentLead) => void;
   onDismiss: (lead: EnrollmentLead) => void;
   onDelete: (lead: EnrollmentLead) => void;
 }) {
@@ -571,6 +573,24 @@ export function LeadDetailPanel({
             )}
             {hasPastAppointment && isActive && (
               <RecordOutcomeButton lead={lead} onClosed={onClose} />
+            )}
+            {/* A no-show still has a live booking link; booking a new date or
+                the family rebooking through the link reopens the lead. */}
+            {lead.status === 'no_show' && (
+              <>
+                <ActionButton
+                  variant="outline"
+                  onClick={() => onPickDate(lead)}
+                >
+                  Pick new date
+                </ActionButton>
+                <ActionButton
+                  variant="outline"
+                  onClick={() => onRescheduleLink(lead)}
+                >
+                  Send reschedule link
+                </ActionButton>
+              </>
             )}
             {isActive && (
               <ActionButton
