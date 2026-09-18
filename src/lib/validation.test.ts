@@ -40,7 +40,7 @@ describe('validateLeadContact', () => {
   });
   it('asks for a phone when both are blank', () => {
     expect(validateLeadContact({ email: ' ', phone: ' ' })).toEqual({
-      phone: 'Add a phone number, or an email above.',
+      phone: 'Add a phone number, or an email.',
     });
   });
   it('rejects a malformed email even when a phone is given', () => {

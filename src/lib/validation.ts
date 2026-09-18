@@ -22,7 +22,7 @@ export function validateLeadContact(input: { email: string; phone: string }): {
     errors.email = 'This does not look like an email address.';
   }
   if (!email) {
-    if (!phone) errors.phone = 'Add a phone number, or an email above.';
+    if (!phone) errors.phone = 'Add a phone number, or an email.';
     else if (!isValidUsPhone(phone))
       errors.phone = 'Enter a 10-digit phone number.';
   }
