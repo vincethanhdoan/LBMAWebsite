@@ -10,9 +10,7 @@ import { CONTACT_LINK_CLASS } from './contactLinkClass';
 // messaging app with a reminder ready to send; the portal sends nothing and
 // records nothing, so staff still mark the visit confirmed themselves.
 export function ContactActions({ lead }: { lead: EnrollmentLead }) {
-  if (!lead.phone) return null;
-  const call = telHref(lead.phone);
-  if (!call) return null;
+  if (!lead.phone || !telHref(lead.phone)) return null;
 
   const todayKey = pacificTodayISO();
   const next = getAppointmentOccurrences([lead]).find(

@@ -16,9 +16,10 @@ import { submitEnrollmentLeadWithTimeout } from '../../lib/supabase/client';
 import { V3 } from './design';
 import { useLanguage } from './lang';
 import { isValidEmail, isValidUsPhone } from '../../lib/validation';
+import { SCHOOL_PHONE_DISPLAY } from '../../lib/contactLinks';
 
 const CONTACT_INFO = [
-  { label: 'Phone', value: '(408) 620-0252', href: 'tel:+14086200252' },
+  { label: 'Phone', value: SCHOOL_PHONE_DISPLAY, href: 'tel:+14086200252' },
   {
     label: 'Email',
     value: 'LosBanosMartialArts@gmail.com',
