@@ -21,6 +21,7 @@ import {
   ErrorCard,
   LeadRow,
   LeadRowSkeleton,
+  NoEmailPill,
   StatusBadge,
   Surface,
 } from './ui';
@@ -164,7 +165,12 @@ export function AllLeadsView({
         title={lead.parent_name}
         titleMeta={titleMeta(lead)}
         line2={line2}
-        badge={kind ? <StatusBadge kind={kind} /> : undefined}
+        badge={
+          <>
+            {lead.parent_email === null && <NoEmailPill />}
+            {kind && <StatusBadge kind={kind} />}
+          </>
+        }
         onOpen={() => onOpenLead(lead.lead_id, lead)}
       />
     );
@@ -184,7 +190,12 @@ export function AllLeadsView({
         title={lead.parent_name}
         titleMeta={titleMeta(lead)}
         line2={line2}
-        badge={kind ? <StatusBadge kind={kind} /> : undefined}
+        badge={
+          <>
+            {lead.parent_email === null && <NoEmailPill />}
+            {kind && <StatusBadge kind={kind} />}
+          </>
+        }
         onOpen={() => onOpenLead(lead.lead_id, lead)}
       />
     );

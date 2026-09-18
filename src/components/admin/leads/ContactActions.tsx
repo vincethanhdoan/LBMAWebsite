@@ -1,12 +1,10 @@
-import { MessageSquare, Phone } from 'lucide-react';
-import { formatPhone } from '../../../lib/format';
+import { MessageSquare } from 'lucide-react';
 import { reminderSmsHref, telHref } from '../../../lib/contactLinks';
+import { pacificTodayISO } from '../../../lib/pacificTime';
 import type { EnrollmentLead } from '../../../lib/types';
-import { toLocalDateKey } from './leadDisplay';
 import { getAppointmentOccurrences } from './leadViews';
-
-const LINK =
-  'inline-flex items-center justify-center gap-1.5 min-h-12 px-3 rounded-md border border-border text-[13px] font-medium hover:bg-muted transition-colors';
+import { CallButton } from './ui';
+import { CONTACT_LINK_CLASS } from './contactLinkClass';
 
 // Phone tools that use the staff member's own device. Texting opens their
 // messaging app with a reminder ready to send; the portal sends nothing and
@@ -16,7 +14,7 @@ export function ContactActions({ lead }: { lead: EnrollmentLead }) {
   const call = telHref(lead.phone);
   if (!call) return null;
 
-  const todayKey = toLocalDateKey(new Date());
+  const todayKey = pacificTodayISO();
   const next = getAppointmentOccurrences([lead]).find(
     (o) => o.dateKey >= todayKey,
   );
@@ -37,16 +35,9 @@ export function ContactActions({ lead }: { lead: EnrollmentLead }) {
 
   return (
     <div className="flex flex-wrap gap-2 pt-1">
-      <a
-        href={call}
-        aria-label={`Call ${lead.parent_name} at ${formatPhone(lead.phone)}`}
-        className={LINK}
-      >
-        <Phone className="w-4 h-4" aria-hidden />
-        Call
-      </a>
+      <CallButton name={lead.parent_name} phone={lead.phone} />
       {text && (
-        <a href={text} className={LINK}>
+        <a href={text} className={CONTACT_LINK_CLASS}>
           <MessageSquare className="w-4 h-4" aria-hidden />
           Text a reminder
         </a>

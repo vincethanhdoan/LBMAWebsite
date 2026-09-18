@@ -182,6 +182,28 @@ describe('a lead with no email', () => {
       'seeing Marco on Monday, Jan 5 at 4:30 PM',
     );
   });
+
+  it('shows a call link but no reminder text when the only visit is in the past', () => {
+    const pastLead = makeLead({
+      status: 'no_show',
+      parent_email: null,
+      attendance_recorded_at: null,
+      programBookings: [
+        makeBooking({
+          status: 'scheduled',
+          appointment_date: '2020-01-06',
+          appointment_time: '16:30:00',
+        }),
+      ],
+    });
+    renderPanel(pastLead);
+    expect(
+      screen.getByRole('link', {
+        name: 'Call Eduardo Guerra at (209) 555-0123',
+      }),
+    ).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Text a reminder' })).toBeNull();
+  });
 });
 
 describe('a lead with an email', () => {
