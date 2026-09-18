@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
 
   const { data: lead } = await supabase
     .from('enrollment_leads')
-    .select('lead_id, status, parent_name')
+    .select('lead_id, status')
     .eq('lead_id', programBooking.lead_id)
     .single();
 

@@ -365,7 +365,7 @@ export function submissionConfirmationHtml(
               : ''
         }
         ${lead.message ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;vertical-align:top;width:110px;">Message</td><td style="padding:4px 0;color:#555;">${escHtml(lead.message)}</td></tr>` : ''}
-        <tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Contact</td><td style="padding:4px 0;color:#555;">${escHtml(lead.parent_email)}</td></tr>
+        ${lead.parent_email ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Contact</td><td style="padding:4px 0;color:#555;">${escHtml(lead.parent_email)}</td></tr>` : ''}
       </table>
     </div>
     <p style="margin:0 0 18px;font-size:13px;color:#555;line-height:1.65;">

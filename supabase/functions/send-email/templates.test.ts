@@ -290,6 +290,20 @@ Deno.test(
   },
 );
 
+Deno.test(
+  'enrollmentNotificationHtml: omits the Email row when parent_email is null',
+  () => {
+    const lead = { ...DUMMY_LEAD, parent_email: null };
+    const html = enrollmentNotificationHtml(
+      lead,
+      'https://example.com/admin',
+      LOGO,
+    );
+    assertEquals(html.includes('>Email</td>'), false);
+    assertEquals(html.includes('Jane'), true);
+  },
+);
+
 // ── submissionConfirmationHtml: children, phone, message ──────────────────
 
 Deno.test(
