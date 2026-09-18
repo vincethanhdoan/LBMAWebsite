@@ -112,28 +112,28 @@ $function$;
 DO $$
 DECLARE
   src text;
+  v_old_email_check text := 'IF p_parent_email IS NULL OR btrim(p_parent_email) = '''' THEN RAISE EXCEPTION ''parent_email is required''; END IF;';
+  v_old_email_set   text := 'parent_email = lower(btrim(p_parent_email)),';
+  v_old_phone_set   text := 'phone = NULLIF(btrim(COALESCE(p_phone, '''')), '''')';
+  v_old_decl        text := 'v_lead_status text;';
 BEGIN
   SELECT pg_get_functiondef('public.update_enrollment_lead(uuid,text,text,text,jsonb)'::regprocedure)
     INTO src;
 
-  IF position('parent_email is required' in src) = 0
-     OR position('parent_email = lower(btrim(p_parent_email)),' in src) = 0
-     OR position('phone = NULLIF(btrim(COALESCE(p_phone, '''')), '''')' in src) = 0 THEN
+  -- Each guard checks the exact string its matching replace() searches for,
+  -- from the same constant, so the guard and the replace can never diverge.
+  IF position(v_old_email_check in src) = 0
+     OR position(v_old_email_set in src) = 0
+     OR position(v_old_phone_set in src) = 0
+     OR position(v_old_decl in src) = 0 THEN
     RAISE EXCEPTION 'update_enrollment_lead no longer matches the expected body';
   END IF;
 
-  src := replace(src,
-    'IF p_parent_email IS NULL OR btrim(p_parent_email) = '''' THEN RAISE EXCEPTION ''parent_email is required''; END IF;',
+  src := replace(src, v_old_email_check,
     'SELECT * INTO v_contact FROM normalize_lead_contact(p_parent_email, p_phone);');
-  src := replace(src,
-    'parent_email = lower(btrim(p_parent_email)),',
-    'parent_email = v_contact.email,');
-  src := replace(src,
-    'phone = NULLIF(btrim(COALESCE(p_phone, '''')), '''')',
-    'phone = v_contact.phone');
-  src := replace(src,
-    'v_lead_status text;',
-    'v_lead_status text;' || chr(10) || '  v_contact record;');
+  src := replace(src, v_old_email_set, 'parent_email = v_contact.email,');
+  src := replace(src, v_old_phone_set, 'phone = v_contact.phone');
+  src := replace(src, v_old_decl, v_old_decl || chr(10) || '  v_contact record;');
 
   EXECUTE src;
 END $$;
