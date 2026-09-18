@@ -132,3 +132,68 @@ describe('LeadDetailPanel for a no_show lead', () => {
     expect(screen.queryByText('Send reschedule link')).toBeNull();
   });
 });
+
+describe('a lead with no email', () => {
+  const upcoming = makeBooking({
+    status: 'scheduled',
+    appointment_date: '2099-01-05',
+    appointment_time: '16:30:00',
+  });
+  const noEmailLead = makeLead({
+    status: 'appointment_scheduled',
+    parent_email: null,
+    attendance_recorded_at: null,
+    programBookings: [upcoming],
+  });
+
+  it('says there is no email instead of rendering a mailto link', () => {
+    renderPanel(noEmailLead);
+    expect(screen.getByText('No email on file')).toBeTruthy();
+    expect(document.querySelector('a[href^="mailto:"]')).toBeNull();
+  });
+
+  it('explains the missing reminder once and offers to add an email', () => {
+    const handlers = renderPanel(noEmailLead);
+    expect(
+      screen.getByText(
+        "This family has no email on file, so they won't get a reminder. Please call or text them a day or two before the visit.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add an email' }));
+    expect(handlers.onEdit).toHaveBeenCalledWith(noEmailLead);
+  });
+
+  it('hides the email-only actions', () => {
+    renderPanel(noEmailLead);
+    expect(screen.queryByText('Resend invites')).toBeNull();
+    expect(screen.queryByText('Send confirmation email')).toBeNull();
+    expect(screen.queryByText('Send now')).toBeNull();
+  });
+
+  it('offers a call link and a prefilled reminder text', () => {
+    renderPanel(noEmailLead);
+    const call = screen.getByRole('link', {
+      name: 'Call Eduardo Guerra at (209) 555-0123',
+    });
+    expect(call.getAttribute('href')).toBe('tel:+12095550123');
+    const text = screen.getByRole('link', { name: 'Text a reminder' });
+    expect(text.getAttribute('href')).toContain('sms:+12095550123?&body=');
+    expect(decodeURIComponent(text.getAttribute('href')!)).toContain(
+      'seeing Marco on Monday, Jan 5 at 4:30 PM',
+    );
+  });
+});
+
+describe('a lead with an email', () => {
+  it('keeps the mailto link and also offers a call link', () => {
+    renderPanel(makeLead());
+    expect(
+      document.querySelector('a[href="mailto:eduardo@example.com"]'),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('link', {
+        name: 'Call Eduardo Guerra at (209) 555-0123',
+      }),
+    ).toBeTruthy();
+  });
+});
