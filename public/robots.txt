@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /portal
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /onboarding
+Disallow: /auth/
+Disallow: /book/
+Disallow: /confirm/
+
+Sitemap: https://www.lbmartialarts.com/sitemap.xml
