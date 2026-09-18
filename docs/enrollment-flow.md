@@ -387,6 +387,16 @@ The system uses a **database webhook**: Supabase is configured to POST to the `s
 
 This architecture means: **inserting a notification row = sending an email.** Any code that wants to send an email just inserts a row. The email infrastructure is completely decoupled.
 
+### Queuing a family-facing email
+
+All family emails (`approval`, `reschedule`, `denial`, `booking_confirmation`, `reminder`) are queued through one PostgreSQL function, `queue_family_notification(lead_id, type)`. Edge functions never insert into `enrollment_lead_notifications` directly for these types — they call it via the shared helper `_shared/familyNotifications.ts`. The function:
+
+- Returns `no_email` and queues nothing when the lead has no `parent_email`.
+- Returns `already_queued` and inserts nothing when a `booking_confirmation` or `reminder` row for that lead is already sitting at `status = 'queued'` — both render the lead's current visits at send time, so a second one would be a duplicate, not a correction.
+- Otherwise inserts the row and returns `queued`.
+
+The one exception is the public `submit_enrollment_lead` RPC, which always has an email (the contact form requires it) and inserts its own `submission` and `new_lead` rows directly rather than going through `queue_family_notification`.
+
 ### Email types and recipients
 
 | Type | Recipient | When sent |
@@ -472,6 +482,10 @@ After filling in the lead details, the admin chooses one of three post-create ac
 | Create Only | Creates lead with `status = 'new'`, no email sent — for record-keeping purposes |
 
 Manually created leads have `source_page = 'admin'` (vs. `'contact'` for form submissions).
+
+### Email is optional
+
+A staff-entered lead does not need an email — a phone number is required instead. `enrollment_leads.parent_email` is nullable, and `create_enrollment_lead` / `update_enrollment_lead` both route through the shared `normalize_lead_contact` check: at least one of email or phone must be present, and clearing the email on an existing lead is refused unless a phone is already on file. A lead with no email receives no emails at all; staff are expected to follow up by phone, and the admin dashboard offers Call and Text a reminder tools in place of the email-only actions ("Resend Booking Link", etc.) for these leads.
 
 ---
 
