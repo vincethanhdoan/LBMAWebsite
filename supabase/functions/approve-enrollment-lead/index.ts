@@ -1,6 +1,10 @@
 // supabase/functions/approve-enrollment-lead/index.ts
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  noEmailResponse,
+  queueFamilyNotification,
+} from '../_shared/familyNotifications.ts';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
@@ -78,6 +82,10 @@ Deno.serve(async (req) => {
   if (!lead)
     return new Response('Lead not found', { status: 404, headers: cors });
 
+  // Approval exists to email a booking link; without an email there is nothing
+  // to send, so refuse before changing the lead.
+  if (!lead.parent_email) return noEmailResponse(cors);
+
   // Fetch program bookings (new flow); may be empty for legacy leads
   const { data: programBookings } = await supabase
     .from('enrollment_lead_program_bookings')
@@ -134,19 +142,11 @@ Deno.serve(async (req) => {
     }
   }
 
-  const { error: notifError } = await supabase
-    .from('enrollment_lead_notifications')
-    .insert({
-      lead_id: leadId,
-      recipient_email: lead.parent_email,
-      channel: 'email',
-      type: 'approval',
-      status: 'queued',
-    });
-
-  if (notifError) {
+  try {
+    await queueFamilyNotification(supabase, leadId, 'approval');
+  } catch (notifError) {
     console.error(
-      '[approve-enrollment-lead] notification insert error:',
+      '[approve-enrollment-lead] notification queue error:',
       notifError,
     );
     return new Response('Notification failed', { status: 500, headers: cors });

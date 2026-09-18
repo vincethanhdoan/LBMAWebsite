@@ -72,7 +72,9 @@ export function enrollmentNotificationHtml(
 ): string {
   const rows = [
     `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;width:110px;">Parent</td><td style="padding:4px 0;color:#555;">${escHtml(lead.parent_name)}</td></tr>`,
-    `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Email</td><td style="padding:4px 0;color:#555;">${escHtml(lead.parent_email)}</td></tr>`,
+    lead.parent_email
+      ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Email</td><td style="padding:4px 0;color:#555;">${escHtml(lead.parent_email)}</td></tr>`
+      : '',
     lead.phone
       ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Phone</td><td style="padding:4px 0;color:#555;">${escHtml(lead.phone)}</td></tr>`
       : '',

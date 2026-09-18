@@ -1,6 +1,10 @@
 // supabase/functions/resend-booking-link/index.ts
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  noEmailResponse,
+  queueFamilyNotification,
+} from '../_shared/familyNotifications.ts';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
@@ -95,6 +99,7 @@ Deno.serve(async (req) => {
       headers: cors,
     });
   }
+  if (!lead.parent_email) return noEmailResponse(cors);
 
   // Check for program bookings (new flow)
   const { data: programBookings } = await supabase
@@ -115,18 +120,15 @@ Deno.serve(async (req) => {
 
   // The send-email handler renders per-program booking links for new-flow
   // leads and falls back to the legacy lead-level token automatically.
-  const { error: notifError } = await supabase
-    .from('enrollment_lead_notifications')
-    .insert({
-      lead_id: leadId,
-      recipient_email: lead.parent_email,
-      channel: 'email',
-      type: reschedule ? 'reschedule' : 'approval',
-      status: 'queued',
-    });
-
-  if (notifError)
+  try {
+    await queueFamilyNotification(
+      supabase,
+      leadId,
+      reschedule ? 'reschedule' : 'approval',
+    );
+  } catch {
     return new Response('Notification failed', { status: 500, headers: cors });
+  }
 
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,

@@ -1,6 +1,10 @@
 // supabase/functions/deny-enrollment-lead/index.ts
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  noEmailResponse,
+  queueFamilyNotification,
+} from '../_shared/familyNotifications.ts';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
@@ -78,6 +82,10 @@ Deno.serve(async (req) => {
   if (!lead)
     return new Response('Lead not found', { status: 404, headers: cors });
 
+  // Deny sends the family an email. Staff use "Deny silently" for a family
+  // with no email, so nothing is changed here.
+  if (!lead.parent_email) return noEmailResponse(cors);
+
   const { error: updateError } = await supabase.rpc('close_enrollment_lead', {
     p_lead_id: leadId,
     p_new_status: 'denied',
@@ -89,19 +97,11 @@ Deno.serve(async (req) => {
     return new Response('Update failed', { status: 500, headers: cors });
   }
 
-  const { error: notifError } = await supabase
-    .from('enrollment_lead_notifications')
-    .insert({
-      lead_id: leadId,
-      recipient_email: lead.parent_email,
-      channel: 'email',
-      type: 'denial',
-      status: 'queued',
-    });
-
-  if (notifError) {
+  try {
+    await queueFamilyNotification(supabase, leadId, 'denial');
+  } catch (notifError) {
     console.error(
-      '[deny-enrollment-lead] notification insert error:',
+      '[deny-enrollment-lead] notification queue error:',
       notifError,
     );
     return new Response('Notification failed', { status: 500, headers: cors });
