@@ -2,7 +2,9 @@ import type { ErrorInfo } from 'react';
 import * as Sentry from '@sentry/react';
 import { scrubEvent, scrubText } from './scrub';
 
-const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+// Trimmed because a DSN pasted into a dashboard with stray whitespace is
+// rejected by the SDK, which silently disables reporting.
+const dsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim();
 
 /**
  * Scrubs an event, or drops it if scrubbing fails. Failing closed matters
