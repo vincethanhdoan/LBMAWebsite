@@ -5,14 +5,21 @@
 ALTER TABLE public.enrollment_leads ALTER COLUMN parent_email DROP NOT NULL;
 
 ALTER TABLE public.enrollment_leads
-  DROP CONSTRAINT enrollment_leads_parent_email_min_len;
+  DROP CONSTRAINT IF EXISTS enrollment_leads_parent_email_min_len;
 ALTER TABLE public.enrollment_leads
   ADD CONSTRAINT enrollment_leads_parent_email_min_len
   CHECK (parent_email IS NULL OR length(TRIM(BOTH FROM parent_email)) >= 5);
 
-ALTER TABLE public.enrollment_leads
-  ADD CONSTRAINT enrollment_leads_contact_method
-  CHECK (parent_email IS NOT NULL OR phone IS NOT NULL);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'enrollment_leads_contact_method'
+  ) THEN
+    ALTER TABLE public.enrollment_leads
+      ADD CONSTRAINT enrollment_leads_contact_method
+      CHECK (parent_email IS NOT NULL OR phone IS NOT NULL);
+  END IF;
+END $$;
 
 -- Shared contact validation for the two admin RPCs. Returns the normalised
 -- email (NULL when blank) and raises when the contact rule is broken.
@@ -119,6 +126,11 @@ DECLARE
 BEGIN
   SELECT pg_get_functiondef('public.update_enrollment_lead(uuid,text,text,text,jsonb)'::regprocedure)
     INTO src;
+
+  -- Already rewritten by a previous run of this migration; nothing to do.
+  IF position('normalize_lead_contact' in src) > 0 THEN
+    RETURN;
+  END IF;
 
   -- Each guard checks the exact string its matching replace() searches for,
   -- from the same constant, so the guard and the replace can never diverge.
