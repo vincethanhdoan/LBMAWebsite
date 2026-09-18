@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { submitEnrollmentLeadWithTimeout } from '../../lib/supabase/client';
 import { V3 } from './design';
 import { useLanguage } from './lang';
+import { isValidEmail, isValidUsPhone } from '../../lib/validation';
 
 const CONTACT_INFO = [
   { label: 'Phone', value: '(408) 620-0252', href: 'tel:+14086200252' },
@@ -33,17 +34,6 @@ type FieldErrors = {
   childCount?: string;
   children: Record<number, string>;
 };
-
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function isValidUsPhone(phone: string): boolean {
-  const digits = phone.replace(/\D/g, '');
-  return (
-    digits.length === 10 || (digits.length === 11 && digits.startsWith('1'))
-  );
-}
 
 export function ContactPage() {
   const { t } = useLanguage();
