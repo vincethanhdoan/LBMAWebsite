@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -8,16 +8,7 @@ import {
   useNavigate,
 } from 'react-router-dom';
 import { QueryProvider } from './providers/QueryProvider';
-import { FamilyOnboarding } from './components/onboarding/FamilyOnboarding';
-import { DashboardV2 } from './components/DashboardV2';
-import { AdminDashboardV2 } from './components/AdminDashboardV2';
 import { ContactSite } from './components/public/ContactSite';
-import { PortalLoginPage } from './components/public/PortalLoginPage';
-import { BookingPage } from './pages/BookingPage';
-import { ConfirmPage } from './pages/ConfirmPage';
-import { PrivacyPage } from './pages/PrivacyPage';
-import { TermsPage } from './pages/TermsPage';
-import { AuthCallback } from './components/AuthCallback';
 import { useAuth } from './hooks/useAuth';
 import { Alert, AlertDescription } from './components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -25,6 +16,55 @@ import { Toaster } from './components/ui/sonner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RootErrorFallback } from './components/ErrorFallbacks';
 import { reportError } from './lib/monitoring/sentry';
+
+// Only the public contact page ships in the entry chunk. Every other route
+// loads on demand so visitors to `/` never download the portals.
+const FamilyOnboarding = lazy(() =>
+  import('./components/onboarding/FamilyOnboarding').then((m) => ({
+    default: m.FamilyOnboarding,
+  })),
+);
+const DashboardV2 = lazy(() =>
+  import('./components/DashboardV2').then((m) => ({ default: m.DashboardV2 })),
+);
+const AdminDashboardV2 = lazy(() =>
+  import('./components/AdminDashboardV2').then((m) => ({
+    default: m.AdminDashboardV2,
+  })),
+);
+const PortalLoginPage = lazy(() =>
+  import('./components/public/PortalLoginPage').then((m) => ({
+    default: m.PortalLoginPage,
+  })),
+);
+const AuthCallback = lazy(() =>
+  import('./components/AuthCallback').then((m) => ({
+    default: m.AuthCallback,
+  })),
+);
+const BookingPage = lazy(() =>
+  import('./pages/BookingPage').then((m) => ({ default: m.BookingPage })),
+);
+const ConfirmPage = lazy(() =>
+  import('./pages/ConfirmPage').then((m) => ({ default: m.ConfirmPage })),
+);
+const PrivacyPage = lazy(() =>
+  import('./pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })),
+);
+const TermsPage = lazy(() =>
+  import('./pages/TermsPage').then((m) => ({ default: m.TermsPage })),
+);
+
+function RouteLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 function ProtectedRoute({
   children,
@@ -42,14 +82,7 @@ function ProtectedRoute({
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
+    return <RouteLoading />;
   }
 
   if (!user) {
@@ -108,7 +141,7 @@ function AppRoutes() {
 
   // Public route renders immediately; protected routes show loading via ProtectedRoute
   return (
-    <>
+    <Suspense fallback={<RouteLoading />}>
       <Routes>
         <Route
           path="/*"
@@ -197,7 +230,7 @@ function AppRoutes() {
         <Route path="/terms" element={<TermsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </Suspense>
   );
 }
 
