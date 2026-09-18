@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  getUserConversations,
-  getAllProfiles,
-  getConversationMembers,
+  getConversationSummaries,
   getMessages,
+  type ConversationSummary,
   type MessageWithMeta,
 } from '../supabase/queries';
 import { createMessage, markConversationAsRead } from '../supabase/mutations';
@@ -18,18 +17,6 @@ export function isDirectConversationAllowed(
   if (!otherRole) return false;
   if (currentUserRole === 'family') return otherRole === 'admin';
   return otherRole === 'family' || otherRole === 'admin';
-}
-
-export function countUnread(
-  messages: Array<{ author_user_id: string; created_at: string }>,
-  userId: string,
-  lastReadAt?: string | null,
-): number {
-  return messages.filter((m) => {
-    if (m.author_user_id === userId) return false;
-    if (!lastReadAt) return true;
-    return new Date(m.created_at).getTime() > new Date(lastReadAt).getTime();
-  }).length;
 }
 
 export type FormattedConversation = {
@@ -52,81 +39,48 @@ type FetchUser = {
   role: 'admin' | 'family';
 };
 
-async function fetchConversationsForUser(
-  user: FetchUser,
-): Promise<ConversationsData> {
-  const [profiles, userConvs] = await Promise.all([
-    getAllProfiles(),
-    getUserConversations(user.id),
-  ]);
-
-  const formattedConvs: FormattedConversation[] = [];
+export function formatConversationSummaries(
+  summaries: ConversationSummary[],
+  role: FetchUser['role'],
+): ConversationsData {
+  const conversations: FormattedConversation[] = [];
   const allowedDirectIds: string[] = [];
 
-  for (const conv of userConvs) {
-    if ((conv as any).hidden && user.role !== 'admin') continue;
+  for (const summary of summaries) {
+    if (summary.hidden && role !== 'admin') continue;
 
-    if (conv.type === 'global') {
-      const convMessages = await getMessages(conv.conversation_id);
-      const lastMsg = convMessages[convMessages.length - 1] as
-        MessageWithMeta | undefined;
-      const memberRecord = (conv as any).conversation_members?.find(
-        (m: any) => m.user_id === user.id,
-      );
-      const lastReadAt = memberRecord?.last_read_at ?? null;
-      const unreadCount = countUnread(convMessages, user.id, lastReadAt);
+    const shared = {
+      id: summary.conversation_id,
+      unreadCount: summary.unread_count,
+      lastMessage: summary.last_message_preview ?? undefined,
+      lastMessageTime: summary.last_message_at ?? undefined,
+    };
 
-      formattedConvs.push({
-        id: conv.conversation_id,
-        name: 'Group Chat',
-        type: 'group',
-        unreadCount,
-        lastMessage: lastMsg?.body?.substring(0, 50),
-        lastMessageTime: lastMsg?.created_at,
-      });
+    if (summary.type === 'global') {
+      conversations.push({ ...shared, name: 'Group Chat', type: 'group' });
       continue;
     }
 
-    if (conv.type !== 'dm') continue;
+    if (summary.type !== 'dm' || !summary.other_user_id) continue;
+    if (!isDirectConversationAllowed(role, summary.other_role)) continue;
 
-    const members = await getConversationMembers(conv.conversation_id);
-    const otherMember = members.find((m) => m.user_id !== user.id);
-    if (!otherMember) continue;
-
-    const otherProfile = profiles.find(
-      (p) => p.user_id === otherMember.user_id,
-    );
-    if (!isDirectConversationAllowed(user.role, otherProfile?.role)) continue;
-
-    allowedDirectIds.push(conv.conversation_id);
-
-    const convMessages = await getMessages(conv.conversation_id);
-    const lastMsg = convMessages[convMessages.length - 1] as
-      MessageWithMeta | undefined;
-    const memberRecord = (conv as any).conversation_members?.find(
-      (m: any) => m.user_id === user.id,
-    );
-    const lastReadAt = memberRecord?.last_read_at ?? null;
-    const unreadCount = countUnread(convMessages, user.id, lastReadAt);
-
-    formattedConvs.push({
-      id: conv.conversation_id,
-      name: otherProfile?.display_name || 'Unknown',
+    allowedDirectIds.push(summary.conversation_id);
+    conversations.push({
+      ...shared,
+      name: summary.other_display_name || 'Unknown',
       type: 'direct',
-      unreadCount,
-      lastMessage: lastMsg?.body?.substring(0, 50),
-      lastMessageTime: lastMsg?.created_at,
-      avatarUrl: otherProfile?.avatar_url ?? null,
+      avatarUrl: summary.other_avatar_url,
     });
   }
 
-  return { conversations: formattedConvs, allowedDirectIds };
+  return { conversations, allowedDirectIds };
 }
 
 export function useConversations(user: FetchUser) {
   return useQuery({
     queryKey: queryKeys.conversations(user.id),
-    queryFn: () => fetchConversationsForUser(user),
+    queryFn: async () =>
+      formatConversationSummaries(await getConversationSummaries(), user.role),
   });
 }
 

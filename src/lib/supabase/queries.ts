@@ -352,22 +352,30 @@ export async function getGlobalConversation(): Promise<Conversation | null> {
   return data || null;
 }
 
-export async function getUserConversations(
-  userId: string,
-): Promise<Conversation[]> {
-  const { data, error } = await supabase
-    .from('conversations')
-    .select(
-      `
-      ${CONVERSATION_COLUMNS},
-      conversation_members!inner (${CONVERSATION_MEMBER_COLUMNS})
-    `,
-    )
-    .eq('conversation_members.user_id', userId)
-    .order('updated_at', { ascending: false });
+export type ConversationSummary = {
+  conversation_id: string;
+  type: string;
+  hidden: boolean;
+  other_user_id: string | null;
+  other_display_name: string | null;
+  other_role: string | null;
+  other_avatar_url: string | null;
+  last_message_preview: string | null;
+  last_message_at: string | null;
+  unread_count: number;
+};
 
+/**
+ * Returns one summary row per conversation the current user belongs to, most
+ * recently updated first. Delegates to the get_conversation_summaries DB
+ * function so the list costs one round-trip regardless of conversation count.
+ */
+export async function getConversationSummaries(): Promise<
+  ConversationSummary[]
+> {
+  const { data, error } = await supabase.rpc('get_conversation_summaries');
   if (error) throw error;
-  return data || [];
+  return (data as ConversationSummary[] | null) ?? [];
 }
 
 export type ConversationMemberWithProfile = ConversationMember & {
