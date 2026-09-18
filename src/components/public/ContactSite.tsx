@@ -49,6 +49,7 @@ function ContactShell() {
           </a>
           <button
             onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
+            lang={lang === 'en' ? 'es' : 'en'}
             style={{
               background: 'none',
               border: 'none',
