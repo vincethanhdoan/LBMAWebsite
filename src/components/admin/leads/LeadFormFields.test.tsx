@@ -3,11 +3,8 @@
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
-import {
-  LeadFormFields,
-  validateLeadForm,
-  type LeadFormValues,
-} from './LeadFormFields';
+import { LeadFormFields } from './LeadFormFields';
+import type { LeadFormValues } from './leadForm';
 
 afterEach(cleanup);
 
@@ -17,36 +14,6 @@ const valid: LeadFormValues = {
   phone: '(209) 555-0123',
   children: [{ childId: null, name: 'Mia', age: '6' }],
 };
-
-describe('validateLeadForm', () => {
-  it('accepts a walk-in with a phone and no email', () => {
-    expect(validateLeadForm(valid)).toEqual({});
-  });
-  it('requires a parent name', () => {
-    expect(validateLeadForm({ ...valid, parentName: ' ' })).toEqual({
-      parentName: 'Required',
-    });
-  });
-  it('requires a phone when there is no email', () => {
-    expect(validateLeadForm({ ...valid, phone: '' })).toEqual({
-      phone: 'Add a phone number, or an email above.',
-    });
-  });
-  it('requires every child to have a name and an age from 4 to 17', () => {
-    expect(
-      validateLeadForm({
-        ...valid,
-        children: [{ childId: null, name: 'Mia', age: '3' }],
-      }),
-    ).toEqual({ children: 'Child ages must be between 4 and 17.' });
-    expect(
-      validateLeadForm({
-        ...valid,
-        children: [{ childId: null, name: '', age: '6' }],
-      }),
-    ).toEqual({ children: 'Each child requires a name and age.' });
-  });
-});
 
 describe('LeadFormFields', () => {
   it('marks email optional and explains what a blank email means', () => {
@@ -101,5 +68,23 @@ describe('LeadFormFields', () => {
     );
     expect(screen.getByRole('button', { name: 'Remove Mia' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Remove child' })).toBeTruthy();
+  });
+
+  it('marks an invalid phone field with aria-invalid and a described error', () => {
+    render(
+      <LeadFormFields
+        idPrefix="t"
+        values={valid}
+        errors={{ phone: 'Enter a 10-digit phone number.' }}
+        disabled={false}
+        onChange={vi.fn()}
+      />,
+    );
+    const phone = screen.getByLabelText('Phone *') as HTMLInputElement;
+    expect(phone.getAttribute('aria-invalid')).toBe('true');
+    const describedBy = phone.getAttribute('aria-describedby');
+    expect(describedBy).toBeTruthy();
+    const errorEl = document.getElementById(describedBy!);
+    expect(errorEl?.textContent).toBe('Enter a 10-digit phone number.');
   });
 });

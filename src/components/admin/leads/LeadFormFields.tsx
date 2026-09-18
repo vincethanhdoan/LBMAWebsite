@@ -2,56 +2,8 @@ import type { ReactNode } from 'react';
 import { Plus, X } from 'lucide-react';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
-import { validateLeadContact } from '../../../lib/validation';
 import { PROGRAM_BADGE_STYLES } from './leadDisplay';
-
-export type LeadFormChild = {
-  childId: string | null;
-  name: string;
-  age: string;
-};
-
-export type LeadFormValues = {
-  parentName: string;
-  parentEmail: string;
-  phone: string;
-  children: LeadFormChild[];
-};
-
-export type LeadFormErrors = {
-  parentName?: string;
-  parentEmail?: string;
-  phone?: string;
-  children?: string;
-};
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function validateLeadForm(values: LeadFormValues): LeadFormErrors {
-  const errors: LeadFormErrors = {};
-  if (!values.parentName.trim()) errors.parentName = 'Required';
-
-  const contact = validateLeadContact({
-    email: values.parentEmail,
-    phone: values.phone,
-  });
-  if (contact.email) errors.parentEmail = contact.email;
-  if (contact.phone) errors.phone = contact.phone;
-
-  if (values.children.length < 1)
-    errors.children = 'At least one child is required.';
-  for (const c of values.children) {
-    const age = Number(c.age);
-    if (!c.name.trim() || !c.age) {
-      errors.children = 'Each child requires a name and age.';
-      break;
-    }
-    if (!Number.isInteger(age) || age < 4 || age > 17) {
-      errors.children = 'Child ages must be between 4 and 17.';
-      break;
-    }
-  }
-  return errors;
-}
+import type { LeadFormChild, LeadFormValues, LeadFormErrors } from './leadForm';
 
 function programHint(ageText: string): { text: string; cls: string } | null {
   if (!ageText) return null;
@@ -107,9 +59,18 @@ export function LeadFormFields({
           disabled={disabled}
           onChange={(e) => onChange({ ...values, parentName: e.target.value })}
           className="mt-1"
+          aria-invalid={errors.parentName ? true : undefined}
+          aria-describedby={
+            errors.parentName ? `${idPrefix}-parent-name-error` : undefined
+          }
         />
         {errors.parentName && (
-          <p className="text-xs text-destructive mt-1">{errors.parentName}</p>
+          <p
+            id={`${idPrefix}-parent-name-error`}
+            className="text-xs text-destructive mt-1"
+          >
+            {errors.parentName}
+          </p>
         )}
       </div>
 
@@ -127,9 +88,18 @@ export function LeadFormFields({
             disabled={disabled}
             onChange={(e) => onChange({ ...values, phone: e.target.value })}
             className="mt-1"
+            aria-invalid={errors.phone ? true : undefined}
+            aria-describedby={
+              errors.phone ? `${idPrefix}-phone-error` : undefined
+            }
           />
           {errors.phone && (
-            <p className="text-xs text-destructive mt-1">{errors.phone}</p>
+            <p
+              id={`${idPrefix}-phone-error`}
+              className="text-xs text-destructive mt-1"
+            >
+              {errors.phone}
+            </p>
           )}
         </div>
         <div>
@@ -146,9 +116,16 @@ export function LeadFormFields({
             }
             onBlur={onEmailBlur}
             className="mt-1"
+            aria-invalid={errors.parentEmail ? true : undefined}
+            aria-describedby={
+              errors.parentEmail ? `${idPrefix}-email-error` : undefined
+            }
           />
           {errors.parentEmail && (
-            <p className="text-xs text-destructive mt-1">
+            <p
+              id={`${idPrefix}-email-error`}
+              className="text-xs text-destructive mt-1"
+            >
               {errors.parentEmail}
             </p>
           )}
@@ -237,7 +214,9 @@ export function LeadFormFields({
           <Plus className="w-4 h-4" /> Add another child
         </button>
         {errors.children && (
-          <p className="text-xs text-destructive">{errors.children}</p>
+          <p role="alert" className="text-xs text-destructive">
+            {errors.children}
+          </p>
         )}
       </div>
     </div>

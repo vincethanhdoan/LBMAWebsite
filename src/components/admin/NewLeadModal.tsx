@@ -27,12 +27,12 @@ import { formatShortDate } from '../../lib/format';
 import { isValidEmail } from '../../lib/validation';
 import type { EnrollmentLead } from '../../lib/types';
 import { STATUS_LABELS, formatTimeShort } from './leads/leadDisplay';
+import { LeadFormFields } from './leads/LeadFormFields';
 import {
-  LeadFormFields,
   validateLeadForm,
   type LeadFormErrors,
   type LeadFormValues,
-} from './leads/LeadFormFields';
+} from './leads/leadForm';
 import { PickDateModal } from './PickDateModal';
 
 const PROGRAM_LABELS: Record<string, string> = {

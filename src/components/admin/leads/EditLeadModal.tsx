@@ -11,12 +11,12 @@ import { Button } from '../../ui/button';
 import { Loader2 } from 'lucide-react';
 import { useUpdateLead } from '../../../lib/hooks/leads';
 import type { EnrollmentLead } from '../../../lib/types';
+import { LeadFormFields } from './LeadFormFields';
 import {
-  LeadFormFields,
   validateLeadForm,
   type LeadFormErrors,
   type LeadFormValues,
-} from './LeadFormFields';
+} from './leadForm';
 
 interface EditLeadModalProps {
   lead: EnrollmentLead;
