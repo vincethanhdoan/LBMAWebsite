@@ -21,14 +21,14 @@ export function PrivacyPage() {
             >
               LBMAA Family Portal
             </p>
-            <p className="text-[11px] text-primary-foreground/40 leading-tight">
+            <p className="text-[11px] text-primary-foreground/70 leading-tight">
               Los Banos Martial Arts Academy
             </p>
           </div>
         </div>
         <Link
           to="/"
-          className="flex items-center gap-1 text-xs text-primary-foreground/40 hover:text-primary-foreground/70 transition-colors"
+          className="flex items-center gap-1 text-xs text-primary-foreground/70 hover:text-primary-foreground transition-colors"
         >
           <ArrowLeft className="w-3 h-3" />
           Back
@@ -484,9 +484,24 @@ export function PrivacyPage() {
                 an embedded Google map of our location and loads its typefaces
                 from Google Fonts. When your browser loads these, Google
                 receives technical information such as your IP address and
-                browser type, and the embedded map may set Google cookies. We do
-                not send Google anything you type into our forms. Google's use
-                of this information is governed by the Google Privacy Policy.
+                browser type. Google Fonts does not set cookies. The embedded
+                map is provided by Google and may set Google cookies. We do not
+                send Google anything you type into our forms. Your use of Google
+                Maps features and content on our website is subject to the{' '}
+                <a
+                  href="https://maps.google.com/help/terms_maps/"
+                  className="text-foreground underline underline-offset-2 hover:text-primary transition-colors"
+                >
+                  Google Maps Additional Terms of Service
+                </a>{' '}
+                and the{' '}
+                <a
+                  href="https://policies.google.com/privacy"
+                  className="text-foreground underline underline-offset-2 hover:text-primary transition-colors"
+                >
+                  Google Privacy Policy
+                </a>
+                .
               </li>
               <li>
                 <strong>Other Families in the Portal.</strong> The family portal
@@ -746,11 +761,18 @@ export function PrivacyPage() {
               follow in the future, we will inform you about that practice in a
               revised version of this Privacy Notice.
             </p>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-3">
               California law requires us to let you know how we respond to web
               browser DNT signals. Because there currently is not an industry or
               legal standard for recognizing or honoring DNT signals, we do not
               respond to them at this time.
+            </p>
+            <p className="text-muted-foreground">
+              We do not track your activity over time and across other websites,
+              and we do not allow advertisers to do so on our Services. The
+              embedded Google map is operated by Google, and Google may collect
+              information about your use of the map under its own privacy
+              policy.
             </p>
           </section>
 

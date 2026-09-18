@@ -92,6 +92,7 @@ export function LoginModal({ onClose }: LoginModalProps) {
           size="icon"
           className="absolute top-4 right-4"
           onClick={onClose}
+          aria-label="Close"
         >
           <X className="w-4 h-4" />
         </Button>

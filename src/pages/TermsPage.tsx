@@ -22,14 +22,14 @@ export function TermsPage() {
             >
               LBMAA Family Portal
             </p>
-            <p className="text-[11px] text-primary-foreground/40 leading-tight">
+            <p className="text-[11px] text-primary-foreground/70 leading-tight">
               Los Banos Martial Arts Academy
             </p>
           </div>
         </div>
         <Link
           to="/"
-          className="flex items-center gap-1 text-xs text-primary-foreground/40 hover:text-primary-foreground/70 transition-colors"
+          className="flex items-center gap-1 text-xs text-primary-foreground/70 hover:text-primary-foreground transition-colors"
         >
           <ArrowLeft className="w-3 h-3" />
           Back
