@@ -2,12 +2,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@layer utilities {
-  .font-oswald {
-    font-family: 'Oswald', sans-serif;
-  }
-}
-
 :root {
   --font-size: 16px;
   /* Typography — Lexend + Source Sans 3 ("Corporate Trust", UI/UX Pro Max Row 16)
