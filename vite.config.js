@@ -34,6 +34,19 @@ export default defineConfig({
     // the token there is no uploader and no deleter, so emitting maps would ship
     // full source to the public. 'hidden' also omits the sourceMappingURL comment.
     sourcemap: sentryAuthToken ? 'hidden' : false,
+    rollupOptions: {
+      output: {
+        // Framework code changes far less often than app code. Keeping it in
+        // its own hashed chunks means a deploy only invalidates what changed.
+        manualChunks(id) {
+          if (
+            /node_modules\/(react|react-dom|react-router|scheduler)\//.test(id)
+          )
+            return 'react';
+          if (/node_modules\/@supabase\//.test(id)) return 'supabase';
+        },
+      },
+    },
   },
   test: {
     environment: 'node',
