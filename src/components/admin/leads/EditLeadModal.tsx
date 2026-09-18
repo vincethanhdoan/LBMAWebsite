@@ -46,7 +46,7 @@ export function EditLeadModal({
 }: EditLeadModalProps) {
   const updateLead = useUpdateLead();
   const [parentName, setParentName] = useState(lead.parent_name);
-  const [parentEmail, setParentEmail] = useState(lead.parent_email);
+  const [parentEmail, setParentEmail] = useState(lead.parent_email ?? '');
   const [phone, setPhone] = useState(lead.phone ?? '');
   const [children, setChildren] = useState<ChildRow[]>(() =>
     initialChildren(lead),
