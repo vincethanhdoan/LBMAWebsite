@@ -298,6 +298,7 @@ const EN = {
     age: 'Age',
     ageLabel: 'Age',
     addChild: 'Add another child',
+    removeChild: 'Remove child',
     notesLabel: 'Questions, notes, or anything we should know',
     notesOptional: '(optional)',
     notesPlaceholder:
@@ -838,6 +839,7 @@ const ES: T = {
     age: 'Edad',
     ageLabel: 'Edad',
     addChild: 'Agregar otro niño',
+    removeChild: 'Quitar niño',
     notesLabel: 'Preguntas, notas o algo que debamos saber',
     notesOptional: '(opcional)',
     notesPlaceholder:

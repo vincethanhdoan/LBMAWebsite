@@ -69,7 +69,7 @@ export function ContactPage() {
     if (!age || isNaN(n)) return null;
     if (n >= 4 && n <= 7) return { text: ct.programLittle, color: '#6d28d9' };
     if (n >= 8 && n <= 17) return { text: ct.programYouth, color: '#1d4ed8' };
-    return { text: ct.programAgeError, color: '#dc2626' };
+    return { text: ct.programAgeError, color: '#b91c1c' };
   }
 
   function addChild() {
@@ -315,7 +315,7 @@ export function ContactPage() {
                         <p
                           id="parent-name-error"
                           className="mt-0.5 text-sm"
-                          style={{ color: '#dc2626' }}
+                          style={{ color: '#b91c1c' }}
                         >
                           {fieldErrors.name}
                         </p>
@@ -356,7 +356,7 @@ export function ContactPage() {
                         <p
                           id="phone-error"
                           className="mt-0.5 text-sm"
-                          style={{ color: '#dc2626' }}
+                          style={{ color: '#b91c1c' }}
                         >
                           {fieldErrors.phone}
                         </p>
@@ -399,7 +399,7 @@ export function ContactPage() {
                       <p
                         id="email-error"
                         className="mt-0.5 text-sm"
-                        style={{ color: '#dc2626' }}
+                        style={{ color: '#b91c1c' }}
                       >
                         {fieldErrors.email}
                       </p>
@@ -408,6 +408,11 @@ export function ContactPage() {
 
                   {/* Children section */}
                   <div
+                    role="group"
+                    aria-labelledby="children-label"
+                    aria-describedby={
+                      fieldErrors.childCount ? 'child-count-error' : undefined
+                    }
                     className="flex flex-col gap-3 rounded-xl p-5"
                     style={{
                       backgroundColor: V3.surface,
@@ -416,6 +421,7 @@ export function ContactPage() {
                   >
                     <div>
                       <Label
+                        id="children-label"
                         className="text-sm font-semibold"
                         style={{ color: V3.text }}
                       >
@@ -429,7 +435,7 @@ export function ContactPage() {
                         <p
                           id="child-count-error"
                           className="mt-1 text-sm"
-                          style={{ color: '#dc2626' }}
+                          style={{ color: '#b91c1c' }}
                         >
                           {fieldErrors.childCount}
                         </p>
@@ -483,6 +489,7 @@ export function ContactPage() {
                                 type="button"
                                 onClick={() => removeChild(i)}
                                 disabled={isSubmitting}
+                                aria-label={`${ct.removeChild} ${i + 1}`}
                                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
                                 style={{
                                   backgroundColor: '#fee2e2',
@@ -505,7 +512,7 @@ export function ContactPage() {
                             <p
                               id={`child-error-${i}`}
                               className="text-sm pl-1"
-                              style={{ color: '#dc2626' }}
+                              style={{ color: '#b91c1c' }}
                             >
                               {rowError}
                             </p>

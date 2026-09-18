@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { LanguageContext, translations, type Lang } from './lang';
 
@@ -10,6 +10,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       return 'en';
     }
   });
+  useEffect(() => {
+    const root = document.documentElement;
+    const initialLang = root.lang;
+    root.lang = lang;
+    return () => {
+      root.lang = initialLang;
+    };
+  }, [lang]);
   const setLang = (l: Lang) => {
     setLangState(l);
     try {
