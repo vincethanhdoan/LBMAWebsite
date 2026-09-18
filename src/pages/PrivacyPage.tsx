@@ -43,7 +43,7 @@ export function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="text-sm text-muted-foreground mb-10">
-          Last updated July 10, 2026
+          Last updated September 18, 2026
         </p>
 
         <div className="space-y-10 text-sm leading-relaxed">
@@ -148,8 +148,10 @@ export function PrivacyPage() {
                   In what situations and with which parties do we share personal
                   information?
                 </strong>{' '}
-                We may share information in specific situations and with
-                specific third parties.
+                We do not sell your personal information. We disclose it only to
+                the service providers that operate our website, portal, and
+                email on our behalf, and in the limited situations described
+                below.
               </p>
               <p>
                 <strong className="text-foreground">
@@ -467,30 +469,44 @@ export function PrivacyPage() {
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-3">
               <li>
+                <strong>Service Providers.</strong> We use other companies to
+                run our website, family portal, and email. They process personal
+                information only on our behalf and only to provide their service
+                to us. They are: Supabase (database, sign-in, and file storage),
+                Vercel (website hosting and privacy-friendly visitor
+                statistics), Resend (delivery of the emails we send you, such as
+                appointment confirmations and reminders), and Sentry (error
+                reports that help us fix problems; these reports are scrubbed of
+                email addresses and phone numbers before they are sent).
+              </li>
+              <li>
+                <strong>Google Maps and Google Fonts.</strong> Our website shows
+                an embedded Google map of our location and loads its typefaces
+                from Google Fonts. When your browser loads these, Google
+                receives technical information such as your IP address and
+                browser type, and the embedded map may set Google cookies. We do
+                not send Google anything you type into our forms. Google's use
+                of this information is governed by the Google Privacy Policy.
+              </li>
+              <li>
+                <strong>Other Families in the Portal.</strong> The family portal
+                is private and by invitation only. If you post a comment on an
+                announcement or post inside the portal, your name and comment
+                can be seen by academy staff and by other enrolled families who
+                are signed in. Comments are not visible to the public. Private
+                messages are between your family and academy staff only.
+              </li>
+              <li>
+                <strong>Legal Requirements.</strong> We may disclose information
+                when we are required to by law, such as in response to a court
+                order or subpoena, or when it is necessary to protect the safety
+                of a child or another person.
+              </li>
+              <li>
                 <strong>Business Transfers.</strong> We may share or transfer
                 your information in connection with, or during negotiations of,
                 any merger, sale of company assets, financing, or acquisition of
                 all or a portion of our business to another company.
-              </li>
-              <li>
-                <strong>When we use Google Maps Platform APIs.</strong> We may
-                share your information with certain Google Maps Platform APIs
-                (e.g., Google Maps API, Places API). Google Maps uses GPS,
-                Wi-Fi, and cell towers to estimate your location. GPS is
-                accurate to about 20 meters, while Wi-Fi and cell towers help
-                improve accuracy when GPS signals are weak, like indoors. This
-                data helps Google Maps provide directions, but it is not always
-                perfectly precise.
-              </li>
-              <li>
-                <strong>Other Users.</strong> When you share personal
-                information (for example, by posting comments, contributions, or
-                other content to the Services) or otherwise interact with public
-                areas of the Services, such personal information may be viewed
-                by all users and may be publicly made available outside the
-                Services in perpetuity. Similarly, other users will be able to
-                view descriptions of your activity, communicate with you within
-                our Services, and view your profile.
               </li>
             </ul>
           </section>
@@ -516,13 +532,18 @@ export function PrivacyPage() {
               your session, and saving your preferences such as language
               selection.
             </p>
+            <p className="text-muted-foreground mb-3">
+              We measure visits to our website with Vercel Web Analytics, which
+              does not use cookies and does not identify or follow individual
+              visitors across websites. The embedded Google map on our website
+              is provided by Google and may set its own cookies.
+            </p>
             <p className="text-muted-foreground">
-              We do not use advertising cookies, and we do not permit third
-              parties to use tracking technologies on our Services for
-              advertising purposes. Most browsers allow you to refuse or delete
-              cookies through their settings; however, if you disable essential
-              cookies, some parts of the Services (such as signing in to the
-              portal) may not work.
+              We do not use advertising cookies, and we do not sell or share
+              your information for advertising purposes. Most browsers allow you
+              to refuse or delete cookies through their settings; however, if
+              you disable essential cookies, some parts of the Services (such as
+              signing in to the portal) may not work.
             </p>
           </section>
 
@@ -545,10 +566,17 @@ export function PrivacyPage() {
               We will only keep your personal information for as long as it is
               necessary for the purposes set out in this Privacy Notice, unless
               a longer retention period is required or permitted by law (such as
-              tax, accounting, or other legal requirements). No purpose in this
-              notice will require us keeping your personal information for
-              longer than the period of time in which users have an account with
-              us.
+              tax, accounting, or other legal requirements).
+            </p>
+            <p className="text-muted-foreground mb-3">
+              If you request a trial class, we keep the information from your
+              request for as long as we need it to schedule and follow up on
+              your visit and to maintain our academy records. If your family
+              enrolls and uses the family portal, we keep your account
+              information for as long as you have an account with us. You can
+              ask us to delete your information at any time by using the contact
+              details in this notice, and we will delete it unless we are
+              required or permitted by law to keep it.
             </p>
             <p className="text-muted-foreground">
               When we have no ongoing legitimate business need to process your
@@ -802,14 +830,14 @@ export function PrivacyPage() {
                     ],
                     [
                       'F. Internet or other similar network activity',
-                      'Browsing history, search history, online behavior, interest data, and interactions with our and other websites, applications, systems, and advertisements',
-                      'NO',
+                      'Pages viewed on our website and technical information about your visit, collected as cookieless visitor statistics. We do not collect browsing history from other websites.',
+                      'YES',
                     ],
                     ['G. Geolocation data', 'Device location', 'NO'],
                     [
                       'H. Audio, electronic, sensory, or similar information',
-                      'Images and audio, video or call recordings created in connection with our business activities',
-                      'NO',
+                      'Profile photos and images or files you upload to the family portal. We do not record audio, video, or calls through the Services.',
+                      'YES',
                     ],
                     [
                       'I. Professional or employment-related information',
@@ -876,9 +904,15 @@ export function PrivacyPage() {
               needed to provide the Services or for:
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-1 mb-6">
-              {['A', 'B', 'C', 'L'].map((cat) => (
+              {['A', 'B', 'C', 'F', 'H', 'L'].map((cat) => (
                 <li key={cat}>
-                  Category {cat} — As long as the user has an account with us
+                  Category {cat}: for the periods described in{' '}
+                  <a
+                    href="#inforetain"
+                    className="text-foreground underline underline-offset-2 hover:text-primary transition-colors"
+                  >
+                    How Long Do We Keep Your Information?
+                  </a>
                 </li>
               ))}
             </ul>
@@ -932,11 +966,12 @@ export function PrivacyPage() {
               considered to be "selling" of your personal information.
             </p>
             <p className="text-muted-foreground mb-6">
-              We have not disclosed, sold, or shared any personal information to
-              third parties for a business or commercial purpose in the
-              preceding twelve (12) months. We will not sell or share personal
-              information in the future belonging to website visitors, users,
-              and other consumers.
+              We have not sold any personal information, or shared it for
+              advertising purposes, in the preceding twelve (12) months, and we
+              will not do so in the future. In the preceding twelve (12) months
+              we have disclosed personal information in categories A, B, C, F,
+              H, and L to the service providers named in the section above, only
+              so that they can operate the Services for us.
             </p>
 
             <h3 className="font-semibold text-foreground mb-2">Your Rights</h3>
