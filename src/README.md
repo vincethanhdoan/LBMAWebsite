@@ -1,4 +1,4 @@
-> **Superseded (2026-07-16).** Parts of this document predate the July 2026 rework and no longer match the code. The public site is currently locked behind an under-construction page, and migrations were rebaselined on 2026-07-10; the old numbered migration files now live in `supabase/migrations_archive/`. See the root `README.md` and `CLAUDE.md` for the current architecture.
+> **Superseded (2026-07-16).** Parts of this document predate the July 2026 rework and no longer match the code. The public site is currently locked behind an under-construction page, and migrations were rebaselined on 2026-07-10; the old numbered migration files now live in `supabase/migrations_archive/`. See the root `README.md` and `docs/engineering.md` for the current architecture.
 
 # LBMAA — Frontend Source Guide
 
@@ -58,9 +58,6 @@ src/
   pages/
     BookingPage.tsx         # public booking page (/book/:token)
     ConfirmPage.tsx         # appointment confirmation (/confirm/:token)
-  experimental/             # prototype work — not in production routes
-    publicV2/               # routed at /experimental/public/*
-    publicV3/               # not routed (prototype only)
 ```
 
 ## Routes and access
@@ -71,7 +68,6 @@ src/
 | `/dashboard` | Family role (authenticated, provisioned, active) |
 | `/admin` | Admin role only |
 | `/onboarding` | Family role, `needs_onboarding` state only |
-| `/experimental/public/*` | Public (publicV2 prototype) |
 | `/book/:token` | Public (booking link) |
 | `/confirm/:token` | Public (appointment confirmation) |
 
@@ -101,6 +97,4 @@ Edge functions in `supabase/functions/`: `send-email`, `invite-family`, `approve
 ## Lint notes
 
 The following shadcn/ui files emit `react-refresh` and impure-function ESLint errors by design — do not modify them:
-`ui/badge.tsx`, `ui/button.tsx`, `ui/form.tsx`, `ui/navigation-menu.tsx`, `ui/sidebar.tsx`, `ui/toggle.tsx`
-
-Files in `src/experimental/` have known lint warnings that are acceptable for prototype code.
+`ui/badge.tsx`, `ui/button.tsx`, `ui/sidebar.tsx`
