@@ -231,8 +231,8 @@ The comparison counts calendar days in **America/Los_Angeles**, the venue's loca
 
 Three guards keep it from overriding a status it shouldn't touch:
 
-- **Finished leads never move.** A lead in `attended`, `denied`, or `closed` is returned unchanged, no matter what its bookings look like. Staff use **Reopen** first to take a lead out of one of these states before it can book again.
-- **A missed visit reopens only when a new visit is booked.** A `no_show` lead stays `no_show` until it has at least one active booking still in the future.
+- **Finished leads never move.** A lead in `attended`, `denied`, or `closed` is returned unchanged, no matter what its bookings look like. `book_program_appointment` enforces the same rule one level down: it raises `lead_closed` for any of these three statuses, so an attended lead's booking link can no longer book a new visit either. Staff use **Reopen** first to take a lead out of one of these states before it can book again.
+- **A missed visit reopens only when a new visit is booked.** A `no_show` lead stays `no_show` until it has at least one active (`scheduled` or `confirmed`) booking that is still upcoming: a visit later today, by arrival time (`appointment_time` later than now), or a visit on any later date.
 - **A lead nobody has invited yet never becomes invited by itself.** A `new` lead whose bookings would otherwise compute to `approved` stays `new` instead. For example, a `new` lead with two programs where staff book only one stays `new` instead of jumping to "approved" with no invite ever sent.
 
 ---
@@ -469,10 +469,12 @@ If the call to Resend fails, `send-email` marks the notification row `status = '
 
 | Failure | Attention item | Retry calls |
 |---|---|---|
-| A `reminder` notification failed | "Confirmation email failed" | `send-appointment-reminder` |
+| A `reminder` notification failed, on an `appointment_scheduled` or `appointment_confirmed` lead | "Confirmation email failed" | `send-appointment-reminder` |
 | A `booking_confirmation` notification failed, on an `appointment_scheduled` or `appointment_confirmed` lead | "Booking receipt email failed" | `resend-booking-link` with `intent: 'receipt'` |
 
 Retrying a receipt re-queues the same `booking_confirmation` type through `queue_family_notification`, which renders whatever visits are still active for the lead at send time, not necessarily the same visit that failed the first time.
+
+Both `booking_confirmation` and `reminder` sends need at least one upcoming visit to render; if none is left by the time the email is due (for example, the visit was cancelled after the notification was queued), `send-email` records the row as `failed` with the message "No upcoming visit was left when this email was due." instead of leaving it `queued` forever, which would otherwise block every later receipt or reminder for that lead through `queue_family_notification`'s already-queued check. Once the lead has moved off `appointment_scheduled`/`appointment_confirmed`, that failure no longer raises an attention item, matching the gating above.
 
 ---
 
@@ -490,15 +492,15 @@ Slots are managed via RPCs:
 
 **Soft delete** means the record stays in the database; it's just marked inactive. This preserves historical data — existing appointments that referenced the slot aren't broken.
 
-### Overrides (blocked dates)
+### Blocked dates
 
-An override blocks a specific slot on a specific date. Example: block the Wednesday slot on Christmas Day.
+A blocked date range closes every slot for its span, not one slot at a time. `blocked_dates` holds `start_date`, `end_date`, and an optional `reason`; a single-day block sets `start_date = end_date`. Example: block Christmas week across all slots at once.
 
-Key SQL constraint: `UNIQUE(slot_id, override_date)` — you can only block a given slot on a given date once. Trying to add a duplicate override does an `ON CONFLICT ... DO UPDATE` (upserts the reason instead).
+Admins manage blocks from `src/components/admin/availability/BlockedDates.tsx` via `add_blocked_dates(p_start_date, p_end_date, p_reason)` and `remove_blocked_dates(p_block_id)`. `slot_date_block_reason` returns `blocked` when the date under test falls in any row's `start_date`–`end_date` span, regardless of which slot is being checked.
 
 ### The single rule: `slot_date_block_reason`
 
-`slot_date_block_reason(slot_id, date, allow_today, horizon_days, lead_id)` is the one rule in the system for whether a slot is open on a given date. It returns `NULL` when the slot is open, or a reason (`slot_inactive`, `past`, `outside_window`, `wrong_day`, `blocked`, `taken`) when it isn't, checking in order: the slot is active; the date isn't in the past (or is today only when `allow_today` is true and the slot's start time hasn't passed); the date is within `horizon_days`; the day of week and week-of-month match the slot's schedule; no blocked-date range covers it; and no other lead already holds that slot/date (`p_lead_id` excludes the asking lead's own booking, so re-picking the same date doesn't look "taken"). `p_date`, `p_allow_today`, and `p_horizon_days` are all trusted values the caller sets, never taken from the request body.
+`slot_date_block_reason(slot_id, date, allow_today, horizon_days, lead_id)` is the one rule in the system for whether a slot is open on a given date. It returns `NULL` when the slot is open, or a reason (`slot_inactive`, `past`, `outside_window`, `wrong_day`, `blocked`, `taken`) when it isn't, checking in order: the slot is active; the date isn't in the past (or is today only when `allow_today` is true and the slot's start time hasn't passed); the date is within `horizon_days`; the day of week and week-of-month match the slot's schedule; no blocked-date range covers it; and no other lead already holds that slot/date (`p_lead_id` excludes the asking lead's own booking, so re-picking the same date doesn't look "taken"). `p_date` is exactly what the caller sends and is exactly what this function validates; only `p_allow_today`, `p_horizon_days`, and `p_actor` are set by server code, never taken from the request body. `p_lead_id` is never supplied by the edge function at all: `book_program_appointment` reads it off the booking row in SQL and passes it through.
 
 Two other functions are built directly on it, so the dates a family is shown and the booking that's actually accepted can never drift apart:
 
