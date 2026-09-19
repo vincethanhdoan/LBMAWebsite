@@ -8,7 +8,10 @@
   --rdp-today-color: #c8102e;
 }
 
-.booking-calendar > *:not(.rdp-root) {
+/* Everything below the calendar (the arrival-time buttons) spans the width.
+   The visually hidden live region is excluded: stretching it would give an
+   absolutely positioned box the width of the page and push the page sideways. */
+.booking-calendar > *:not(.rdp-root):not(.sr-only) {
   width: 100%;
 }
 
@@ -66,6 +69,28 @@
   width: var(--rdp-day-width);
   height: var(--rdp-day-height);
   padding: 0;
+}
+
+/* Phones: the month grid takes the width it is given instead of demanding its
+   own. `table-layout: fixed` then splits that width evenly across the seven
+   columns, so the day cells stay their usual size wherever there is room and
+   shrink rather than push the page sideways where there is not. The layout
+   from 640px up is untouched. */
+@media (max-width: 639.98px) {
+  .booking-calendar .rdp-month_grid {
+    width: 100%;
+    max-width: calc(7 * var(--rdp-day-width));
+  }
+
+  .booking-calendar .rdp-weekday,
+  .booking-calendar .rdp-day {
+    width: auto;
+  }
+
+  .booking-calendar .rdp-day_button {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 /* Nav buttons — match shadcn ghost button style */

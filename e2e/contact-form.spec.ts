@@ -28,6 +28,23 @@ test('empty submit shows a field error and stays on the form', async ({
   await expect(page.getByRole('status')).toHaveCount(0);
 });
 
+// Most parents open this form on a phone. The calendar is the widest thing on
+// the page, so it is what would push the page sideways; this books nothing.
+test('the calendar fits a 360px phone screen without scrolling sideways', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto('/');
+  await page.locator('#child-age-0').fill('8');
+  await expect(page.getByRole('grid')).toBeVisible({ timeout: 15_000 });
+
+  const width = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    inner: window.innerWidth,
+  }));
+  expect(width.scroll).toBeLessThanOrEqual(width.inner);
+});
+
 // A valid submission now books a visit, not just files an inquiry, so this
 // test also has to pick a day and a time on the calendar and then undo the
 // booking afterward. Otherwise every CI run against staging would

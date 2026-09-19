@@ -325,7 +325,7 @@ export function ContactPage() {
           <div className="grid lg:grid-cols-[1fr_340px] gap-10 xl:gap-14 items-start">
             {/* ── FORM ── */}
             <div
-              className="rounded-2xl p-7 lg:p-10"
+              className="rounded-2xl p-4 sm:p-7 lg:p-10"
               style={{ backgroundColor: 'white' }}
             >
               {receipt ? (

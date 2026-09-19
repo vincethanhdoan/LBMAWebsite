@@ -140,14 +140,16 @@ function ProgramGroup({
         });
   const errorId = `visit-error-${program}`;
 
+  // The group is plain and edge to edge on phones: the calendar inside needs
+  // every pixel of the card it sits in. The tinted, bordered box comes back
+  // from `sm` up, where there is room for it.
   return (
     <fieldset
       id={`visit-group-${program}`}
       tabIndex={-1}
       disabled={disabled}
       aria-describedby={error ? errorId : undefined}
-      className="flex flex-col gap-3 rounded-xl p-5"
-      style={{ backgroundColor: V3.surface, border: `1px solid ${V3.border}` }}
+      className="flex flex-col gap-3 rounded-xl py-2 sm:border sm:border-[var(--v3-border)] sm:bg-[var(--v3-surface)] sm:p-5"
     >
       <legend className="text-sm font-semibold px-1" style={{ color: V3.text }}>
         {legend}
