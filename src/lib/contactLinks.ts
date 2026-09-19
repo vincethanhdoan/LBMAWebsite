@@ -13,7 +13,7 @@ export function telHref(phone: string): string | null {
   return e164 ? `tel:${e164}` : null;
 }
 
-function joinNames(names: string[], language: 'en' | 'es'): string {
+export function joinNames(names: string[], language: 'en' | 'es'): string {
   if (names.length === 0)
     return language === 'es' ? 'tu familia' : 'your family';
   if (names.length === 1) return names[0];

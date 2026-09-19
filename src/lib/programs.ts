@@ -5,7 +5,7 @@ export const PROGRAM_LABELS: Record<string, string> = {
   youth: 'Youth Program',
 };
 
-type Program = 'little_dragons' | 'youth';
+export type Program = 'little_dragons' | 'youth';
 
 // Which program a child of this age belongs to, or null if they're outside
 // the ages we enroll (4-17).
