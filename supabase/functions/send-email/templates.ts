@@ -127,7 +127,7 @@ export function enrollmentNotificationHtml(
       ? visits!
           .map(
             (v) =>
-              `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;vertical-align:top;">Visit</td><td style="padding:4px 0;color:#555;">${escHtml(v.programLabel)}${v.childNames ? ` · ${escHtml(v.childNames)}` : ''} — ${escHtml(v.date)}, ${escHtml(v.time)}</td></tr>`,
+              `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;vertical-align:top;">Visit</td><td style="padding:4px 0;color:#555;">${escHtml(v.programLabel)}${v.childNames ? ` · ${escHtml(v.childNames)}` : ''} · ${escHtml(v.date)}, ${escHtml(v.time)}</td></tr>`,
           )
           .join('')
       : '',
@@ -442,7 +442,7 @@ export function reminderEmailHtml(
     .map((a) => {
       const inner = `<div style="font-size:13px;color:#555;margin-top:4px;">${escHtml(a.time)}</div>
       <p style="margin:10px 0 0;font-size:12px;color:#595959;">
-        Need to reschedule? <a href="${a.rebookingUrl}" style="color:#A01F23;text-decoration:none;">Click here</a>
+        Need to reschedule? <a href="${escHtml(a.rebookingUrl)}" style="color:#A01F23;text-decoration:none;">Click here</a>
       </p>`;
       return visitCard(a, inner);
     })
