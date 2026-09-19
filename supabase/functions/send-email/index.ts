@@ -95,6 +95,7 @@ async function getLeadAppointments(
     .from('enrollment_lead_program_bookings')
     .select('program_type, booking_token, appointment_date, appointment_time')
     .eq('lead_id', leadId)
+    .in('status', ['scheduled', 'confirmed'])
     .not('appointment_date', 'is', null)
     .gte('appointment_date', pacificToday)
     .order('appointment_date', { ascending: true });

@@ -41,6 +41,18 @@ const RESENDABLE_STATUSES = [
   'appointment_confirmed',
 ];
 
+const BOOKED_STATUSES = ['appointment_scheduled', 'appointment_confirmed'];
+
+// What each intent sends, and which leads it may be sent to.
+const INTENTS = {
+  invite: { type: 'approval', statuses: RESENDABLE_STATUSES },
+  reschedule: {
+    type: 'reschedule',
+    statuses: [...RESENDABLE_STATUSES, 'no_show'],
+  },
+  receipt: { type: 'booking_confirmation', statuses: BOOKED_STATUSES },
+} as const;
+
 Deno.serve(async (req) => {
   const cors = corsHeaders(req.headers.get('Origin'));
 
@@ -78,12 +90,8 @@ Deno.serve(async (req) => {
   const { leadId, intent } = await req.json();
   if (!leadId)
     return new Response('Missing leadId', { status: 400, headers: cors });
-  // 'reschedule' sends the sorry-we-missed-you email and is also allowed for
-  // no-show leads; the default resend re-sends the original booking invite.
-  const reschedule = intent === 'reschedule';
-  const allowedStatuses = reschedule
-    ? [...RESENDABLE_STATUSES, 'no_show']
-    : RESENDABLE_STATUSES;
+  const { type, statuses } =
+    INTENTS[intent as keyof typeof INTENTS] ?? INTENTS.invite;
 
   const { data: lead } = await supabase
     .from('enrollment_leads')
@@ -93,7 +101,7 @@ Deno.serve(async (req) => {
 
   if (!lead)
     return new Response('Lead not found', { status: 404, headers: cors });
-  if (!allowedStatuses.includes(lead.status)) {
+  if (!statuses.includes(lead.status)) {
     return new Response('Lead is not in a resendable state', {
       status: 422,
       headers: cors,
@@ -101,31 +109,32 @@ Deno.serve(async (req) => {
   }
   if (!lead.parent_email) return noEmailResponse(cors);
 
-  // Check for program bookings (new flow)
-  const { data: programBookings } = await supabase
-    .from('enrollment_lead_program_bookings')
-    .select('booking_id, booking_token')
-    .eq('lead_id', leadId)
-    .not('booking_token', 'is', null);
+  // A receipt needs no booking token: it just lists whatever visits are
+  // still live for the lead, so the token check only applies to the
+  // invite and reschedule emails.
+  if (type !== 'booking_confirmation') {
+    // Check for program bookings (new flow)
+    const { data: programBookings } = await supabase
+      .from('enrollment_lead_program_bookings')
+      .select('booking_id, booking_token')
+      .eq('lead_id', leadId)
+      .not('booking_token', 'is', null);
 
-  const hasNewFlow = programBookings && programBookings.length > 0;
+    const hasNewFlow = programBookings && programBookings.length > 0;
 
-  // Legacy: require enrollment_leads.booking_token
-  if (!hasNewFlow && !lead.booking_token) {
-    return new Response('Lead has no booking token', {
-      status: 422,
-      headers: cors,
-    });
+    // Legacy: require enrollment_leads.booking_token
+    if (!hasNewFlow && !lead.booking_token) {
+      return new Response('Lead has no booking token', {
+        status: 422,
+        headers: cors,
+      });
+    }
   }
 
   // The send-email handler renders per-program booking links for new-flow
   // leads and falls back to the legacy lead-level token automatically.
   try {
-    await queueFamilyNotification(
-      supabase,
-      leadId,
-      reschedule ? 'reschedule' : 'approval',
-    );
+    await queueFamilyNotification(supabase, leadId, type);
   } catch {
     return new Response('Notification failed', { status: 500, headers: cors });
   }
