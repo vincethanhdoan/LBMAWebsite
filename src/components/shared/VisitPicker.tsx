@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
+import type { Locale } from 'react-day-picker';
+import { enUS, es } from 'react-day-picker/locale';
 import 'react-day-picker/style.css';
 import './booking-calendar.css';
 import { Loader2 } from 'lucide-react';
@@ -7,6 +9,11 @@ import { getUpcomingBookableDates } from '../../lib/supabase/queries';
 import { visitPickerCopy } from './visitPickerCopy';
 import type { VisitPickerLanguage } from './visitPickerCopy';
 import type { AppointmentSlot } from '../../lib/types';
+
+// Kept here (not in visitPickerCopy.ts) so the calendar's locale data only
+// loads with this already-lazy-loaded component, not wherever the plain
+// strings in visitPickerCopy are needed.
+const dateLocales: Record<VisitPickerLanguage, Locale> = { en: enUS, es };
 
 export type VisitChoice = {
   slotId: string;
@@ -253,7 +260,7 @@ export function VisitPicker({
         modifiers={{ available: availableDates }}
         modifiersClassNames={{ available: 'rdp-day_available' }}
         showOutsideDays={false}
-        locale={copy.dateLocale}
+        locale={dateLocales[language]}
         defaultMonth={defaultMonth}
       />
 

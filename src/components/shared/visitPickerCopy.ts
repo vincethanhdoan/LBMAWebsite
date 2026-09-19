@@ -1,6 +1,3 @@
-import { enUS, es } from 'react-day-picker/locale';
-import type { Locale } from 'react-day-picker';
-
 export type VisitPickerLanguage = 'en' | 'es';
 
 interface VisitPickerCopy {
@@ -9,7 +6,6 @@ interface VisitPickerCopy {
   loading: string;
   selectedDay: (date: string) => string;
   arriveAt: (time: string) => string;
-  dateLocale: Locale;
 }
 
 export const visitPickerCopy: Record<VisitPickerLanguage, VisitPickerCopy> = {
@@ -20,7 +16,6 @@ export const visitPickerCopy: Record<VisitPickerLanguage, VisitPickerCopy> = {
     loading: 'Loading available days',
     selectedDay: (date) => `Selected ${date}`,
     arriveAt: (time) => `Arrive at ${time}`,
-    dateLocale: enUS,
   },
   es: {
     loadError:
@@ -29,6 +24,5 @@ export const visitPickerCopy: Record<VisitPickerLanguage, VisitPickerCopy> = {
     loading: 'Cargando los días disponibles',
     selectedDay: (date) => `Seleccionaste ${date}`,
     arriveAt: (time) => `Llegar a las ${time}`,
-    dateLocale: es,
   },
 };
