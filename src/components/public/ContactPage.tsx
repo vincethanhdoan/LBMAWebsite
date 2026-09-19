@@ -328,19 +328,6 @@ export function ContactPage() {
               className="rounded-2xl p-7 lg:p-10"
               style={{ backgroundColor: 'white' }}
             >
-              <h2
-                className="v3-h font-black mb-1"
-                style={{
-                  fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
-                  color: V3.text,
-                }}
-              >
-                {ct.formHeading}
-              </h2>
-              <p className="text-base mb-8" style={{ color: V3.muted }}>
-                {ct.formSub}
-              </p>
-
               {receipt ? (
                 <TrialBookedPanel
                   ref={successRef}
@@ -354,6 +341,21 @@ export function ContactPage() {
                   noValidate
                   className="flex flex-col gap-6"
                 >
+                  <div>
+                    <h2
+                      className="v3-h font-black mb-1"
+                      style={{
+                        fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
+                        color: V3.text,
+                      }}
+                    >
+                      {ct.formHeading}
+                    </h2>
+                    <p className="text-base" style={{ color: V3.muted }}>
+                      {ct.formSub}
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
                       <Label

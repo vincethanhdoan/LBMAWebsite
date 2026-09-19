@@ -62,14 +62,9 @@ export function TrialBookedPanel({
     .flatMap((program) => childrenByProgram[program] ?? []);
 
   return (
-    <div
-      ref={ref}
-      role="region"
-      aria-labelledby={HEADING_ID}
-      tabIndex={-1}
-      className="rounded-2xl p-7 lg:p-10"
-      style={{ backgroundColor: 'white' }}
-    >
+    // No card chrome of its own: this renders inside the form's white card,
+    // which already provides the background, rounding and padding.
+    <div ref={ref} role="region" aria-labelledby={HEADING_ID} tabIndex={-1}>
       <div
         className="text-center pb-8"
         style={{ borderBottom: `1px solid ${V3.border}` }}
