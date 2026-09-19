@@ -192,7 +192,6 @@ describe('VisitPicker', () => {
   });
 
   it('renders the Spanish month caption and arrival label with the real es-US output', async () => {
-    console.log('es-US time format for 17:20:00 ->', spanishTimeLabel);
     vi.mocked(getUpcomingBookableDates).mockResolvedValue(['2026-09-21']);
     render(
       <VisitPicker
