@@ -108,7 +108,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         code: 'not_resendable',
-        error: "This lead's status changed, so that email can't be sent right now.",
+        error:
+          "This lead's status changed, so that email can't be sent right now.",
       }),
       { status: 422, headers: { ...cors, 'Content-Type': 'application/json' } },
     );

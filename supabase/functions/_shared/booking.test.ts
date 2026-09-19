@@ -19,18 +19,24 @@ async function checkResponse(
   }
 }
 
-Deno.test('bookingErrorResponse: postgres unique violation is slot_taken', async () => {
-  const res = bookingErrorResponse({ code: '23P01' }, CORS);
-  await checkResponse(res, 409, { code: 'slot_taken' });
-});
+Deno.test(
+  'bookingErrorResponse: postgres unique violation is slot_taken',
+  async () => {
+    const res = bookingErrorResponse({ code: '23P01' }, CORS);
+    await checkResponse(res, 409, { code: 'slot_taken' });
+  },
+);
 
-Deno.test('bookingErrorResponse: message slot_taken maps the same way', async () => {
-  const res = bookingErrorResponse(
-    { message: 'duplicate key value: slot_taken' },
-    CORS,
-  );
-  await checkResponse(res, 409, { code: 'slot_taken' });
-});
+Deno.test(
+  'bookingErrorResponse: message slot_taken maps the same way',
+  async () => {
+    const res = bookingErrorResponse(
+      { message: 'duplicate key value: slot_taken' },
+      CORS,
+    );
+    await checkResponse(res, 409, { code: 'slot_taken' });
+  },
+);
 
 Deno.test('bookingErrorResponse: message date_unavailable', async () => {
   const res = bookingErrorResponse({ message: 'date_unavailable' }, CORS);
@@ -72,22 +78,24 @@ Deno.test('bookingErrorResponse: message invalid_booking_request', async () => {
   });
 });
 
-Deno.test('bookingErrorResponse: unknown error is a 500 with cors headers', async () => {
-  const originalError = console.error;
-  const calls: unknown[][] = [];
-  console.error = (...args: unknown[]) => {
-    calls.push(args);
-  };
-  try {
-    const res = bookingErrorResponse(new Error('something unexpected'), CORS);
-    assertEquals(res.status, 500);
-    assertEquals(await res.text(), 'Booking failed');
-    for (const [key, value] of Object.entries(CORS)) {
-      assertEquals(res.headers.get(key), value);
+Deno.test(
+  'bookingErrorResponse: unknown error is a 500 with cors headers',
+  async () => {
+    const originalError = console.error;
+    const calls: unknown[][] = [];
+    console.error = (...args: unknown[]) => {
+      calls.push(args);
+    };
+    try {
+      const res = bookingErrorResponse(new Error('something unexpected'), CORS);
+      assertEquals(res.status, 500);
+      assertEquals(await res.text(), 'Booking failed');
+      for (const [key, value] of Object.entries(CORS)) {
+        assertEquals(res.headers.get(key), value);
+      }
+      assertEquals(calls.length, 1);
+    } finally {
+      console.error = originalError;
     }
-    assertEquals(calls.length, 1);
-  } finally {
-    console.error = originalError;
-  }
-});
-
+  },
+);
