@@ -221,9 +221,9 @@ A lead's `status` column is a state machine. Each status represents where the le
 
 ### The auto-confirm rule
 
-When a booking is made (either by the prospect or admin), the system checks: is the appointment date fewer than 2 calendar days away? If yes, the status jumps directly to `appointment_confirmed` instead of `appointment_scheduled`. This avoids confusion where someone books for tomorrow and sees "scheduled" rather than "confirmed."
+When a booking is made (either by the prospect or admin), the system checks: is the appointment two calendar days away or less? If yes, the status is set directly to `appointment_confirmed` instead of `appointment_scheduled`. This avoids confusion where someone books for tomorrow and sees "scheduled" rather than "confirmed."
 
-The comparison uses **UTC midnight** to avoid timezone edge cases in the edge function, which runs in UTC.
+The comparison counts calendar days in **America/Los_Angeles**, the venue's local time zone. It is decided in SQL by `resolve_program_booking`, not in the edge function, so the rule applies the same way regardless of which booking path calls it.
 
 ### The `recalculate_lead_status` rule
 
