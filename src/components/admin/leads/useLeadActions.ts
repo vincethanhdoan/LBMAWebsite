@@ -81,7 +81,22 @@ export function useLeadActions({
     }
   }
 
-  async function resendBookingLink(lead: EnrollmentLead) {
+  // Shared shape for every `resend-booking-link` call: busy guard, auth
+  // header fetch, the invoke itself (an intent picks the email variant; the
+  // default invite intent sends no intent field), error surfacing, query
+  // invalidation and a success toast.
+  async function resendFromLead(
+    lead: EnrollmentLead,
+    {
+      intent,
+      errorFallback,
+      successMessage,
+    }: {
+      intent?: 'reschedule' | 'receipt';
+      errorFallback: string;
+      successMessage: string;
+    },
+  ) {
     if (busyLeadIds.has(lead.lead_id)) return;
     markBusy(lead.lead_id);
     try {
@@ -90,82 +105,46 @@ export function useLeadActions({
         onError('Session expired. Please sign in again.');
         return;
       }
+      const body: { leadId: string; intent?: 'reschedule' | 'receipt' } = {
+        leadId: lead.lead_id,
+      };
+      if (intent) body.intent = intent;
       const { error } = await supabase.functions.invoke('resend-booking-link', {
-        body: { leadId: lead.lead_id },
+        body,
         headers: fnHeaders,
       });
       if (error) {
-        onError(
-          await edgeErrorMessage(
-            error,
-            "Couldn't resend the booking link. Please try again.",
-          ),
-        );
+        onError(await edgeErrorMessage(error, errorFallback));
         return;
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
-      toast.success('Booking link resent');
+      toast.success(successMessage);
     } finally {
       clearBusy(lead.lead_id);
     }
+  }
+
+  async function resendBookingLink(lead: EnrollmentLead) {
+    return resendFromLead(lead, {
+      errorFallback: "Couldn't resend the booking link. Please try again.",
+      successMessage: 'Booking link resent',
+    });
   }
 
   async function sendRescheduleLink(lead: EnrollmentLead) {
-    if (busyLeadIds.has(lead.lead_id)) return;
-    markBusy(lead.lead_id);
-    try {
-      const fnHeaders = await edgeFunctionUserAuthHeaders();
-      if (!fnHeaders) {
-        onError('Session expired. Please sign in again.');
-        return;
-      }
-      const { error } = await supabase.functions.invoke('resend-booking-link', {
-        body: { leadId: lead.lead_id, intent: 'reschedule' },
-        headers: fnHeaders,
-      });
-      if (error) {
-        onError(
-          await edgeErrorMessage(
-            error,
-            "Couldn't send the reschedule link. Please try again.",
-          ),
-        );
-        return;
-      }
-      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
-      toast.success('Reschedule link sent');
-    } finally {
-      clearBusy(lead.lead_id);
-    }
+    return resendFromLead(lead, {
+      intent: 'reschedule',
+      errorFallback: "Couldn't send the reschedule link. Please try again.",
+      successMessage: 'Reschedule link sent',
+    });
   }
 
   async function resendReceipt(lead: EnrollmentLead) {
-    if (busyLeadIds.has(lead.lead_id)) return;
-    markBusy(lead.lead_id);
-    try {
-      const fnHeaders = await edgeFunctionUserAuthHeaders();
-      if (!fnHeaders) {
-        onError('Session expired. Please sign in again.');
-        return;
-      }
-      const { error } = await supabase.functions.invoke('resend-booking-link', {
-        body: { leadId: lead.lead_id, intent: 'receipt' },
-        headers: fnHeaders,
-      });
-      if (error) {
-        onError(
-          await edgeErrorMessage(
-            error,
-            "Couldn't resend the booking receipt. Please try again.",
-          ),
-        );
-        return;
-      }
-      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
-      toast.success('Booking receipt sent again');
-    } finally {
-      clearBusy(lead.lead_id);
-    }
+    return resendFromLead(lead, {
+      intent: 'receipt',
+      errorFallback: "Couldn't resend the booking receipt. Please try again.",
+      successMessage: 'Booking receipt sent again',
+    });
   }
 
   async function deny(leadId: string, message: string): Promise<boolean> {
