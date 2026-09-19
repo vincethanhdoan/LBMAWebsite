@@ -139,6 +139,35 @@ export function useLeadActions({
     }
   }
 
+  async function resendReceipt(lead: EnrollmentLead) {
+    if (busyLeadIds.has(lead.lead_id)) return;
+    markBusy(lead.lead_id);
+    try {
+      const fnHeaders = await edgeFunctionUserAuthHeaders();
+      if (!fnHeaders) {
+        onError('Session expired. Please sign in again.');
+        return;
+      }
+      const { error } = await supabase.functions.invoke('resend-booking-link', {
+        body: { leadId: lead.lead_id, intent: 'receipt' },
+        headers: fnHeaders,
+      });
+      if (error) {
+        onError(
+          await edgeErrorMessage(
+            error,
+            "Couldn't resend the booking receipt. Please try again.",
+          ),
+        );
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollmentLeads() });
+      toast.success('Booking receipt sent again');
+    } finally {
+      clearBusy(lead.lead_id);
+    }
+  }
+
   async function deny(leadId: string, message: string): Promise<boolean> {
     if (busyLeadIds.has(leadId)) return false;
     markBusy(leadId);
@@ -368,6 +397,7 @@ export function useLeadActions({
     approve,
     resendBookingLink,
     sendRescheduleLink,
+    resendReceipt,
     deny,
     bookAppointments,
     markConfirmed,

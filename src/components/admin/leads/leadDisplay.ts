@@ -22,6 +22,20 @@ export function effectiveConfirmationNotification(
   return lead.reminderNotification;
 }
 
+// The newest notification of a given type, by created_at. notificationHistory
+// is not guaranteed to be sorted, so this does not assume array order.
+export function latestNotification(
+  lead: EnrollmentLead,
+  type: EnrollmentLeadNotification['type'],
+): EnrollmentLeadNotification | null {
+  let latest: EnrollmentLeadNotification | null = null;
+  for (const n of lead.notificationHistory) {
+    if (n.type !== type) continue;
+    if (!latest || n.created_at > latest.created_at) latest = n;
+  }
+  return latest;
+}
+
 // ─── Search ────────────────────────────────────────────────────────────────
 
 export function leadMatchesSearch(
