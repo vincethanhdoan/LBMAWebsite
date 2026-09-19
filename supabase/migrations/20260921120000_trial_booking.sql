@@ -59,6 +59,7 @@ CREATE OR REPLACE FUNCTION public.program_for_age(p_age integer)
 RETURNS text
 LANGUAGE sql
 IMMUTABLE
+SET search_path TO 'public'
 AS $function$
   SELECT CASE
     WHEN p_age BETWEEN 4 AND 7 THEN 'little_dragons'
@@ -100,9 +101,15 @@ DECLARE
   v_phone             text := NULLIF(trim(COALESCE(p_phone, '')), '');
   v_digits            text;
   v_message           text := NULLIF(trim(COALESCE(p_message, '')), '');
-  v_source_raw        text := NULLIF(trim(COALESCE(p_source_page, '')), '');
-  v_source            text := CASE WHEN v_source_raw IS NULL OR length(v_source_raw) > 50
-                                    THEN 'contact' ELSE v_source_raw END;
+  -- 'admin' marks a staff-entered lead and is excluded from the public
+  -- hourly cap below, so the public path may not claim it: only a caller
+  -- value shaped like a real source-page slug, and not 'admin', is kept.
+  v_source_raw        text := trim(COALESCE(p_source_page, ''));
+  v_source            text := CASE
+                                 WHEN v_source_raw ~ '^[a-z0-9_-]{1,50}$' AND v_source_raw <> 'admin'
+                                 THEN v_source_raw
+                                 ELSE 'contact'
+                               END;
   v_language          text := CASE WHEN p_language = 'es' THEN 'es' ELSE 'en' END;
   v_today             date := (now() AT TIME ZONE 'America/Los_Angeles')::date;
   v_child             jsonb;
@@ -243,11 +250,22 @@ BEGIN
     RAISE EXCEPTION 'Too many requests right now. Please try again later.' USING ERRCODE = 'P0429';
   END IF;
 
-  INSERT INTO enrollment_leads
-    (parent_name, parent_email, phone, message, source_page, status,
-     preferred_language, notification_status, notified_at, request_id)
-  VALUES (v_name, v_email, v_phone, v_message, v_source, 'new', v_language, 'queued', now(), p_request_id)
-  RETURNING lead_id INTO v_lead_id;
+  -- The only unique constraint this insert can violate is
+  -- idx_enrollment_leads_request_id (lead_id is a fresh default uuid, and no
+  -- other column here is unique-constrained). Trapping unique_violation can
+  -- therefore only mean a request id collision: reused against a different
+  -- email, or reused after the original lead was soft-deleted. Report it the
+  -- same way any other malformed booking request is reported, instead of
+  -- leaking the constraint name to the caller.
+  BEGIN
+    INSERT INTO enrollment_leads
+      (parent_name, parent_email, phone, message, source_page, status,
+       preferred_language, notification_status, notified_at, request_id)
+    VALUES (v_name, v_email, v_phone, v_message, v_source, 'new', v_language, 'queued', now(), p_request_id)
+    RETURNING lead_id INTO v_lead_id;
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'invalid_booking_request';
+  END;
 
   FOR v_child IN SELECT * FROM jsonb_array_elements(p_children) LOOP
     v_age := (v_child->>'age')::integer;
