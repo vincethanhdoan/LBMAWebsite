@@ -154,7 +154,8 @@ Deno.test(
   () => {
     const html = bookingConfirmationHtml('Eduardo Guerra', single, 'en');
     assertStringIncludes(html, "You're booked");
-    assertStringIncludes(html, 'Eduardo Guerra');
+    assertStringIncludes(html, 'Hi Eduardo,');
+    assertEquals(html.includes('Guerra'), false);
     assertStringIncludes(html, 'Monday, April 28, 2026');
     assertStringIncludes(html, 'Please arrive at 4:00 PM.');
     assertStringIncludes(html, 'Little Dragons');
@@ -222,6 +223,71 @@ Deno.test('bookingConfirmationHtml: escapes a name containing <', () => {
 });
 
 Deno.test(
+  'bookingConfirmationHtml: greets by first name only, en and es',
+  () => {
+    const htmlEn = bookingConfirmationHtml('Maria Lopez', single, 'en');
+    assertStringIncludes(htmlEn, 'Hi Maria,');
+    assertEquals(htmlEn.includes('Lopez'), false);
+
+    const htmlEs = bookingConfirmationHtml('Maria Lopez', single, 'es');
+    assertStringIncludes(htmlEs, 'Hola Maria,');
+    assertEquals(htmlEs.includes('Lopez'), false);
+  },
+);
+
+Deno.test('bookingConfirmationHtml: a single-word name is used as-is', () => {
+  const html = bookingConfirmationHtml('Cher', single, 'en');
+  assertStringIncludes(html, 'Hi Cher,');
+});
+
+Deno.test(
+  'bookingConfirmationHtml: query-string hrefs are HTML-escaped, not raw',
+  () => {
+    const appt: AppointmentInfo[] = [
+      {
+        ...single[0],
+        googleCalendarUrl:
+          'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Trial+visit&ctz=America/Los_Angeles',
+      },
+    ];
+    const html = bookingConfirmationHtml('Maria Lopez', appt, 'en');
+    assertStringIncludes(html, '&amp;ctz=');
+    assertEquals(html.includes('&ctz='), false);
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: no booking token omits the calendar-file and change links, keeps Google Calendar',
+  () => {
+    const appt: AppointmentInfo[] = [{ ...single[0], bookingToken: null }];
+    const html = bookingConfirmationHtml('Eduardo Guerra', appt, 'en');
+    assertStringIncludes(html, 'Add to Google Calendar');
+    assertEquals(html.includes('Add to Apple or Outlook calendar'), false);
+    assertEquals(html.includes('Change or cancel this visit'), false);
+    assertEquals(
+      html.includes(
+        'https://project.supabase.co/functions/v1/visit-calendar?token=abc123',
+      ),
+      false,
+    );
+    assertEquals(html.includes('https://lbmaa.com/book/abc123'), false);
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml es: footer uses Spanish "Questions?" and "or"',
+  () => {
+    const html = bookingConfirmationHtml('Maria Lopez', single, 'es');
+    assertStringIncludes(html, '¿Preguntas?');
+    assertEquals(html.includes('Questions?'), false);
+    assertStringIncludes(
+      html,
+      'o <a href="tel:+14086200252" style="color:#A01F23;text-decoration:underline;">(408) 620-0252</a>',
+    );
+  },
+);
+
+Deno.test(
   'bookingConfirmationText: one fact per line, urls on their own lines',
   () => {
     const text = bookingConfirmationText('Eduardo Guerra', multi, 'en');
@@ -247,6 +313,23 @@ Deno.test('bookingConfirmationText: es uses Spanish copy', () => {
     'Cambiar o cancelar esta visita: https://lbmaa.com/book/abc123',
   );
 });
+
+Deno.test('bookingConfirmationText: greets by first name only', () => {
+  const text = bookingConfirmationText('Maria Lopez', single, 'en');
+  assertStringIncludes(text, 'Hi Maria,');
+  assertEquals(text.includes('Lopez'), false);
+});
+
+Deno.test(
+  'bookingConfirmationText: no booking token omits the calendar-file and change lines, keeps Google Calendar',
+  () => {
+    const appt: AppointmentInfo[] = [{ ...single[0], bookingToken: null }];
+    const text = bookingConfirmationText('Eduardo Guerra', appt, 'en');
+    assertStringIncludes(text, 'Add to Google Calendar');
+    assertEquals(text.includes('Add to Apple or Outlook calendar'), false);
+    assertEquals(text.includes('Change or cancel this visit'), false);
+  },
+);
 
 Deno.test(
   'reminderEmailHtml: contains all appointments, confirm button, reschedule links',
@@ -493,6 +576,22 @@ Deno.test(
       LOGO,
     );
     assertEquals(html.includes('>Language</td>'), false);
+  },
+);
+
+Deno.test(
+  'enrollmentNotificationHtml: Spanish lead with no visits still shows the Language row and keeps the plain inquiry heading',
+  () => {
+    const lead = { ...DUMMY_LEAD, preferred_language: 'es' };
+    const html = enrollmentNotificationHtml(
+      lead,
+      'https://example.com/admin',
+      LOGO,
+    );
+    assertStringIncludes(html, 'New enrollment inquiry');
+    assertEquals(html.includes('New trial booking'), false);
+    assertStringIncludes(html, 'Language');
+    assertStringIncludes(html, 'Spanish');
   },
 );
 

@@ -14,6 +14,8 @@ import {
   fillTemplate,
   buildGoogleCalendarUrl,
   buildIcsUrl,
+  sanitizeForSubject,
+  firstName,
 } from './copy.ts';
 
 Deno.test('toLanguage: recognizes es', () => {
@@ -154,4 +156,52 @@ Deno.test('buildIcsUrl: exact string for one token', () => {
     buildIcsUrl('https://project.supabase.co', 'abc123'),
     'https://project.supabase.co/functions/v1/visit-calendar?token=abc123',
   );
+});
+
+Deno.test(
+  'sanitizeForSubject: a newline is collapsed to a single space',
+  () => {
+    assertEquals(sanitizeForSubject('Jane\nDoe'), 'Jane Doe');
+  },
+);
+
+Deno.test('sanitizeForSubject: a CRLF collapses to one space, not two', () => {
+  assertEquals(sanitizeForSubject('Jane\r\nDoe'), 'Jane Doe');
+});
+
+Deno.test('sanitizeForSubject: a tab is collapsed to a single space', () => {
+  assertEquals(sanitizeForSubject('Jane\tDoe'), 'Jane Doe');
+});
+
+Deno.test('sanitizeForSubject: leading and trailing spaces are trimmed', () => {
+  assertEquals(sanitizeForSubject('   Jane Doe   '), 'Jane Doe');
+});
+
+Deno.test(
+  'sanitizeForSubject: a 300-character name is capped at 120 chars',
+  () => {
+    const longName = 'A'.repeat(300);
+    const result = sanitizeForSubject(longName);
+    assertEquals(result.length, 120);
+    assertEquals(result, 'A'.repeat(120));
+  },
+);
+
+Deno.test(
+  'sanitizeForSubject: other C0 control characters are also collapsed',
+  () => {
+    assertEquals(sanitizeForSubject('Jane\x01\x1FDoe'), 'Jane Doe');
+  },
+);
+
+Deno.test('firstName: returns the first whitespace-separated word', () => {
+  assertEquals(firstName('Maria Lopez'), 'Maria');
+});
+
+Deno.test('firstName: a single-word name is used as-is', () => {
+  assertEquals(firstName('Cher'), 'Cher');
+});
+
+Deno.test('firstName: trims surrounding whitespace before splitting', () => {
+  assertEquals(firstName('  Maria   Lopez  '), 'Maria');
 });

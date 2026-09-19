@@ -36,7 +36,9 @@ import {
   fillTemplate,
   buildGoogleCalendarUrl,
   buildIcsUrl,
+  sanitizeForSubject,
   RECEIPT_COPY,
+  SCHOOL_ADDRESS,
 } from './copy.ts';
 import type { Language } from './copy.ts';
 
@@ -46,7 +48,6 @@ const FROM =
 const REPLY_TO = 'LosBanosMartialArts@gmail.com';
 const LOGO_URL =
   'https://qfyeguikxxwwxpxleqrr.supabase.co/storage/v1/object/public/assets/logo-96.png';
-const ADDRESS = '1209 South 6th St Suite E, Los Banos, CA';
 
 async function sendEmail(
   to: string,
@@ -167,12 +168,15 @@ async function getLeadAppointments(
             dateKey: b.appointment_date,
             time: b.appointment_time,
             title: CALENDAR_TITLE[language],
-            address: ADDRESS,
+            address: SCHOOL_ADDRESS,
             details: rebookingUrl,
           }),
+          // No token means no working calendar-file link; the template
+          // omits the link entirely in that case rather than rendering a
+          // labeled link pointing at a fallback URL.
           icsUrl: b.booking_token
             ? buildIcsUrl(supabaseUrl, b.booking_token)
-            : rebookingUrl,
+            : '',
           bookingToken: b.booking_token,
         };
       },
@@ -301,10 +305,13 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         appUrl,
         'en',
       );
+      // A parent name is free text; a stray newline or control character
+      // must not reach Resend's JSON subject field verbatim.
+      const safeParentName = sanitizeForSubject(lead.parent_name);
       if (visits.length > 0) {
-        subject = `New trial booking from ${lead.parent_name}: ${visits[0].dateShort} at ${visits[0].time}`;
+        subject = `New trial booking from ${safeParentName}: ${visits[0].dateShort} at ${visits[0].time}`;
       } else {
-        subject = `New enrollment inquiry from ${lead.parent_name}`;
+        subject = `New enrollment inquiry from ${safeParentName}`;
       }
       html = enrollmentNotificationHtml(
         enrichedLead,

@@ -10,6 +10,37 @@ export function toLanguage(value: string | null | undefined): Language {
   return value === 'es' ? 'es' : 'en';
 }
 
+export const SCHOOL_ADDRESS = '1209 South 6th St Suite E, Los Banos, CA';
+
+export const FOOTER_COPY: Record<Language, { questions: string; or: string }> =
+  {
+    en: { questions: 'Questions?', or: 'or' },
+    es: { questions: '¿Preguntas?', or: 'o' },
+  };
+
+// Every C0 control character (backslash-x00 through backslash-x1F) and DEL,
+// plus ordinary whitespace. The regex \s token already matches every
+// ECMAScript line terminator (LF, CR, and the two Unicode line/paragraph
+// separator code points), not just space and tab, so nothing else is needed.
+const SUBJECT_UNSAFE = /[\x00-\x1F\x7F\s]+/g;
+
+// Makes free-text (a parent's name, etc.) safe to interpolate into an email
+// subject line: a raw newline or other control character would otherwise
+// reach the provider's JSON subject field verbatim. Collapses every run of
+// control/whitespace characters to a single space, trims, and caps length.
+export function sanitizeForSubject(text: string, maxLength = 120): string {
+  const collapsed = text.replace(SUBJECT_UNSAFE, ' ').trim();
+  return collapsed.length > maxLength
+    ? collapsed.slice(0, maxLength)
+    : collapsed;
+}
+
+// Greets by first name only. A name with no whitespace (including a
+// single-word name) is returned as-is.
+export function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] ?? '';
+}
+
 const LOCALES: Record<Language, string> = { en: 'en-US', es: 'es-US' };
 
 // Dates come in as a 'YYYY-MM-DD' key with no time component. Anchoring at

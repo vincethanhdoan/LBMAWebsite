@@ -1,7 +1,14 @@
 // supabase/functions/send-email/templates.ts
 
 import type { EnrollmentLead, AppointmentInfo } from './types.ts';
-import { RECEIPT_COPY, joinNames, fillTemplate } from './copy.ts';
+import {
+  RECEIPT_COPY,
+  FOOTER_COPY,
+  SCHOOL_ADDRESS,
+  joinNames,
+  fillTemplate,
+  firstName,
+} from './copy.ts';
 import type { Language, ReceiptCopy } from './copy.ts';
 
 function escHtml(s: string | null | undefined): string {
@@ -18,10 +25,8 @@ export const PROGRAM_LABELS: Record<string, string> = {
   youth: 'Youth Program',
 };
 
-const ADDRESS = '1209 South 6th St Suite E, Los Banos, CA';
 const PHONE_DISPLAY = '(408) 620-0252';
-const MAPS_URL =
-  'https://www.google.com/maps/search/?api=1&query=1209+South+6th+St+Suite+E,+Los+Banos,+CA';
+const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${SCHOOL_ADDRESS.replace(/ /g, '+')}`;
 
 const STRIPE = `<div style="height:4px;background:#A01F23;"></div>`;
 
@@ -47,20 +52,30 @@ function makeHeader(logoUrl?: string, subtitle?: string): string {
   <div style="padding:16px 28px;border-bottom:1px solid #e2dbd5;">${nameBlock}</div>`;
 }
 
-const FOOTER = `
+// English by default; the receipt is the only caller that passes a language,
+// so every other email keeps its existing English footer unchanged.
+function footer(language: Language = 'en'): string {
+  const t = FOOTER_COPY[language];
+  return `
   <p style="margin:0;font-size:12px;color:#595959;line-height:1.6;text-align:center;">
-    Questions? <a href="mailto:LosBanosMartialArts@gmail.com" style="color:#A01F23;text-decoration:underline;">LosBanosMartialArts@gmail.com</a>
-    or <a href="tel:+14086200252" style="color:#A01F23;text-decoration:underline;">(408) 620-0252</a><br />1209 South 6th St Suite E, Los Banos, CA
+    ${t.questions} <a href="mailto:LosBanosMartialArts@gmail.com" style="color:#A01F23;text-decoration:underline;">LosBanosMartialArts@gmail.com</a>
+    ${t.or} <a href="tel:+14086200252" style="color:#A01F23;text-decoration:underline;">(408) 620-0252</a><br />${SCHOOL_ADDRESS}
   </p>
 `;
+}
 
-function wrap(inner: string, logoUrl?: string, subtitle?: string): string {
+function wrap(
+  inner: string,
+  logoUrl?: string,
+  subtitle?: string,
+  language: Language = 'en',
+): string {
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#3d3d3d;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #e2dbd5;border-radius:6px;overflow:hidden;">
     ${STRIPE}
     ${makeHeader(logoUrl, subtitle)}
     <div style="padding:24px 28px;">
       ${inner}
-      ${FOOTER}
+      ${footer(language)}
     </div>
   </div>`;
 }
@@ -287,6 +302,22 @@ function receiptArrive(c: ReceiptCopy, time: string): string {
   return fillTemplate(c.arrive, { time }).replace(/\.\.$/, '.');
 }
 
+// The outer container and program/children header are identical between the
+// receipt and the reminder; only the content below the date (arrive sentence
+// + links vs. time + one reschedule link) differs, so each caller supplies
+// that inner content and keeps its own href-building and escaping.
+function visitCard(a: AppointmentInfo, inner: string): string {
+  return `
+    <div style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
+        ${escHtml(a.programLabel)}${a.childNames ? ` · ${escHtml(a.childNames)}` : ''}
+      </div>
+      <div style="font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(a.date)}</div>
+      ${inner}
+    </div>
+  `;
+}
+
 // The intro line names every child once, across all booked visits, even
 // when they're spread across different programs (and therefore different
 // AppointmentInfo entries).
@@ -314,25 +345,30 @@ export function bookingConfirmationHtml(
   const c = RECEIPT_COPY[language];
   const heading = appointments.length > 1 ? c.headingMany : c.heading;
   const intro = fillTemplate(c.intro, {
-    name: parentName,
+    name: firstName(parentName),
     children: receiptChildren(appointments, language),
   });
 
   const cards = appointments
     .map((a) => {
       const arrive = receiptArrive(c, a.time);
-      return `
-    <div style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
-        ${escHtml(a.programLabel)}${a.childNames ? ` · ${escHtml(a.childNames)}` : ''}
-      </div>
-      <div style="font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(a.date)}</div>
-      <p style="margin:8px 0 12px;font-size:13px;color:#555;">${escHtml(arrive)}</p>
-      <p style="margin:0 0 4px;font-size:12px;"><a href="${a.googleCalendarUrl}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.addGoogle)}</a></p>
-      <p style="margin:0 0 4px;font-size:12px;"><a href="${a.icsUrl}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.addIcs)}</a></p>
-      <p style="margin:0;font-size:12px;"><a href="${a.rebookingUrl}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.change)}</a></p>
-    </div>
-  `;
+      // A visit with no booking token has no working reschedule or
+      // calendar-file link; omit both rather than pointing a labeled link
+      // at a fallback URL. The Google Calendar link needs no token.
+      const linkLines = [
+        `<p style="margin:0 0 4px;font-size:12px;"><a href="${escHtml(a.googleCalendarUrl)}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.addGoogle)}</a></p>`,
+        a.bookingToken
+          ? `<p style="margin:0 0 4px;font-size:12px;"><a href="${escHtml(a.icsUrl)}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.addIcs)}</a></p>`
+          : null,
+        a.bookingToken
+          ? `<p style="margin:0;font-size:12px;"><a href="${escHtml(a.rebookingUrl)}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.change)}</a></p>`
+          : null,
+      ]
+        .filter((line): line is string => line !== null)
+        .join('\n      ');
+      const inner = `<p style="margin:8px 0 12px;font-size:13px;color:#555;">${escHtml(arrive)}</p>
+      ${linkLines}`;
+      return visitCard(a, inner);
     })
     .join('');
 
@@ -342,13 +378,15 @@ export function bookingConfirmationHtml(
     <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">${escHtml(intro)}</p>
     ${cards}
     <p style="margin:20px 0 4px;font-size:13px;font-weight:700;color:#1a1a2e;">${escHtml(c.whereHeading)}</p>
-    <p style="margin:0 0 4px;color:#555;font-size:13px;">${ADDRESS}</p>
-    <p style="margin:0 0 20px;font-size:12px;"><a href="${MAPS_URL}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.openMaps)}</a></p>
+    <p style="margin:0 0 4px;color:#555;font-size:13px;">${SCHOOL_ADDRESS}</p>
+    <p style="margin:0 0 20px;font-size:12px;"><a href="${escHtml(MAPS_URL)}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.openMaps)}</a></p>
     <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1a1a2e;">${escHtml(c.expectHeading)}</p>
     <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">${escHtml(c.expectBody)}</p>
     <p style="margin:0;color:#555;font-size:13px;line-height:1.65;">${escHtml(fillTemplate(c.closing, { phone: PHONE_DISPLAY }))}</p>
   `,
     logoUrl,
+    undefined,
+    language,
   );
 }
 
@@ -360,7 +398,7 @@ export function bookingConfirmationText(
   const c = RECEIPT_COPY[language];
   const heading = appointments.length > 1 ? c.headingMany : c.heading;
   const intro = fillTemplate(c.intro, {
-    name: parentName,
+    name: firstName(parentName),
     children: receiptChildren(appointments, language),
   });
 
@@ -371,13 +409,17 @@ export function bookingConfirmationText(
     lines.push(a.date);
     lines.push(receiptArrive(c, a.time));
     lines.push(`${c.addGoogle}: ${a.googleCalendarUrl}`);
-    lines.push(`${c.addIcs}: ${a.icsUrl}`);
-    lines.push(`${c.change}: ${a.rebookingUrl}`);
+    // See bookingConfirmationHtml: no booking token means no working
+    // reschedule or calendar-file link, so both lines are omitted.
+    if (a.bookingToken) {
+      lines.push(`${c.addIcs}: ${a.icsUrl}`);
+      lines.push(`${c.change}: ${a.rebookingUrl}`);
+    }
     lines.push('');
   }
 
   lines.push(c.whereHeading);
-  lines.push(ADDRESS);
+  lines.push(SCHOOL_ADDRESS);
   lines.push(`${c.openMaps}: ${MAPS_URL}`);
   lines.push('');
   lines.push(c.expectHeading);
@@ -397,20 +439,13 @@ export function reminderEmailHtml(
   subtitle?: string,
 ): string {
   const cards = appointments
-    .map(
-      (a) => `
-    <div style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
-        ${escHtml(a.programLabel)}${a.childNames ? ` · ${escHtml(a.childNames)}` : ''}
-      </div>
-      <div style="font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(a.date)}</div>
-      <div style="font-size:13px;color:#555;margin-top:4px;">${escHtml(a.time)}</div>
+    .map((a) => {
+      const inner = `<div style="font-size:13px;color:#555;margin-top:4px;">${escHtml(a.time)}</div>
       <p style="margin:10px 0 0;font-size:12px;color:#595959;">
         Need to reschedule? <a href="${a.rebookingUrl}" style="color:#A01F23;text-decoration:none;">Click here</a>
-      </p>
-    </div>
-  `,
-    )
+      </p>`;
+      return visitCard(a, inner);
+    })
     .join('');
 
   const heading =
