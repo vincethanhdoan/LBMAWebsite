@@ -167,12 +167,7 @@ Deno.serve(async (req) => {
   if (error)
     return new Response('Confirmation failed', { status: 500, headers: cors });
 
-  // Reflect the confirm on the already-fetched set so recalc skips a re-query.
-  const confirmedIds = new Set(scheduledFuture.map((b) => b.booking_id));
-  const updatedBookings = (leadBookings ?? []).map((b) =>
-    confirmedIds.has(b.booking_id) ? { ...b, status: 'confirmed' } : b,
-  );
-  await recalculateLeadStatus(supabase, tokenBooking.lead_id, updatedBookings);
+  await recalculateLeadStatus(supabase, tokenBooking.lead_id);
 
   return okResponse(
     { already_confirmed: false },
