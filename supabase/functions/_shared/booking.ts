@@ -48,7 +48,10 @@ export function bookingErrorResponse(
   error: unknown,
   cors: Record<string, string>,
 ): Response {
-  const { code, message } = (error ?? {}) as { code?: string; message?: string };
+  const { code, message } = (error ?? {}) as {
+    code?: string;
+    message?: string;
+  };
   if (code === '23P01' || message?.includes('slot_taken'))
     return json({ code: 'slot_taken' }, 409, cors);
   if (message?.includes('date_unavailable'))
@@ -65,7 +68,10 @@ export function bookingErrorResponse(
     );
   if (message?.includes('lead_closed'))
     return json(
-      { code: 'lead_closed', error: 'Reopen this lead before booking a visit.' },
+      {
+        code: 'lead_closed',
+        error: 'Reopen this lead before booking a visit.',
+      },
       422,
       cors,
     );
