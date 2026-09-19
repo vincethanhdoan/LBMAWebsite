@@ -74,4 +74,20 @@ describe('reminderSmsHref in Spanish', () => {
     expect(body).toContain('4:30');
     expect(body).toContain('(408) 620-0252');
   });
+
+  it('falls back to "tu familia" when there are no children', () => {
+    const body = decodeURIComponent(
+      reminderSmsHref({ ...base, childNames: [] })!.split('body=')[1],
+    );
+    expect(body).toContain('ver a tu familia el jueves');
+  });
+
+  it('joins two or more children with "y"', () => {
+    const body = decodeURIComponent(
+      reminderSmsHref({ ...base, childNames: ['Mia', 'Alex', 'Sam'] })!.split(
+        'body=',
+      )[1],
+    );
+    expect(body).toContain('ver a Mia, Alex y Sam el jueves');
+  });
 });
