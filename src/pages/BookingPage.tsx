@@ -10,6 +10,7 @@ import {
 import { BookingCalendar } from '../components/shared/BookingCalendar';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { PROGRAM_LABELS } from '../lib/programs';
+import { SCHOOL_PHONE_DISPLAY } from '../lib/contactLinks';
 import type { AppointmentSlot } from '../lib/types';
 
 interface BookingInfo {
@@ -114,6 +115,12 @@ export function BookingPage() {
               : 'That date is no longer available. Please pick another.',
           );
           setCalendarKey((k) => k + 1);
+          return;
+        }
+        if (body?.code === 'lead_closed') {
+          setActionError(
+            `This link can't be used to book another visit. Please call us at ${SCHOOL_PHONE_DISPLAY} and we'll set one up.`,
+          );
           return;
         }
       }

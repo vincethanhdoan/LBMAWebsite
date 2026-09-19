@@ -242,7 +242,8 @@ BEGIN
 
   SELECT status INTO v_lead_status FROM enrollment_leads
   WHERE lead_id = v_booking.lead_id;
-  IF v_lead_status IN ('denied', 'closed') THEN
+  -- A finished lead's link can't book a new visit; staff use Reopen first.
+  IF v_lead_status IN ('denied', 'closed', 'attended') THEN
     RAISE EXCEPTION 'lead_closed';
   END IF;
 

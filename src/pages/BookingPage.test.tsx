@@ -140,6 +140,37 @@ describe('BookingPage action errors', () => {
     expect(screen.getByText(/January 5, 2099/)).toBeTruthy();
   });
 
+  it('shows a call-us message inline when the lead is closed', async () => {
+    vi.mocked(getProgramBookingByToken).mockResolvedValue({
+      booking_id: 'b1',
+      program_type: 'youth',
+      status: 'link_sent',
+      appointment_date: null,
+      appointment_time: null,
+      parent_name: 'Maria Lopez',
+      child_names: ['Mia'],
+    });
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      data: null,
+      error: new FunctionsHttpError({
+        json: async () => ({ code: 'lead_closed' }),
+      }),
+    } as never);
+
+    renderAtToken();
+
+    fireEvent.click(await screen.findByText('Pick'));
+
+    expect(
+      await screen.findByText(
+        "This link can't be used to book another visit. Please call us at (408) 620-0252 and we'll set one up.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText('Link unavailable')).toBeNull();
+    expect(screen.getByText('Pick')).toBeTruthy();
+  });
+
   it('still shows Link unavailable for a dead link', async () => {
     vi.mocked(getProgramBookingByToken).mockResolvedValue(null);
 
