@@ -81,7 +81,7 @@ src/
 
 **Messaging** — DMs are constrained to `family↔admin` pairs. `create_or_get_dm_conversation` RPC enforces this at DB level. Unread state tracked via `conversation_members.last_read_at`.
 
-**Enrollment leads** — `ContactPage` → `submit_enrollment_lead` RPC → inserts lead row visible to admins. Admin side uses `create_enrollment_lead` RPC for manual lead entry.
+**Enrollment leads**: `ContactPage` → `submit_trial_booking` RPC → inserts the lead, books the chosen visit per program, and leaves a row visible to admins. Admin side uses `create_enrollment_lead` RPC for manual lead entry.
 
 ## Supabase
 
