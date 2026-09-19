@@ -1,0 +1,229 @@
+// supabase/functions/send-email/copy.ts
+// Pure formatting and copy for the receipt (and other) emails: language
+// resolution, date/time formatting, string substitution, and the two
+// calendar-link builders. No I/O, no Deno.env access, so every function
+// here is exact-string testable. The school address and the child-name
+// joiner live in ../_shared/copy.ts, shared with visit-calendar, and are
+// re-exported here so the rest of this directory keeps importing from
+// './copy.ts'.
+
+import { SCHOOL_ADDRESS, joinNames } from '../_shared/copy.ts';
+import type { Language } from '../_shared/copy.ts';
+
+export type { Language };
+export { SCHOOL_ADDRESS, joinNames };
+
+export function toLanguage(value: string | null | undefined): Language {
+  return value === 'es' ? 'es' : 'en';
+}
+
+const PROGRAM_NAMES: Record<Language, Record<string, string>> = {
+  en: { little_dragons: 'Little Dragons', youth: 'Youth Program' },
+  es: { little_dragons: 'Pequeños Dragones', youth: 'Programa Juvenil' },
+};
+
+// Picks a program's display name in the given language. A program_type
+// outside the two known programs falls back to the raw key, same as the
+// callers did before this lookup existed.
+export function programLabel(programType: string, language: Language): string {
+  return PROGRAM_NAMES[language][programType] ?? programType;
+}
+
+export const FOOTER_COPY: Record<Language, { questions: string; or: string }> =
+  {
+    en: { questions: 'Questions?', or: 'or' },
+    es: { questions: '¿Preguntas?', or: 'o' },
+  };
+
+// Every C0 control character (backslash-x00 through backslash-x1F) and DEL,
+// plus ordinary whitespace. The regex \s token already matches every
+// ECMAScript line terminator (LF, CR, and the two Unicode line/paragraph
+// separator code points), not just space and tab, so nothing else is needed.
+const SUBJECT_UNSAFE = /[\x00-\x1F\x7F\s]+/g;
+
+// Makes free-text (a parent's name, etc.) safe to interpolate into an email
+// subject line: a raw newline or other control character would otherwise
+// reach the provider's JSON subject field verbatim. Collapses every run of
+// control/whitespace characters to a single space, trims, and caps length.
+// An input that is entirely control characters/whitespace collapses to
+// nothing, which would read as an awkward blank subject, so callers must
+// supply a fallback to use in that case.
+export function sanitizeForSubject(
+  text: string,
+  fallback: string,
+  maxLength = 120,
+): string {
+  const collapsed = text.replace(SUBJECT_UNSAFE, ' ').trim();
+  if (collapsed.length === 0) return fallback;
+  return collapsed.length > maxLength
+    ? collapsed.slice(0, maxLength)
+    : collapsed;
+}
+
+// Greets by first name only. A name with no whitespace (including a
+// single-word name) is returned as-is.
+export function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] ?? '';
+}
+
+const LOCALES: Record<Language, string> = { en: 'en-US', es: 'es-US' };
+
+// Dates come in as a 'YYYY-MM-DD' key with no time component. Anchoring at
+// noon UTC and formatting with timeZone: 'UTC' means the calendar day never
+// shifts, regardless of the machine's local timezone.
+export function formatVisitDate(dateKey: string, language: Language): string {
+  const d = new Date(`${dateKey}T12:00:00Z`);
+  return d.toLocaleDateString(LOCALES[language], {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+export function formatVisitDateShort(
+  dateKey: string,
+  language: Language,
+): string {
+  const d = new Date(`${dateKey}T12:00:00Z`);
+  return d.toLocaleDateString(LOCALES[language], {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+// Times come in as a bare 'HH:MM:SS'. Anchoring on the epoch date with
+// timeZone: 'UTC' formats the clock time as written, with no timezone shift.
+export function formatVisitTime(time: string, language: Language): string {
+  const d = new Date(`1970-01-01T${time}Z`);
+  return d.toLocaleTimeString(LOCALES[language], {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  });
+}
+
+export interface ReceiptCopy {
+  subject: string;
+  subjectMany: string;
+  heading: string;
+  headingMany: string;
+  intro: string;
+  arrive: string;
+  addGoogle: string;
+  addIcs: string;
+  change: string;
+  whereHeading: string;
+  openMaps: string;
+  expectHeading: string;
+  expectBody: string;
+  closing: string;
+  familyFallback: string;
+}
+
+export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
+  en: {
+    subject: 'Trial visit booked: {dateShort} at {time}',
+    subjectMany: 'Your trial visits are booked',
+    heading: "You're booked",
+    headingMany: 'Your visits are booked',
+    intro:
+      "Hi {name}, we're looking forward to meeting {children}. Here are the details of your visit.",
+    arrive: 'Please arrive at {time}.',
+    addGoogle: 'Add to Google Calendar',
+    addIcs: 'Add to Apple or Outlook calendar',
+    change: 'Change or cancel this visit',
+    whereHeading: 'Where to find us',
+    openMaps: 'Open in Maps',
+    expectHeading: 'What to expect',
+    expectBody:
+      "Comfortable athletic clothes are all your child needs. We provide everything else for the first class. You're welcome to watch from the side, and we'll answer any questions afterward.",
+    closing: 'If anything changes, reply to this email or call us at {phone}.',
+    familyFallback: 'your family',
+  },
+  es: {
+    subject: 'Visita de prueba reservada: {dateShort}, {time}',
+    subjectMany: 'Tus visitas de prueba están reservadas',
+    heading: 'Tu visita está reservada',
+    headingMany: 'Tus visitas están reservadas',
+    intro:
+      'Hola {name}, tenemos muchas ganas de conocer a {children}. Aquí están los detalles de tu visita.',
+    arrive: 'Por favor llega a las {time}.',
+    addGoogle: 'Agregar a Google Calendar',
+    addIcs: 'Agregar al calendario de Apple u Outlook',
+    change: 'Cambiar o cancelar esta visita',
+    whereHeading: 'Dónde encontrarnos',
+    openMaps: 'Abrir en Mapas',
+    expectHeading: 'Qué esperar',
+    expectBody:
+      'Tu hijo solo necesita ropa deportiva cómoda. Nosotros proporcionamos todo lo demás para la primera clase. Puedes observar desde un lado, y después responderemos cualquier pregunta que tengas.',
+    closing: 'Si algo cambia, responde a este correo o llámanos al {phone}.',
+    familyFallback: 'tu familia',
+  },
+};
+
+// Replaces {key} placeholders from vars; a placeholder with no matching key
+// is left as-is rather than silently dropped.
+export function fillTemplate(
+  template: string,
+  vars: Record<string, string>,
+): string {
+  return template.replace(/\{(\w+)\}/g, (match, key) =>
+    Object.prototype.hasOwnProperty.call(vars, key) ? vars[key] : match,
+  );
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+// Formats a 'YYYY-MM-DD' + 'HH:MM:SS' wall-clock pair as 'YYYYMMDDTHHMMSS'.
+// Uses Date.UTC purely as an arithmetic scratchpad (never converts to an
+// actual timezone), so adding minutes/hours rolls the date over correctly
+// near midnight instead of being computed by string-splicing.
+function formatWallClock(
+  dateKey: string,
+  time: string,
+  addMinutes: number,
+): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const [hour, minute, second] = time.split(':').map(Number);
+  const instant = new Date(
+    Date.UTC(year, month - 1, day, hour, minute, second) + addMinutes * 60_000,
+  );
+  return (
+    `${instant.getUTCFullYear()}${pad2(instant.getUTCMonth() + 1)}${pad2(instant.getUTCDate())}` +
+    `T${pad2(instant.getUTCHours())}${pad2(instant.getUTCMinutes())}${pad2(instant.getUTCSeconds())}`
+  );
+}
+
+export interface GoogleCalendarLinkInput {
+  dateKey: string; // 'YYYY-MM-DD'
+  time: string; // 'HH:MM:SS'
+  title: string;
+  address: string;
+  details: string;
+}
+
+// One hour long, in local wall-clock time, interpreted by Google via ctz
+// rather than converted to UTC ourselves.
+export function buildGoogleCalendarUrl(input: GoogleCalendarLinkInput): string {
+  const start = formatWallClock(input.dateKey, input.time, 0);
+  const end = formatWallClock(input.dateKey, input.time, 60);
+  const qs = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: input.title,
+    dates: `${start}/${end}`,
+    ctz: 'America/Los_Angeles',
+    location: input.address,
+    details: input.details,
+  });
+  return `https://calendar.google.com/calendar/render?${qs.toString()}`;
+}
+
+export function buildIcsUrl(supabaseUrl: string, bookingToken: string): string {
+  return `${supabaseUrl}/functions/v1/visit-calendar?token=${bookingToken}`;
+}

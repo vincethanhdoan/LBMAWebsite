@@ -13,10 +13,12 @@ export function telHref(phone: string): string | null {
   return e164 ? `tel:${e164}` : null;
 }
 
-function joinNames(names: string[]): string {
-  if (names.length === 0) return 'your family';
+function joinNames(names: string[], language: 'en' | 'es'): string {
+  if (names.length === 0)
+    return language === 'es' ? 'tu familia' : 'your family';
   if (names.length === 1) return names[0];
-  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  const and = language === 'es' ? 'y' : 'and';
+  return `${names.slice(0, -1).join(', ')} ${and} ${names[names.length - 1]}`;
 }
 
 // Opens the staff member's own messaging app with a reminder ready to send.
@@ -28,26 +30,43 @@ export function reminderSmsHref(input: {
   childNames: string[];
   dateKey: string;
   time: string | null;
+  language: 'en' | 'es';
 }): string | null {
   const e164 = toE164(input.phone);
   if (!e164) return null;
 
   const firstName = input.parentName.trim().split(/\s+/)[0];
-  const day = new Date(input.dateKey + 'T12:00:00').toLocaleDateString(
-    'en-US',
-    { weekday: 'long', month: 'short', day: 'numeric' },
-  );
-  const at = input.time
-    ? ` at ${new Date('1970-01-01T' + input.time).toLocaleTimeString('en-US', {
+  const locale = input.language === 'es' ? 'es-US' : 'en-US';
+  const day = new Date(input.dateKey + 'T12:00:00').toLocaleDateString(locale, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+  const time = input.time
+    ? new Date('1970-01-01T' + input.time).toLocaleTimeString(locale, {
         hour: 'numeric',
         minute: '2-digit',
-      })}`
-    : '';
+      })
+    : null;
+  const children = joinNames(input.childNames, input.language);
 
-  const body =
-    `Hi ${firstName}, this is Los Banos Martial Arts. We're looking forward to seeing ` +
-    `${joinNames(input.childNames)} on ${day}${at}. Please reply to let us know ` +
-    `you're still coming, or call us at ${SCHOOL_PHONE_DISPLAY} if you need a different day.`;
+  let body: string;
+  if (input.language === 'es') {
+    // es-US already renders "p.m." with a trailing period, so the sentence
+    // period is only added when the visit clause doesn't already end in one.
+    const visit = `el ${day}${time ? `, a las ${time}` : ''}`;
+    const closing = visit.endsWith('.') ? '' : '.';
+    body =
+      `Hola ${firstName}, te escribimos de Los Banos Martial Arts. Tenemos muchas ganas de ver a ` +
+      `${children} ${visit}${closing} Por favor responde para confirmar que vienen, ` +
+      `o llámanos al ${SCHOOL_PHONE_DISPLAY} si necesitan otro día.`;
+  } else {
+    const at = time ? ` at ${time}` : '';
+    body =
+      `Hi ${firstName}, this is Los Banos Martial Arts. We're looking forward to seeing ` +
+      `${children} on ${day}${at}. Please reply to let us know ` +
+      `you're still coming, or call us at ${SCHOOL_PHONE_DISPLAY} if you need a different day.`;
+  }
 
   return `sms:${e164}?&body=${encodeURIComponent(body)}`;
 }
