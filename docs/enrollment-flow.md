@@ -102,7 +102,7 @@ Submit is never disabled; every check runs when the form is submitted. Name, pho
 
 ### The request id
 
-Before the form ever submits, `ContactPage` generates one `crypto.randomUUID()` per page load (`requestId`, held in a `useRef` so it survives re-renders but not a page reload) and sends it as `p_request_id` on every submit attempt, including a retry after a timeout. `submit_trial_booking` uses it to recognize "this is the same attempt, not a new one" (§12, Retry). Without it, a parent whose connection times out after the database already committed would either get a confusing `already_booked` error on resubmit, or double-book, on a form that lets them try again.
+Before the form ever submits, `ContactPage` generates one `crypto.randomUUID()` per page load (`requestId`, generated once and kept for the life of the mounted page, so it survives re-renders but not a page reload) and sends it as `p_request_id` on every submit attempt, including a retry after a timeout. `submit_trial_booking` uses it to recognize "this is the same attempt, not a new one" (§12, Retry). Without it, a parent whose connection times out after the database already committed would either get a confusing `already_booked` error on resubmit, or double-book, on a form that lets them try again.
 
 ### How each server error is shown
 
