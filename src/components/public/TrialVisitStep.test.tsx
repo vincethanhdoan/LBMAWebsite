@@ -2,7 +2,13 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  cleanup,
+  fireEvent,
+} from '@testing-library/react';
 import { TrialVisitStep } from './TrialVisitStep';
 import type { VisitSelections } from './TrialVisitStep';
 import { LanguageContext, translations } from './lang';
@@ -287,6 +293,35 @@ describe('TrialVisitStep', () => {
 
     await waitFor(() => expect(getAppointmentSlots).toHaveBeenCalledTimes(2));
     expect(await screen.findByRole('button', { name: 'Pick' })).toBeTruthy();
+  });
+
+  it('retries a failed fetch when the visitor presses try again', async () => {
+    vi.mocked(getAppointmentSlots)
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce([]);
+    render(tree({ children: [{ name: 'Alex', age: '9' }] }));
+    await waitFor(() => expect(getAppointmentSlots).toHaveBeenCalledTimes(1));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'We could not load the available days. Please try again, or call us at (408) 620-0252 and we will book your visit for you.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    await waitFor(() => expect(getAppointmentSlots).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('button', { name: 'Pick' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('shows the Spanish load error and retry label for a Spanish render', async () => {
+    vi.mocked(getAppointmentSlots).mockRejectedValue(new Error('boom'));
+    render(tree({ children: [{ name: 'Alex', age: '9' }], lang: 'es' }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'No pudimos cargar los días disponibles. Inténtalo de nuevo, o llámanos al (408) 620-0252 y nosotros reservamos tu visita.',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Intentar de nuevo' }),
+    ).toBeTruthy();
   });
 
   it('retries a failed fetch when refreshKey changes, leaving a succeeded program cached', async () => {

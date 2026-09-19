@@ -1,5 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import type { ComponentType } from 'react';
 import { Loader2 } from 'lucide-react';
+import { ErrorBoundary } from '../ErrorBoundary';
+import { reportError } from '../../lib/monitoring/sentry';
 import { useLanguage } from './lang';
 import { V3 } from './design';
 import { fillTemplate } from './fillTemplate';
@@ -8,12 +11,16 @@ import { programsForChildren } from '../../lib/programs';
 import type { Program } from '../../lib/programs';
 import { getAppointmentSlots } from '../../lib/supabase/bookingQueries';
 import { visitPickerCopy } from '../shared/visitPickerCopy';
-import type { VisitChoice } from '../shared/VisitPicker';
+import type { VisitChoice, VisitPickerProps } from '../shared/VisitPicker';
 import type { AppointmentSlot } from '../../lib/types';
 
-const VisitPicker = lazy(() =>
-  import('../shared/VisitPicker').then((m) => ({ default: m.VisitPicker })),
-);
+function importVisitPicker() {
+  return import('../shared/VisitPicker').then((m) => ({
+    default: m.VisitPicker,
+  }));
+}
+
+type VisitPickerComponent = ComponentType<VisitPickerProps>;
 
 // The 21 days `submit_trial_booking` accepts from the public form. Asking for
 // more would show a signed-in staff member days their own submit would refuse,
@@ -57,6 +64,32 @@ function LoadingSpinner({ label }: { label: string }) {
   );
 }
 
+function LoadFailure({
+  message,
+  retryLabel,
+  onRetry,
+}: {
+  message: string;
+  retryLabel: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="text-center py-4">
+      <p role="alert" className="text-sm text-destructive">
+        {message}
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-3 min-h-[44px] px-4 rounded-lg border-2 text-sm font-semibold transition-colors hover:bg-black/5"
+        style={{ borderColor: V3.border, color: V3.text }}
+      >
+        {retryLabel}
+      </button>
+    </div>
+  );
+}
+
 interface ProgramGroupProps {
   program: Program;
   label: string;
@@ -68,6 +101,9 @@ interface ProgramGroupProps {
   error: string | undefined;
   disabled: boolean;
   slotsState: SlotsState;
+  onRetrySlots: (program: Program) => void;
+  VisitPicker: VisitPickerComponent;
+  onRetryPickerLoad: () => void;
   visitFor: string;
   visitNone: string;
 }
@@ -83,6 +119,9 @@ function ProgramGroup({
   error,
   disabled,
   slotsState,
+  onRetrySlots,
+  VisitPicker,
+  onRetryPickerLoad,
   visitFor,
   visitNone,
 }: ProgramGroupProps) {
@@ -110,23 +149,42 @@ function ProgramGroup({
       </legend>
 
       {slotsState.status === 'error' ? (
-        <p role="alert" className="text-sm text-destructive text-center py-4">
-          {copy.loadError}
-        </p>
+        <LoadFailure
+          message={copy.loadError}
+          retryLabel={copy.retry}
+          onRetry={() => onRetrySlots(program)}
+        />
       ) : slotsState.status === 'loading' ? (
         <LoadingSpinner label={copy.loading} />
       ) : (
-        <Suspense fallback={<LoadingSpinner label={copy.loading} />}>
-          <VisitPicker
-            slots={slotsState.slots}
-            value={value}
-            onChange={(choice) => onPick(program, choice)}
-            language={language}
-            horizonWeeks={PUBLIC_HORIZON_WEEKS}
-            refreshKey={refreshKey}
-            emptyMessage={visitNone}
-          />
-        </Suspense>
+        // Without this boundary a failed chunk request (a stale hash after a
+        // deploy, a dropped connection) would reach the app root and replace
+        // the whole page with its generic English error.
+        <ErrorBoundary
+          onError={reportError}
+          fallback={(reset) => (
+            <LoadFailure
+              message={copy.loadError}
+              retryLabel={copy.retry}
+              onRetry={() => {
+                onRetryPickerLoad();
+                reset();
+              }}
+            />
+          )}
+        >
+          <Suspense fallback={<LoadingSpinner label={copy.loading} />}>
+            <VisitPicker
+              slots={slotsState.slots}
+              value={value}
+              onChange={(choice) => onPick(program, choice)}
+              language={language}
+              horizonWeeks={PUBLIC_HORIZON_WEEKS}
+              refreshKey={refreshKey}
+              emptyMessage={visitNone}
+            />
+          </Suspense>
+        </ErrorBoundary>
       )}
 
       {error && (
@@ -156,17 +214,38 @@ export function TrialVisitStep({
     Partial<Record<Program, AppointmentSlot[]>>
   >({});
   const [errorPrograms, setErrorPrograms] = useState<Set<Program>>(new Set());
+  // React.lazy remembers a rejected import forever, so recovering from a
+  // failed chunk load takes a brand new lazy component, not just a boundary
+  // reset. Holding it here is what lets the retry button hand one over. One
+  // for every group: the module is the same, so a load that failed for one
+  // group failed for both.
+  const [VisitPicker, setVisitPicker] = useState<VisitPickerComponent>(() =>
+    lazy(importVisitPicker),
+  );
+  // Bumped by a slot retry, to run the fetch effect below again once that
+  // program's recorded status has been cleared.
+  const [slotRetryCount, setSlotRetryCount] = useState(0);
   // Per-program fetch status, tracked outside React state so deciding
   // whether to (re)fetch never itself triggers a render. A success is
   // permanent -- it's never refetched. An error is retried when its program
-  // drops out of the present set and reappears, or when `refreshKey`
-  // changes (both compared against the previous effect run below).
+  // drops out of the present set and reappears, when `refreshKey` changes
+  // (both compared against the previous effect run below), or when the
+  // visitor presses "try again", which clears the status outright.
   const statusRef = useRef<
     Partial<Record<Program, 'pending' | 'success' | 'error'>>
   >({});
   const attemptRef = useRef<Partial<Record<Program, number>>>({});
   const prevPresentRef = useRef<Set<Program>>(new Set());
   const prevRefreshKeyRef = useRef(refreshKey);
+
+  function retrySlots(program: Program) {
+    delete statusRef.current[program];
+    setSlotRetryCount((n) => n + 1);
+  }
+
+  function retryPickerLoad() {
+    setVisitPicker(() => lazy(importVisitPicker));
+  }
 
   useEffect(() => {
     const present = new Set(parseProgramsKey(programsKey));
@@ -205,7 +284,7 @@ export function TrialVisitStep({
     });
 
     prevPresentRef.current = present;
-  }, [programsKey, refreshKey]);
+  }, [programsKey, refreshKey, slotRetryCount]);
 
   // Prune selections for programs that dropped out of the present set
   // (an age edited out of range, or a child removed). Only calls `onChange`
@@ -275,6 +354,9 @@ export function TrialVisitStep({
               error={errors[program]}
               disabled={disabled}
               slotsState={slotsState}
+              onRetrySlots={retrySlots}
+              VisitPicker={VisitPicker}
+              onRetryPickerLoad={retryPickerLoad}
               visitFor={ct.visitFor}
               visitNone={ct.visitNone}
             />
