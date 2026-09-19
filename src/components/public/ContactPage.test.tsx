@@ -8,6 +8,7 @@ import {
   fireEvent,
   cleanup,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ContactPage } from './ContactPage';
@@ -15,14 +16,14 @@ import { LanguageContext, translations } from './lang';
 import type { Lang } from './lang';
 import { submitTrialBookingWithTimeout } from '../../lib/supabase/client';
 import type { TrialBookingReceipt } from '../../lib/supabase/client';
-import { getAppointmentSlots } from '../../lib/supabase/queries';
+import { getAppointmentSlots } from '../../lib/supabase/bookingQueries';
 import type { VisitChoice } from '../shared/VisitPicker';
 
 vi.mock('../../lib/supabase/client', () => ({
   submitTrialBookingWithTimeout: vi.fn(),
 }));
 
-vi.mock('../../lib/supabase/queries', () => ({
+vi.mock('../../lib/supabase/bookingQueries', () => ({
   getAppointmentSlots: vi.fn(),
   getUpcomingBookableDates: vi.fn(),
 }));
@@ -43,6 +44,7 @@ vi.mock('../shared/VisitPicker', () => ({
         {value ? `${value.slotId}|${value.date}|${value.startTime}` : ''}
       </span>
       <button
+        type="button"
         onClick={() =>
           onChange({ slotId: 's1', date: '2099-01-05', startTime: '17:20:00' })
         }
@@ -86,6 +88,31 @@ function fillRequiredFields() {
 async function pickVisit() {
   const pickButton = await screen.findByRole('button', { name: 'Pick' });
   fireEvent.click(pickButton);
+}
+
+function fillTwoChildren() {
+  fireEvent.change(screen.getByLabelText(/Your name/), {
+    target: { value: 'Jane Parent' },
+  });
+  fireEvent.change(screen.getByLabelText(/^Phone/), {
+    target: { value: '(408) 555-0199' },
+  });
+  fireEvent.change(screen.getByLabelText(/Email address/), {
+    target: { value: 'jane@example.com' },
+  });
+  fireEvent.change(screen.getByLabelText("Child's name 1"), {
+    target: { value: 'Mia' },
+  });
+  fireEvent.change(screen.getByLabelText('Age 1'), {
+    target: { value: '5' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Add another child' }));
+  fireEvent.change(screen.getByLabelText("Child's name 2"), {
+    target: { value: 'Alex' },
+  });
+  fireEvent.change(screen.getByLabelText('Age 2'), {
+    target: { value: '9' },
+  });
 }
 
 function submitForm() {
@@ -189,7 +216,18 @@ describe('ContactPage', () => {
     vi.clearAllMocks();
     vi.mocked(getAppointmentSlots).mockResolvedValue([]);
     vi.mocked(submitTrialBookingWithTimeout).mockResolvedValue({
-      data: { lead_id: 'lead-2', visits: [] },
+      data: {
+        lead_id: 'lead-2',
+        visits: [
+          {
+            program_type: 'youth',
+            booking_token: 'tok-2',
+            appointment_date: '2099-01-05',
+            appointment_time: '17:20:00',
+            status: 'scheduled',
+          },
+        ],
+      },
       error: null,
     });
 
@@ -239,11 +277,24 @@ describe('ContactPage', () => {
       );
       submitForm();
 
-      expect(await screen.findByText(expectedText)).toBeTruthy();
+      // The same message appears twice: once in the submit alert, and once
+      // as the affected group's inline error (its aria-describedby target),
+      // since the submit alert sits below the notes field and is off-screen
+      // after focus moves up to the group.
+      const matches = await screen.findAllByText(expectedText);
+      expect(matches).toHaveLength(2);
+      const youthGroup = screen.getByRole('group', {
+        name: 'Youth Program visit for Alex',
+      });
+      expect(within(youthGroup).getByText(expectedText)).toBeTruthy();
       expect(screen.getByTestId('picker-value').textContent).toBe('');
       expect(screen.getByTestId('picker-refresh-key').textContent).toBe('1');
-      expect(document.activeElement).toBe(
-        document.getElementById('visit-group-youth'),
+      // Focus moves in a passive effect once `isSubmitting` has committed
+      // back to false, which can land a tick after the text above appears.
+      await waitFor(() =>
+        expect(document.activeElement).toBe(
+          document.getElementById('visit-group-youth'),
+        ),
       );
       expect(
         (screen.getByLabelText(/Your name/) as HTMLInputElement).value,
@@ -333,5 +384,163 @@ describe('ContactPage', () => {
     expect(screen.getByTestId('picker-value').textContent).toBe(
       's1|2099-01-05|17:20:00',
     );
+  });
+
+  it('submits one booking per program for a mixed-age family', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    const receipt: TrialBookingReceipt = {
+      lead_id: 'lead-3',
+      visits: [
+        {
+          program_type: 'little_dragons',
+          booking_token: 'tok-ld',
+          appointment_date: '2099-01-05',
+          appointment_time: '17:20:00',
+          status: 'scheduled',
+        },
+        {
+          program_type: 'youth',
+          booking_token: 'tok-y',
+          appointment_date: '2099-01-05',
+          appointment_time: '17:20:00',
+          status: 'scheduled',
+        },
+      ],
+    };
+    vi.mocked(submitTrialBookingWithTimeout).mockResolvedValue({
+      data: receipt,
+      error: null,
+    });
+
+    render(<Wrapper lang="en" />);
+    fillTwoChildren();
+    const littleGroup = await screen.findByRole('group', {
+      name: 'Little Dragons visit for Mia',
+    });
+    const youthGroup = screen.getByRole('group', {
+      name: 'Youth Program visit for Alex',
+    });
+    fireEvent.click(within(littleGroup).getByRole('button', { name: 'Pick' }));
+    fireEvent.click(within(youthGroup).getByRole('button', { name: 'Pick' }));
+
+    submitForm();
+
+    await waitFor(() =>
+      expect(submitTrialBookingWithTimeout).toHaveBeenCalledTimes(1),
+    );
+    const [params] = vi.mocked(submitTrialBookingWithTimeout).mock.calls[0];
+    expect(params.bookings).toEqual([
+      { program_type: 'little_dragons', slot_id: 's1', date: '2099-01-05' },
+      { program_type: 'youth', slot_id: 's1', date: '2099-01-05' },
+    ]);
+  });
+
+  it('focuses the first group and marks every group missing a choice when neither program has one', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(<Wrapper lang="en" />);
+    fillTwoChildren();
+    await screen.findAllByRole('button', { name: 'Pick' });
+
+    submitForm();
+
+    expect(submitTrialBookingWithTimeout).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(
+      document.getElementById('visit-group-little_dragons'),
+    );
+    const littleGroup = screen.getByRole('group', {
+      name: 'Little Dragons visit for Mia',
+    });
+    const youthGroup = screen.getByRole('group', {
+      name: 'Youth Program visit for Alex',
+    });
+    expect(
+      within(littleGroup).getByText('Please choose a day and arrival time.'),
+    ).toBeTruthy();
+    expect(
+      within(youthGroup).getByText('Please choose a day and arrival time.'),
+    ).toBeTruthy();
+  });
+
+  it('marks and focuses only the group still missing a choice when the other already has one', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(<Wrapper lang="en" />);
+    fillTwoChildren();
+    const littleGroup = await screen.findByRole('group', {
+      name: 'Little Dragons visit for Mia',
+    });
+    fireEvent.click(within(littleGroup).getByRole('button', { name: 'Pick' }));
+
+    submitForm();
+
+    expect(submitTrialBookingWithTimeout).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(
+      document.getElementById('visit-group-youth'),
+    );
+    const youthGroup = screen.getByRole('group', {
+      name: 'Youth Program visit for Alex',
+    });
+    expect(
+      within(youthGroup).getByText('Please choose a day and arrival time.'),
+    ).toBeTruthy();
+    expect(
+      within(littleGroup).queryByText('Please choose a day and arrival time.'),
+    ).toBeNull();
+  });
+
+  it('disables the submit button while the request is in flight', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    let resolveSubmit: (result: {
+      data: TrialBookingReceipt | null;
+      error: { message: string; code?: string } | null;
+    }) => void = () => {};
+    vi.mocked(submitTrialBookingWithTimeout).mockReturnValue(
+      new Promise((resolve) => {
+        resolveSubmit = resolve;
+      }),
+    );
+
+    render(<Wrapper lang="en" />);
+    fillRequiredFields();
+    await pickVisit();
+    submitForm();
+
+    const button = screen.getByRole('button', {
+      name: 'Sending…',
+    }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+
+    resolveSubmit({
+      data: {
+        lead_id: 'lead-4',
+        visits: [
+          {
+            program_type: 'youth',
+            booking_token: 'tok-4',
+            appointment_date: '2099-01-05',
+            appointment_time: '17:20:00',
+            status: 'scheduled',
+          },
+        ],
+      },
+      error: null,
+    });
+    await screen.findByRole('region');
+  });
+
+  it('clears errVisit once a choice is made for that group', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(<Wrapper lang="en" />);
+    fillRequiredFields();
+    await screen.findByRole('button', { name: 'Pick' });
+    submitForm();
+    expect(
+      screen.getByText('Please choose a day and arrival time.'),
+    ).toBeTruthy();
+
+    await pickVisit();
+
+    expect(
+      screen.queryByText('Please choose a day and arrival time.'),
+    ).toBeNull();
   });
 });

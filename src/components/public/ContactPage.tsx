@@ -53,26 +53,52 @@ export function ContactPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({ children: {} });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // A request to focus a visit group's fieldset, tagged with a request id so
+  // asking for the same program twice in a row still triggers a fresh focus.
+  const [visitFocusRequest, setVisitFocusRequest] = useState<{
+    program: Program;
+    requestId: number;
+  } | null>(null);
+  const nextVisitFocusRequestId = useRef(0);
+  const handledVisitFocusRequestId = useRef<number | null>(null);
   const successRef = useRef<HTMLDivElement>(null);
-  const requestId = useRef(crypto.randomUUID());
+  const [requestId] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
     if (receipt) successRef.current?.focus();
   }, [receipt]);
 
+  // Focusing a visit group's fieldset has to wait until `isSubmitting` has
+  // committed back to false: while it's true the fieldset is `disabled`, and
+  // real browsers (unlike jsdom) refuse to focus a disabled element. The
+  // handled-request ref (not state) tracks which request this has already
+  // acted on, so the effect body never calls setState itself.
+  useEffect(() => {
+    if (!visitFocusRequest || isSubmitting) return;
+    if (handledVisitFocusRequestId.current === visitFocusRequest.requestId)
+      return;
+    handledVisitFocusRequestId.current = visitFocusRequest.requestId;
+    document
+      .getElementById(`visit-group-${visitFocusRequest.program}`)
+      ?.focus();
+  }, [visitFocusRequest, isSubmitting]);
+
+  function requestVisitFocus(program: Program) {
+    nextVisitFocusRequestId.current += 1;
+    setVisitFocusRequest({
+      program,
+      requestId: nextVisitFocusRequestId.current,
+    });
+  }
+
   const handleVisitChange = useCallback((next: VisitSelections) => {
     setSelections(next);
     setVisitErrors((prev) => {
-      const remaining = (Object.keys(prev) as Program[]).filter(
-        (program) => !next[program],
+      const entries = (Object.entries(prev) as [Program, string][]).filter(
+        ([program]) => !next[program],
       );
-      if (remaining.length === Object.keys(prev).length) return prev;
-      const nextErrors: Partial<Record<Program, string>> = {};
-      remaining.forEach((program) => {
-        const existing = prev[program];
-        if (existing) nextErrors[program] = existing;
-      });
-      return nextErrors;
+      if (entries.length === Object.keys(prev).length) return prev;
+      return Object.fromEntries(entries) as Partial<Record<Program, string>>;
     });
   }, []);
 
@@ -191,7 +217,7 @@ export function ContactPage() {
         nextVisitErrors[g.program] = ct.errVisit;
       });
       setVisitErrors(nextVisitErrors);
-      document.getElementById(`visit-group-${missing[0].program}`)?.focus();
+      requestVisitFocus(missing[0].program);
       return;
     }
 
@@ -223,7 +249,7 @@ export function ContactPage() {
           age: Number(c.age),
         })),
         bookings,
-        requestId: requestId.current,
+        requestId,
         language: lang,
       },
       12000,
@@ -242,10 +268,13 @@ export function ContactPage() {
         msg.includes('slot_mismatch') ||
         msg.includes('invalid_booking_request')
       ) {
-        setSubmitError(code === '23P01' ? ct.errSlotTaken : ct.errDateGone);
+        const availabilityMessage =
+          code === '23P01' ? ct.errSlotTaken : ct.errDateGone;
+        setSubmitError(availabilityMessage);
+        setVisitErrors({ [groups[0].program]: availabilityMessage });
         setSelections({});
         setVisitRefreshKey((k) => k + 1);
-        document.getElementById(`visit-group-${groups[0].program}`)?.focus();
+        requestVisitFocus(groups[0].program);
       } else {
         setSubmitError(ct.errSubmit);
       }
