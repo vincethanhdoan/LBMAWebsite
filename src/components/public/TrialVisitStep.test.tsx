@@ -7,10 +7,10 @@ import { TrialVisitStep } from './TrialVisitStep';
 import type { VisitSelections } from './TrialVisitStep';
 import { LanguageContext, translations } from './lang';
 import type { Lang } from './lang';
-import { getAppointmentSlots } from '../../lib/supabase/queries';
+import { getAppointmentSlots } from '../../lib/supabase/bookingQueries';
 import type { VisitChoice } from '../shared/VisitPicker';
 
-vi.mock('../../lib/supabase/queries', () => ({
+vi.mock('../../lib/supabase/bookingQueries', () => ({
   getAppointmentSlots: vi.fn(),
 }));
 

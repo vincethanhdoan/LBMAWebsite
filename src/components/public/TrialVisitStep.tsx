@@ -6,7 +6,7 @@ import { fillTemplate } from './fillTemplate';
 import { joinNames } from '../../lib/contactLinks';
 import { programsForChildren } from '../../lib/programs';
 import type { Program } from '../../lib/programs';
-import { getAppointmentSlots } from '../../lib/supabase/queries';
+import { getAppointmentSlots } from '../../lib/supabase/bookingQueries';
 import { visitPickerCopy } from '../shared/visitPickerCopy';
 import type { VisitChoice } from '../shared/VisitPicker';
 import type { AppointmentSlot } from '../../lib/types';

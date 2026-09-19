@@ -10,10 +10,10 @@ import {
   cleanup,
 } from '@testing-library/react';
 import { BookingCalendar } from './BookingCalendar';
-import { getUpcomingBookableDates } from '../../lib/supabase/queries';
+import { getUpcomingBookableDates } from '../../lib/supabase/bookingQueries';
 import type { AppointmentSlot } from '../../lib/types';
 
-vi.mock('../../lib/supabase/queries', () => ({
+vi.mock('../../lib/supabase/bookingQueries', () => ({
   getUpcomingBookableDates: vi.fn(),
 }));
 

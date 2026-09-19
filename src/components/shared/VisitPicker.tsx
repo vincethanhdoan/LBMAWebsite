@@ -5,7 +5,7 @@ import { enUS, es } from 'react-day-picker/locale';
 import 'react-day-picker/style.css';
 import './booking-calendar.css';
 import { Loader2 } from 'lucide-react';
-import { getUpcomingBookableDates } from '../../lib/supabase/queries';
+import { getUpcomingBookableDates } from '../../lib/supabase/bookingQueries';
 import { visitPickerCopy } from './visitPickerCopy';
 import type { VisitPickerLanguage } from './visitPickerCopy';
 import type { AppointmentSlot } from '../../lib/types';
@@ -76,8 +76,17 @@ export function VisitPicker({
   const [availableMap, setAvailableMap] = useState<Map<string, string[]>>(
     new Map(),
   );
-  const [fetching, setFetching] = useState(slotIds === '' ? false : true);
   const [fetchFailed, setFetchFailed] = useState(false);
+  // The (slotIds, allowToday, refreshKey) combination `availableMap` above
+  // was loaded for. `fetching` is derived from it rather than mirrored in
+  // its own state, so a refresh-triggered fetch (refreshKey or slots
+  // changing) shows the loading state immediately instead of leaving the
+  // old available dates -- including one a refetch is about to drop --
+  // rendered while the new fetch is in flight.
+  const fetchKey =
+    slotIds === '' ? '' : `${slotIds}::${allowToday}::${refreshKey ?? ''}`;
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const fetching = fetchKey !== '' && loadedKey !== fetchKey;
   // A day the visitor picked that has more than one arrival time and no
   // time chosen yet. Whenever `value` is set, it (not this) is the source
   // of truth for which day is selected — see `selectedKey` below.
@@ -135,12 +144,12 @@ export function VisitPicker({
         if (!cancelled) setFetchFailed(true);
       })
       .finally(() => {
-        if (!cancelled) setFetching(false);
+        if (!cancelled) setLoadedKey(fetchKey);
       });
     return () => {
       cancelled = true;
     };
-  }, [slotIds, allowToday, refreshKey]);
+  }, [slotIds, allowToday, refreshKey, fetchKey]);
 
   // Once a refetch lands, drop a chosen value that is no longer bookable.
   // (A stale pending day needs no such effect — `selectedKey` above already

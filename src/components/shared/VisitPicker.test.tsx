@@ -12,10 +12,10 @@ import {
 } from '@testing-library/react';
 import { VisitPicker } from './VisitPicker';
 import type { VisitChoice } from './VisitPicker';
-import { getUpcomingBookableDates } from '../../lib/supabase/queries';
+import { getUpcomingBookableDates } from '../../lib/supabase/bookingQueries';
 import type { AppointmentSlot } from '../../lib/types';
 
-vi.mock('../../lib/supabase/queries', () => ({
+vi.mock('../../lib/supabase/bookingQueries', () => ({
   getUpcomingBookableDates: vi.fn(),
 }));
 
@@ -263,6 +263,64 @@ describe('VisitPicker', () => {
     );
 
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(null));
+  });
+
+  it('shows loading and hides the old days while a refresh-triggered fetch is pending, then shows the new days once it resolves', async () => {
+    let resolveSecondFetch: (dates: string[]) => void = () => {};
+    vi.mocked(getUpcomingBookableDates)
+      .mockResolvedValueOnce(['2026-09-21'])
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecondFetch = resolve;
+          }),
+      );
+    const slot = makeSlot({ slot_id: 'slot-1', start_time: '10:00:00' });
+
+    const { rerender } = render(
+      <VisitPicker
+        slots={[slot]}
+        value={null}
+        onChange={vi.fn()}
+        language="en"
+        emptyMessage="No visits available."
+        refreshKey={1}
+      />,
+    );
+    await waitForLoadToFinish();
+    expect(
+      screen.getByRole('button', { name: /September 21st, 2026/ }),
+    ).toBeTruthy();
+
+    rerender(
+      <VisitPicker
+        slots={[slot]}
+        value={null}
+        onChange={vi.fn()}
+        language="en"
+        emptyMessage="No visits available."
+        refreshKey={2}
+      />,
+    );
+
+    expect(
+      screen.getByRole('status', { name: 'Loading available days' }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: /September 21st, 2026/ }),
+    ).toBeNull();
+
+    resolveSecondFetch(['2026-09-25']);
+    await waitForLoadToFinish();
+
+    const day25 = screen.getByRole('button', {
+      name: /September 25th, 2026/,
+    }) as HTMLButtonElement;
+    expect(day25.disabled).toBe(false);
+    const day21 = screen.getByRole('button', {
+      name: /September 21st, 2026/,
+    }) as HTMLButtonElement;
+    expect(day21.disabled).toBe(true);
   });
 
   it('calls onDaySelect with the picked day, including back to null on deselect', async () => {
