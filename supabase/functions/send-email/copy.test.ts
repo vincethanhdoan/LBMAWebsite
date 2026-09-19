@@ -161,27 +161,27 @@ Deno.test('buildIcsUrl: exact string for one token', () => {
 Deno.test(
   'sanitizeForSubject: a newline is collapsed to a single space',
   () => {
-    assertEquals(sanitizeForSubject('Jane\nDoe'), 'Jane Doe');
+    assertEquals(sanitizeForSubject('Jane\nDoe', 'fallback'), 'Jane Doe');
   },
 );
 
 Deno.test('sanitizeForSubject: a CRLF collapses to one space, not two', () => {
-  assertEquals(sanitizeForSubject('Jane\r\nDoe'), 'Jane Doe');
+  assertEquals(sanitizeForSubject('Jane\r\nDoe', 'fallback'), 'Jane Doe');
 });
 
 Deno.test('sanitizeForSubject: a tab is collapsed to a single space', () => {
-  assertEquals(sanitizeForSubject('Jane\tDoe'), 'Jane Doe');
+  assertEquals(sanitizeForSubject('Jane\tDoe', 'fallback'), 'Jane Doe');
 });
 
 Deno.test('sanitizeForSubject: leading and trailing spaces are trimmed', () => {
-  assertEquals(sanitizeForSubject('   Jane Doe   '), 'Jane Doe');
+  assertEquals(sanitizeForSubject('   Jane Doe   ', 'fallback'), 'Jane Doe');
 });
 
 Deno.test(
   'sanitizeForSubject: a 300-character name is capped at 120 chars',
   () => {
     const longName = 'A'.repeat(300);
-    const result = sanitizeForSubject(longName);
+    const result = sanitizeForSubject(longName, 'fallback');
     assertEquals(result.length, 120);
     assertEquals(result, 'A'.repeat(120));
   },
@@ -190,7 +190,25 @@ Deno.test(
 Deno.test(
   'sanitizeForSubject: other C0 control characters are also collapsed',
   () => {
-    assertEquals(sanitizeForSubject('Jane\x01\x1FDoe'), 'Jane Doe');
+    assertEquals(sanitizeForSubject('Jane\x01\x1FDoe', 'fallback'), 'Jane Doe');
+  },
+);
+
+Deno.test(
+  'sanitizeForSubject: an all-control-character input returns the fallback',
+  () => {
+    assertEquals(sanitizeForSubject('\n\t\r', 'a family'), 'a family');
+  },
+);
+
+Deno.test('sanitizeForSubject: an empty string returns the fallback', () => {
+  assertEquals(sanitizeForSubject('', 'a family'), 'a family');
+});
+
+Deno.test(
+  'sanitizeForSubject: a fallback is not used when real text remains',
+  () => {
+    assertEquals(sanitizeForSubject('Jane', 'a family'), 'Jane');
   },
 );
 

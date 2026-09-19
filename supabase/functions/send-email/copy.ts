@@ -28,8 +28,16 @@ const SUBJECT_UNSAFE = /[\x00-\x1F\x7F\s]+/g;
 // subject line: a raw newline or other control character would otherwise
 // reach the provider's JSON subject field verbatim. Collapses every run of
 // control/whitespace characters to a single space, trims, and caps length.
-export function sanitizeForSubject(text: string, maxLength = 120): string {
+// An input that is entirely control characters/whitespace collapses to
+// nothing, which would read as an awkward blank subject, so callers must
+// supply a fallback to use in that case.
+export function sanitizeForSubject(
+  text: string,
+  fallback: string,
+  maxLength = 120,
+): string {
   const collapsed = text.replace(SUBJECT_UNSAFE, ' ').trim();
+  if (collapsed.length === 0) return fallback;
   return collapsed.length > maxLength
     ? collapsed.slice(0, maxLength)
     : collapsed;

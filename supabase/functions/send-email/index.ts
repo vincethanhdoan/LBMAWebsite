@@ -307,7 +307,7 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
       );
       // A parent name is free text; a stray newline or control character
       // must not reach Resend's JSON subject field verbatim.
-      const safeParentName = sanitizeForSubject(lead.parent_name);
+      const safeParentName = sanitizeForSubject(lead.parent_name, 'a family');
       if (visits.length > 0) {
         subject = `New trial booking from ${safeParentName}: ${visits[0].dateShort} at ${visits[0].time}`;
       } else {
@@ -563,9 +563,11 @@ async function handleMessageNotification(recordId: string): Promise<void> {
 
   if (!notifyMessages) return;
 
+  // senderName is a display_name the user typed; a stray newline or control
+  // character must not reach Resend's JSON subject field verbatim.
   await sendEmail(
     user.email,
-    `New message from ${senderName} in the LBMAA Portal`,
+    `New message from ${sanitizeForSubject(senderName, 'Someone')} in the LBMAA Portal`,
     messagingNotificationHtml(senderName, portalUrl, LOGO_URL),
   );
 }
@@ -605,7 +607,10 @@ async function handlePortalNotification(recordId: string): Promise<void> {
       );
       break;
     case 'blog_post':
-      subject = `New post from ${record.payload.author_name ?? 'a member'} in the LBMAA Parent Blog`;
+      // author_name is free text a portal user typed; sanitize before it
+      // reaches the subject line (the html call below is unrelated and
+      // already goes through escHtml in the template).
+      subject = `New post from ${sanitizeForSubject(record.payload.author_name ?? 'a member', 'a member')} in the LBMAA Parent Blog`;
       html = blogPostNotificationHtml(
         record.payload.title ?? '',
         record.payload.author_name ?? 'A member',
@@ -614,7 +619,7 @@ async function handlePortalNotification(recordId: string): Promise<void> {
       );
       break;
     case 'comment_reply':
-      subject = `${record.payload.replier_name ?? 'Someone'} replied to your comment in the LBMAA Portal`;
+      subject = `${sanitizeForSubject(record.payload.replier_name ?? 'Someone', 'Someone')} replied to your comment in the LBMAA Portal`;
       html = commentReplyHtml(
         record.payload.replier_name ?? 'Someone',
         record.payload.original_snippet ?? '',
