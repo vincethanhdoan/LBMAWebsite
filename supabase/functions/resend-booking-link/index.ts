@@ -90,11 +90,8 @@ Deno.serve(async (req) => {
   const { leadId, intent } = await req.json();
   if (!leadId)
     return new Response('Missing leadId', { status: 400, headers: cors });
-  const chosen =
-    typeof intent === 'string' && Object.hasOwn(INTENTS, intent)
-      ? INTENTS[intent as keyof typeof INTENTS]
-      : INTENTS.invite;
-  const { type, statuses } = chosen;
+  const { type, statuses } =
+    INTENTS[intent as keyof typeof INTENTS] ?? INTENTS.invite;
 
   const { data: lead } = await supabase
     .from('enrollment_leads')
