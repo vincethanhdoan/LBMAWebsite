@@ -33,6 +33,7 @@ export function BookingPage() {
   );
   const [showReschedule, setShowReschedule] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [calendarKey, setCalendarKey] = useState(0);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -83,7 +84,7 @@ export function BookingPage() {
     if (!token) return;
     setSubmitting(true);
     try {
-      setError(null);
+      setActionError(null);
       const { data, error: fnError } = await supabase.functions.invoke(
         'book-appointment',
         {
@@ -106,13 +107,17 @@ export function BookingPage() {
     } catch (err) {
       if (err instanceof FunctionsHttpError) {
         const body = await err.context.json().catch(() => null);
-        if (body?.code === 'slot_taken') {
-          setError('That time was just taken. Please pick another date.');
+        if (body?.code === 'slot_taken' || body?.code === 'date_unavailable') {
+          setActionError(
+            body.code === 'slot_taken'
+              ? 'That time was just taken. Please pick another date.'
+              : 'That date is no longer available. Please pick another.',
+          );
           setCalendarKey((k) => k + 1);
           return;
         }
       }
-      setError('Something went wrong. Please try again.');
+      setActionError('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -122,7 +127,7 @@ export function BookingPage() {
     if (!token) return;
     setCancelling(true);
     try {
-      setError(null);
+      setActionError(null);
       const { error: fnError } = await supabase.functions.invoke(
         'book-appointment',
         {
@@ -139,7 +144,7 @@ export function BookingPage() {
       setBooking((prev) => (prev ? { ...prev, status: 'cancelled' } : prev));
     } catch {
       setCancelDialogOpen(false);
-      setError("We couldn't cancel that just now. Please try again.");
+      setActionError("We couldn't cancel that just now. Please try again.");
     } finally {
       setCancelling(false);
     }
@@ -213,7 +218,10 @@ export function BookingPage() {
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <button
-                onClick={() => setShowReschedule(true)}
+                onClick={() => {
+                  setActionError(null);
+                  setShowReschedule(true);
+                }}
                 className="text-sm text-primary hover:underline"
               >
                 Need to reschedule?
@@ -225,12 +233,20 @@ export function BookingPage() {
                 Cancel appointment
               </button>
             </div>
+            {actionError && (
+              <p role="alert" className="text-sm text-destructive">
+                {actionError}
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
             {showReschedule && (
               <button
-                onClick={() => setShowReschedule(false)}
+                onClick={() => {
+                  setActionError(null);
+                  setShowReschedule(false);
+                }}
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
                 ← Back
@@ -255,8 +271,10 @@ export function BookingPage() {
               submitting={submitting}
               confirmLabel="Confirm Appointment"
             />
-            {error && (
-              <p className="text-sm text-destructive text-center">{error}</p>
+            {actionError && (
+              <p role="alert" className="text-sm text-destructive text-center">
+                {actionError}
+              </p>
             )}
           </div>
         )}
