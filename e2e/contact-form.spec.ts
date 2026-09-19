@@ -24,8 +24,10 @@ test('empty submit shows a field error and stays on the form', async ({
   await expect(page.locator('#parentName')).toBeVisible();
   await page.locator('button[type="submit"]').click();
   await expect(page.locator('#parent-name-error')).toBeVisible();
-  // Still on the form: the success status region has not appeared.
-  await expect(page.getByRole('status')).toHaveCount(0);
+  // Still on the form: the booked panel has not appeared.
+  await expect(
+    page.getByRole('heading', { name: "You're booked" }),
+  ).toHaveCount(0);
 });
 
 // Most parents open this form on a phone. The calendar is the widest thing on
