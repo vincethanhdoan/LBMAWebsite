@@ -50,19 +50,26 @@ describe('TrialBookedPanel', () => {
       ),
     );
 
-    expect(screen.getByText("You're booked")).toBeTruthy();
+    const region = screen.getByRole('region');
+    expect(region.getAttribute('tabindex')).toBe('-1');
+    const heading = screen.getByText("You're booked");
+    expect(region.getAttribute('aria-labelledby')).toBe(heading.id);
+
     expect(
       screen.getByText("We're looking forward to meeting Alex."),
     ).toBeTruthy();
+    expect(screen.getByText('Youth Program · Alex')).toBeTruthy();
     expect(screen.getByText('Friday, September 25, 2026')).toBeTruthy();
     expect(screen.getByText('Please arrive at 5:20 PM.')).toBeTruthy();
 
     const changeLink = screen.getByRole('link', {
-      name: 'View or change this visit',
+      name: 'View or change this visit: Youth Program · Alex',
     });
     expect(changeLink.getAttribute('href')).toBe('/book/tok-youth');
 
-    const calendarLink = screen.getByRole('link', { name: 'Add to calendar' });
+    const calendarLink = screen.getByRole('link', {
+      name: 'Add to calendar: Youth Program · Alex',
+    });
     expect(calendarLink.getAttribute('href')).toBe(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/visit-calendar?token=tok-youth`,
     );
@@ -138,10 +145,30 @@ describe('TrialBookedPanel', () => {
     expect(
       screen.getByText("We're looking forward to meeting Mia and Alex."),
     ).toBeTruthy();
+    expect(screen.getByText('Little Dragons · Mia')).toBeTruthy();
+    expect(screen.getByText('Youth Program · Alex')).toBeTruthy();
 
-    expect(
-      screen.getAllByRole('link', { name: 'Add to calendar' }),
-    ).toHaveLength(2);
+    // A screen-reader user browsing by links must be able to tell the two
+    // visits' "View or change"/"Add to calendar" links apart.
+    const changeLittle = screen.getByRole('link', {
+      name: 'View or change this visit: Little Dragons · Mia',
+    });
+    const changeYouth = screen.getByRole('link', {
+      name: 'View or change this visit: Youth Program · Alex',
+    });
+    const calendarLittle = screen.getByRole('link', {
+      name: 'Add to calendar: Little Dragons · Mia',
+    });
+    const calendarYouth = screen.getByRole('link', {
+      name: 'Add to calendar: Youth Program · Alex',
+    });
+    const names = [
+      changeLittle,
+      changeYouth,
+      calendarLittle,
+      calendarYouth,
+    ].map((link) => link.getAttribute('aria-label'));
+    expect(new Set(names).size).toBe(4);
   });
 
   it('renders Spanish strings and a Spanish date', () => {
@@ -173,13 +200,20 @@ describe('TrialBookedPanel', () => {
     expect(
       screen.getByText('Tenemos muchas ganas de conocer a Alex.'),
     ).toBeTruthy();
+    // Per-visit heading: the site's own (untranslated) program name plus
+    // the child's name, not the English PROGRAM_LABELS value.
+    expect(screen.getByText('Programa Juvenil · Alex')).toBeTruthy();
     expect(screen.getByText('viernes, 25 de septiembre de 2026')).toBeTruthy();
     expect(screen.getByText('Por favor llega a las 5:20 p.m.')).toBeTruthy();
     expect(
-      screen.getByRole('link', { name: 'Ver o cambiar esta visita' }),
+      screen.getByRole('link', {
+        name: 'Ver o cambiar esta visita: Programa Juvenil · Alex',
+      }),
     ).toBeTruthy();
     expect(
-      screen.getByRole('link', { name: 'Agregar al calendario' }),
+      screen.getByRole('link', {
+        name: 'Agregar al calendario: Programa Juvenil · Alex',
+      }),
     ).toBeTruthy();
     expect(screen.getByText('Dónde encontrarnos')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Abrir en Mapas' })).toBeTruthy();

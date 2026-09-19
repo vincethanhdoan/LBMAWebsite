@@ -5,8 +5,7 @@ import { useLanguage } from './lang';
 import type { Lang } from './lang';
 import { V3 } from './design';
 import { fillTemplate } from './fillTemplate';
-import { joinNames } from '../../lib/contactLinks';
-import { PROGRAM_LABELS } from '../../lib/programs';
+import { collapseDoublePeriod, joinNames } from '../../lib/contactLinks';
 import type { Program } from '../../lib/programs';
 import type { TrialBookingReceipt } from '../../lib/supabase/client';
 
@@ -39,12 +38,7 @@ function formatVisitTime(time: string, lang: Lang): string {
   });
 }
 
-// es-US already renders "a.m."/"p.m." with a trailing period, and
-// successArrive's own template ends in one too, so filling it in doubles up.
-// Collapse that here rather than editing the approved copy string.
-function collapseDoublePeriod(text: string): string {
-  return text.endsWith('..') ? text.slice(0, -1) : text;
-}
+const HEADING_ID = 'trial-booked-heading';
 
 export function TrialBookedPanel({
   receipt,
@@ -70,7 +64,8 @@ export function TrialBookedPanel({
   return (
     <div
       ref={ref}
-      role="status"
+      role="region"
+      aria-labelledby={HEADING_ID}
       tabIndex={-1}
       className="rounded-2xl p-7 lg:p-10"
       style={{ backgroundColor: 'white' }}
@@ -86,6 +81,7 @@ export function TrialBookedPanel({
           <CheckCircle2 className="w-8 h-8" style={{ color: V3.primary }} />
         </div>
         <h2
+          id={HEADING_ID}
           className="v3-h font-black mb-2"
           style={{ fontSize: '1.75rem', color: V3.text }}
         >
@@ -104,7 +100,10 @@ export function TrialBookedPanel({
       <div className="flex flex-col gap-4 pt-8">
         {sortedVisits.map((visit) => {
           const childNames = childrenByProgram[visit.program_type] ?? [];
-          const programLabel = PROGRAM_LABELS[visit.program_type];
+          const programLabel =
+            visit.program_type === 'little_dragons'
+              ? ct.programNameLittle
+              : ct.programNameYouth;
           const heading =
             childNames.length > 0
               ? `${programLabel} · ${joinNames(childNames, lang)}`
@@ -134,7 +133,8 @@ export function TrialBookedPanel({
               </p>
               <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3">
                 <Link
-                  to={`/book/${visit.booking_token}`}
+                  to={`/book/${encodeURIComponent(visit.booking_token)}`}
+                  aria-label={`${ct.successChange}: ${heading}`}
                   className="text-sm font-semibold"
                   style={{
                     color: V3.primary,
@@ -145,7 +145,8 @@ export function TrialBookedPanel({
                   {ct.successChange}
                 </Link>
                 <a
-                  href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/visit-calendar?token=${visit.booking_token}`}
+                  href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/visit-calendar?token=${encodeURIComponent(visit.booking_token)}`}
+                  aria-label={`${ct.successCalendar}: ${heading}`}
                   className="text-sm font-semibold"
                   style={{
                     color: V3.primary,

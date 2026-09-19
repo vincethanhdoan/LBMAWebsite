@@ -5,7 +5,8 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import { TrialVisitStep } from './TrialVisitStep';
 import type { VisitSelections } from './TrialVisitStep';
-import { LanguageProvider } from './LanguageProvider';
+import { LanguageContext, translations } from './lang';
+import type { Lang } from './lang';
 import { getAppointmentSlots } from '../../lib/supabase/queries';
 import type { VisitChoice } from '../shared/VisitPicker';
 
@@ -38,9 +39,13 @@ function tree(props: {
   errors?: Partial<Record<'little_dragons' | 'youth', string>>;
   refreshKey?: number;
   disabled?: boolean;
+  lang?: Lang;
 }) {
+  const lang = props.lang ?? 'en';
   return (
-    <LanguageProvider>
+    <LanguageContext.Provider
+      value={{ lang, setLang: vi.fn(), t: translations[lang] }}
+    >
       <TrialVisitStep
         children={props.children}
         value={props.value ?? {}}
@@ -49,7 +54,7 @@ function tree(props: {
         refreshKey={props.refreshKey ?? 0}
         disabled={props.disabled ?? false}
       />
-    </LanguageProvider>
+    </LanguageContext.Provider>
   );
 }
 
@@ -101,6 +106,18 @@ describe('TrialVisitStep', () => {
       screen.getByRole('group', { name: 'Youth Program visit for Alex' }),
     ).toBeTruthy();
     await waitFor(() => expect(getAppointmentSlots).toHaveBeenCalledTimes(2));
+  });
+
+  it("shows the Spanish legend, using the site's own program names, for a Spanish render", async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(tree({ children: [{ name: 'Alex', age: '9' }], lang: 'es' }));
+
+    expect(
+      screen.getByRole('group', {
+        name: 'Visita de Programa Juvenil para Alex',
+      }),
+    ).toBeTruthy();
+    await waitFor(() => expect(getAppointmentSlots).toHaveBeenCalledTimes(1));
   });
 
   it('removes the Little Dragons selection when an age moves from 7 to 8, keeping the Youth one', async () => {
@@ -238,5 +255,62 @@ describe('TrialVisitStep', () => {
       'visit-group-youth',
     ) as HTMLFieldSetElement;
     expect(fieldset.disabled).toBe(true);
+  });
+
+  it('retries a failed fetch once its program drops out of the set and reappears', async () => {
+    vi.mocked(getAppointmentSlots)
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce([]);
+    const { rerender } = render(
+      tree({ children: [{ name: 'Amy', age: '7' }] }),
+    );
+    await waitFor(() => expect(getAppointmentSlots).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+
+    // Age out of range: little_dragons drops out of the present program set.
+    rerender(tree({ children: [{ name: 'Amy', age: '2' }] }));
+    // Back to a little_dragons age: the program reappears.
+    rerender(tree({ children: [{ name: 'Amy', age: '7' }] }));
+
+    await waitFor(() => expect(getAppointmentSlots).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('button', { name: 'Pick' })).toBeTruthy();
+  });
+
+  it('retries a failed fetch when refreshKey changes, leaving a succeeded program cached', async () => {
+    vi.mocked(getAppointmentSlots).mockImplementation(
+      (program?: 'little_dragons' | 'youth') =>
+        program === 'little_dragons'
+          ? Promise.reject(new Error('boom'))
+          : Promise.resolve([]),
+    );
+    const { rerender } = render(
+      tree({
+        children: [
+          { name: 'Amy', age: '7' },
+          { name: 'Ben', age: '10' },
+        ],
+        refreshKey: 0,
+      }),
+    );
+    await waitFor(() => expect(getAppointmentSlots).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+
+    vi.mocked(getAppointmentSlots).mockClear();
+    vi.mocked(getAppointmentSlots).mockImplementation(() =>
+      Promise.resolve([]),
+    );
+
+    rerender(
+      tree({
+        children: [
+          { name: 'Amy', age: '7' },
+          { name: 'Ben', age: '10' },
+        ],
+        refreshKey: 1,
+      }),
+    );
+
+    await waitFor(() => expect(getAppointmentSlots).toHaveBeenCalledTimes(1));
+    expect(getAppointmentSlots).toHaveBeenCalledWith('little_dragons');
   });
 });

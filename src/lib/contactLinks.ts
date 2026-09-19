@@ -21,6 +21,14 @@ export function joinNames(names: string[], language: 'en' | 'es'): string {
   return `${names.slice(0, -1).join(', ')} ${and} ${names[names.length - 1]}`;
 }
 
+// es-US already renders "a.m."/"p.m." with a trailing period, so composing a
+// formatted time into a sentence that ends (or continues) with its own
+// period doubles it up. Collapses any ".." left over from that composition
+// into a single ".", wherever it lands in the string.
+export function collapseDoublePeriod(text: string): string {
+  return text.replace(/\.\./g, '.');
+}
+
 // Opens the staff member's own messaging app with a reminder ready to send.
 // Nothing is sent or recorded by the portal. The "?&body=" form is the one
 // both iOS and Android accept.
@@ -52,14 +60,12 @@ export function reminderSmsHref(input: {
 
   let body: string;
   if (input.language === 'es') {
-    // es-US already renders "p.m." with a trailing period, so the sentence
-    // period is only added when the visit clause doesn't already end in one.
-    const visit = `el ${day}${time ? `, a las ${time}` : ''}`;
-    const closing = visit.endsWith('.') ? '' : '.';
-    body =
+    const visit = `el ${day}${time ? `, a las ${time}` : ''}.`;
+    body = collapseDoublePeriod(
       `Hola ${firstName}, te escribimos de Los Banos Martial Arts. Tenemos muchas ganas de ver a ` +
-      `${children} ${visit}${closing} Por favor responde para confirmar que vienen, ` +
-      `o llámanos al ${SCHOOL_PHONE_DISPLAY} si necesitan otro día.`;
+        `${children} ${visit} Por favor responde para confirmar que vienen, ` +
+        `o llámanos al ${SCHOOL_PHONE_DISPLAY} si necesitan otro día.`,
+    );
   } else {
     const at = time ? ` at ${time}` : '';
     body =

@@ -361,6 +361,8 @@ const EN = {
       'We recently received a request from you. Please wait a moment and try again, or call us directly.',
     programLittle: 'Little Dragons · ages 4–7',
     programYouth: 'Youth Program · ages 8–17',
+    programNameLittle: 'Little Dragons',
+    programNameYouth: 'Youth Program',
     programAgeError: 'Age must be 4–17',
   },
   footer: {
@@ -930,6 +932,8 @@ const ES: T = {
       'Recibimos una solicitud tuya hace poco. Por favor espera un momento e intenta de nuevo, o llámanos directamente.',
     programLittle: 'Pequeños Dragones · edades 4–7',
     programYouth: 'Programa Juvenil · edades 8–17',
+    programNameLittle: 'Pequeños Dragones',
+    programNameYouth: 'Programa Juvenil',
     programAgeError: 'La edad debe ser 4–17',
   },
   footer: {

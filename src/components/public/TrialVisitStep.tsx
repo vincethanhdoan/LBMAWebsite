@@ -4,7 +4,7 @@ import { useLanguage } from './lang';
 import { V3 } from './design';
 import { fillTemplate } from './fillTemplate';
 import { joinNames } from '../../lib/contactLinks';
-import { programsForChildren, PROGRAM_LABELS } from '../../lib/programs';
+import { programsForChildren } from '../../lib/programs';
 import type { Program } from '../../lib/programs';
 import { getAppointmentSlots } from '../../lib/supabase/queries';
 import { visitPickerCopy } from '../shared/visitPickerCopy';
@@ -54,6 +54,7 @@ function LoadingSpinner({ label }: { label: string }) {
 
 interface ProgramGroupProps {
   program: Program;
+  label: string;
   childNames: string[];
   value: VisitChoice | null;
   onPick: (program: Program, choice: VisitChoice | null) => void;
@@ -68,6 +69,7 @@ interface ProgramGroupProps {
 
 function ProgramGroup({
   program,
+  label,
   childNames,
   value,
   onPick,
@@ -80,7 +82,6 @@ function ProgramGroup({
   visitNone,
 }: ProgramGroupProps) {
   const copy = visitPickerCopy[language];
-  const label = PROGRAM_LABELS[program];
   const legend =
     childNames.length === 0
       ? label
@@ -149,23 +150,56 @@ export function TrialVisitStep({
     Partial<Record<Program, AppointmentSlot[]>>
   >({});
   const [errorPrograms, setErrorPrograms] = useState<Set<Program>>(new Set());
-  const fetchedRef = useRef<Set<Program>>(new Set());
+  // Per-program fetch status, tracked outside React state so deciding
+  // whether to (re)fetch never itself triggers a render. A success is
+  // permanent -- it's never refetched. An error is retried when its program
+  // drops out of the present set and reappears, or when `refreshKey`
+  // changes (both compared against the previous effect run below).
+  const statusRef = useRef<
+    Partial<Record<Program, 'pending' | 'success' | 'error'>>
+  >({});
+  const attemptRef = useRef<Partial<Record<Program, number>>>({});
+  const prevPresentRef = useRef<Set<Program>>(new Set());
+  const prevRefreshKeyRef = useRef(refreshKey);
 
   useEffect(() => {
-    const presentPrograms = parseProgramsKey(programsKey);
-    const toFetch = presentPrograms.filter((p) => !fetchedRef.current.has(p));
-    if (toFetch.length === 0) return;
-    toFetch.forEach((p) => fetchedRef.current.add(p));
-    toFetch.forEach((program) => {
+    const present = new Set(parseProgramsKey(programsKey));
+    const refreshKeyChanged = prevRefreshKeyRef.current !== refreshKey;
+    prevRefreshKeyRef.current = refreshKey;
+
+    present.forEach((program) => {
+      const status = statusRef.current[program];
+      const justArrived = !prevPresentRef.current.has(program);
+      const shouldFetch =
+        status === undefined ||
+        (status === 'error' && (justArrived || refreshKeyChanged));
+      if (!shouldFetch) return;
+
+      statusRef.current[program] = 'pending';
+      const attempt = (attemptRef.current[program] ?? 0) + 1;
+      attemptRef.current[program] = attempt;
+      setErrorPrograms((prev) => {
+        if (!prev.has(program)) return prev;
+        const next = new Set(prev);
+        next.delete(program);
+        return next;
+      });
+
       getAppointmentSlots(program)
         .then((slots) => {
+          if (attemptRef.current[program] !== attempt) return;
+          statusRef.current[program] = 'success';
           setSlotsByProgram((prev) => ({ ...prev, [program]: slots }));
         })
         .catch(() => {
+          if (attemptRef.current[program] !== attempt) return;
+          statusRef.current[program] = 'error';
           setErrorPrograms((prev) => new Set(prev).add(program));
         });
     });
-  }, [programsKey]);
+
+    prevPresentRef.current = present;
+  }, [programsKey, refreshKey]);
 
   // Prune selections for programs that dropped out of the present set
   // (an age edited out of range, or a child removed). Only calls `onChange`
@@ -217,11 +251,16 @@ export function TrialVisitStep({
             : slots
               ? { status: 'ready', slots }
               : { status: 'loading' };
+          const label =
+            program === 'little_dragons'
+              ? ct.programNameLittle
+              : ct.programNameYouth;
 
           return (
             <ProgramGroup
               key={program}
               program={program}
+              label={label}
               childNames={childNames}
               value={value[program] ?? null}
               onPick={handlePick}
