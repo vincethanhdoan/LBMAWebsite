@@ -4,7 +4,9 @@
 -- Why a slot is not bookable on a date, or NULL when it is. p_allow_today and
 -- p_horizon_days are trusted arguments set by the caller, never derived from
 -- the request. p_lead_id lets a family's own bookings be ignored, matching
--- prevent_slot_double_booking.
+-- prevent_slot_double_booking. Raises invalid_booking_request when p_date,
+-- p_allow_today, or p_horizon_days is NULL; a missing p_slot_id resolves to
+-- slot_inactive like any slot that doesn't exist.
 CREATE OR REPLACE FUNCTION public.slot_date_block_reason(
   p_slot_id uuid,
   p_date date,
@@ -23,6 +25,10 @@ DECLARE
   v_now   timestamp := now() AT TIME ZONE 'America/Los_Angeles';
   v_today date := (now() AT TIME ZONE 'America/Los_Angeles')::date;
 BEGIN
+  IF p_date IS NULL OR p_allow_today IS NULL OR p_horizon_days IS NULL THEN
+    RAISE EXCEPTION 'invalid_booking_request';
+  END IF;
+
   SELECT * INTO v_slot FROM appointment_slots
   WHERE slot_id = p_slot_id AND is_active = true;
   IF NOT FOUND THEN RETURN 'slot_inactive'; END IF;
@@ -73,6 +79,9 @@ GRANT EXECUTE ON FUNCTION public.slot_date_block_reason(uuid, date, boolean, int
 
 -- The dates shown to families and staff. Families and the public see three
 -- weeks and never today; staff see the window they ask for and may book today.
+-- Keeps its existing anon/authenticated grants: CREATE OR REPLACE preserves
+-- grants already set on a function, unlike the four functions below, which
+-- are new here and need their own REVOKE/GRANT.
 CREATE OR REPLACE FUNCTION public.get_upcoming_bookable_dates(
   p_slot_id uuid,
   p_weeks_ahead integer DEFAULT 20,
@@ -87,8 +96,9 @@ AS $function$
 DECLARE
   v_is_admin boolean := public.is_admin(auth.uid());
   v_today    date := (now() AT TIME ZONE 'America/Los_Angeles')::date;
-  v_horizon  integer := CASE WHEN v_is_admin THEN p_weeks_ahead * 7
-                             ELSE LEAST(p_weeks_ahead * 7, 21) END;
+  v_weeks    integer := COALESCE(p_weeks_ahead, 20);
+  v_horizon  integer := CASE WHEN v_is_admin THEN v_weeks * 7
+                             ELSE LEAST(v_weeks * 7, 21) END;
   v_date     date;
 BEGIN
   FOR v_date IN
@@ -164,6 +174,7 @@ DECLARE
   v_upcoming  integer;
   v_result    text;
   v_today     date := (now() AT TIME ZONE 'America/Los_Angeles')::date;
+  v_now       timestamp := now() AT TIME ZONE 'America/Los_Angeles';
 BEGIN
   SELECT status INTO v_status FROM enrollment_leads WHERE lead_id = p_lead_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Lead not found'; END IF;
@@ -174,7 +185,8 @@ BEGIN
          count(*) FILTER (WHERE status IN ('scheduled', 'confirmed')),
          count(*) FILTER (WHERE status = 'confirmed'),
          count(*) FILTER (WHERE status IN ('scheduled', 'confirmed')
-                            AND appointment_date >= v_today)
+                            AND (appointment_date > v_today
+                                 OR (appointment_date = v_today AND appointment_time > v_now::time)))
     INTO v_total, v_active, v_booked, v_confirmed, v_upcoming
   FROM enrollment_lead_program_bookings
   WHERE lead_id = p_lead_id;
@@ -221,6 +233,8 @@ DECLARE
   v_new_status  text;
   v_time        time;
 BEGIN
+  IF p_slot_id IS NULL THEN RAISE EXCEPTION 'invalid_booking_request'; END IF;
+
   SELECT * INTO v_booking FROM enrollment_lead_program_bookings
   WHERE booking_id = p_booking_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'booking_not_found'; END IF;
@@ -265,7 +279,7 @@ DECLARE
   src     text;
   v_start integer;
   v_end   integer;
-  v_open  text := '  IF v_lead_status IN (''approved'', ''appointment_scheduled'', ''appointment_confirmed'') THEN' || chr(10) || '    UPDATE enrollment_leads SET status = (';
+  v_open  text := '  -- Only active post-approval statuses move; ''new'' and terminal states stay.' || chr(10) || '  IF v_lead_status IN (''approved'', ''appointment_scheduled'', ''appointment_confirmed'') THEN' || chr(10) || '    UPDATE enrollment_leads SET status = (';
   v_close text := '    WHERE lead_id = p_lead_id;' || chr(10) || '  END IF;' || chr(10) || 'END';
 BEGIN
   SELECT pg_get_functiondef('public.update_enrollment_lead(uuid,text,text,text,jsonb)'::regprocedure)
@@ -281,6 +295,7 @@ BEGIN
   END IF;
 
   src := substr(src, 1, v_start - 1)
+      || '  -- recalculate_lead_status owns the rule, including which statuses never move.' || chr(10)
       || '  PERFORM public.recalculate_lead_status(p_lead_id);' || chr(10)
       || 'END'
       || substr(src, v_end + length(v_close));
