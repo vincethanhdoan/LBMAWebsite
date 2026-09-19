@@ -21,6 +21,7 @@ export function BookingCalendar({
   allowToday = false,
 }: BookingCalendarProps) {
   const [choice, setChoice] = useState<VisitChoice | null>(null);
+  const [daySelected, setDaySelected] = useState(false);
 
   async function handleConfirm() {
     if (!choice) return;
@@ -33,15 +34,16 @@ export function BookingCalendar({
         slots={slots}
         value={choice}
         onChange={setChoice}
+        onDaySelect={(dateKey) => setDaySelected(dateKey !== null)}
         language="en"
         allowToday={allowToday}
         emptyMessage="There are no open visit times right now. Please contact us directly."
       />
 
-      {choice && (
+      {daySelected && (
         <Button
           onClick={handleConfirm}
-          disabled={submitting}
+          disabled={!choice || submitting}
           className="w-full mt-3"
         >
           {submitting ? (

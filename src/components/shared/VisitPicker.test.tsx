@@ -43,6 +43,26 @@ function ControlledVisitPicker(props: {
   return <VisitPicker {...props} value={value} onChange={setValue} />;
 }
 
+function ControlledVisitPickerWithInitialValue(props: {
+  slots: AppointmentSlot[];
+  language: 'en' | 'es';
+  emptyMessage: string;
+  refreshKey: number;
+  initialValue: VisitChoice | null;
+}) {
+  const [value, setValue] = useState<VisitChoice | null>(props.initialValue);
+  return (
+    <VisitPicker
+      slots={props.slots}
+      value={value}
+      onChange={setValue}
+      language={props.language}
+      emptyMessage={props.emptyMessage}
+      refreshKey={props.refreshKey}
+    />
+  );
+}
+
 const spanishTimeLabel = new Date('1970-01-01T17:20:00').toLocaleTimeString(
   'es-US',
   { hour: 'numeric', minute: '2-digit' },
@@ -243,6 +263,190 @@ describe('VisitPicker', () => {
     );
 
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(null));
+  });
+
+  it('calls onDaySelect with the picked day, including back to null on deselect', async () => {
+    vi.mocked(getUpcomingBookableDates).mockResolvedValue(['2026-09-21']);
+    const onDaySelect = vi.fn();
+    const slots = [
+      makeSlot({ slot_id: 'slot-1', start_time: '10:00:00' }),
+      makeSlot({ slot_id: 'slot-2', start_time: '17:20:00' }),
+    ];
+    render(
+      <VisitPicker
+        slots={slots}
+        value={null}
+        onChange={vi.fn()}
+        onDaySelect={onDaySelect}
+        language="en"
+        emptyMessage="No visits available."
+      />,
+    );
+    await waitForLoadToFinish();
+    expect(onDaySelect).toHaveBeenLastCalledWith(null);
+
+    const day = screen.getByRole('button', { name: /September 21st, 2026/ });
+    fireEvent.click(day);
+    expect(onDaySelect).toHaveBeenLastCalledWith('2026-09-21');
+
+    fireEvent.click(day);
+    expect(onDaySelect).toHaveBeenLastCalledWith(null);
+  });
+
+  it('shows a different value the parent swaps to as selected, with its own time pressed', async () => {
+    vi.mocked(getUpcomingBookableDates).mockResolvedValue([
+      '2026-09-21',
+      '2026-09-25',
+    ]);
+    const slots = [
+      makeSlot({ slot_id: 'slot-1', start_time: '10:00:00' }),
+      makeSlot({ slot_id: 'slot-2', start_time: '17:20:00' }),
+    ];
+    const choiceA: VisitChoice = {
+      slotId: 'slot-1',
+      date: '2026-09-21',
+      startTime: '10:00:00',
+    };
+    const choiceB: VisitChoice = {
+      slotId: 'slot-2',
+      date: '2026-09-25',
+      startTime: '17:20:00',
+    };
+
+    const { rerender } = render(
+      <VisitPicker
+        slots={slots}
+        value={choiceA}
+        onChange={vi.fn()}
+        language="en"
+        emptyMessage="No visits available."
+      />,
+    );
+    await waitForLoadToFinish();
+
+    const day21 = screen.getByRole('button', {
+      name: /September 21st, 2026/,
+    });
+    expect(day21.closest('td')?.getAttribute('aria-selected')).toBe('true');
+    expect(
+      screen
+        .getByRole('button', { name: /^Arrive at 10:00 AM/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+
+    rerender(
+      <VisitPicker
+        slots={slots}
+        value={choiceB}
+        onChange={vi.fn()}
+        language="en"
+        emptyMessage="No visits available."
+      />,
+    );
+
+    const day25 = screen.getByRole('button', {
+      name: /September 25th, 2026/,
+    });
+    expect(day25.closest('td')?.getAttribute('aria-selected')).toBe('true');
+    expect(day21.closest('td')?.getAttribute('aria-selected')).not.toBe('true');
+    expect(
+      screen
+        .getByRole('button', { name: /^Arrive at 5:20 PM/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(
+      screen
+        .getByRole('button', { name: 'Arrive at 10:00 AM' })
+        .getAttribute('aria-pressed'),
+    ).toBe('false');
+  });
+
+  it('shows no day selected and no time buttons once the parent nulls the value', async () => {
+    vi.mocked(getUpcomingBookableDates).mockResolvedValue(['2026-09-21']);
+    const slots = [
+      makeSlot({ slot_id: 'slot-1', start_time: '10:00:00' }),
+      makeSlot({ slot_id: 'slot-2', start_time: '17:20:00' }),
+    ];
+    const choice: VisitChoice = {
+      slotId: 'slot-1',
+      date: '2026-09-21',
+      startTime: '10:00:00',
+    };
+
+    const { rerender } = render(
+      <VisitPicker
+        slots={slots}
+        value={choice}
+        onChange={vi.fn()}
+        language="en"
+        emptyMessage="No visits available."
+      />,
+    );
+    await waitForLoadToFinish();
+    expect(
+      screen.getByRole('group', { name: 'Choose an arrival time' }),
+    ).toBeTruthy();
+
+    rerender(
+      <VisitPicker
+        slots={slots}
+        value={null}
+        onChange={vi.fn()}
+        language="en"
+        emptyMessage="No visits available."
+      />,
+    );
+
+    expect(
+      screen
+        .getByRole('button', { name: /September 21st, 2026/ })
+        .closest('td')
+        ?.getAttribute('aria-selected'),
+    ).not.toBe('true');
+    expect(
+      screen.queryByRole('group', { name: 'Choose an arrival time' }),
+    ).toBeNull();
+  });
+
+  it('leaves no day highlighted after a refetch drops the chosen date (controlled round trip)', async () => {
+    vi.mocked(getUpcomingBookableDates)
+      .mockResolvedValueOnce(['2026-09-21'])
+      .mockResolvedValueOnce(['2026-09-25']);
+    const slot = makeSlot({ slot_id: 'slot-1', start_time: '10:00:00' });
+    const initialValue: VisitChoice = {
+      slotId: 'slot-1',
+      date: '2026-09-21',
+      startTime: '10:00:00',
+    };
+
+    const { rerender } = render(
+      <ControlledVisitPickerWithInitialValue
+        slots={[slot]}
+        language="en"
+        emptyMessage="No visits available."
+        refreshKey={1}
+        initialValue={initialValue}
+      />,
+    );
+    await waitForLoadToFinish();
+
+    rerender(
+      <ControlledVisitPickerWithInitialValue
+        slots={[slot]}
+        language="en"
+        emptyMessage="No visits available."
+        refreshKey={2}
+        initialValue={initialValue}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(document.querySelector('[aria-selected="true"]')).toBeNull();
+    });
+    const day21 = screen.getByRole('button', {
+      name: /September 21st, 2026/,
+    }) as HTMLButtonElement;
+    expect(day21.disabled).toBe(true);
   });
 
   it('renders the empty message when there are no bookable dates', async () => {

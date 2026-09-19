@@ -23,6 +23,7 @@ interface VisitPickerProps {
   slots: AppointmentSlot[];
   value: VisitChoice | null;
   onChange: (choice: VisitChoice | null) => void;
+  onDaySelect?: (dateKey: string | null) => void;
   language: VisitPickerLanguage;
   allowToday?: boolean;
   refreshKey?: string | number;
@@ -43,10 +44,19 @@ function formatTime(timeStr: string, localeCode: string): string {
   });
 }
 
+function sameChoice(a: VisitChoice | null, b: VisitChoice | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.slotId === b.slotId && a.date === b.date && a.startTime === b.startTime
+  );
+}
+
 export function VisitPicker({
   slots,
   value,
   onChange,
+  onDaySelect,
   language,
   allowToday = false,
   refreshKey,
@@ -61,9 +71,34 @@ export function VisitPicker({
   );
   const [fetching, setFetching] = useState(slotIds === '' ? false : true);
   const [fetchFailed, setFetchFailed] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<Date | undefined>(() =>
-    value ? new Date(value.date + 'T12:00:00') : undefined,
-  );
+  // A day the visitor picked that has more than one arrival time and no
+  // time chosen yet. Whenever `value` is set, it (not this) is the source
+  // of truth for which day is selected — see `selectedKey` below.
+  const [pendingDayKey, setPendingDayKey] = useState<string | null>(null);
+  const [prevValue, setPrevValue] = useState(value);
+
+  // Derive rather than mirror: if a caller changes `value` to a different
+  // choice, or clears it, a stale local pendingDayKey must not keep the old
+  // day highlighted. This runs during render (not an effect) so it resolves
+  // before this render commits. Our own handlers below keep `prevValue` in
+  // step with the `value` they expect to produce, so this only ever fires
+  // for a change this component didn't itself just request.
+  if (!sameChoice(value, prevValue)) {
+    setPrevValue(value);
+    setPendingDayKey(null);
+  }
+
+  // A pending day that a refetch dropped from the map is stale: derive it
+  // out of `selectedKey` rather than reaching for an effect to clear it.
+  const selectedKey = value
+    ? value.date
+    : pendingDayKey && availableMap.has(pendingDayKey)
+      ? pendingDayKey
+      : null;
+
+  useEffect(() => {
+    onDaySelect?.(selectedKey);
+  }, [selectedKey, onDaySelect]);
 
   useEffect(() => {
     if (slotIds === '') return;
@@ -101,6 +136,8 @@ export function VisitPicker({
   }, [slotIds, allowToday, refreshKey]);
 
   // Once a refetch lands, drop a chosen value that is no longer bookable.
+  // (A stale pending day needs no such effect — `selectedKey` above already
+  // stops reading it once it drops out of `availableMap`.)
   useEffect(() => {
     if (fetching || !value) return;
     const dayIds = availableMap.get(value.date) ?? [];
@@ -119,13 +156,18 @@ export function VisitPicker({
   }
 
   function handleDaySelect(date: Date | undefined) {
-    setSelectedDay(date);
     if (!date) {
+      setPendingDayKey(null);
       onChange(null);
       return;
     }
     const dateKey = toDateKey(date);
     const options = getDayOptions(dateKey);
+    // Set the pending day for both branches, not just the multi-time one:
+    // it's the fallback `selectedKey` uses whenever a caller doesn't (yet)
+    // hand the new value back as a prop, so the day/time stay visible even
+    // one render ahead of the parent's own state updating.
+    setPendingDayKey(dateKey);
     if (options.length === 1) {
       onChange({
         slotId: options[0].slotId,
@@ -133,15 +175,20 @@ export function VisitPicker({
         startTime: options[0].startTime,
       });
     } else {
+      // We're nulling `value` ourselves as part of picking this new day.
+      // Pre-empt the render-time check above with the `value` this is
+      // expected to produce, so it doesn't mistake our own action for an
+      // external reset and immediately clear the pending day we just set.
+      setPrevValue(null);
       onChange(null);
     }
   }
 
   function handleTimeSelect(option: DateOption) {
-    if (!selectedDay) return;
+    if (!selectedKey) return;
     onChange({
       slotId: option.slotId,
-      date: toDateKey(selectedDay),
+      date: selectedKey,
       startTime: option.startTime,
     });
   }
@@ -182,11 +229,13 @@ export function VisitPicker({
   );
   const firstAvailableKey = Array.from(availableMap.keys()).sort()[0];
   const defaultMonth = new Date(firstAvailableKey + 'T12:00:00');
-  const selectedKey = selectedDay ? toDateKey(selectedDay) : null;
+  const selectedDayDate = selectedKey
+    ? new Date(selectedKey + 'T12:00:00')
+    : undefined;
   const dayOptions = selectedKey ? getDayOptions(selectedKey) : [];
-  const selectedDayAnnouncement = selectedDay
+  const selectedDayAnnouncement = selectedDayDate
     ? copy.selectedDay(
-        selectedDay.toLocaleDateString(localeCode, {
+        selectedDayDate.toLocaleDateString(localeCode, {
           weekday: 'long',
           month: 'long',
           day: 'numeric',
@@ -198,7 +247,7 @@ export function VisitPicker({
     <div className="booking-calendar">
       <DayPicker
         mode="single"
-        selected={selectedDay}
+        selected={selectedDayDate}
         onSelect={handleDaySelect}
         disabled={(date) => !availableMap.has(toDateKey(date))}
         modifiers={{ available: availableDates }}
@@ -208,7 +257,7 @@ export function VisitPicker({
         defaultMonth={defaultMonth}
       />
 
-      {selectedDay && dayOptions.length > 0 && (
+      {selectedDayDate && dayOptions.length > 0 && (
         <div
           role="group"
           aria-label={copy.chooseTime}
