@@ -41,9 +41,15 @@
   background: transparent;
 }
 
-/* Center the DayPicker within its container */
+/* Center the DayPicker within its container. The accent variables also live
+   here rather than on .booking-calendar above: react-day-picker sets its own
+   defaults on .rdp-root itself, which would otherwise shadow an override set
+   on the wrapper one level up. */
 .booking-calendar .rdp-root {
   margin: 0 auto;
+  --rdp-accent-color: #c8102e;
+  --rdp-accent-background-color: #fef2f2;
+  --rdp-today-color: #c8102e;
 }
 
 /* Enforce table layout — guards against aggressive CSS resets from browser extensions */
@@ -73,7 +79,7 @@
    columns, so the day cells stay their usual size wherever there is room and
    shrink rather than push the page sideways where there is not. The layout
    from 640px up is untouched. */
-@media (max-width: 639.98px) {
+@media (width < 40rem) {
   .booking-calendar .rdp-month_grid {
     width: 100%;
     max-width: calc(7 * var(--rdp-day-width));
@@ -86,6 +92,7 @@
 
   .booking-calendar .rdp-day_button {
     width: 100%;
+    max-width: var(--rdp-day_button-width);
     min-width: 0;
   }
 }
