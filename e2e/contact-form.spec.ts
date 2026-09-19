@@ -64,19 +64,40 @@ test('a valid submission books a visit and frees the slot on cleanup', async ({
   await expect(timeButton).toBeVisible();
   await timeButton.click();
 
-  // Capture the booking RPC's own request instead of hardcoding the staging
-  // URL or key: it carries the same supabaseUrl/anon key the cleanup call
-  // below needs, straight from what the app actually sent.
-  const [rpcRequest] = await Promise.all([
+  // Capture the booking RPC's own request and response, both registered
+  // before the click. The request carries the same supabaseUrl/anon key the
+  // cleanup call below needs, straight from what the app actually sent. The
+  // response carries every booked visit's token: cleanup reads it from here,
+  // not from the confirmation panel, so a UI assertion failing after the
+  // booking has already committed server-side can never suppress cleanup.
+  const [rpcRequest, rpcResponse] = await Promise.all([
     page.waitForRequest((req) =>
       req.url().includes('/rest/v1/rpc/submit_trial_booking'),
+    ),
+    page.waitForResponse((res) =>
+      res.url().includes('/rest/v1/rpc/submit_trial_booking'),
     ),
     page.locator('button[type="submit"]').click(),
   ]);
   const supabaseUrl = rpcRequest.url().split('/rest/v1/rpc/')[0];
   const anonKey = rpcRequest.headers()['apikey'] ?? '';
 
-  let bookingToken = '';
+  const bookingTokens: string[] = [];
+  try {
+    const body = (await rpcResponse.json()) as {
+      visits?: Array<{ booking_token?: unknown }>;
+    };
+    for (const visit of body.visits ?? []) {
+      if (typeof visit.booking_token === 'string' && visit.booking_token) {
+        bookingTokens.push(visit.booking_token);
+      }
+    }
+  } catch {
+    // Non-2xx or unparseable response body: leave bookingTokens empty.
+    // Cleanup below warns rather than throwing, so the real test failure
+    // (if any) still surfaces.
+  }
+
   try {
     await expect(
       page.getByRole('heading', { name: "You're booked" }),
@@ -86,30 +107,35 @@ test('a valid submission books a visit and frees the slot on cleanup', async ({
       .getByRole('link', { name: /View or change this visit/ })
       .first();
     await expect(changeLink).toBeVisible();
-    const href = await changeLink.getAttribute('href');
-    bookingToken = href?.match(/\/book\/([^/?#]+)/)?.[1] ?? '';
-    expect(bookingToken).not.toBe('');
   } finally {
-    if (bookingToken && supabaseUrl && anonKey) {
-      try {
-        const res = await page.request.post(
-          `${supabaseUrl}/functions/v1/book-appointment`,
-          {
-            headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
-            data: { token: bookingToken, action: 'cancel' },
-          },
-        );
-        if (!res.ok()) {
+    if (bookingTokens.length > 0 && supabaseUrl && anonKey) {
+      for (const token of bookingTokens) {
+        try {
+          const res = await page.request.post(
+            `${supabaseUrl}/functions/v1/book-appointment`,
+            {
+              headers: {
+                apikey: anonKey,
+                Authorization: `Bearer ${anonKey}`,
+              },
+              data: { token, action: 'cancel' },
+            },
+          );
+          if (!res.ok()) {
+            console.warn(
+              `cleanup: book-appointment cancel returned ${res.status()} for token ${token}`,
+            );
+          }
+        } catch (err) {
           console.warn(
-            `cleanup: book-appointment cancel returned ${res.status()} for token ${bookingToken}`,
+            `cleanup: failed to cancel the booked visit for token ${token}`,
+            err,
           );
         }
-      } catch (err) {
-        console.warn('cleanup: failed to cancel the booked visit', err);
       }
     } else {
       console.warn(
-        'cleanup: no booking token or supabase credentials captured; the slot was not freed',
+        'cleanup: no booking tokens or supabase credentials captured; the slot(s) were not freed',
       );
     }
   }
