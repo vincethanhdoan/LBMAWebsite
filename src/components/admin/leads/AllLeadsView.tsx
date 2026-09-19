@@ -15,11 +15,13 @@ import {
   toLocalDateKey,
 } from './leadDisplay';
 import { childSummary, getAppointmentOccurrences } from './leadViews';
+import { findDuplicateLeadIds } from './duplicates';
 import {
   EmptyState,
   ErrorCard,
   LeadRow,
   LeadRowSkeleton,
+  NoEmailPill,
   StatusBadge,
   Surface,
 } from './ui';
@@ -130,22 +132,10 @@ export function AllLeadsView({
 
   // A loaded lead is a possible duplicate when its email matches an
   // earlier-created loaded lead; the first occurrence of each email is never flagged.
-  const duplicateLeadIds = useMemo(() => {
-    const loaded = [...activeLeads, ...terminalLeads];
-    const earliestByEmail = new Map<string, string>();
-    for (const l of loaded) {
-      const email = l.parent_email.trim().toLowerCase();
-      const earliest = earliestByEmail.get(email);
-      if (!earliest || l.created_at < earliest)
-        earliestByEmail.set(email, l.created_at);
-    }
-    const ids = new Set<string>();
-    for (const l of loaded) {
-      const email = l.parent_email.trim().toLowerCase();
-      if (l.created_at > earliestByEmail.get(email)!) ids.add(l.lead_id);
-    }
-    return ids;
-  }, [activeLeads, terminalLeads]);
+  const duplicateLeadIds = useMemo(
+    () => findDuplicateLeadIds([...activeLeads, ...terminalLeads]),
+    [activeLeads, terminalLeads],
+  );
 
   const terminalTotal = counts
     ? counts.attended + counts.no_show + counts.closed + counts.denied
@@ -175,7 +165,12 @@ export function AllLeadsView({
         title={lead.parent_name}
         titleMeta={titleMeta(lead)}
         line2={line2}
-        badge={kind ? <StatusBadge kind={kind} /> : undefined}
+        badge={
+          <>
+            {lead.parent_email === null && <NoEmailPill />}
+            {kind && <StatusBadge kind={kind} />}
+          </>
+        }
         onOpen={() => onOpenLead(lead.lead_id, lead)}
       />
     );
@@ -195,7 +190,12 @@ export function AllLeadsView({
         title={lead.parent_name}
         titleMeta={titleMeta(lead)}
         line2={line2}
-        badge={kind ? <StatusBadge kind={kind} /> : undefined}
+        badge={
+          <>
+            {lead.parent_email === null && <NoEmailPill />}
+            {kind && <StatusBadge kind={kind} />}
+          </>
+        }
         onOpen={() => onOpenLead(lead.lead_id, lead)}
       />
     );

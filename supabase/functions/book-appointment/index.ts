@@ -3,6 +3,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { recalculateLeadStatus } from '../_shared/leadStatus.ts';
+import { queueFamilyNotification } from '../_shared/familyNotifications.ts';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
@@ -67,7 +68,7 @@ Deno.serve(async (req) => {
 
   const { data: lead } = await supabase
     .from('enrollment_leads')
-    .select('lead_id, status, parent_email, parent_name')
+    .select('lead_id, status')
     .eq('lead_id', programBooking.lead_id)
     .single();
 
@@ -225,35 +226,18 @@ Deno.serve(async (req) => {
   // Confirm what was just booked, even if other programs are still pending.
   // The email renders every currently booked appointment at send time, so a
   // single queued row covers back-to-back bookings without duplicate emails.
-  const { data: queuedConfirmation } = await supabase
-    .from('enrollment_lead_notifications')
-    .select('notification_id')
-    .eq('lead_id', lead.lead_id)
-    .eq('type', 'booking_confirmation')
-    .eq('status', 'queued')
-    .maybeSingle();
-
-  if (!queuedConfirmation) {
-    const { error: notifError } = await supabase
-      .from('enrollment_lead_notifications')
-      .insert({
-        lead_id: lead.lead_id,
-        recipient_email: lead.parent_email,
-        channel: 'email',
-        type: 'booking_confirmation',
-        status: 'queued',
-      });
-
-    if (notifError) {
-      console.error(
-        '[book-appointment] notification insert error:',
-        notifError,
-      );
-      return new Response('Booking saved but notification failed', {
-        status: 500,
-        headers: cors,
-      });
-    }
+  // The booking is already saved: a family with no email, or a queue failure,
+  // must not turn it into an error.
+  let emailQueued = false;
+  try {
+    const result = await queueFamilyNotification(
+      supabase,
+      lead.lead_id,
+      'booking_confirmation',
+    );
+    emailQueued = result !== 'no_email';
+  } catch (notifError) {
+    console.error('[book-appointment] notification queue error:', notifError);
   }
 
   return new Response(
@@ -262,6 +246,7 @@ Deno.serve(async (req) => {
       status: newProgramStatus,
       appointment_date: appointmentDate,
       appointment_time: slot.start_time,
+      emailQueued,
     }),
     { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } },
   );

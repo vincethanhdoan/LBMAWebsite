@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu';
 import { ActionButton, StatusBadge } from './ui';
+import { ContactActions } from './ContactActions';
 import { LeadTimeline } from './LeadTimeline';
 import { buildTimelineEntries } from './timelineEntries';
 import { RecordOutcomeButton } from './RecordOutcomePopover';
@@ -157,6 +158,7 @@ export function LeadDetailPanel({
   const hasAppointmentSection =
     bookings.length > 0 || lead.appointment_date !== null;
   const confirmationEmail = effectiveConfirmationNotification(lead);
+  const hasEmail = lead.parent_email !== null;
 
   const today = pacificTodayISO();
   const occurrences = getAppointmentOccurrences([lead]);
@@ -219,10 +221,12 @@ export function LeadDetailPanel({
   const primaryAction: { label: string; run: () => void } | null = (() => {
     switch (lead.status) {
       case 'new':
-        return {
-          label: 'Approve and send invites',
-          run: () => actions.approve(lead),
-        };
+        return hasEmail
+          ? {
+              label: 'Approve and send invites',
+              run: () => actions.approve(lead),
+            }
+          : { label: 'Pick a date', run: () => onPickDate(lead) };
       case 'appointment_scheduled':
         return {
           label: 'Mark confirmed',
@@ -325,7 +329,7 @@ export function LeadDetailPanel({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+              className="w-11 h-11 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -356,68 +360,91 @@ export function LeadDetailPanel({
                   </div>
                 )}
                 {/* Email state only when it still needs something from staff or family. */}
-                {lead.status === 'appointment_scheduled' &&
-                  !confirmationEmail && (
-                    <div className="text-[11px] flex items-center gap-2">
-                      <span className="text-muted-foreground">
-                        {autoSendDateKey
-                          ? `Confirmation email will be sent ${formatDateConcise(autoSendDateKey + 'T12:00:00')}`
-                          : 'No confirmation email sent'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => actions.sendReminder(lead)}
-                        disabled={actions.sendingReminderId === lead.lead_id}
-                        className="font-medium text-primary hover:underline disabled:opacity-50"
-                      >
-                        {actions.sendingReminderId === lead.lead_id
-                          ? 'Sending…'
-                          : autoSendDateKey
-                            ? 'Send now'
-                            : 'Send confirmation email'}
-                      </button>
-                    </div>
-                  )}
-                {lead.status === 'appointment_scheduled' &&
-                  (confirmationEmail?.status === 'sent' ||
-                    confirmationEmail?.status === 'queued') && (
-                    <div className="text-[11px] flex items-center gap-2">
-                      <span className="text-muted-foreground">
-                        {confirmationEmail.status === 'sent'
-                          ? `Confirmation email sent ${formatDateConcise(confirmationEmail.created_at)}, waiting on the family`
-                          : 'Confirmation email queued'}
-                      </span>
-                      {confirmationEmail.status === 'sent' && (
+                {hasEmail ? (
+                  <>
+                    {lead.status === 'appointment_scheduled' &&
+                      !confirmationEmail && (
+                        <div className="text-[13px] flex items-center gap-2">
+                          <span className="text-muted-foreground">
+                            {autoSendDateKey
+                              ? `Confirmation email will be sent ${formatDateConcise(autoSendDateKey + 'T12:00:00')}`
+                              : 'No confirmation email sent'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => actions.sendReminder(lead)}
+                            disabled={
+                              actions.sendingReminderId === lead.lead_id
+                            }
+                            className="py-1 font-medium text-primary hover:underline disabled:opacity-50"
+                          >
+                            {actions.sendingReminderId === lead.lead_id
+                              ? 'Sending…'
+                              : autoSendDateKey
+                                ? 'Send now'
+                                : 'Send confirmation email'}
+                          </button>
+                        </div>
+                      )}
+                    {lead.status === 'appointment_scheduled' &&
+                      (confirmationEmail?.status === 'sent' ||
+                        confirmationEmail?.status === 'queued') && (
+                        <div className="text-[13px] flex items-center gap-2">
+                          <span className="text-muted-foreground">
+                            {confirmationEmail.status === 'sent'
+                              ? `Confirmation email sent ${formatDateConcise(confirmationEmail.created_at)}, waiting on the family`
+                              : 'Confirmation email queued'}
+                          </span>
+                          {confirmationEmail.status === 'sent' && (
+                            <button
+                              type="button"
+                              onClick={() => actions.sendReminder(lead)}
+                              disabled={
+                                actions.sendingReminderId === lead.lead_id
+                              }
+                              className="py-1 font-medium text-primary hover:underline disabled:opacity-50"
+                            >
+                              {actions.sendingReminderId === lead.lead_id
+                                ? 'Sending…'
+                                : 'Resend'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    {confirmationEmail?.status === 'failed' && (
+                      <div className="text-[13px] flex items-center gap-2">
+                        <span className="flex items-center gap-1 text-status-danger-fg">
+                          <AlertCircle className="w-3 h-3" />
+                          Confirmation email failed
+                        </span>
                         <button
                           type="button"
                           onClick={() => actions.sendReminder(lead)}
                           disabled={actions.sendingReminderId === lead.lead_id}
-                          className="font-medium text-primary hover:underline disabled:opacity-50"
+                          className="py-1 font-medium text-primary hover:underline disabled:opacity-50"
                         >
                           {actions.sendingReminderId === lead.lead_id
                             ? 'Sending…'
-                            : 'Resend'}
+                            : 'Retry'}
                         </button>
-                      )}
-                    </div>
-                  )}
-                {confirmationEmail?.status === 'failed' && (
-                  <div className="text-[11px] flex items-center gap-2">
-                    <span className="flex items-center gap-1 text-status-danger-fg">
-                      <AlertCircle className="w-3 h-3" />
-                      Confirmation email failed
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => actions.sendReminder(lead)}
-                      disabled={actions.sendingReminderId === lead.lead_id}
-                      className="font-medium text-primary hover:underline disabled:opacity-50"
-                    >
-                      {actions.sendingReminderId === lead.lead_id
-                        ? 'Sending…'
-                        : 'Retry'}
-                    </button>
-                  </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  isActive && (
+                    <p className="text-[13px] text-muted-foreground leading-relaxed">
+                      {
+                        "This family has no email on file, so they won't get a reminder. Please call or text them a day or two before the visit."
+                      }{' '}
+                      <button
+                        type="button"
+                        onClick={() => onEdit(lead)}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Add an email
+                      </button>
+                    </p>
+                  )
                 )}
               </div>
             )}
@@ -425,17 +452,24 @@ export function LeadDetailPanel({
             {/* Contact */}
             <div className="space-y-1.5">
               <SectionLabel>Contact</SectionLabel>
-              <a
-                href={`mailto:${lead.parent_email}`}
-                className="block text-[13px] text-primary hover:underline break-all"
-              >
-                {lead.parent_email}
-              </a>
+              {lead.parent_email ? (
+                <a
+                  href={`mailto:${lead.parent_email}`}
+                  className="block text-[13px] text-primary hover:underline break-all"
+                >
+                  {lead.parent_email}
+                </a>
+              ) : (
+                <div className="text-[13px] text-muted-foreground">
+                  No email on file
+                </div>
+              )}
               {lead.phone && (
                 <div className="text-[13px] text-muted-foreground">
                   {formatPhone(lead.phone)}
                 </div>
               )}
+              <ContactActions lead={lead} />
             </div>
 
             {/* The family's inquiry message, quoted */}
@@ -566,9 +600,14 @@ export function LeadDetailPanel({
                 >
                   Pick new date
                 </ActionButton>
-                <ActionButton variant="outline" onClick={() => onResend(lead)}>
-                  Resend invites
-                </ActionButton>
+                {hasEmail && (
+                  <ActionButton
+                    variant="outline"
+                    onClick={() => onResend(lead)}
+                  >
+                    Resend invites
+                  </ActionButton>
+                )}
               </>
             )}
             {hasPastAppointment && isActive && (
@@ -584,12 +623,14 @@ export function LeadDetailPanel({
                 >
                   Pick new date
                 </ActionButton>
-                <ActionButton
-                  variant="outline"
-                  onClick={() => onRescheduleLink(lead)}
-                >
-                  Send reschedule link
-                </ActionButton>
+                {hasEmail && (
+                  <ActionButton
+                    variant="outline"
+                    onClick={() => onRescheduleLink(lead)}
+                  >
+                    Send reschedule link
+                  </ActionButton>
+                )}
               </>
             )}
             {isActive && (
@@ -608,7 +649,7 @@ export function LeadDetailPanel({
                   <button
                     type="button"
                     aria-label="More actions"
-                    className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    className="w-11 h-11 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                   >
                     <MoreVertical className="w-4 h-4" />
                   </button>
@@ -630,12 +671,14 @@ export function LeadDetailPanel({
                   {lead.status === 'new' && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                        onSelect={() => onDeny(lead)}
-                      >
-                        Deny…
-                      </DropdownMenuItem>
+                      {hasEmail && (
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                          onSelect={() => onDeny(lead)}
+                        >
+                          Deny…
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive focus:bg-destructive/10"
                         onSelect={() => onDismiss(lead)}

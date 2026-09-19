@@ -16,8 +16,10 @@ import type { AppointmentOccurrence, FollowUpItem } from './leadViews';
 import { WeekCard } from './WeekCard';
 import {
   ActionButton,
+  CallButton,
   EmptyState,
   LeadRow,
+  NoEmailPill,
   Pill,
   StatusBadge,
   Surface,
@@ -346,21 +348,27 @@ function OccurrenceRow({
         )
       }
       badge={
-        callNow ? undefined : (
-          <StatusBadge
-            kind={occurrence.confirmed ? 'confirmed' : 'unconfirmed'}
-          />
-        )
+        <>
+          {lead.parent_email === null && <NoEmailPill />}
+          {!callNow && (
+            <StatusBadge
+              kind={occurrence.confirmed ? 'confirmed' : 'unconfirmed'}
+            />
+          )}
+        </>
       }
       action={
         callNow ? (
-          <ActionButton
-            variant="outline"
-            disabled={actions.busyLeadIds.has(lead.lead_id)}
-            onClick={() => actions.markConfirmed(lead)}
-          >
-            Mark confirmed
-          </ActionButton>
+          <>
+            <CallButton name={lead.parent_name} phone={lead.phone} />
+            <ActionButton
+              variant="outline"
+              disabled={actions.busyLeadIds.has(lead.lead_id)}
+              onClick={() => actions.markConfirmed(lead)}
+            >
+              Mark confirmed
+            </ActionButton>
+          </>
         ) : undefined
       }
       onOpen={() => onOpenLead(lead.lead_id)}

@@ -84,6 +84,12 @@ describe('leadMatchesSearch', () => {
     });
     expect(leadMatchesSearch(lead, 'mateo')).toBe(true);
   });
+
+  it('searches a lead with no email without throwing', () => {
+    const lead = makeLead({ parent_email: null });
+    expect(leadMatchesSearch(lead, 'guerra')).toBe(true);
+    expect(leadMatchesSearch(lead, 'example.com')).toBe(false);
+  });
 });
 
 describe('toLocalDateKey', () => {

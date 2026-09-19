@@ -725,7 +725,7 @@ export async function upsertAdminNotificationPreferences(
 
 export async function createEnrollmentLead(fields: {
   parentName: string;
-  parentEmail: string;
+  parentEmail: string | null;
   phone?: string;
   notes?: string;
   children: Array<{ name: string; age: number }>;
@@ -744,7 +744,7 @@ export async function createEnrollmentLead(fields: {
 export async function updateEnrollmentLead(input: {
   leadId: string;
   parentName: string;
-  parentEmail: string;
+  parentEmail: string | null;
   phone: string | null;
   children: Array<{ childId: string | null; name: string; age: number }>;
 }): Promise<void> {

@@ -37,7 +37,7 @@ export function leadMatchesSearch(
   return (
     phoneMatch ||
     lead.parent_name.toLowerCase().includes(q) ||
-    lead.parent_email.toLowerCase().includes(q) ||
+    (lead.parent_email?.toLowerCase().includes(q) ?? false) ||
     (lead.student_name?.toLowerCase().includes(q) ?? false) ||
     (lead.children?.some((c) => c.name.toLowerCase().includes(q)) ?? false)
   );

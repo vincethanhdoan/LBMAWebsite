@@ -12,6 +12,7 @@ import {
 import type { AttentionItem } from './leadViews';
 import {
   ActionButton,
+  CallButton,
   EmptyState,
   LeadRow,
   SectionHeader,
@@ -251,13 +252,16 @@ function AttentionRow({
       </>
     );
     action = (
-      <ActionButton
-        variant="outline"
-        disabled={busy}
-        onClick={() => actions.markConfirmed(lead)}
-      >
-        Mark confirmed
-      </ActionButton>
+      <>
+        <CallButton name={lead.parent_name} phone={lead.phone} />
+        <ActionButton
+          variant="outline"
+          disabled={busy}
+          onClick={() => actions.markConfirmed(lead)}
+        >
+          Mark confirmed
+        </ActionButton>
+      </>
     );
   } else if (item.reason === 'record_outcome') {
     const { followUp } = item;

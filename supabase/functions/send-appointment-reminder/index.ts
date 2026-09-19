@@ -1,4 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  noEmailResponse,
+  queueFamilyNotification,
+} from '../_shared/familyNotifications.ts';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
@@ -85,42 +89,27 @@ Deno.serve(async (req) => {
       headers: cors,
     });
   }
+  if (!lead.parent_email) return noEmailResponse(cors);
 
-  // Block only while a send is in flight. Already-sent confirmations can be
+  // A reminder still waiting to send blocks another. Already-sent ones can be
   // re-sent: delivery fails silently (spam, typos fixed via edit), and staff
   // need to nudge families again.
-  const { data: existing } = await supabase
-    .from('enrollment_lead_notifications')
-    .select('notification_id')
-    .eq('lead_id', leadId)
-    .eq('type', 'reminder')
-    .eq('status', 'queued')
-    .maybeSingle();
-
-  if (existing) {
-    return new Response('Reminder already queued', {
-      status: 409,
-      headers: cors,
-    });
-  }
-
-  const { error: notifError } = await supabase
-    .from('enrollment_lead_notifications')
-    .insert({
-      lead_id: leadId,
-      recipient_email: lead.parent_email,
-      channel: 'email',
-      type: 'reminder',
-      status: 'queued',
-    });
-
-  if (notifError) {
+  let result;
+  try {
+    result = await queueFamilyNotification(supabase, leadId, 'reminder');
+  } catch (notifError) {
     console.error(
-      '[send-appointment-reminder] notification insert error:',
+      '[send-appointment-reminder] notification queue error:',
       notifError,
     );
     return new Response('Failed to queue reminder', {
       status: 500,
+      headers: cors,
+    });
+  }
+  if (result === 'already_queued') {
+    return new Response('Reminder already queued', {
+      status: 409,
       headers: cors,
     });
   }

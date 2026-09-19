@@ -102,7 +102,7 @@ export function useUpdateLead() {
     mutationFn: (input: {
       leadId: string;
       parentName: string;
-      parentEmail: string;
+      parentEmail: string | null;
       phone: string | null;
       children: Array<{ childId: string | null; name: string; age: number }>;
     }) => updateEnrollmentLead(input),

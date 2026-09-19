@@ -1,7 +1,10 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { CheckCircle2, ChevronRight } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Phone } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Skeleton } from '../../ui/skeleton';
+import { formatPhone } from '../../../lib/format';
+import { telHref } from '../../../lib/contactLinks';
+import { CONTACT_LINK_CLASS } from './contactLinkClass';
 
 // Shared 48px-min touch target for leads action buttons (list rows, detail
 // panel action bar, record-outcome trigger). Keeps every inline lead action at
@@ -167,7 +170,7 @@ export function LeadRow({
         )}
       </div>
       <div
-        className="flex items-center gap-2 flex-shrink-0"
+        className="flex flex-wrap items-center justify-end gap-2 flex-shrink-0 max-w-[60%]"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
@@ -270,4 +273,33 @@ export function EmptyState({
       {action}
     </div>
   );
+}
+
+// Tap-to-call on the staff member's own phone. Same 48px target as
+// ActionButton so it sits beside one in a row.
+export function CallButton({
+  name,
+  phone,
+}: {
+  name: string;
+  phone: string | null;
+}) {
+  const href = phone ? telHref(phone) : null;
+  if (!href || !phone) return null;
+  return (
+    <a
+      href={href}
+      aria-label={`Call ${name} at ${formatPhone(phone)}`}
+      className={CONTACT_LINK_CLASS}
+    >
+      <Phone className="w-4 h-4" aria-hidden />
+      Call
+    </a>
+  );
+}
+
+// Neutral on purpose: a family without an email is a normal state, not a
+// warning. It tells staff this family needs a phone reminder.
+export function NoEmailPill() {
+  return <Pill>No email</Pill>;
 }

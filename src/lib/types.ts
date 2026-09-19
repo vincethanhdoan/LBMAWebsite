@@ -161,7 +161,7 @@ export type EnrollmentLeadNotification = {
 export type EnrollmentLead = {
   lead_id: string;
   parent_name: string;
-  parent_email: string;
+  parent_email: string | null;
   phone: string | null;
   student_name: string | null;
   student_age: number | null;

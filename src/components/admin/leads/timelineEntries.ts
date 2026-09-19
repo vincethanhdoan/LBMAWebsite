@@ -63,7 +63,7 @@ export function buildTimelineEntries(lead: EnrollmentLead): TimelineEntry[] {
     });
   }
 
-  const parentEmail = lead.parent_email.trim().toLowerCase();
+  const parentEmail = lead.parent_email?.trim().toLowerCase() ?? null;
   for (const n of lead.notificationHistory) {
     // Admin alert emails are internal plumbing, not lead history.
     if (n.type === 'new_lead') continue;
