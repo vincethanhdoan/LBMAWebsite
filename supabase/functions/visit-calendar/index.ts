@@ -108,13 +108,15 @@ Deno.serve(async (req) => {
     .eq('lead_id', booking.lead_id)
     .single();
 
-  // A deleted, denied, or closed lead's booking links are dead, the same as
-  // everywhere else a booking_token is resolved.
+  // A deleted, denied, closed, or attended lead's booking links are dead, the
+  // same as everywhere else a booking_token is resolved: book_program_appointment
+  // also refuses to book against a lead in any of these statuses.
   if (
     !lead ||
     lead.deleted_at ||
     lead.status === 'denied' ||
-    lead.status === 'closed'
+    lead.status === 'closed' ||
+    lead.status === 'attended'
   ) {
     return notFound(cors);
   }
