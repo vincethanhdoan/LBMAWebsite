@@ -7,6 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { buildVisitIcs } from './ics.ts';
 import { SCHOOL_ADDRESS, joinNames } from '../_shared/copy.ts';
 import type { Language } from '../_shared/copy.ts';
+import { getAppUrl } from '../_shared/appUrl.ts';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
@@ -37,14 +38,16 @@ function adminClient() {
   );
 }
 
-function getAppUrl(): string {
-  const url = Deno.env.get('APP_URL');
-  if (!url) throw new Error('APP_URL environment variable is not set');
-  return url.replace(/\/+$/, '');
-}
+// The booking token's validity can change (a visit gets cancelled or a stale
+// token starts resolving to a different booking), so neither a hit nor a
+// miss may be cached by the browser or an intermediary.
+const NO_STORE = { 'Cache-Control': 'private, no-store' };
 
 function notFound(cors: Record<string, string>): Response {
-  return new Response('Not found', { status: 404, headers: cors });
+  return new Response('Not found', {
+    status: 404,
+    headers: { ...cors, ...NO_STORE },
+  });
 }
 
 const UUID_RE =
@@ -145,6 +148,7 @@ Deno.serve(async (req) => {
     status: 200,
     headers: {
       ...cors,
+      ...NO_STORE,
       'Content-Type': 'text/calendar; charset=utf-8',
       'Content-Disposition': 'attachment; filename="trial-visit.ics"',
     },

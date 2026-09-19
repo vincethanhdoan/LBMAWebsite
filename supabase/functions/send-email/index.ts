@@ -41,6 +41,7 @@ import {
   SCHOOL_ADDRESS,
 } from './copy.ts';
 import type { Language } from './copy.ts';
+import { getAppUrl } from '../_shared/appUrl.ts';
 
 const RESEND_API_URL = 'https://api.resend.com/emails';
 const FROM =
@@ -82,12 +83,6 @@ function adminClient() {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     { auth: { persistSession: false } },
   );
-}
-
-function getAppUrl(): string {
-  const url = Deno.env.get('APP_URL');
-  if (!url) throw new Error('APP_URL environment variable is not set');
-  return url.replace(/\/+$/, '');
 }
 
 // How far off the appointment is, phrased for the reminder subject/heading.
