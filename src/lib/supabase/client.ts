@@ -53,11 +53,13 @@ export type TrialBookingReceipt = {
 };
 
 function isTrialBookingReceipt(value: unknown): value is TrialBookingReceipt {
+  const visits = (value as { visits?: unknown } | null)?.visits;
   return (
     typeof value === 'object' &&
     value !== null &&
     typeof (value as { lead_id?: unknown }).lead_id === 'string' &&
-    Array.isArray((value as { visits?: unknown }).visits)
+    Array.isArray(visits) &&
+    visits.length > 0
   );
 }
 

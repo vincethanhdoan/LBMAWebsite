@@ -257,4 +257,12 @@ describe('submitTrialBookingWithTimeout', () => {
     const result = await submitTrialBookingWithTimeout(trialInput, 5000);
     expect(result).toEqual({ data: null, error: null });
   });
+
+  it('returns null data when the receipt has no visits', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ lead_id: 'lead-uuid-123', visits: [] }),
+    );
+    const result = await submitTrialBookingWithTimeout(trialInput, 5000);
+    expect(result).toEqual({ data: null, error: null });
+  });
 });

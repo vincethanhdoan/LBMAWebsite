@@ -76,7 +76,7 @@ Defined in `src/App.tsx`:
 ### 4.4 Public Enrollment Leads
 
 1. Visitor submits `ContactPage` form.
-2. `submit_enrollment_lead` RPC inserts a lead and notification queue row.
+2. `submit_trial_booking` RPC inserts a lead and notification queue row.
 3. Admin users can view/update lead queues through authenticated access governed by RLS.
 
 ## 5) Security Architecture

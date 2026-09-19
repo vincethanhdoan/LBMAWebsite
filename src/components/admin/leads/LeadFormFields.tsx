@@ -4,16 +4,17 @@ import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { PROGRAM_BADGE_STYLES } from './leadDisplay';
 import type { LeadFormChild, LeadFormValues, LeadFormErrors } from './leadForm';
+import { programForAgeText } from '../../../lib/programs';
 
 function programHint(ageText: string): { text: string; cls: string } | null {
   if (!ageText) return null;
-  const age = Number(ageText);
-  if (age >= 4 && age <= 7)
+  const program = programForAgeText(ageText);
+  if (program === 'little_dragons')
     return {
       text: 'Little Dragons · 4 to 7',
       cls: PROGRAM_BADGE_STYLES.little_dragons,
     };
-  if (age >= 8 && age <= 17)
+  if (program === 'youth')
     return { text: 'Youth Program · 8 to 17', cls: PROGRAM_BADGE_STYLES.youth };
   return { text: 'Age must be 4 to 17', cls: 'text-destructive' };
 }

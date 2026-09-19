@@ -19,7 +19,6 @@ import type {
   StudentFeedback,
   FeedbackTest,
   Review,
-  AppointmentSlot,
   BlockedDate,
   AdminNotificationSetting,
   UserNotification,
@@ -776,39 +775,13 @@ export async function getUserReview(userId: string): Promise<Review | null> {
 // APPOINTMENT SLOTS
 // ============================================
 
-export async function getAppointmentSlots(
-  programType?: 'little_dragons' | 'youth',
-): Promise<AppointmentSlot[]> {
-  let query = supabase
-    .from('appointment_slots')
-    .select('*')
-    .eq('is_active', true)
-    .order('day_of_week');
-
-  if (programType) {
-    query = query.in('program_type', [programType, 'all']);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function getUpcomingBookableDates(
-  slotId: string,
-  weeksAhead = 20,
-  includeToday = false,
-): Promise<string[]> {
-  const { data, error } = await supabase.rpc('get_upcoming_bookable_dates', {
-    p_slot_id: slotId,
-    p_weeks_ahead: weeksAhead,
-    p_include_today: includeToday,
-  });
-  if (error) throw error;
-  return (data ?? []).map(
-    (row: { available_date: string }) => row.available_date,
-  );
-}
+// Kept in a leaf module (bookingQueries.ts) so the public booking graph can
+// import them without pulling in the rest of this file; re-exported here so
+// every existing portal import keeps working unchanged.
+export {
+  getAppointmentSlots,
+  getUpcomingBookableDates,
+} from './bookingQueries';
 
 export async function getProgramBookingByToken(token: string): Promise<{
   booking_id: string;
