@@ -40,8 +40,8 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Edge function template tests
-        run: deno test supabase/functions/send-email/
+      - name: Edge function tests
+        run: deno test supabase/functions/
 
       - name: Format check
         run: npm run format:check

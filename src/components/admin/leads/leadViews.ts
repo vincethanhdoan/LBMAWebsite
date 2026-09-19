@@ -7,6 +7,7 @@ import { daysUntilInPacific } from '../../../lib/pacificTime';
 import {
   effectiveConfirmationNotification,
   getWeekStart,
+  latestNotification,
   toLocalDateKey,
 } from './leadDisplay';
 
@@ -103,7 +104,11 @@ export type AttentionItem =
       occurrence: AppointmentOccurrence;
     }
   | { reason: 'record_outcome'; lead: EnrollmentLead; followUp: FollowUpItem }
-  | { reason: 'email_failed'; lead: EnrollmentLead }
+  | {
+      reason: 'email_failed';
+      lead: EnrollmentLead;
+      email: 'reminder' | 'receipt';
+    }
   | { reason: 'stale_invite'; lead: EnrollmentLead; daysWaiting: number };
 
 export const STALE_INVITE_DAYS = 5;
@@ -140,8 +145,19 @@ export function deriveAttentionItems(
     push({ reason: 'record_outcome', lead: followUp.lead, followUp });
   }
   for (const lead of leads) {
-    if (effectiveConfirmationNotification(lead)?.status === 'failed') {
-      push({ reason: 'email_failed', lead });
+    const stillBooked =
+      lead.status === 'appointment_scheduled' ||
+      lead.status === 'appointment_confirmed';
+    if (
+      stillBooked &&
+      effectiveConfirmationNotification(lead)?.status === 'failed'
+    ) {
+      push({ reason: 'email_failed', lead, email: 'reminder' });
+    } else if (
+      stillBooked &&
+      latestNotification(lead, 'booking_confirmation')?.status === 'failed'
+    ) {
+      push({ reason: 'email_failed', lead, email: 'receipt' });
     }
   }
   for (const lead of leads) {

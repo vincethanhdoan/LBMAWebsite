@@ -95,6 +95,7 @@ async function getLeadAppointments(
     .from('enrollment_lead_program_bookings')
     .select('program_type, booking_token, appointment_date, appointment_time')
     .eq('lead_id', leadId)
+    .in('status', ['scheduled', 'confirmed'])
     .not('appointment_date', 'is', null)
     .gte('appointment_date', pacificToday)
     .order('appointment_date', { ascending: true });
@@ -354,6 +355,11 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
           '[send-email] booking_confirmation: no booked appointments for lead',
           record.lead_id,
         );
+        await markEnrollmentFailed(
+          supabase,
+          record.notification_id,
+          'No upcoming visit was left when this email was due.',
+        );
         return;
       }
       subject =
@@ -373,6 +379,11 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         console.warn(
           '[send-email] reminder: no booked appointments for lead',
           record.lead_id,
+        );
+        await markEnrollmentFailed(
+          supabase,
+          record.notification_id,
+          'No upcoming visit was left when this email was due.',
         );
         return;
       }

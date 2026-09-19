@@ -351,6 +351,133 @@ describe('deriveAttentionItems', () => {
     expect(items).toHaveLength(1);
     expect(items[0].reason).toBe('call_to_confirm');
   });
+
+  it('flags a lead whose latest booking receipt failed', () => {
+    const lead = makeLead({
+      status: 'appointment_confirmed',
+      programBookings: [
+        makeBooking({ appointment_date: '2026-07-25', status: 'confirmed' }),
+      ],
+      notificationHistory: [
+        {
+          notification_id: 'n1',
+          type: 'booking_confirmation',
+          status: 'failed',
+          recipient_email: 'eduardo@example.com',
+          created_at: '2026-07-14T00:00:00Z',
+        },
+      ],
+    });
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      reason: 'email_failed',
+      email: 'receipt',
+    });
+  });
+
+  it('does not flag a receipt failure that a later receipt fixed', () => {
+    const lead = makeLead({
+      status: 'appointment_confirmed',
+      notificationHistory: [
+        {
+          notification_id: 'n1',
+          type: 'booking_confirmation',
+          status: 'failed',
+          recipient_email: 'eduardo@example.com',
+          created_at: '2026-07-13T00:00:00Z',
+        },
+        {
+          notification_id: 'n2',
+          type: 'booking_confirmation',
+          status: 'sent',
+          recipient_email: 'eduardo@example.com',
+          created_at: '2026-07-14T00:00:00Z',
+        },
+      ],
+    });
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
+    expect(items).toEqual([]);
+  });
+
+  it('reports a failed reminder as email: reminder when still booked', () => {
+    const lead = makeLead({
+      status: 'appointment_scheduled',
+      reminderNotification: {
+        notification_id: 'n1',
+        type: 'reminder',
+        status: 'failed',
+        recipient_email: 'eduardo@example.com',
+        created_at: '2026-07-14T00:00:00Z',
+      },
+    });
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      reason: 'email_failed',
+      email: 'reminder',
+    });
+  });
+
+  it('does not flag a failed reminder once the lead is no longer booked', () => {
+    const lead = makeLead({
+      status: 'approved',
+      reminderNotification: {
+        notification_id: 'n1',
+        type: 'reminder',
+        status: 'failed',
+        recipient_email: 'eduardo@example.com',
+        created_at: '2026-07-14T00:00:00Z',
+      },
+    });
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
+    expect(items).toEqual([]);
+  });
+
+  it('ignores failed receipts on finished leads', () => {
+    const lead = makeLead({
+      status: 'closed',
+      notificationHistory: [
+        {
+          notification_id: 'n1',
+          type: 'booking_confirmation',
+          status: 'failed',
+          recipient_email: 'eduardo@example.com',
+          created_at: '2026-07-14T00:00:00Z',
+        },
+      ],
+    });
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
+    expect(items).toEqual([]);
+  });
+
+  it('prefers a failed reminder over a failed receipt on the same lead', () => {
+    const lead = makeLead({
+      status: 'appointment_confirmed',
+      reminderNotification: {
+        notification_id: 'n1',
+        type: 'reminder',
+        status: 'failed',
+        recipient_email: 'eduardo@example.com',
+        created_at: '2026-07-14T00:00:00Z',
+      },
+      notificationHistory: [
+        {
+          notification_id: 'n2',
+          type: 'booking_confirmation',
+          status: 'failed',
+          recipient_email: 'eduardo@example.com',
+          created_at: '2026-07-13T00:00:00Z',
+        },
+      ],
+    });
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      reason: 'email_failed',
+      email: 'reminder',
+    });
+  });
 });
 
 describe('buildWeekDays', () => {

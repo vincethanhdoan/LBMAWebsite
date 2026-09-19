@@ -269,12 +269,17 @@ function AttentionRow({
     line2 = `Was ${dateLabel} · did they come in?`;
     action = <RecordOutcomeButton lead={lead} />;
   } else if (item.reason === 'email_failed') {
-    line2 = 'Confirmation email failed';
+    const receipt = item.email === 'receipt';
+    line2 = receipt
+      ? 'Booking receipt email failed'
+      : 'Confirmation email failed';
     action = (
       <ActionButton
         variant="outline"
-        disabled={actions.sendingReminderId === lead.lead_id}
-        onClick={() => actions.sendReminder(lead)}
+        disabled={receipt ? busy : actions.sendingReminderId === lead.lead_id}
+        onClick={() =>
+          receipt ? actions.resendReceipt(lead) : actions.sendReminder(lead)
+        }
       >
         Retry email
       </ActionButton>

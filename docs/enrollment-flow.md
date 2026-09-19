@@ -221,9 +221,19 @@ A lead's `status` column is a state machine. Each status represents where the le
 
 ### The auto-confirm rule
 
-When a booking is made (either by the prospect or admin), the system checks: is the appointment date fewer than 2 calendar days away? If yes, the status jumps directly to `appointment_confirmed` instead of `appointment_scheduled`. This avoids confusion where someone books for tomorrow and sees "scheduled" rather than "confirmed."
+When a booking is made (either by the prospect or admin), the system checks: is the appointment two calendar days away or less? If yes, the status is set directly to `appointment_confirmed` instead of `appointment_scheduled`. This avoids confusion where someone books for tomorrow and sees "scheduled" rather than "confirmed."
 
-The comparison uses **UTC midnight** to avoid timezone edge cases in the edge function, which runs in UTC.
+The comparison counts calendar days in **America/Los_Angeles**, the venue's local time zone. It is decided in SQL by `resolve_program_booking`, not in the edge function, so the rule applies the same way regardless of which booking path calls it.
+
+### The `recalculate_lead_status` rule
+
+`recalculate_lead_status(lead_id)` is the single source of truth for what a lead's status should be, given its program bookings. Every booking action (book, confirm, cancel, admin-confirm) and `update_enrollment_lead` call it instead of recomputing the status locally, so the rule can't drift between code paths. It derives the status from the lead's **active** (non-cancelled) program bookings: none active → `approved`; every active booking confirmed → `appointment_confirmed`; every active booking at least scheduled → `appointment_scheduled`.
+
+Three guards keep it from overriding a status it shouldn't touch:
+
+- **Finished leads never move.** A lead in `attended`, `denied`, or `closed` is returned unchanged, no matter what its bookings look like. `book_program_appointment` enforces the same rule one level down: it raises `lead_closed` for any of these three statuses, so an attended lead's booking link can no longer book a new visit either. Staff use **Reopen** first to take a lead out of one of these states before it can book again.
+- **A missed visit reopens only when a new visit is booked.** A `no_show` lead stays `no_show` until it has at least one active (`scheduled` or `confirmed`) booking that is still upcoming: a visit later today, by arrival time (`appointment_time` later than now), or a visit on any later date.
+- **A lead nobody has invited yet never becomes invited by itself.** A `new` lead whose bookings would otherwise compute to `approved` stays `new` instead. For example, a `new` lead with two programs where staff book only one stays `new` instead of jumping to "approved" with no invite ever sent.
 
 ---
 
@@ -329,17 +339,14 @@ This pattern handles **ES256 asymmetric JWTs** (the newer Supabase default) corr
 
 **Trigger:** Prospect clicks "Book Your Appointment" in their email, lands on a booking page, picks a slot and date, submits.
 
-**Authentication:** No Supabase session needed. Auth is the `booking_token` in the request body. This is intentional — the prospect doesn't have an account, and we can't ask them to log in just to book.
+**Authentication:** No Supabase session needed. Auth is the `booking_token` on the program booking (`enrollment_lead_program_bookings.booking_token`) in the request body. This is intentional: the prospect doesn't have an account, and we can't ask them to log in just to book.
 
 **What it does:**
-1. Looks up the lead by `booking_token`. Rejects if token is invalid.
-2. Checks that the lead's current status is one of `approved`, `appointment_scheduled`, or `appointment_confirmed`. (This allows re-booking on an existing appointment.)
-3. Validates the slot exists and is active.
-4. Validates the `appointmentDate` matches the slot's `day_of_week`.
-5. Checks for overrides (blocked dates) on that slot/date combination.
-6. Applies the auto-confirm rule (< 2 days → `appointment_confirmed`).
-7. Updates the lead with the date, time, and new status.
-8. Queues a `booking_confirmation` notification email.
+1. Looks up the program booking by `booking_token`. Rejects with `Invalid booking token` (404) if it doesn't exist, before anything else runs, including a request with no `appointmentDate`, which never reaches SQL.
+2. Rejects if the lead is `denied` or `closed`, or if the booking's own status isn't bookable (`link_sent`, `scheduled`, `confirmed`, or `cancelled`, which allows re-booking or rebooking after a cancel).
+3. Handles a plain cancel (`action: 'cancel'`) separately: flips the booking to `cancelled` and recalculates the lead's status, without touching `book_program_appointment`.
+4. Otherwise calls the shared `bookProgramAppointment()` helper (`_shared/booking.ts`), which invokes the `book_program_appointment` RPC with `allowToday: false` and `horizonDays: FAMILY_HORIZON_DAYS` (21), the family window, always, regardless of what the request sends.
+5. On success, queues a `booking_confirmation` notification email via `queue_family_notification`. A queue failure or a lead with no email does not turn the booking into an error: it already saved.
 
 **Why allow re-booking?** A prospect who already has a scheduled appointment might need to reschedule. Allowing them to use the same link keeps the experience simple.
 
@@ -349,13 +356,31 @@ This pattern handles **ES256 asymmetric JWTs** (the newer Supabase default) corr
 
 **File:** `supabase/functions/admin-book-appointment/index.ts`
 
-**Trigger:** Admin clicks "Pick Date for Them" and selects a slot/date in the PickDateModal.
+**Trigger:** Admin clicks "Pick Date for Them" or "Change date" and selects a slot/date in the PickDateModal.
 
 **Almost identical to `book-appointment`**, but:
 - Requires admin authentication instead of a booking token.
-- Generates a `booking_token` if one doesn't exist yet (in case the lead was never approved through the normal flow).
+- Calls the same `bookProgramAppointment()` helper with `allowToday: true` and `horizonDays: STAFF_HORIZON_DAYS` (140, i.e. 20 weeks); staff can book the same day, as long as the slot's start time hasn't passed yet.
 
 **Why have a separate function?** The auth mechanism is fundamentally different (admin JWT vs. public token). Combining them into one function would mean one code path with two very different auth checks, which is harder to reason about and audit.
+
+---
+
+### The booking error mapping
+
+Both `book-appointment` and `admin-book-appointment` validate and write through the same `book_program_appointment` SQL function (§8), then hand any error to the shared `bookingErrorResponse()` helper (`_shared/booking.ts`), which maps the named error `book_program_appointment` raises to an HTTP response:
+
+| Named error | HTTP status | Body |
+|---|---|---|
+| `slot_taken` (Postgres `23P01`) | 409 | `{ code: 'slot_taken' }` |
+| `date_unavailable` | 422 | `{ code: 'date_unavailable', error: 'This date is not available.' }` |
+| `slot_mismatch` | 422 | `{ code: 'slot_mismatch', error: 'That time is for a different program.' }` |
+| `lead_closed` | 422 | `{ code: 'lead_closed', error: 'Reopen this lead before booking a visit.' }` |
+| `booking_not_found` | 404 | `{ code: 'booking_not_found' }` |
+| `invalid_booking_request` | 400 | `{ code: 'invalid_booking_request', error: 'That booking request was incomplete.' }` |
+| anything else | 500 | `Booking failed` (logged server-side) |
+
+`invalid_booking_request` is a last-line guard, not a response either edge function is expected to trigger under normal use: both check their own required fields (token, `slotId`, `appointmentDate`, `programBookingId`) before ever calling the RPC, so a genuinely incomplete request is rejected by the edge function's own checks first. The SQL layer (`slot_date_block_reason`, `book_program_appointment`) raises it anyway if a date, horizon, or allow-today flag is ever missing, so a caller that bypasses the edge functions and calls the RPCs directly still can't slip through with a malformed request.
 
 ---
 
@@ -363,12 +388,17 @@ This pattern handles **ES256 asymmetric JWTs** (the newer Supabase default) corr
 
 **File:** `supabase/functions/resend-booking-link/index.ts`
 
-**Trigger:** Admin clicks "Resend Booking Link."
+**Trigger:** Admin clicks "Resend Booking Link," "Send reschedule link," or retries a failed booking receipt.
 
 **What it does:**
 1. Verifies admin identity.
-2. Checks the lead is in a resendable status (`approved`, `appointment_scheduled`, or `appointment_confirmed`).
-3. Inserts another `approval` notification row — this re-triggers the same booking link email.
+2. Reads `intent` from the request (`invite`, `reschedule`, or `receipt`; unrecognized or missing intents default to `invite`) and looks up which notification type it queues and which lead statuses it's valid for:
+   - `invite` → `approval`, for `approved` / `appointment_scheduled` / `appointment_confirmed` leads.
+   - `reschedule` → `reschedule`, for those same statuses plus `no_show` (the "Send reschedule link" action on a missed appointment).
+   - `receipt` → `booking_confirmation`, for `appointment_scheduled` / `appointment_confirmed` leads only: this is the retry action for a failed booking receipt (§7).
+3. Rejects if the lead's status isn't valid for the chosen intent, or if the lead has no email.
+4. For `invite` and `reschedule`, requires a booking token to exist (per-program or legacy); `receipt` doesn't, since it just re-renders whatever visits are currently active.
+5. Inserts another notification row via `queue_family_notification`, which re-triggers the appropriate email.
 
 **Note:** The booking link is permanent (same token, same URL). "Resending" just re-queues the same email template, it doesn't invalidate the old link.
 
@@ -433,6 +463,19 @@ https://<APP_URL>/book/<booking_token>
 
 The `booking_token` is a UUID (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`). Because it's random and never guessable, possession of the token proves authorization — no login required. The booking page (frontend route not yet implemented) would call the `book-appointment` edge function.
 
+### Failed deliveries
+
+If the call to Resend fails, `send-email` marks the notification row `status = 'failed'` (with the error saved to `error_message`) instead of leaving it `queued` or `sent`, so a delivery failure isn't silently lost. The admin Overview surfaces this as an attention item with a "Retry email" button:
+
+| Failure | Attention item | Retry calls |
+|---|---|---|
+| A `reminder` notification failed, on an `appointment_scheduled` or `appointment_confirmed` lead | "Confirmation email failed" | `send-appointment-reminder` |
+| A `booking_confirmation` notification failed, on an `appointment_scheduled` or `appointment_confirmed` lead | "Booking receipt email failed" | `resend-booking-link` with `intent: 'receipt'` |
+
+Retrying a receipt re-queues the same `booking_confirmation` type through `queue_family_notification`, which renders whatever visits are still active for the lead at send time, not necessarily the same visit that failed the first time.
+
+Both `booking_confirmation` and `reminder` sends need at least one upcoming visit to render; if none is left by the time the email is due (for example, the visit was cancelled after the notification was queued), `send-email` records the row as `failed` with the message "No upcoming visit was left when this email was due." instead of leaving it `queued` forever, which would otherwise block every later receipt or reminder for that lead through `queue_family_notification`'s already-queued check. Once the lead has moved off `appointment_scheduled`/`appointment_confirmed`, that failure no longer raises an attention item, matching the gating above.
+
 ---
 
 ## 8. Appointment Availability System
@@ -449,21 +492,24 @@ Slots are managed via RPCs:
 
 **Soft delete** means the record stays in the database; it's just marked inactive. This preserves historical data — existing appointments that referenced the slot aren't broken.
 
-### Overrides (blocked dates)
+### Blocked dates
 
-An override blocks a specific slot on a specific date. Example: block the Wednesday slot on Christmas Day.
+A blocked date range closes every slot for its span, not one slot at a time. `blocked_dates` holds `start_date`, `end_date`, and an optional `reason`; a single-day block sets `start_date = end_date`. Example: block Christmas week across all slots at once.
 
-Key SQL constraint: `UNIQUE(slot_id, override_date)` — you can only block a given slot on a given date once. Trying to add a duplicate override does an `ON CONFLICT ... DO UPDATE` (upserts the reason instead).
+Admins manage blocks from `src/components/admin/availability/BlockedDates.tsx` via `add_blocked_dates(p_start_date, p_end_date, p_reason)` and `remove_blocked_dates(p_block_id)`. `slot_date_block_reason` returns `blocked` when the date under test falls in any row's `start_date`–`end_date` span, regardless of which slot is being checked.
 
-### Available date calculation
+### The single rule: `slot_date_block_reason`
 
-The `get_upcoming_bookable_dates(slot_id, weeks_ahead)` RPC returns a list of upcoming dates where a slot is available. It:
-1. Loops day by day from tomorrow to `weeks_ahead` weeks out.
-2. For each day, checks if the day of the week matches the slot's `day_of_week`.
-3. Checks that no override exists for that slot/date combination.
-4. Returns matching dates.
+`slot_date_block_reason(slot_id, date, allow_today, horizon_days, lead_id)` is the one rule in the system for whether a slot is open on a given date. It returns `NULL` when the slot is open, or a reason (`slot_inactive`, `past`, `outside_window`, `wrong_day`, `blocked`, `taken`) when it isn't, checking in order: the slot is active; the date isn't in the past (or is today only when `allow_today` is true and the slot's start time hasn't passed); the date is within `horizon_days`; the day of week and week-of-month match the slot's schedule; no blocked-date range covers it; and no other lead already holds that slot/date (`p_lead_id` excludes the asking lead's own booking, so re-picking the same date doesn't look "taken"). `p_date` is exactly what the caller sends and is exactly what this function validates; only `p_allow_today`, `p_horizon_days`, and `p_actor` are set by server code, never taken from the request body. `p_lead_id` is never supplied by the edge function at all: `book_program_appointment` reads it off the booking row in SQL and passes it through.
 
-The frontend booking picker (used in `PickDateModal`) would call this RPC to populate a date picker.
+Two other functions are built directly on it, so the dates a family is shown and the booking that's actually accepted can never drift apart:
+
+- **`get_upcoming_bookable_dates(slot_id, weeks_ahead, include_today)`** lists the open dates for a slot by calling `slot_date_block_reason` for every day in the window.
+- **`book_program_appointment(booking_id, slot_id, date, allow_today, horizon_days, actor)`** validates and writes a booking (§4, §6) by calling `slot_date_block_reason` through `resolve_program_booking`, which also checks the slot matches the booking's program type and returns whether the visit lands as `scheduled` or `confirmed`.
+
+The window differs by who's asking. Families and the public, meaning the contact-form booking page and reschedule links, see and can book up to 21 days ahead and never today (`FAMILY_HORIZON_DAYS` in `supabase/functions/_shared/booking.ts`). Staff keep the longstanding 20-week (140-day) window and can book a slot the same day, as long as the slot's start time hasn't passed yet (`STAFF_HORIZON_DAYS` in the same file).
+
+The frontend booking picker (used in `PickDateModal` and the family `BookingPage`) calls `get_upcoming_bookable_dates` to populate a date picker.
 
 ---
 

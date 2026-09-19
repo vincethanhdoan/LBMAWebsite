@@ -6,6 +6,7 @@ import {
   getWeekStart,
   formatWeekRange,
   STATUS_LABELS,
+  latestNotification,
 } from './leadDisplay';
 
 function makeLead(partial: Partial<EnrollmentLead> = {}): EnrollmentLead {
@@ -120,6 +121,37 @@ describe('getWeekStart / formatWeekRange', () => {
 
   it('formats a same-month week range with a single trailing day number', () => {
     expect(formatWeekRange(getWeekStart(0))).toBe('Jul 12 – 18');
+  });
+});
+
+describe('latestNotification', () => {
+  const n = (type: string, status: string, created_at: string) =>
+    ({
+      notification_id: type + created_at,
+      lead_id: 'lead-1',
+      recipient_email: 'a@b.co',
+      channel: 'email',
+      type,
+      status,
+      error_message: null,
+      created_at,
+    }) as never;
+
+  it('returns the newest notification of a type regardless of array order', () => {
+    const lead = makeLead({
+      notificationHistory: [
+        n('booking_confirmation', 'sent', '2026-07-03T00:00:00Z'),
+        n('booking_confirmation', 'failed', '2026-07-05T00:00:00Z'),
+        n('reminder', 'sent', '2026-07-06T00:00:00Z'),
+      ],
+    });
+    expect(latestNotification(lead, 'booking_confirmation')?.status).toBe(
+      'failed',
+    );
+  });
+
+  it('returns null when there is none', () => {
+    expect(latestNotification(makeLead(), 'booking_confirmation')).toBeNull();
   });
 });
 

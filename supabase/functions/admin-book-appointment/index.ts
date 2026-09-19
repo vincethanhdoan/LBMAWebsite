@@ -1,8 +1,12 @@
 // supabase/functions/admin-book-appointment/index.ts
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { recalculateLeadStatus } from '../_shared/leadStatus.ts';
 import { queueFamilyNotification } from '../_shared/familyNotifications.ts';
+import {
+  STAFF_HORIZON_DAYS,
+  bookProgramAppointment,
+  bookingErrorResponse,
+} from '../_shared/booking.ts';
 
 const ALLOWED_ORIGINS = new Set([
   'https://lbmartialarts.com',
@@ -75,140 +79,27 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Resolve program booking
-  const { data: programBooking } = await supabase
-    .from('enrollment_lead_program_bookings')
-    .select('booking_id, lead_id, program_type, status')
-    .eq('booking_id', programBookingId)
-    .single();
-
-  if (!programBooking)
-    return new Response('Program booking not found', {
-      status: 404,
-      headers: cors,
+  let booked;
+  try {
+    booked = await bookProgramAppointment(supabase, {
+      bookingId: programBookingId,
+      slotId,
+      appointmentDate,
+      allowToday: true,
+      horizonDays: STAFF_HORIZON_DAYS,
+      actor: user.id,
     });
-
-  const { data: lead } = await supabase
-    .from('enrollment_leads')
-    .select('lead_id, status')
-    .eq('lead_id', programBooking.lead_id)
-    .single();
-
-  if (!lead)
-    return new Response('Lead not found', { status: 404, headers: cors });
-
-  if (lead.status === 'denied' || lead.status === 'closed') {
-    return new Response(
-      JSON.stringify({ error: 'Reopen this lead before booking a visit.' }),
-      { status: 422, headers: { ...cors, 'Content-Type': 'application/json' } },
-    );
+  } catch (bookingError) {
+    return bookingErrorResponse(bookingError, cors);
   }
 
-  const { data: slot } = await supabase
-    .from('appointment_slots')
-    .select('slot_id, start_time, day_of_week, is_active')
-    .eq('slot_id', slotId)
-    .eq('is_active', true)
-    .single();
-
-  if (!slot)
-    return new Response('Slot not found or inactive', {
-      status: 404,
-      headers: cors,
-    });
-
-  const targetDate = new Date(appointmentDate + 'T12:00:00');
-  if (targetDate.getDay() !== slot.day_of_week) {
-    return new Response('Appointment date does not match slot day', {
-      status: 422,
-      headers: cors,
-    });
-  }
-
-  const { data: block, error: blockError } = await supabase
-    .from('blocked_dates')
-    .select('block_id')
-    .lte('start_date', appointmentDate)
-    .gte('end_date', appointmentDate)
-    .limit(1)
-    .maybeSingle();
-
-  if (blockError)
-    return new Response('Unable to verify availability', {
-      status: 500,
-      headers: cors,
-    });
-  if (block)
-    return new Response('This date is blocked', { status: 422, headers: cors });
-
-  const { data: conflict } = await supabase
-    .from('enrollment_lead_program_bookings')
-    .select('booking_id')
-    .eq('appointment_slot_id', slotId)
-    .eq('appointment_date', appointmentDate)
-    .in('status', ['scheduled', 'confirmed'])
-    .neq('lead_id', programBooking.lead_id)
-    .limit(1)
-    .maybeSingle();
-
-  if (conflict) {
-    return new Response(JSON.stringify({ code: 'slot_taken' }), {
-      status: 409,
-      headers: { ...cors, 'Content-Type': 'application/json' },
-    });
-  }
-
-  const todayPacific = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Los_Angeles',
-  }).format(new Date());
-  const today = new Date(todayPacific + 'T12:00:00');
-  const daysUntilAppt = Math.floor(
-    (targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-  );
-  if (daysUntilAppt < 0) {
-    return new Response('Appointment date is in the past', {
-      status: 422,
-      headers: cors,
-    });
-  }
-  const newProgramStatus = daysUntilAppt <= 2 ? 'confirmed' : 'scheduled';
-
-  const { error: updateError } = await supabase
-    .from('enrollment_lead_program_bookings')
-    .update({
-      appointment_slot_id: slotId,
-      appointment_date: appointmentDate,
-      appointment_time: slot.start_time,
-      status: newProgramStatus,
-      updated_by: user.id,
-    })
-    .eq('booking_id', programBooking.booking_id);
-
-  if (updateError) {
-    if (
-      updateError.code === '23P01' ||
-      updateError.message?.includes('slot_taken')
-    ) {
-      return new Response(JSON.stringify({ code: 'slot_taken' }), {
-        status: 409,
-        headers: { ...cors, 'Content-Type': 'application/json' },
-      });
-    }
-    return new Response('Booking failed', { status: 500, headers: cors });
-  }
-
-  await recalculateLeadStatus(supabase, lead.lead_id);
-
-  // Confirm what was just booked, even if other programs are still pending.
-  // The email renders every currently booked appointment at send time, so a
-  // single queued row covers back-to-back bookings without duplicate emails.
   // The booking is already saved: a family with no email, or a queue failure,
   // must not turn it into an error.
   let emailQueued = false;
   try {
     const result = await queueFamilyNotification(
       supabase,
-      lead.lead_id,
+      booked.lead_id,
       'booking_confirmation',
     );
     emailQueued = result !== 'no_email';
@@ -222,9 +113,9 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       ok: true,
-      status: newProgramStatus,
-      appointment_date: appointmentDate,
-      appointment_time: slot.start_time,
+      status: booked.status,
+      appointment_date: booked.appointment_date,
+      appointment_time: booked.appointment_time,
       emailQueued,
     }),
     { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } },
