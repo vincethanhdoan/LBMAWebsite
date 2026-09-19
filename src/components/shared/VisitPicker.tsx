@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { getUpcomingBookableDates } from '../../lib/supabase/bookingQueries';
 import { visitPickerCopy } from './visitPickerCopy';
 import type { VisitPickerLanguage } from './visitPickerCopy';
+import { VisitLoadFailure } from './VisitLoadFailure';
 import type { AppointmentSlot } from '../../lib/types';
 
 // Kept here (not in visitPickerCopy.ts) so the calendar's locale data only
@@ -248,18 +249,11 @@ export function VisitPicker({
 
   if (loaded?.status === 'error') {
     return (
-      <div className="text-center py-4">
-        <p role="alert" className="text-sm text-destructive">
-          {copy.loadError}
-        </p>
-        <button
-          type="button"
-          onClick={() => setRetryCount((n) => n + 1)}
-          className="mt-3 min-h-[44px] px-4 rounded-lg border-2 border-border text-sm font-semibold hover:border-primary/50 hover:bg-muted/50 transition-colors"
-        >
-          {copy.retry}
-        </button>
-      </div>
+      <VisitLoadFailure
+        message={copy.loadError}
+        retryLabel={copy.retry}
+        onRetry={() => setRetryCount((n) => n + 1)}
+      />
     );
   }
 
