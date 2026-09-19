@@ -355,6 +355,11 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
           '[send-email] booking_confirmation: no booked appointments for lead',
           record.lead_id,
         );
+        await markEnrollmentFailed(
+          supabase,
+          record.notification_id,
+          'No upcoming visit was left when this email was due.',
+        );
         return;
       }
       subject =
@@ -374,6 +379,11 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         console.warn(
           '[send-email] reminder: no booked appointments for lead',
           record.lead_id,
+        );
+        await markEnrollmentFailed(
+          supabase,
+          record.notification_id,
+          'No upcoming visit was left when this email was due.',
         );
         return;
       }
