@@ -120,6 +120,7 @@ function makeLead(partial: Partial<EnrollmentLead> = {}): EnrollmentLead {
     deleted_at: null,
     attendance_recorded_at: null,
     attendance_recorded_by: null,
+    preferred_language: 'en',
     children: [
       {
         child_id: 'c1',

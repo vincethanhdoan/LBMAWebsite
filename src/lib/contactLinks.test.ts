@@ -18,6 +18,7 @@ describe('reminderSmsHref', () => {
     childNames: ['Mia'],
     dateKey: '2026-09-24',
     time: '16:30:00',
+    language: 'en' as const,
   };
 
   it('addresses the parent by first name and states the visit', () => {
@@ -49,5 +50,28 @@ describe('reminderSmsHref', () => {
 
   it('returns null when the phone cannot be texted', () => {
     expect(reminderSmsHref({ ...base, phone: '' })).toBeNull();
+  });
+});
+
+describe('reminderSmsHref in Spanish', () => {
+  const base = {
+    phone: '(209) 555-0123',
+    parentName: 'Maria Lopez',
+    childNames: ['Mia'],
+    dateKey: '2026-09-24',
+    time: '16:30:00',
+    language: 'es' as const,
+  };
+
+  it('greets informally, states the visit in Spanish, and keeps the school phone', () => {
+    const href = reminderSmsHref(base)!;
+    const body = decodeURIComponent(href.split('body=')[1]);
+    expect(body).toBe(
+      'Hola Maria, te escribimos de Los Banos Martial Arts. Tenemos muchas ganas de ver a Mia el jueves, 24 de sept, a las 4:30 p.m. Por favor responde para confirmar que vienen, o llámanos al (408) 620-0252 si necesitan otro día.',
+    );
+    expect(body).toContain('Mia');
+    expect(body).toContain('jueves');
+    expect(body).toContain('4:30');
+    expect(body).toContain('(408) 620-0252');
   });
 });

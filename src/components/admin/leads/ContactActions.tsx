@@ -28,6 +28,7 @@ export function ContactActions({ lead }: { lead: EnrollmentLead }) {
         ).map((c) => c.name),
         dateKey: next.dateKey,
         time: next.time,
+        language: lead.preferred_language,
       })
     : null;
 
