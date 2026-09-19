@@ -71,6 +71,15 @@ export function bookingErrorResponse(
     );
   if (message?.includes('booking_not_found'))
     return json({ code: 'booking_not_found' }, 404, cors);
+  if (message?.includes('invalid_booking_request'))
+    return json(
+      {
+        code: 'invalid_booking_request',
+        error: 'That booking request was incomplete.',
+      },
+      400,
+      cors,
+    );
   console.error('[booking] unexpected error:', error);
   return new Response('Booking failed', { status: 500, headers: cors });
 }
