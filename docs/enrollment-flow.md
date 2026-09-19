@@ -611,7 +611,7 @@ This section documents backend work that lets a family pick a specific date and 
 |---|---|---|
 | `p_parent_name` | text | Required |
 | `p_parent_email` | text | Required |
-| `p_phone` | text | Required, unlike `submit_enrollment_lead`, which does not accept email-only or phone-only |
+| `p_phone` | text | Required; the older `submit_enrollment_lead` accepts a lead with no phone (it validates the phone only when one is given) |
 | `p_children` | jsonb | Required, 1–6 entries, each `{ name, age }` |
 | `p_bookings` | jsonb | Required, one entry per program the children fall into, each `{ program_type, slot_id, date }` |
 | `p_request_id` | uuid | Optional but strongly expected; see Retry below |
@@ -628,6 +628,8 @@ The booking window (21 days ahead) and the no-same-day rule are fixed inside the
 Creating the lead, inserting its children, and booking every one of its visits all happen inside `submit_trial_booking`'s single transaction. If any step fails, including a slot that got taken by someone else a moment ago, the whole submission rolls back: no orphaned lead, no half-booked family. A web lead either exists complete with all its visits, or it does not exist at all.
 
 Visits are `INSERT`ed already in `scheduled` or `confirmed` status, not created first and then booked in a second step. This matters for the admin bell: `trg_notify_admins_booking_change` (§4, §7) only fires on `UPDATE`, never on `INSERT`, so booking a visit this way produces exactly one `new_lead` bell and never a second "appointment booked" bell for the same visit.
+
+The lead itself follows the same auto-confirm rule as every other booking path (§4): a public trial booking lands the lead at `appointment_scheduled`, or `appointment_confirmed` when the visit is two calendar days away or less.
 
 ### Retry: `p_request_id`
 
@@ -669,6 +671,8 @@ The hourly cap only counts leads whose `source_page` is not `'admin'`, so staff 
 
 `enrollment_leads.preferred_language` (`'en'` or `'es'`, defaults to `'en'`) is set once from `p_language` at booking time. Staff see it as a "Prefers Spanish" line under the contact info in the lead detail panel (`src/components/admin/leads/LeadDetailPanel.tsx`) when it's `'es'`; nothing is shown for English. The reminder text message an admin sends from **Contact Actions** (`src/components/admin/leads/ContactActions.tsx`, `reminderSmsHref` in `src/lib/contactLinks.ts`) is drafted in Spanish or English to match, so a staff member texting a family doesn't have to remember which language to write in.
 
+In this PR, only two things follow the family's language: the booking receipt email (below) and that staff reminder text message. The reminder *email* (queued by the `appointment-reminders` cron job, §7) is always English, regardless of `preferred_language`. And because `preferred_language` is only ever set by `submit_trial_booking`, a lead created by staff through the admin dashboard (§9) is always English until a later change adds a way for staff to set it.
+
 ### The booking receipt email
 
 **Files:** `supabase/functions/send-email/{index,templates,copy}.ts`, `supabase/functions/_shared/copy.ts`
@@ -697,7 +701,7 @@ GET <SUPABASE_URL>/functions/v1/visit-calendar?token=<booking_token>
 
 The `booking_token` on the program booking is the only credential: no session, no Authorization header, the same trust model as `book-appointment` (§6). The function is deployed with `verify_jwt: false`, so the platform doesn't require a JWT before the request even reaches the code; the function itself needs nothing more than a syntactically valid token.
 
-It returns **404** (plain text, no calendar body) when: the token is missing or not shaped like a UUID (checked before any database query runs); no booking matches it; the booking's status isn't `scheduled` or `confirmed`; its date or time is unset; or the owning lead is soft-deleted, `denied`, or `closed`. That's the same set of "this link is dead" conditions the rest of the booking flow already applies to a `booking_token`. Every response, the 200 and every 404 alike, carries `Cache-Control: private, no-store`, so neither a valid file nor a not-found result sticks around in a browser's or intermediary's cache after a visit is rescheduled or cancelled.
+It returns **404** (plain text, no calendar body) when: the token is missing or not shaped like a UUID (checked before any database query runs); no booking matches it; the booking's status isn't `scheduled` or `confirmed` (which also refuses a cancelled visit); its date or time is unset; or the owning lead is soft-deleted, `denied`, `closed`, or `attended`. That's the same set of lead statuses `book_program_appointment` itself refuses to book against (§4). One gap remains between the two: `book-appointment` does not check `deleted_at` on the lead at all, a pre-existing looseness this endpoint does not share, since `visit-calendar` checks it explicitly. Every response, the 200 and every 404 alike, carries `Cache-Control: private, no-store`, so neither a valid file nor a not-found result sticks around in a browser's or intermediary's cache after a visit is rescheduled or cancelled.
 
 The event is exactly one hour long, starting at the visit's appointment time. `appointment_date`/`appointment_time` are stored as plain Pacific wall-clock values with no timezone attached; `pacificToUtc()` (`_shared/pacificTime.ts`) converts that wall-clock pair into the correct UTC instant for `DTSTART`/`DTEND`, settling on the right side of the daylight-saving transition rather than assuming a fixed UTC offset.
 
@@ -710,6 +714,7 @@ Both functions import from `../_shared/`, so their deploy file lists must be sen
 - `send-email/templates.ts`
 - `send-email/types.ts`
 - `send-email/copy.ts`
+- `send-email/messages.ts`
 - `_shared/copy.ts`
 - `_shared/appUrl.ts`
 
@@ -720,14 +725,18 @@ Both functions import from `../_shared/`, so their deploy file lists must be sen
 - `_shared/copy.ts`
 - `_shared/appUrl.ts`
 
-After every deploy, fetch the deployed files back and compare them against the branch byte-for-byte. Do not treat a successful deploy call as proof the served code matches what's on disk.
+After every deploy, fetch the deployed files back and compare them against the branch byte-for-byte. Do not treat a successful deploy call as proof the served code matches what's on disk. `send-email/types.ts` is the one exception worth expecting ahead of time: it must still be sent (the other files import types from it), but every one of those imports is type-only and is erased at build time, so it will not appear in the fetched-back file list. Its absence there is expected, not a mismatch to chase.
+
+### Production rollout notes
+
+After deploying `send-email`, send one real receipt to an address the owner controls: book a throwaway lead through the admin portal, confirm the English receipt arrives with working links, then delete the lead. Staging has no email provider key configured, and this send path has never delivered a real message, so this is the only way to know the Resend integration actually works end to end before a real family relies on it.
 
 ### Known exposures
 
 Two things accepted as-is for now rather than fixed in this PR, recorded here so a future reader doesn't have to rediscover them:
 
 - **No CAPTCHA.** Nothing stops a script from calling `submit_trial_booking` directly and repeatedly. Spread across enough different email addresses to dodge the per-email limits, a handful of fake submissions could take every bookable date across the whole three-week window before a real family gets to one. Each fake submission still lands as an ordinary lead with a new-lead bell, so it's visible and cheap to undo: an admin cancelling or deleting the lead frees the slot again immediately.
-- **`already_booked` is a yes/no oracle.** Anyone who already holds (or guesses) a family's email address or phone number learns, from the error alone, that the family has an upcoming visit, without learning its date, time, or program. The signal is limited to that one bit; nothing else about the booking is exposed by it.
+- **`already_booked` is a yes/no oracle.** Anyone who already holds (or guesses) a family's email address or phone number learns, from the error alone, that the family has an upcoming visit, without learning its date, time, or program. The signal is limited to that one bit; nothing else about the booking is exposed by it. It's also unthrottled by any of the rate limits above: an `already_booked` probe creates no lead, and every one of the three limits counts only created leads, so repeatedly probing the same or different emails never trips a limit.
 
 ---
 
