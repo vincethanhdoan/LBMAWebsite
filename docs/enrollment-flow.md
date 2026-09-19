@@ -17,7 +17,7 @@ This document covers everything about how a prospective family goes from filling
 9. [Admin Manual Lead Creation](#9-admin-manual-lead-creation)
 10. [Security Model](#10-security-model)
 11. [Design Decisions](#11-design-decisions)
-12. [Booking a Trial Visit at Signup (New Backend, Not Yet Live)](#12-booking-a-trial-visit-at-signup-new-backend-not-yet-live)
+12. [Booking a Trial Visit at Signup](#12-booking-a-trial-visit-at-signup)
 13. [Glossary](#13-glossary)
 
 ---
@@ -26,82 +26,113 @@ This document covers everything about how a prospective family goes from filling
 
 An **enrollment lead** is a record that represents one family's journey from "I'm interested" to "I have an appointment." The flow has two sides:
 
-- **The prospect side** — a parent fills out a public form and later receives emails with links to book an appointment.
-- **The admin side** — staff review submissions in a dashboard and decide whether to approve, deny, or schedule the family directly.
+- **The prospect side:** a parent fills out the public form and picks their own day and arrival time in the same visit. The visit is booked the moment they submit; there is no separate "wait for an admin to approve, then book" step for a web lead. See §12 for the full mechanics.
+- **The admin side:** staff can still create a lead by hand (walk-ins, phone calls, referrals) and either book it for the family right away or send them a booking link to pick their own time. See §9.
 
 The flow is entirely serverless: there is no custom backend server. All business logic runs either inside PostgreSQL (as stored procedures called **RPCs**) or inside **Supabase Edge Functions** (small JavaScript/TypeScript functions that run on Deno at the edge).
 
 ```
-Prospect fills out form
+Prospect fills out the form and picks a day + time per program
         │
         ▼
-  submit_enrollment_lead RPC
-  (PostgreSQL, runs on DB)
+  submit_trial_booking RPC
+  (PostgreSQL, runs on DB, one transaction)
         │
         ├─► lead row inserted in enrollment_leads
-        ├─► new_lead notification queued   → email to admin
-        └─► submission notification queued → thank-you email to prospect
+        ├─► one row per child in enrollment_lead_children
+        ├─► one visit booked per program, already scheduled/confirmed
+        ├─► new_lead notification queued        → email to admin
+        └─► booking_confirmation notification queued → receipt email to prospect
                 │
                 ▼
-          Admin reviews lead in dashboard
+      appointment_scheduled / appointment_confirmed
                 │
-         ┌──────┴──────┐
-         │             │
-       Deny          Approve
-         │             │
-         ▼             ▼
-   denial email    approval email with booking link
-                        │
-               ┌────────┴────────┐
-               │                 │
-         Prospect            Admin books
-         self-books          for them
-               │                 │
-               └────────┬────────┘
-                        ▼
-              appointment_scheduled / appointment_confirmed
-                        │
-                        ▼ (2 days out → auto-confirm)
-                appointment_confirmed
-                        │
-                        ▼
-             reminder email (2 days before)
+                ▼ (2 days out → auto-confirm)
+        appointment_confirmed
+                │
+                ▼
+     reminder email (2 days before, skipped for a same-day
+     booking that's already confirmed; see §7)
+
+Admin manual lead creation (walk-ins, phone calls, referrals; §9)
+follows the older path: a `new` lead that staff either book directly
+or send a booking link (`approved` → self-book → scheduled/confirmed),
+with the same deny/approve/reschedule actions described in §4-§6.
 ```
 
 ---
 
 ## 2. The Contact Form (Entry Point)
 
-**File:** `src/components/public/ContactPage.tsx`
+**Files:** `src/components/public/ContactPage.tsx`, `TrialVisitStep.tsx`, `TrialBookedPanel.tsx`, `src/components/shared/VisitPicker.tsx`
 
-The contact form is publicly accessible — no login required. It collects:
+The contact form is publicly accessible: no login required. A parent leaves it with a booked visit, not just a submitted inquiry. It collects:
 
 | Field | Required? | Notes |
 |---|---|---|
-| Parent name | Yes | Min 2 characters |
+| Parent name | Yes | 2–100 characters |
+| Phone | Yes | Valid 10-digit US number |
 | Parent email | Yes | Standard email format |
-| Phone | No | |
-| Child's name | No | |
-| Child's age | No | Validated 3–99 client-side |
-| Message / notes | No | Free text |
+| Child's name | Yes, per child | 1–60 characters |
+| Child's age | Yes, per child | 4–17; decides the child's program (§12) |
+| Visit day + arrival time | Yes, per program | One calendar per program the children fall into (below) |
+| Message / notes | No | Free text, max 1500 characters |
+
+A family can add 1–6 children. Phone and email are both required on this form (unlike a staff-entered lead, §9, where only one of the two is required): a web lead always has both ways to reach the family.
+
+### One calendar per program
+
+Which programs are in play is derived from the children's ages as they're typed, with `programForAgeText()` (`src/lib/programs.ts`) applying the same 1–2 digit whole-number format the server enforces, so the client never shows a program grouping the server would then reject. A family with a 5-year-old and a 10-year-old sees two visit calendars, one for Little Dragons and one for Youth; a family with two children both age 6 sees one. Each calendar is a `VisitPicker` (`src/components/shared/VisitPicker.tsx`), shared with the `/book` self-service page and the admin `PickDateModal`, so the same calendar code decides what's clickable everywhere a family or an admin picks a date.
+
+Editing a child's age away from a program (or removing the child) clears that program's visit selection and its calendar disappears; a program that's already been visited by an edit keeps its own selection untouched.
+
+### Lazy loading the calendar
+
+`VisitPicker` is imported with `React.lazy()` from `TrialVisitStep.tsx`, not bundled into the app's entry chunk. A visitor who never gets far enough to see the visit step (or leaves after reading the hero) never downloads the calendar code, `react-day-picker`, or its locale data. Each program's calendar also fetches its own available dates independently and shows its own loading spinner, so one program's slow fetch doesn't block another's.
+
+### Validating on submit
+
+Submit is never disabled; every check runs when the form is submitted. Name, phone, email, and each child's name/age are checked first. If any of those fail, the form focuses the first invalid field and stops there, before it even looks at visit selections. Only once those pass does it check that every program with children in it has a chosen day and time; if one is missing, it focuses that program's calendar instead. This order means a parent always sees the most fundamental problem first, not a visit error while their own name field is still blank.
 
 ### What happens on submit
 
-1. The form calls `submitEnrollmentLeadWithTimeout()` from `src/lib/supabase/client.ts`, which is a thin wrapper around Supabase's RPC call with a 12-second timeout.
-2. That calls the PostgreSQL function `submit_enrollment_lead(...)` which:
-   - Validates inputs (name, email, age range).
-   - Inserts a row into `enrollment_leads` with `status = 'new'`.
-   - Queues a `new_lead` notification for admins.
-   - Queues a `submission` notification (a thank-you email) for the prospect.
-3. On success, the form replaces itself with a confirmation message: "We got your message."
+1. The form calls `submitTrialBookingWithTimeout()` from `src/lib/supabase/client.ts`, a thin wrapper around a direct `fetch` to the RPC endpoint with a 12-second timeout (see "Why a 12-second timeout?" below).
+2. That calls `submit_trial_booking(...)` (§12), which validates everything server-side again, creates the lead, its children, and every visit in one transaction, and returns a receipt: the lead id and each booked visit (program, date, time, status, per-visit booking token).
+3. On success, the form replaces itself with `TrialBookedPanel`, an on-screen receipt (below). It does not navigate away or reload; the receipt renders in place of the form.
+
+### The request id
+
+Before the form ever submits, `ContactPage` generates one `crypto.randomUUID()` per page load (`requestId`, held in a `useRef` so it survives re-renders but not a page reload) and sends it as `p_request_id` on every submit attempt, including a retry after a timeout. `submit_trial_booking` uses it to recognize "this is the same attempt, not a new one" (§12, Retry). Without it, a parent whose connection times out after the database already committed would either get a confusing `already_booked` error on resubmit, or double-book, on a form that lets them try again.
+
+### How each server error is shown
+
+The RPC's error `code` (or a substring of its message, for errors the client can't otherwise distinguish) maps to one on-screen message, shown in an alert above the submit button:
+
+| Server error | Shown as |
+|---|---|
+| `P0429` (any of the three rate limits, §12) | "We recently received a request from you. Please wait a moment and try again, or call us directly." |
+| `P0409` (`already_booked`) | "It looks like you already have a visit booked with us. Check your email for the details, or call us at (408) 620-0252 to change it." |
+| `23P01` (`slot_taken`) | "Someone just booked that time. Please pick another." Every visit selection is also cleared and each calendar refetches, since the slot map underneath this one just changed |
+| `date_unavailable`, `slot_mismatch`, or `invalid_booking_request` | "That day is no longer available. Please pick another." Same clear-and-refetch as `slot_taken` |
+| Anything else, including a timeout | "Unable to submit right now. Please try again or call us directly." |
+
+Clearing selections and refetching on a slot/date error, rather than just showing the message, means a parent never resubmits into the same stale error: by the time they pick a new day, the calendar is already showing what's actually still open.
+
+### Language
+
+The form's own language toggle (English/Spanish, `useLanguage()` in `lang.tsx`) drives every string on the page, the calendar's `react-day-picker` locale (`enUS`/`es`), and is sent as `p_language` on submit. That's the one thing this form hands the backend that a staff-entered lead never sets: the booking receipt email is written in the family's own language (§12), matching what they were reading when they booked.
+
+### The on-screen receipt
+
+`TrialBookedPanel` shows, per booked visit: the program and children in it, the date and arrival time, a "View or change this visit" link (routes to `/book/<token>`, the same self-service page a booking-link email points to), and an "Add to calendar" link. That link goes straight to the `visit-calendar` `.ics` endpoint (§12), not a Google Calendar render URL: a downloaded `.ics` file works on every phone, so the panel doesn't need a second copy of the Google Calendar URL builder the receipt email already has. Below the visits: the school's address with a link to Maps, a short "what to expect" paragraph, a note that the same details were emailed (with a spam-folder reminder), and a phone number for questions. It never states a price or calls the visit free, the same rule the email follows (§12).
 
 ### Why a 12-second timeout?
 
-Serverless database calls occasionally experience cold-start latency. The timeout prevents the UI from hanging indefinitely while still giving the DB enough time to respond under normal conditions.
+Serverless database calls occasionally experience cold-start latency. The timeout prevents the UI from hanging indefinitely while still giving the DB enough time to respond under normal conditions. Because the timeout can fire after the database already committed, the request id above is what makes a retry safe.
 
 ### Why validate age client-side AND server-side?
 
-Client-side validation gives fast feedback in the UI (no round-trip needed). Server-side validation (the `CHECK` constraint in the DB) is the real safety net — a client-side check can always be bypassed by someone making a raw HTTP request.
+Client-side validation gives fast feedback in the UI (no round-trip needed) and decides which calendars even show up. Server-side validation (the RPC's own checks, and the `CHECK` constraints in the DB) is the real safety net: a client-side check can always be bypassed by someone making a raw HTTP request.
 
 ---
 
@@ -426,18 +457,18 @@ All family emails (`approval`, `reschedule`, `denial`, `booking_confirmation`, `
 - Returns `already_queued` and inserts nothing when a `booking_confirmation` or `reminder` row for that lead is already sitting at `status = 'queued'`: both render the lead's current visits at send time, so a second one would be a duplicate, not a correction.
 - Otherwise inserts the row and returns `queued`.
 
-The one exception is the public `submit_enrollment_lead` RPC, which always has an email (the contact form requires it) and inserts its own `submission` and `new_lead` rows directly rather than going through `queue_family_notification`.
+The one exception is `new_lead`: both `submit_trial_booking` (the live form, §12) and the retired `submit_enrollment_lead` insert it directly, rather than going through `queue_family_notification`, since an admin alert isn't a family-facing email and doesn't need that function's no-email/already-queued guards.
 
 ### Email types and recipients
 
 | Type | Recipient | When sent |
 |---|---|---|
 | `new_lead` | All admins who have `notify_new_leads = true` in `admin_notification_settings` | On form submit |
-| `submission` | Prospect | On form submit (thank-you confirmation) |
+| `submission` | Prospect | On submit, only via the retired `submit_enrollment_lead` path (below); the live form's receipt is `booking_confirmation` instead |
 | `approval` | Prospect | When admin approves / resends booking link |
 | `denial` | Prospect | When admin denies |
-| `booking_confirmation` | Prospect | After an appointment is booked |
-| `reminder` | Prospect | Queued by the `appointment-reminders` pg_cron job at 6pm Pacific, two days before the earliest upcoming visit |
+| `booking_confirmation` | Prospect | Queued in the same transaction as the booking, for both a web `submit_trial_booking` submission and a staff-booked visit |
+| `reminder` | Prospect | Queued by the `appointment-reminders` pg_cron job at 6pm Pacific, two days before the earliest upcoming visit, unless the lead was booked earlier that same day and every active visit is already confirmed (see "The reminder tweak" below) |
 
 ### The `new_lead` fan-out
 
@@ -462,7 +493,7 @@ Templates are plain-HTML inline-style strings (no CSS framework). This is standa
 https://<APP_URL>/book/<booking_token>
 ```
 
-The `booking_token` is a UUID (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`). Because it's random and never guessable, possession of the token proves authorization — no login required. The booking page (frontend route not yet implemented) would call the `book-appointment` edge function.
+The `booking_token` is a UUID (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`). Because it's random and never guessable, possession of the token proves authorization: no login required. The `/book/<token>` page calls the `book-appointment` edge function.
 
 ### Failed deliveries
 
@@ -476,6 +507,14 @@ If the call to Resend fails, `send-email` marks the notification row `status = '
 Retrying a receipt re-queues the same `booking_confirmation` type through `queue_family_notification`, which renders whatever visits are still active for the lead at send time, not necessarily the same visit that failed the first time.
 
 Both `booking_confirmation` and `reminder` sends need at least one upcoming visit to render; if none is left by the time the email is due (for example, the visit was cancelled after the notification was queued), `send-email` records the row as `failed` with the message "No upcoming visit was left when this email was due." instead of leaving it `queued` forever, which would otherwise block every later receipt or reminder for that lead through `queue_family_notification`'s already-queued check. Once the lead has moved off `appointment_scheduled`/`appointment_confirmed`, that failure no longer raises an attention item, matching the gating above.
+
+### The reminder tweak
+
+**File:** `supabase/migrations/20260922120000_reminder_skip_same_day_confirmed.sql`
+
+The `appointment-reminders` pg_cron job's `SELECT` already only ever queues a `reminder` for a lead whose earliest upcoming visit is exactly two days out. Now that a web lead can book that same day, two days out, and land straight at `appointment_confirmed` with a receipt already in their inbox, that lead would otherwise get a reminder the same evening asking them to confirm a visit nothing ever left unconfirmed. The job now adds one more condition: skip a lead when it was created today (Pacific) **and** every one of its active program bookings is `confirmed` (none merely `scheduled`). A lead created today whose visit is still `scheduled` (an admin booked it for them, for instance) still gets the reminder, and so does any lead from an earlier day, confirmed or not.
+
+The condition is added the same way the job has always been changed: unschedule the existing `cron.job` row, then `cron.schedule` it again with the full command, one added `AND NOT (...)` clause. Verified on staging with three rolled-back fixtures (`begin; ... rollback;`): a lead created today with an all-confirmed visit two days out was excluded from the job's own `SELECT` (with its `EXTRACT(HOUR ...) = 18` gate removed, since the gate itself can't be tested without waiting for 6pm Pacific); the same shape created yesterday was included; and a lead created today with a `scheduled` (not yet confirmed) visit two days out was included.
 
 ---
 
@@ -597,11 +636,11 @@ The `appointment_slots` table has a public RLS policy that allows `anon` users t
 
 ---
 
-## 12. Booking a Trial Visit at Signup (New Backend, Not Yet Live)
+## 12. Booking a Trial Visit at Signup
 
-This section documents backend work that lets a family pick a specific date and time for their trial visit at the moment they sign up, instead of submitting an inquiry and waiting for an admin to approve it and email back a booking link. It is a new RPC, a rewritten receipt email, and a new calendar-file endpoint.
+This section documents the backend behind the live form (§2): a family picks a specific date and time for their trial visit at the moment they sign up, instead of submitting an inquiry and waiting for an admin to approve it and email back a booking link. It is an RPC, a rewritten receipt email, and a calendar-file endpoint.
 
-**The live public form still calls `submit_enrollment_lead` (§2) and does not use any of this.** Nothing described in this section is reachable from the public site yet. Wiring the contact form to it, the visit-picker UI, and the on-screen confirmation are a follow-up PR.
+**`submit_enrollment_lead` is retired from the public form.** The public form now calls `submit_trial_booking`, below, exclusively. `submitEnrollmentLeadWithTimeout()` (`src/lib/supabase/client.ts`) and the `submit_enrollment_lead` RPC itself are no longer called by any live path; they're left in place only because cached copies of the old form (a browser tab left open from before this shipped, a stale service worker, a search-engine cache) could still try to call them for a short while after deploy. A follow-up cleanup PR removes both once those cached copies have had roughly a week to age out.
 
 ### The `submit_trial_booking` RPC
 
@@ -654,6 +693,8 @@ Three limits, checked in order, all `P0429`:
 | 10 per hour | Across all non-`admin` leads, site-wide | "Too many requests right now. Please try again later." |
 
 The hourly cap only counts leads whose `source_page` is not `'admin'`, so staff typing leads in by hand can never block the public form. Because that carve-out exists, the public path is not allowed to claim it for itself: `p_source_page` is only kept as given when it matches a plain lowercase slug shape (`^[a-z0-9_-]{1,50}$`) **and** is not literally `'admin'`; anything else, including a caller that deliberately sends `'admin'`, falls back to `'contact'`. A public submission can never be stored as if a staff member had entered it, and can never opt itself out of the hourly cap this way.
+
+The e2e smoke test's valid-submission run (`e2e/contact-form.spec.ts`) counts against this same 10-per-hour cap, like any other public submission to staging. On a day with a lot of pushes and PR runs against staging in a short window, this test can fail on the 10-per-hour limit even though nothing is actually broken; a failure with `P0429` in the response is that cap, not a regression.
 
 ### Error contract
 
