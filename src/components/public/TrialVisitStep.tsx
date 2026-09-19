@@ -22,6 +22,11 @@ function importVisitPicker() {
 
 type VisitPickerComponent = ComponentType<VisitPickerProps>;
 
+// Module scope, so a chunk that has already arrived is shared by every mount
+// and never suspends twice. A retry swaps in a fresh lazy instead of reusing
+// this one, because React.lazy remembers a rejected import forever.
+const VisitPickerChunk: VisitPickerComponent = lazy(importVisitPicker);
+
 // The 21 days `submit_trial_booking` accepts from the public form. Asking for
 // more would show a signed-in staff member days their own submit would refuse,
 // since the server only clamps the horizon for anonymous callers.
@@ -214,14 +219,12 @@ export function TrialVisitStep({
     Partial<Record<Program, AppointmentSlot[]>>
   >({});
   const [errorPrograms, setErrorPrograms] = useState<Set<Program>>(new Set());
-  // React.lazy remembers a rejected import forever, so recovering from a
-  // failed chunk load takes a brand new lazy component, not just a boundary
-  // reset. Holding it here is what lets the retry button hand one over. One
-  // for every group: the module is the same, so a load that failed for one
-  // group failed for both.
-  const [VisitPicker, setVisitPicker] = useState<VisitPickerComponent>(() =>
-    lazy(importVisitPicker),
-  );
+  // Set only once a chunk load has failed and the visitor asks to try again.
+  // One replacement for every group: the module is the same, so a load that
+  // failed for one group failed for both.
+  const [reloadedPicker, setReloadedPicker] =
+    useState<VisitPickerComponent | null>(null);
+  const VisitPicker = reloadedPicker ?? VisitPickerChunk;
   // Bumped by a slot retry, to run the fetch effect below again once that
   // program's recorded status has been cleared.
   const [slotRetryCount, setSlotRetryCount] = useState(0);
@@ -244,7 +247,7 @@ export function TrialVisitStep({
   }
 
   function retryPickerLoad() {
-    setVisitPicker(() => lazy(importVisitPicker));
+    setReloadedPicker(() => lazy(importVisitPicker));
   }
 
   useEffect(() => {
