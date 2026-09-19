@@ -8,6 +8,7 @@ import {
   joinNames,
   fillTemplate,
   firstName,
+  programLabel,
 } from './copy.ts';
 import type { Language, ReceiptCopy } from './copy.ts';
 
@@ -20,9 +21,12 @@ function escHtml(s: string | null | undefined): string {
     .replace(/"/g, '&quot;');
 }
 
+// English program names, used by the admin alert (always English) and the
+// invite/approval emails (not language-parameterized). The localized copy
+// lives in copy.ts; this is that copy's English half.
 export const PROGRAM_LABELS: Record<string, string> = {
-  little_dragons: 'Little Dragons',
-  youth: 'Youth Program',
+  little_dragons: programLabel('little_dragons', 'en'),
+  youth: programLabel('youth', 'en'),
 };
 
 const PHONE_DISPLAY = '(408) 620-0252';

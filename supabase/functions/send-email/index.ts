@@ -34,6 +34,7 @@ import {
   buildIcsUrl,
   sanitizeForSubject,
   SCHOOL_ADDRESS,
+  programLabel,
 } from './copy.ts';
 import type { Language } from './copy.ts';
 import { getAppUrl } from '../_shared/appUrl.ts';
@@ -150,7 +151,7 @@ async function getLeadAppointments(
           : appUrl;
 
         return {
-          programLabel: PROGRAM_LABELS[b.program_type] ?? b.program_type,
+          programLabel: programLabel(b.program_type, language),
           childNames,
           date: formatVisitDate(b.appointment_date, language),
           dateShort: formatVisitDateShort(b.appointment_date, language),

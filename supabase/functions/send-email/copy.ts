@@ -17,6 +17,18 @@ export function toLanguage(value: string | null | undefined): Language {
   return value === 'es' ? 'es' : 'en';
 }
 
+const PROGRAM_NAMES: Record<Language, Record<string, string>> = {
+  en: { little_dragons: 'Little Dragons', youth: 'Youth Program' },
+  es: { little_dragons: 'Pequeños Dragones', youth: 'Programa Juvenil' },
+};
+
+// Picks a program's display name in the given language. A program_type
+// outside the two known programs falls back to the raw key, same as the
+// callers did before this lookup existed.
+export function programLabel(programType: string, language: Language): string {
+  return PROGRAM_NAMES[language][programType] ?? programType;
+}
+
 export const FOOTER_COPY: Record<Language, { questions: string; or: string }> =
   {
     en: { questions: 'Questions?', or: 'or' },

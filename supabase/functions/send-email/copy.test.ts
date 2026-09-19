@@ -16,6 +16,7 @@ import {
   buildIcsUrl,
   sanitizeForSubject,
   firstName,
+  programLabel,
 } from './copy.ts';
 
 Deno.test('toLanguage: recognizes es', () => {
@@ -223,3 +224,21 @@ Deno.test('firstName: a single-word name is used as-is', () => {
 Deno.test('firstName: trims surrounding whitespace before splitting', () => {
   assertEquals(firstName('  Maria   Lopez  '), 'Maria');
 });
+
+Deno.test('programLabel: English names', () => {
+  assertEquals(programLabel('little_dragons', 'en'), 'Little Dragons');
+  assertEquals(programLabel('youth', 'en'), 'Youth Program');
+});
+
+Deno.test('programLabel: Spanish names', () => {
+  assertEquals(programLabel('little_dragons', 'es'), 'Pequeños Dragones');
+  assertEquals(programLabel('youth', 'es'), 'Programa Juvenil');
+});
+
+Deno.test(
+  'programLabel: an unknown program_type falls back to the raw key in either language',
+  () => {
+    assertEquals(programLabel('adult', 'en'), 'adult');
+    assertEquals(programLabel('adult', 'es'), 'adult');
+  },
+);

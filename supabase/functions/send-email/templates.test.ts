@@ -275,6 +275,38 @@ Deno.test(
 );
 
 Deno.test(
+  'bookingConfirmationHtml es: uses the Spanish program name, not the English one',
+  () => {
+    const esAppointment: AppointmentInfo[] = [
+      { ...single[0], programLabel: 'Pequeños Dragones' },
+    ];
+    const html = bookingConfirmationHtml('Maria Lopez', esAppointment, 'es');
+    assertStringIncludes(html, 'Pequeños Dragones');
+    assertEquals(html.includes('Little Dragons'), false);
+  },
+);
+
+Deno.test(
+  'bookingConfirmationText es: uses the Spanish program name, not the English one',
+  () => {
+    const esAppointment: AppointmentInfo[] = [
+      { ...single[0], programLabel: 'Pequeños Dragones' },
+    ];
+    const text = bookingConfirmationText('Maria Lopez', esAppointment, 'es');
+    assertStringIncludes(text, 'Pequeños Dragones');
+    assertEquals(text.includes('Little Dragons'), false);
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml en: still uses the English program name',
+  () => {
+    const html = bookingConfirmationHtml('Eduardo Guerra', single, 'en');
+    assertStringIncludes(html, 'Little Dragons');
+  },
+);
+
+Deno.test(
   'bookingConfirmationHtml es: footer uses Spanish "Questions?" and "or"',
   () => {
     const html = bookingConfirmationHtml('Maria Lopez', single, 'es');
