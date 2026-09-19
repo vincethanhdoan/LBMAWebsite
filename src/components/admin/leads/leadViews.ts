@@ -145,11 +145,16 @@ export function deriveAttentionItems(
     push({ reason: 'record_outcome', lead: followUp.lead, followUp });
   }
   for (const lead of leads) {
-    if (effectiveConfirmationNotification(lead)?.status === 'failed') {
+    const stillBooked =
+      lead.status === 'appointment_scheduled' ||
+      lead.status === 'appointment_confirmed';
+    if (
+      stillBooked &&
+      effectiveConfirmationNotification(lead)?.status === 'failed'
+    ) {
       push({ reason: 'email_failed', lead, email: 'reminder' });
     } else if (
-      (lead.status === 'appointment_scheduled' ||
-        lead.status === 'appointment_confirmed') &&
+      stillBooked &&
       latestNotification(lead, 'booking_confirmation')?.status === 'failed'
     ) {
       push({ reason: 'email_failed', lead, email: 'receipt' });

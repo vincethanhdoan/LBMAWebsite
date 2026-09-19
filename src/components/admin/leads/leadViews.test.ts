@@ -400,8 +400,9 @@ describe('deriveAttentionItems', () => {
     expect(items).toEqual([]);
   });
 
-  it('reports a failed reminder as email: reminder', () => {
+  it('reports a failed reminder as email: reminder when still booked', () => {
     const lead = makeLead({
+      status: 'appointment_scheduled',
       reminderNotification: {
         notification_id: 'n1',
         type: 'reminder',
@@ -416,6 +417,21 @@ describe('deriveAttentionItems', () => {
       reason: 'email_failed',
       email: 'reminder',
     });
+  });
+
+  it('does not flag a failed reminder once the lead is no longer booked', () => {
+    const lead = makeLead({
+      status: 'approved',
+      reminderNotification: {
+        notification_id: 'n1',
+        type: 'reminder',
+        status: 'failed',
+        recipient_email: 'eduardo@example.com',
+        created_at: '2026-07-14T00:00:00Z',
+      },
+    });
+    const items = deriveAttentionItems([lead], '2026-07-15T12:00:00', nowMs);
+    expect(items).toEqual([]);
   });
 
   it('ignores failed receipts on finished leads', () => {
