@@ -15,6 +15,11 @@ const VisitPicker = lazy(() =>
   import('../shared/VisitPicker').then((m) => ({ default: m.VisitPicker })),
 );
 
+// The 21 days `submit_trial_booking` accepts from the public form. Asking for
+// more would show a signed-in staff member days their own submit would refuse,
+// since the server only clamps the horizon for anonymous callers.
+const PUBLIC_HORIZON_WEEKS = 3;
+
 export type VisitSelections = Partial<Record<Program, VisitChoice>>;
 
 type ChildRow = { name: string; age: string };
@@ -117,6 +122,7 @@ function ProgramGroup({
             value={value}
             onChange={(choice) => onPick(program, choice)}
             language={language}
+            horizonWeeks={PUBLIC_HORIZON_WEEKS}
             refreshKey={refreshKey}
             emptyMessage={visitNone}
           />

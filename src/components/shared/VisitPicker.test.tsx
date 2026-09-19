@@ -536,6 +536,39 @@ describe('VisitPicker', () => {
     );
   });
 
+  it('asks for the full staff horizon when no horizon is given', async () => {
+    vi.mocked(getUpcomingBookableDates).mockResolvedValue(['2026-09-21']);
+    render(
+      <VisitPicker
+        slots={[makeSlot({ slot_id: 'slot-1' })]}
+        value={null}
+        onChange={vi.fn()}
+        language="en"
+        emptyMessage="No visits available."
+      />,
+    );
+    await waitForLoadToFinish();
+
+    expect(getUpcomingBookableDates).toHaveBeenCalledWith('slot-1', 20, false);
+  });
+
+  it('asks for only the given horizon in weeks', async () => {
+    vi.mocked(getUpcomingBookableDates).mockResolvedValue(['2026-09-21']);
+    render(
+      <VisitPicker
+        slots={[makeSlot({ slot_id: 'slot-1' })]}
+        value={null}
+        onChange={vi.fn()}
+        language="en"
+        horizonWeeks={3}
+        emptyMessage="No visits available."
+      />,
+    );
+    await waitForLoadToFinish();
+
+    expect(getUpcomingBookableDates).toHaveBeenCalledWith('slot-1', 3, false);
+  });
+
   it('opens the calendar on the month of the first available date', async () => {
     vi.mocked(getUpcomingBookableDates).mockResolvedValue(['2026-11-03']);
     render(

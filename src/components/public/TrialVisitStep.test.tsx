@@ -17,16 +17,21 @@ vi.mock('../../lib/supabase/bookingQueries', () => ({
 vi.mock('../shared/VisitPicker', () => ({
   VisitPicker: ({
     onChange,
+    horizonWeeks,
   }: {
     onChange: (choice: VisitChoice | null) => void;
+    horizonWeeks?: number;
   }) => (
-    <button
-      onClick={() =>
-        onChange({ slotId: 's1', date: '2099-01-05', startTime: '17:20:00' })
-      }
-    >
-      Pick
-    </button>
+    <div>
+      <span data-testid="picker-horizon-weeks">{horizonWeeks}</span>
+      <button
+        onClick={() =>
+          onChange({ slotId: 's1', date: '2099-01-05', startTime: '17:20:00' })
+        }
+      >
+        Pick
+      </button>
+    </div>
   ),
 }));
 
@@ -86,6 +91,14 @@ describe('TrialVisitStep', () => {
     await waitFor(() => expect(getAppointmentSlots).toHaveBeenCalledTimes(1));
     expect(getAppointmentSlots).toHaveBeenCalledWith('youth');
     expect(await screen.findByRole('button', { name: 'Pick' })).toBeTruthy();
+  });
+
+  it('asks the picker for only the 3 weeks the public submit accepts', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(tree({ children: [{ name: 'Alex', age: '9' }] }));
+
+    const horizon = await screen.findByTestId('picker-horizon-weeks');
+    expect(horizon.textContent).toBe('3');
   });
 
   it('shows two groups, each named for its own children, for a mixed-age family', async () => {

@@ -33,6 +33,14 @@ interface VisitPickerProps {
   onDaySelect?: (dateKey: string | null) => void;
   language: VisitPickerLanguage;
   allowToday?: boolean;
+  /**
+   * How far ahead to ask for bookable days, in weeks. The server clamps this
+   * to its own horizon for the caller, so it must not ask for more than the
+   * booking that follows will accept: the public signup form passes 3 (the
+   * 21 days `submit_trial_booking` enforces), while staff booking runs to
+   * the full 20 weeks.
+   */
+  horizonWeeks?: number;
   refreshKey?: string | number;
   emptyMessage: string;
 }
@@ -66,6 +74,7 @@ export function VisitPicker({
   onDaySelect,
   language,
   allowToday = false,
+  horizonWeeks = 20,
   refreshKey,
   emptyMessage,
 }: VisitPickerProps) {
@@ -77,14 +86,16 @@ export function VisitPicker({
     new Map(),
   );
   const [fetchFailed, setFetchFailed] = useState(false);
-  // The (slotIds, allowToday, refreshKey) combination `availableMap` above
-  // was loaded for. `fetching` is derived from it rather than mirrored in
-  // its own state, so a refresh-triggered fetch (refreshKey or slots
-  // changing) shows the loading state immediately instead of leaving the
-  // old available dates -- including one a refetch is about to drop --
+  // The (slotIds, allowToday, horizonWeeks, refreshKey) combination
+  // `availableMap` above was loaded for. `fetching` is derived from it rather
+  // than mirrored in its own state, so a refresh-triggered fetch (refreshKey
+  // or slots changing) shows the loading state immediately instead of leaving
+  // the old available dates -- including one a refetch is about to drop --
   // rendered while the new fetch is in flight.
   const fetchKey =
-    slotIds === '' ? '' : `${slotIds}::${allowToday}::${refreshKey ?? ''}`;
+    slotIds === ''
+      ? ''
+      : `${slotIds}::${allowToday}::${horizonWeeks}::${refreshKey ?? ''}`;
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const fetching = fetchKey !== '' && loadedKey !== fetchKey;
   // A day the visitor picked that has more than one arrival time and no
@@ -122,7 +133,7 @@ export function VisitPicker({
     let cancelled = false;
     Promise.all(
       ids.map((id) =>
-        getUpcomingBookableDates(id, 20, allowToday).then((dates) => ({
+        getUpcomingBookableDates(id, horizonWeeks, allowToday).then((dates) => ({
           id,
           dates,
         })),
@@ -149,7 +160,7 @@ export function VisitPicker({
     return () => {
       cancelled = true;
     };
-  }, [slotIds, allowToday, refreshKey, fetchKey]);
+  }, [slotIds, allowToday, horizonWeeks, refreshKey, fetchKey]);
 
   // Once a refetch lands, drop a chosen value that is no longer bookable.
   // (A stale pending day needs no such effect: `selectedKey` above already
