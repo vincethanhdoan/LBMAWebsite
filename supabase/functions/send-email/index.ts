@@ -11,14 +11,11 @@ import type {
   ChildRecord,
 } from './types.ts';
 import {
-  enrollmentNotificationHtml,
   messagingNotificationHtml,
   approvalEmailHtml,
   multiProgramApprovalEmailHtml,
   rescheduleEmailHtml,
   denialEmailHtml,
-  bookingConfirmationHtml,
-  bookingConfirmationText,
   reminderEmailHtml,
   submissionConfirmationHtml,
   announcementNotificationHtml,
@@ -33,22 +30,23 @@ import {
   formatVisitDateShort,
   formatVisitTime,
   joinNames,
-  fillTemplate,
   buildGoogleCalendarUrl,
   buildIcsUrl,
   sanitizeForSubject,
-  RECEIPT_COPY,
   SCHOOL_ADDRESS,
 } from './copy.ts';
 import type { Language } from './copy.ts';
 import { getAppUrl } from '../_shared/appUrl.ts';
+import {
+  LOGO_URL,
+  buildReceiptMessage,
+  buildAdminAlertMessage,
+} from './messages.ts';
 
 const RESEND_API_URL = 'https://api.resend.com/emails';
 const FROM =
   'Los Banos Martial Arts Academy <hello@notifications.lbmartialarts.com>';
 const REPLY_TO = 'LosBanosMartialArts@gmail.com';
-const LOGO_URL =
-  'https://qfyeguikxxwwxpxleqrr.supabase.co/storage/v1/object/public/assets/logo-96.png';
 
 async function sendEmail(
   to: string,
@@ -208,8 +206,10 @@ async function getProgramBookingLinks(
           .eq('program_type', b.program_type);
         return {
           programLabel: PROGRAM_LABELS[b.program_type] ?? b.program_type,
-          childNames:
-            children?.map((c: { name: string }) => c.name).join(' & ') ?? '',
+          childNames: joinNames(
+            children?.map((c: { name: string }) => c.name) ?? [],
+            'en',
+          ),
           bookingToken: b.booking_token,
         };
       },
@@ -300,21 +300,14 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         appUrl,
         'en',
       );
-      // A parent name is free text; a stray newline or control character
-      // must not reach Resend's JSON subject field verbatim.
-      const safeParentName = sanitizeForSubject(lead.parent_name, 'a family');
-      if (visits.length > 0) {
-        subject = `New trial booking from ${safeParentName}: ${visits[0].dateShort} at ${visits[0].time}`;
-      } else {
-        subject = `New enrollment inquiry from ${safeParentName}`;
-      }
-      html = enrollmentNotificationHtml(
+      const alert = buildAdminAlertMessage(
         enrichedLead,
+        visits,
         adminUrl,
         LOGO_URL,
-        'Admin Portal',
-        visits,
       );
+      subject = alert.subject;
+      html = alert.html;
       const results = await Promise.allSettled(
         recipients.map((to: string) => sendEmail(to, subject, html)),
       );
@@ -417,21 +410,10 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         );
         return;
       }
-      const c = RECEIPT_COPY[language];
-      subject =
-        appointments.length > 1
-          ? c.subjectMany
-          : fillTemplate(c.subject, {
-              dateShort: appointments[0].dateShort,
-              time: appointments[0].time,
-            });
-      html = bookingConfirmationHtml(
-        lead.parent_name,
-        appointments,
-        language,
-        LOGO_URL,
-      );
-      text = bookingConfirmationText(lead.parent_name, appointments, language);
+      const receipt = buildReceiptMessage(lead, appointments);
+      subject = receipt.subject;
+      html = receipt.html;
+      text = receipt.text;
       break;
     }
     case 'reminder': {
