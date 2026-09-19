@@ -15,12 +15,23 @@ export function programForAge(age: number): Program | null {
   return null;
 }
 
+// The exact age format the server accepts (a 1 or 2 digit whole number, no
+// sign, no decimal point, no exponent). Kept in one place so the client
+// never shows a program grouping the server would then reject at submit.
+const AGE_PATTERN = /^\d{1,2}$/;
+
 function parseAge(ageText: string): number | null {
   const trimmed = ageText.trim();
-  if (!trimmed) return null;
-  const age = Number(trimmed);
-  if (!Number.isInteger(age)) return null;
-  return age;
+  if (!AGE_PATTERN.test(trimmed)) return null;
+  return Number(trimmed);
+}
+
+// Same as programForAge, but takes the raw string a form field holds and
+// applies the server's age format before converting to a number.
+export function programForAgeText(ageText: string): Program | null {
+  const age = parseAge(ageText);
+  if (age === null) return null;
+  return programForAge(age);
 }
 
 // Groups a form's child rows by program, in a fixed little_dragons-then-youth
@@ -37,9 +48,7 @@ export function programsForChildren(
   const presentPrograms = new Set<Program>();
 
   for (const child of children) {
-    const age = parseAge(child.age);
-    if (age === null) continue;
-    const program = programForAge(age);
+    const program = programForAgeText(child.age);
     if (!program) continue;
 
     presentPrograms.add(program);

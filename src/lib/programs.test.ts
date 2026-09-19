@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { programForAge, programsForChildren } from './programs';
+import {
+  programForAge,
+  programForAgeText,
+  programsForChildren,
+} from './programs';
 import { translations } from '../components/public/lang';
 
 describe('programForAge', () => {
@@ -23,6 +27,39 @@ describe('programForAge', () => {
   });
 });
 
+describe('programForAgeText', () => {
+  it('parses a plain 1-2 digit age', () => {
+    expect(programForAgeText('6')).toBe('little_dragons');
+    expect(programForAgeText('17')).toBe('youth');
+  });
+
+  it('rejects blank and non-numeric text', () => {
+    expect(programForAgeText('')).toBe(null);
+    expect(programForAgeText('five')).toBe(null);
+  });
+
+  it('rejects an out-of-range age', () => {
+    expect(programForAgeText('3')).toBe(null);
+    expect(programForAgeText('18')).toBe(null);
+  });
+
+  it('rejects scientific notation the server regex would reject', () => {
+    expect(programForAgeText('1e1')).toBe(null);
+  });
+
+  it('rejects a leading plus sign the server regex would reject', () => {
+    expect(programForAgeText('+8')).toBe(null);
+  });
+
+  it('rejects a decimal-looking integer the server regex would reject', () => {
+    expect(programForAgeText('4.0')).toBe(null);
+  });
+
+  it('accepts a leading zero the same way the server regex does', () => {
+    expect(programForAgeText('08')).toBe('youth');
+  });
+});
+
 describe('programsForChildren', () => {
   it('ignores a row with a blank age', () => {
     expect(programsForChildren([{ name: 'Mia', age: '' }])).toEqual([]);
@@ -36,6 +73,18 @@ describe('programsForChildren', () => {
   it('ignores a row with an out-of-range age', () => {
     expect(programsForChildren([{ name: 'Mia', age: '3' }])).toEqual([]);
     expect(programsForChildren([{ name: 'Mia', age: '18' }])).toEqual([]);
+  });
+
+  it('ignores a row whose age the server regex would reject even though Number() parses it', () => {
+    expect(programsForChildren([{ name: 'Mia', age: '1e1' }])).toEqual([]);
+    expect(programsForChildren([{ name: 'Mia', age: '+8' }])).toEqual([]);
+    expect(programsForChildren([{ name: 'Mia', age: '4.0' }])).toEqual([]);
+  });
+
+  it('accepts a leading zero the same way the server regex does', () => {
+    expect(programsForChildren([{ name: 'Mia', age: '08' }])).toEqual([
+      { program: 'youth', childNames: ['Mia'] },
+    ]);
   });
 
   it('groups two children in the same program under one entry', () => {

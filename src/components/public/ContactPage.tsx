@@ -17,6 +17,7 @@ import { V3 } from './design';
 import { useLanguage } from './lang';
 import { isValidEmail, isValidUsPhone } from '../../lib/validation';
 import { SCHOOL_PHONE_DISPLAY } from '../../lib/contactLinks';
+import { programForAgeText } from '../../lib/programs';
 
 const CONTACT_INFO = [
   { label: 'Phone', value: SCHOOL_PHONE_DISPLAY, href: 'tel:+14086200252' },
@@ -56,10 +57,11 @@ export function ContactPage() {
   }, [submitted]);
 
   function programLabel(age: string): { text: string; color: string } | null {
-    const n = Number(age);
-    if (!age || isNaN(n)) return null;
-    if (n >= 4 && n <= 7) return { text: ct.programLittle, color: '#6d28d9' };
-    if (n >= 8 && n <= 17) return { text: ct.programYouth, color: '#1d4ed8' };
+    if (!age) return null;
+    const program = programForAgeText(age);
+    if (program === 'little_dragons')
+      return { text: ct.programLittle, color: '#6d28d9' };
+    if (program === 'youth') return { text: ct.programYouth, color: '#1d4ed8' };
     return { text: ct.programAgeError, color: '#b91c1c' };
   }
 
@@ -125,8 +127,7 @@ export function ContactPage() {
         errors.children[i] = ct.errChildFields;
         return;
       }
-      const age = Number(c.age);
-      if (!Number.isInteger(age) || age < 4 || age > 17) {
+      if (programForAgeText(c.age) === null) {
         errors.children[i] = ct.errAgeRange;
       }
     });
