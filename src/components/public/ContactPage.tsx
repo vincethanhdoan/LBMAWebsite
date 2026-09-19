@@ -1,23 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  CheckCircle2,
-  AlertCircle,
-  X,
-  Plus,
-  MapPin,
-  Loader2,
-} from 'lucide-react';
+import { AlertCircle, X, Plus, MapPin, Loader2 } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription } from '../ui/alert';
-import { submitEnrollmentLeadWithTimeout } from '../../lib/supabase/client';
+import { submitTrialBookingWithTimeout } from '../../lib/supabase/client';
+import type { TrialBookingReceipt } from '../../lib/supabase/client';
 import { V3 } from './design';
 import { useLanguage } from './lang';
 import { isValidEmail, isValidUsPhone } from '../../lib/validation';
 import { SCHOOL_PHONE_DISPLAY } from '../../lib/contactLinks';
-import { programForAgeText } from '../../lib/programs';
+import { programForAgeText, programsForChildren } from '../../lib/programs';
+import type { Program } from '../../lib/programs';
+import { TrialVisitStep } from './TrialVisitStep';
+import type { VisitSelections } from './TrialVisitStep';
+import { TrialBookedPanel } from './TrialBookedPanel';
 
 const CONTACT_INFO = [
   { label: 'Phone', value: SCHOOL_PHONE_DISPLAY, href: 'tel:+14086200252' },
@@ -38,7 +36,7 @@ type FieldErrors = {
 };
 
 export function ContactPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const ct = t.contact;
 
   const [parentName, setParentName] = useState('');
@@ -46,15 +44,44 @@ export function ContactPage() {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [children, setChildren] = useState<ChildRow[]>([{ name: '', age: '' }]);
-  const [submitted, setSubmitted] = useState(false);
+  const [selections, setSelections] = useState<VisitSelections>({});
+  const [visitErrors, setVisitErrors] = useState<
+    Partial<Record<Program, string>>
+  >({});
+  const [visitRefreshKey, setVisitRefreshKey] = useState(0);
+  const [receipt, setReceipt] = useState<TrialBookingReceipt | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({ children: {} });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const successRef = useRef<HTMLDivElement>(null);
+  const requestId = useRef(crypto.randomUUID());
 
   useEffect(() => {
-    if (submitted) successRef.current?.focus();
-  }, [submitted]);
+    if (receipt) successRef.current?.focus();
+  }, [receipt]);
+
+  const handleVisitChange = useCallback((next: VisitSelections) => {
+    setSelections(next);
+    setVisitErrors((prev) => {
+      const remaining = (Object.keys(prev) as Program[]).filter(
+        (program) => !next[program],
+      );
+      if (remaining.length === Object.keys(prev).length) return prev;
+      const nextErrors: Partial<Record<Program, string>> = {};
+      remaining.forEach((program) => {
+        const existing = prev[program];
+        if (existing) nextErrors[program] = existing;
+      });
+      return nextErrors;
+    });
+  }, []);
+
+  const childrenByProgram = programsForChildren(children).reduce<
+    Partial<Record<Program, string[]>>
+  >((acc, g) => {
+    acc[g.program] = g.childNames;
+    return acc;
+  }, {});
 
   function programLabel(age: string): { text: string; color: string } | null {
     if (!age) return null;
@@ -155,8 +182,36 @@ export function ContactPage() {
     }
 
     setFieldErrors({ children: {} });
+
+    const groups = programsForChildren(children);
+    const missing = groups.filter((g) => !selections[g.program]);
+    if (missing.length > 0) {
+      const nextVisitErrors: Partial<Record<Program, string>> = {};
+      missing.forEach((g) => {
+        nextVisitErrors[g.program] = ct.errVisit;
+      });
+      setVisitErrors(nextVisitErrors);
+      document.getElementById(`visit-group-${missing[0].program}`)?.focus();
+      return;
+    }
+
+    setVisitErrors({});
     setIsSubmitting(true);
-    const { data, error } = await submitEnrollmentLeadWithTimeout(
+
+    const bookings = groups.flatMap((g) => {
+      const choice = selections[g.program];
+      return choice
+        ? [
+            {
+              program_type: g.program,
+              slot_id: choice.slotId,
+              date: choice.date,
+            },
+          ]
+        : [];
+    });
+
+    const { data, error } = await submitTrialBookingWithTimeout(
       {
         parentName: trimmedName,
         parentEmail: trimmedEmail,
@@ -167,16 +222,38 @@ export function ContactPage() {
           name: c.name.trim(),
           age: Number(c.age),
         })),
+        bookings,
+        requestId: requestId.current,
+        language: lang,
       },
       12000,
     );
 
     if (error || !data) {
-      setSubmitError(error?.code === 'P0429' ? ct.errRateLimit : ct.errSubmit);
+      const code = error?.code;
+      const msg = error?.message ?? '';
+      if (code === 'P0429') {
+        setSubmitError(ct.errRateLimit);
+      } else if (code === 'P0409') {
+        setSubmitError(ct.errAlreadyBooked);
+      } else if (
+        code === '23P01' ||
+        msg.includes('date_unavailable') ||
+        msg.includes('slot_mismatch') ||
+        msg.includes('invalid_booking_request')
+      ) {
+        setSubmitError(code === '23P01' ? ct.errSlotTaken : ct.errDateGone);
+        setSelections({});
+        setVisitRefreshKey((k) => k + 1);
+        document.getElementById(`visit-group-${groups[0].program}`)?.focus();
+      } else {
+        setSubmitError(ct.errSubmit);
+      }
       setIsSubmitting(false);
       return;
     }
-    setSubmitted(true);
+
+    setReceipt(data);
     setIsSubmitting(false);
   };
 
@@ -235,36 +312,13 @@ export function ContactPage() {
                 {ct.formSub}
               </p>
 
-              {submitted ? (
-                <div
+              {receipt ? (
+                <TrialBookedPanel
                   ref={successRef}
-                  role="status"
-                  tabIndex={-1}
-                  className="py-16 text-center rounded-xl"
-                  style={{ backgroundColor: V3.surface }}
-                >
-                  <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
-                    style={{ backgroundColor: V3.primaryBg }}
-                  >
-                    <CheckCircle2
-                      className="w-8 h-8"
-                      style={{ color: V3.primary }}
-                    />
-                  </div>
-                  <h3
-                    className="v3-h font-black mb-2"
-                    style={{ fontSize: '1.75rem', color: V3.text }}
-                  >
-                    {ct.successHeading}
-                  </h3>
-                  <p
-                    className="text-base max-w-sm mx-auto leading-relaxed"
-                    style={{ color: V3.muted }}
-                  >
-                    {ct.successBody}
-                  </p>
-                </div>
+                  receipt={receipt}
+                  childrenByProgram={childrenByProgram}
+                  email={parentEmail.trim().toLowerCase()}
+                />
               ) : (
                 <form
                   onSubmit={handleSubmit}
@@ -341,7 +395,9 @@ export function ContactPage() {
                         autoComplete="tel"
                         aria-invalid={!!fieldErrors.phone}
                         aria-describedby={
-                          fieldErrors.phone ? 'phone-error' : undefined
+                          fieldErrors.phone
+                            ? 'phone-error phone-consent'
+                            : 'phone-consent'
                         }
                       />
                       {fieldErrors.phone && (
@@ -353,6 +409,13 @@ export function ContactPage() {
                           {fieldErrors.phone}
                         </p>
                       )}
+                      <p
+                        id="phone-consent"
+                        className="text-sm"
+                        style={{ color: V3.muted }}
+                      >
+                        {ct.phoneConsent}
+                      </p>
                     </div>
                   </div>
 
@@ -524,6 +587,15 @@ export function ContactPage() {
                       {ct.addChild}
                     </button>
                   </div>
+
+                  <TrialVisitStep
+                    children={children}
+                    value={selections}
+                    onChange={handleVisitChange}
+                    errors={visitErrors}
+                    refreshKey={visitRefreshKey}
+                    disabled={isSubmitting}
+                  />
 
                   <div className="flex flex-col gap-2">
                     <Label
