@@ -1,6 +1,8 @@
 // supabase/functions/send-email/templates.ts
 
 import type { EnrollmentLead, AppointmentInfo } from './types.ts';
+import { RECEIPT_COPY, joinNames, fillTemplate } from './copy.ts';
+import type { Language, ReceiptCopy } from './copy.ts';
 
 function escHtml(s: string | null | undefined): string {
   if (!s) return '';
@@ -15,6 +17,11 @@ export const PROGRAM_LABELS: Record<string, string> = {
   little_dragons: 'Little Dragons',
   youth: 'Youth Program',
 };
+
+const ADDRESS = '1209 South 6th St Suite E, Los Banos, CA';
+const PHONE_DISPLAY = '(408) 620-0252';
+const MAPS_URL =
+  'https://www.google.com/maps/search/?api=1&query=1209+South+6th+St+Suite+E,+Los+Banos,+CA';
 
 const STRIPE = `<div style="height:4px;background:#A01F23;"></div>`;
 
@@ -64,12 +71,22 @@ function ctaButton(href: string, label: string): string {
   </div>`;
 }
 
+export interface AdminVisitInfo {
+  programLabel: string;
+  childNames: string;
+  date: string;
+  time: string;
+}
+
 export function enrollmentNotificationHtml(
   lead: EnrollmentLead,
   adminUrl: string,
   logoUrl?: string,
   subtitle = 'Admin Portal',
+  visits?: AdminVisitInfo[],
 ): string {
+  const hasVisits = (visits?.length ?? 0) > 0;
+
   const rows = [
     `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;width:110px;">Parent</td><td style="padding:4px 0;color:#555;">${escHtml(lead.parent_name)}</td></tr>`,
     lead.parent_email
@@ -91,12 +108,28 @@ export function enrollmentNotificationHtml(
     lead.message
       ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;vertical-align:top;">Message</td><td style="padding:4px 0;color:#555;">${escHtml(lead.message)}</td></tr>`
       : '',
+    hasVisits
+      ? visits!
+          .map(
+            (v) =>
+              `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;vertical-align:top;">Visit</td><td style="padding:4px 0;color:#555;">${escHtml(v.programLabel)}${v.childNames ? ` · ${escHtml(v.childNames)}` : ''} — ${escHtml(v.date)}, ${escHtml(v.time)}</td></tr>`,
+          )
+          .join('')
+      : '',
+    lead.preferred_language === 'es'
+      ? `<tr><td style="padding:4px 0;font-weight:700;color:#1a1a2e;">Language</td><td style="padding:4px 0;color:#555;">Spanish</td></tr>`
+      : '',
   ].join('');
+
+  const heading = hasVisits ? 'New trial booking' : 'New enrollment inquiry';
+  const intro = hasVisits
+    ? 'A family booked a trial visit through the website.'
+    : 'A family submitted an enrollment inquiry through the website.';
 
   return wrap(
     `
-    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">New enrollment inquiry</p>
-    <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">A family submitted an enrollment inquiry through the website.</p>
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">${heading}</p>
+    <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">${intro}</p>
     <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">${rows}</table>
     ${ctaButton(adminUrl, 'View in Admin Dashboard')}
   `,
@@ -148,7 +181,7 @@ export function multiProgramApprovalEmailHtml(
 
   return wrap(
     `
-    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Your enrollment request has been approved!</p>
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">We'd love to have you in for a visit. Pick a day and time that works for your family.</p>
     <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">
       Hi ${escHtml(parentName)}! We'd love to welcome your family to Los Banos Martial Arts Academy.
       Use the buttons below to choose an appointment date for each program.
@@ -213,7 +246,7 @@ export function approvalEmailHtml(
 ): string {
   return wrap(
     `
-    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">Your enrollment request has been approved!</p>
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">We'd love to have you in for a visit. Pick a day and time that works for your family.</p>
     <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">
       Hi ${escHtml(lead.parent_name)}! We'd love to welcome your family to Los Banos Martial Arts Academy.
       Use the button below to choose an appointment date that works for you.
@@ -247,47 +280,112 @@ export function denialEmailHtml(
   );
 }
 
+// The Spanish time format ("5:20 p. m.") already ends in a period, so the
+// "arrive" sentence template would otherwise end in "..". Collapse that back
+// to a single period rather than hand-editing the copy string.
+function receiptArrive(c: ReceiptCopy, time: string): string {
+  return fillTemplate(c.arrive, { time }).replace(/\.\.$/, '.');
+}
+
+// The intro line names every child once, across all booked visits, even
+// when they're spread across different programs (and therefore different
+// AppointmentInfo entries).
+function receiptChildren(
+  appointments: AppointmentInfo[],
+  language: Language,
+): string {
+  const seen = new Set<string>();
+  const groups: string[] = [];
+  for (const a of appointments) {
+    if (a.childNames && !seen.has(a.childNames)) {
+      seen.add(a.childNames);
+      groups.push(a.childNames);
+    }
+  }
+  return joinNames(groups, language) || RECEIPT_COPY[language].familyFallback;
+}
+
 export function bookingConfirmationHtml(
   parentName: string,
   appointments: AppointmentInfo[],
+  language: Language,
   logoUrl?: string,
-  subtitle?: string,
 ): string {
+  const c = RECEIPT_COPY[language];
+  const heading = appointments.length > 1 ? c.headingMany : c.heading;
+  const intro = fillTemplate(c.intro, {
+    name: parentName,
+    children: receiptChildren(appointments, language),
+  });
+
   const cards = appointments
-    .map(
-      (a) => `
+    .map((a) => {
+      const arrive = receiptArrive(c, a.time);
+      return `
     <div style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
         ${escHtml(a.programLabel)}${a.childNames ? ` · ${escHtml(a.childNames)}` : ''}
       </div>
       <div style="font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(a.date)}</div>
-      <div style="font-size:13px;color:#555;margin-top:4px;">${escHtml(a.time)}</div>
-      <p style="margin:10px 0 0;font-size:12px;color:#595959;">
-        Need to reschedule? <a href="${a.rebookingUrl}" style="color:#A01F23;text-decoration:none;">Click here</a>
-      </p>
+      <p style="margin:8px 0 12px;font-size:13px;color:#555;">${escHtml(arrive)}</p>
+      <p style="margin:0 0 4px;font-size:12px;"><a href="${a.googleCalendarUrl}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.addGoogle)}</a></p>
+      <p style="margin:0 0 4px;font-size:12px;"><a href="${a.icsUrl}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.addIcs)}</a></p>
+      <p style="margin:0;font-size:12px;"><a href="${a.rebookingUrl}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.change)}</a></p>
     </div>
-  `,
-    )
+  `;
+    })
     .join('');
-
-  const heading =
-    appointments.length > 1
-      ? 'Appointments confirmed!'
-      : 'Appointment confirmed!';
-  const intro =
-    appointments.length > 1
-      ? 'your enrollment appointments are set:'
-      : 'your enrollment appointment is set:';
 
   return wrap(
     `
-    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">${heading}</p>
-    <p style="margin:0 0 16px;color:#555;font-size:13px;">Hi ${escHtml(parentName)}, ${intro}</p>
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">${escHtml(heading)}</p>
+    <p style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">${escHtml(intro)}</p>
     ${cards}
+    <p style="margin:20px 0 4px;font-size:13px;font-weight:700;color:#1a1a2e;">${escHtml(c.whereHeading)}</p>
+    <p style="margin:0 0 4px;color:#555;font-size:13px;">${ADDRESS}</p>
+    <p style="margin:0 0 20px;font-size:12px;"><a href="${MAPS_URL}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.openMaps)}</a></p>
+    <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1a1a2e;">${escHtml(c.expectHeading)}</p>
+    <p style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">${escHtml(c.expectBody)}</p>
+    <p style="margin:0;color:#555;font-size:13px;line-height:1.65;">${escHtml(fillTemplate(c.closing, { phone: PHONE_DISPLAY }))}</p>
   `,
     logoUrl,
-    subtitle,
   );
+}
+
+export function bookingConfirmationText(
+  parentName: string,
+  appointments: AppointmentInfo[],
+  language: Language,
+): string {
+  const c = RECEIPT_COPY[language];
+  const heading = appointments.length > 1 ? c.headingMany : c.heading;
+  const intro = fillTemplate(c.intro, {
+    name: parentName,
+    children: receiptChildren(appointments, language),
+  });
+
+  const lines: string[] = [heading, '', intro, ''];
+
+  for (const a of appointments) {
+    lines.push(`${a.programLabel}${a.childNames ? ` - ${a.childNames}` : ''}`);
+    lines.push(a.date);
+    lines.push(receiptArrive(c, a.time));
+    lines.push(`${c.addGoogle}: ${a.googleCalendarUrl}`);
+    lines.push(`${c.addIcs}: ${a.icsUrl}`);
+    lines.push(`${c.change}: ${a.rebookingUrl}`);
+    lines.push('');
+  }
+
+  lines.push(c.whereHeading);
+  lines.push(ADDRESS);
+  lines.push(`${c.openMaps}: ${MAPS_URL}`);
+  lines.push('');
+  lines.push(c.expectHeading);
+  lines.push(c.expectBody);
+  lines.push('');
+  lines.push(fillTemplate(c.closing, { phone: PHONE_DISPLAY }));
+
+  return lines.join('\n');
 }
 
 export function reminderEmailHtml(
