@@ -11,25 +11,24 @@ import { programsForChildren } from '../../lib/programs';
 import type { Program } from '../../lib/programs';
 import { getAppointmentSlots } from '../../lib/supabase/bookingQueries';
 import { visitPickerCopy } from '../shared/visitPickerCopy';
+import { VisitLoadFailure } from '../shared/VisitLoadFailure';
 import type { VisitChoice, VisitPickerProps } from '../shared/VisitPicker';
 import type { AppointmentSlot } from '../../lib/types';
-
-function importVisitPicker() {
-  return import('../shared/VisitPicker').then((m) => ({
-    default: m.VisitPicker,
-  }));
-}
 
 type VisitPickerComponent = ComponentType<VisitPickerProps>;
 
 // Module scope, so a chunk that has already arrived is shared by every mount
-// and never suspends twice. A retry swaps in a fresh lazy instead of reusing
-// this one, because React.lazy remembers a rejected import forever.
-const VisitPickerChunk: VisitPickerComponent = lazy(importVisitPicker);
+// and never suspends twice. A failed dynamic import is cached in the module
+// map forever, so there is no way to retry this from here; the ErrorBoundary
+// fallback below tells the visitor to call instead.
+const VisitPickerChunk: VisitPickerComponent = lazy(() =>
+  import('../shared/VisitPicker').then((m) => ({ default: m.VisitPicker })),
+);
 
 // The 21 days `submit_trial_booking` accepts from the public form. Asking for
-// more would show a signed-in staff member days their own submit would refuse,
-// since the server only clamps the horizon for anonymous callers.
+// more would show a signed-in staff member days their own submit would
+// refuse, since the server clamps this horizon for every non-admin caller
+// (anonymous and signed-in family alike) -- only admins are unclamped.
 const PUBLIC_HORIZON_WEEKS = 3;
 
 export type VisitSelections = Partial<Record<Program, VisitChoice>>;
@@ -69,32 +68,6 @@ function LoadingSpinner({ label }: { label: string }) {
   );
 }
 
-function LoadFailure({
-  message,
-  retryLabel,
-  onRetry,
-}: {
-  message: string;
-  retryLabel: string;
-  onRetry: () => void;
-}) {
-  return (
-    <div className="text-center py-4">
-      <p role="alert" className="text-sm text-destructive">
-        {message}
-      </p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="mt-3 min-h-[44px] px-4 rounded-lg border-2 text-sm font-semibold transition-colors hover:bg-black/5"
-        style={{ borderColor: V3.border, color: V3.text }}
-      >
-        {retryLabel}
-      </button>
-    </div>
-  );
-}
-
 interface ProgramGroupProps {
   program: Program;
   label: string;
@@ -107,8 +80,6 @@ interface ProgramGroupProps {
   disabled: boolean;
   slotsState: SlotsState;
   onRetrySlots: (program: Program) => void;
-  VisitPicker: VisitPickerComponent;
-  onRetryPickerLoad: () => void;
   visitFor: string;
   visitNone: string;
 }
@@ -125,8 +96,6 @@ function ProgramGroup({
   disabled,
   slotsState,
   onRetrySlots,
-  VisitPicker,
-  onRetryPickerLoad,
   visitFor,
   visitNone,
 }: ProgramGroupProps) {
@@ -149,14 +118,14 @@ function ProgramGroup({
       tabIndex={-1}
       disabled={disabled}
       aria-describedby={error ? errorId : undefined}
-      className="flex flex-col gap-3 rounded-xl py-2 sm:border sm:border-[var(--v3-border)] sm:bg-[var(--v3-surface)] sm:p-5"
+      className="flex flex-col gap-3 py-2 sm:rounded-xl sm:border sm:border-[var(--v3-border)] sm:bg-[var(--v3-surface)] sm:p-5"
     >
       <legend className="text-sm font-semibold px-1" style={{ color: V3.text }}>
         {legend}
       </legend>
 
       {slotsState.status === 'error' ? (
-        <LoadFailure
+        <VisitLoadFailure
           message={copy.loadError}
           retryLabel={copy.retry}
           onRetry={() => onRetrySlots(program)}
@@ -166,22 +135,15 @@ function ProgramGroup({
       ) : (
         // Without this boundary a failed chunk request (a stale hash after a
         // deploy, a dropped connection) would reach the app root and replace
-        // the whole page with its generic English error.
+        // the whole page with its generic English error. There is no retry:
+        // a failed dynamic import is cached by the browser and never
+        // refetches, so the fallback sends the visitor to call instead.
         <ErrorBoundary
           onError={reportError}
-          fallback={(reset) => (
-            <LoadFailure
-              message={copy.loadError}
-              retryLabel={copy.retry}
-              onRetry={() => {
-                onRetryPickerLoad();
-                reset();
-              }}
-            />
-          )}
+          fallback={() => <VisitLoadFailure message={copy.chunkLoadError} />}
         >
           <Suspense fallback={<LoadingSpinner label={copy.loading} />}>
-            <VisitPicker
+            <VisitPickerChunk
               slots={slotsState.slots}
               value={value}
               onChange={(choice) => onPick(program, choice)}
@@ -221,12 +183,6 @@ export function TrialVisitStep({
     Partial<Record<Program, AppointmentSlot[]>>
   >({});
   const [errorPrograms, setErrorPrograms] = useState<Set<Program>>(new Set());
-  // Set only once a chunk load has failed and the visitor asks to try again.
-  // One replacement for every group: the module is the same, so a load that
-  // failed for one group failed for both.
-  const [reloadedPicker, setReloadedPicker] =
-    useState<VisitPickerComponent | null>(null);
-  const VisitPicker = reloadedPicker ?? VisitPickerChunk;
   // Bumped by a slot retry, to run the fetch effect below again once that
   // program's recorded status has been cleared.
   const [slotRetryCount, setSlotRetryCount] = useState(0);
@@ -246,10 +202,6 @@ export function TrialVisitStep({
   function retrySlots(program: Program) {
     delete statusRef.current[program];
     setSlotRetryCount((n) => n + 1);
-  }
-
-  function retryPickerLoad() {
-    setReloadedPicker(() => lazy(importVisitPicker));
   }
 
   useEffect(() => {
@@ -360,8 +312,6 @@ export function TrialVisitStep({
               disabled={disabled}
               slotsState={slotsState}
               onRetrySlots={retrySlots}
-              VisitPicker={VisitPicker}
-              onRetryPickerLoad={retryPickerLoad}
               visitFor={ct.visitFor}
               visitNone={ct.visitNone}
             />

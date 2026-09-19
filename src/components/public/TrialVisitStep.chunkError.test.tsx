@@ -2,13 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import {
-  render,
-  screen,
-  cleanup,
-  fireEvent,
-  waitFor,
-} from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import { TrialVisitStep } from './TrialVisitStep';
 import { LanguageContext, translations } from './lang';
 import type { Lang } from './lang';
@@ -20,10 +14,9 @@ vi.mock('../../lib/supabase/bookingQueries', () => ({
 
 // Stands in for a chunk request that never arrives: a stale hash after a
 // deploy, or a dropped connection. The dynamic import rejects, which is what
-// React.lazy turns into a throw during render.
-const chunk = vi.hoisted(() => ({ attempts: 0 }));
+// React.lazy turns into a throw during render. A browser caches a rejected
+// import in its module map forever, so there is nothing to retry here.
 vi.mock('../shared/VisitPicker', () => {
-  chunk.attempts += 1;
   throw new Error('Failed to fetch dynamically imported module');
 });
 
@@ -50,14 +43,15 @@ afterEach(() => {
 });
 
 describe('TrialVisitStep when the calendar chunk fails to load', () => {
-  it('shows the load error with the phone number instead of letting it reach the app root', async () => {
+  it('shows the load error with the phone number and no retry button, instead of letting it reach the app root', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(getAppointmentSlots).mockResolvedValue([]);
     render(tree('en'));
 
     expect((await screen.findByRole('alert')).textContent).toBe(
-      'We could not load the available days. Please try again, or call us at (408) 620-0252 and we will book your visit for you.',
+      'We could not load the calendar. Please call us at (408) 620-0252 and we will book your visit for you.',
     );
+    expect(screen.queryByRole('button', { name: /try again/i })).toBeNull();
     // The rest of the step is still on screen, so nothing typed above is lost.
     expect(
       screen.getByRole('group', { name: 'Youth Program visit for Alex' }),
@@ -70,20 +64,10 @@ describe('TrialVisitStep when the calendar chunk fails to load', () => {
     render(tree('es'));
 
     expect((await screen.findByRole('alert')).textContent).toBe(
-      'No pudimos cargar los días disponibles. Inténtalo de nuevo, o llámanos al (408) 620-0252 y nosotros reservamos tu visita.',
+      'No pudimos cargar el calendario. Llámanos al (408) 620-0252 y nosotros reservamos tu visita.',
     );
-  });
-
-  it('imports the calendar again when the visitor presses try again', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
-    render(tree('en'));
-    await screen.findByRole('alert');
-    const before = chunk.attempts;
-
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-
-    await waitFor(() => expect(chunk.attempts).toBeGreaterThan(before));
-    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: /intentar de nuevo/i }),
+    ).toBeNull();
   });
 });
