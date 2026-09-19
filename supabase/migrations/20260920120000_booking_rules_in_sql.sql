@@ -94,18 +94,19 @@ SECURITY DEFINER
 SET search_path TO 'public'
 AS $function$
 DECLARE
-  v_is_admin boolean := public.is_admin(auth.uid());
-  v_today    date := (now() AT TIME ZONE 'America/Los_Angeles')::date;
-  v_weeks    integer := COALESCE(p_weeks_ahead, 20);
-  v_horizon  integer := CASE WHEN v_is_admin THEN v_weeks * 7
-                             ELSE LEAST(v_weeks * 7, 21) END;
-  v_date     date;
+  v_is_admin      boolean := public.is_admin(auth.uid());
+  v_today         date := (now() AT TIME ZONE 'America/Los_Angeles')::date;
+  v_weeks         integer := COALESCE(p_weeks_ahead, 20);
+  v_include_today boolean := COALESCE(p_include_today, false);
+  v_horizon       integer := CASE WHEN v_is_admin THEN v_weeks * 7
+                                  ELSE LEAST(v_weeks * 7, 21) END;
+  v_date          date;
 BEGIN
   FOR v_date IN
     SELECT d::date FROM generate_series(v_today, v_today + v_horizon, interval '1 day') AS d
   LOOP
     IF public.slot_date_block_reason(
-         p_slot_id, v_date, v_is_admin AND p_include_today, v_horizon, NULL
+         p_slot_id, v_date, v_is_admin AND v_include_today, v_horizon, NULL
        ) IS NULL THEN
       available_date := v_date;
       RETURN NEXT;
