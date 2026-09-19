@@ -2,15 +2,20 @@
 // Pure formatting and copy for the receipt (and other) emails: language
 // resolution, date/time formatting, string substitution, and the two
 // calendar-link builders. No I/O, no Deno.env access, so every function
-// here is exact-string testable.
+// here is exact-string testable. The school address and the child-name
+// joiner live in ../_shared/copy.ts, shared with visit-calendar, and are
+// re-exported here so the rest of this directory keeps importing from
+// './copy.ts'.
 
-export type Language = 'en' | 'es';
+import { SCHOOL_ADDRESS, joinNames } from '../_shared/copy.ts';
+import type { Language } from '../_shared/copy.ts';
+
+export type { Language };
+export { SCHOOL_ADDRESS, joinNames };
 
 export function toLanguage(value: string | null | undefined): Language {
   return value === 'es' ? 'es' : 'en';
 }
-
-export const SCHOOL_ADDRESS = '1209 South 6th St Suite E, Los Banos, CA';
 
 export const FOOTER_COPY: Record<Language, { questions: string; or: string }> =
   {
@@ -157,17 +162,6 @@ export function fillTemplate(
   return template.replace(/\{(\w+)\}/g, (match, key) =>
     Object.prototype.hasOwnProperty.call(vars, key) ? vars[key] : match,
   );
-}
-
-// Joins a list of names into a natural-language list: "Mia", "Emma and
-// Lily", "Emma, Lily, and Jake" ("y" instead of "and" in Spanish).
-export function joinNames(names: string[], language: Language): string {
-  const filtered = names.filter(Boolean);
-  if (filtered.length === 0) return '';
-  if (filtered.length === 1) return filtered[0];
-  const and = language === 'es' ? 'y' : 'and';
-  if (filtered.length === 2) return `${filtered[0]} ${and} ${filtered[1]}`;
-  return `${filtered.slice(0, -1).join(', ')}, ${and} ${filtered[filtered.length - 1]}`;
 }
 
 function pad2(n: number): string {
