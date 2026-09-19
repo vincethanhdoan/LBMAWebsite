@@ -105,10 +105,13 @@ Deno.serve(async (req) => {
   if (!lead)
     return new Response('Lead not found', { status: 404, headers: cors });
   if (!statuses.includes(lead.status)) {
-    return new Response('Lead is not in a resendable state', {
-      status: 422,
-      headers: cors,
-    });
+    return new Response(
+      JSON.stringify({
+        code: 'not_resendable',
+        error: "This lead's status changed, so that email can't be sent right now.",
+      }),
+      { status: 422, headers: { ...cors, 'Content-Type': 'application/json' } },
+    );
   }
   if (!lead.parent_email) return noEmailResponse(cors);
 
