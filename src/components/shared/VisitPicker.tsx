@@ -89,7 +89,7 @@ export function VisitPicker({
   const fetching = fetchKey !== '' && loadedKey !== fetchKey;
   // A day the visitor picked that has more than one arrival time and no
   // time chosen yet. Whenever `value` is set, it (not this) is the source
-  // of truth for which day is selected — see `selectedKey` below.
+  // of truth for which day is selected. See `selectedKey` below.
   const [pendingDayKey, setPendingDayKey] = useState<string | null>(null);
   const [prevValue, setPrevValue] = useState(value);
 
@@ -152,7 +152,7 @@ export function VisitPicker({
   }, [slotIds, allowToday, refreshKey, fetchKey]);
 
   // Once a refetch lands, drop a chosen value that is no longer bookable.
-  // (A stale pending day needs no such effect — `selectedKey` above already
+  // (A stale pending day needs no such effect: `selectedKey` above already
   // stops reading it once it drops out of `availableMap`.)
   useEffect(() => {
     if (fetching || !value) return;
