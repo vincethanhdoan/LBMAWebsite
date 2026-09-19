@@ -499,11 +499,7 @@ export function ContactPage() {
                     aria-describedby={
                       fieldErrors.childCount ? 'child-count-error' : undefined
                     }
-                    className="flex flex-col gap-3 rounded-xl p-5"
-                    style={{
-                      backgroundColor: V3.surface,
-                      border: `1px solid ${V3.border}`,
-                    }}
+                    className="flex flex-col gap-3 py-2 sm:rounded-xl sm:border sm:border-[var(--v3-border)] sm:bg-[var(--v3-surface)] sm:p-5"
                   >
                     <div>
                       <Label
