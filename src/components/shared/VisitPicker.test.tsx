@@ -532,8 +532,108 @@ describe('VisitPicker', () => {
       />,
     );
     expect((await screen.findByRole('alert')).textContent).toBe(
-      "We couldn't load the available days. Please refresh the page or call us at (408) 620-0252.",
+      'We could not load the available days. Please try again, or call us at (408) 620-0252 and we will book your visit for you.',
     );
+  });
+
+  it('refetches and shows the days when the visitor presses try again', async () => {
+    vi.mocked(getUpcomingBookableDates)
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(['2026-09-21']);
+    render(
+      <VisitPicker
+        slots={[makeSlot()]}
+        value={null}
+        onChange={vi.fn()}
+        language="en"
+        emptyMessage="No visits available."
+      />,
+    );
+    await screen.findByRole('alert');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitForLoadToFinish();
+
+    expect(screen.queryByRole('alert')).toBeNull();
+    const availableDay = screen.getByRole('button', {
+      name: /September 21st, 2026/,
+    }) as HTMLButtonElement;
+    expect(availableDay.disabled).toBe(false);
+  });
+
+  it('stops showing the load error once a later fetch succeeds', async () => {
+    vi.mocked(getUpcomingBookableDates)
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(['2026-09-21']);
+    const slot = makeSlot();
+
+    const { rerender } = render(
+      <VisitPicker
+        slots={[slot]}
+        value={null}
+        onChange={vi.fn()}
+        language="en"
+        emptyMessage="No visits available."
+        refreshKey={1}
+      />,
+    );
+    await screen.findByRole('alert');
+
+    rerender(
+      <VisitPicker
+        slots={[slot]}
+        value={null}
+        onChange={vi.fn()}
+        language="en"
+        emptyMessage="No visits available."
+        refreshKey={2}
+      />,
+    );
+    await waitForLoadToFinish();
+
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(
+      screen.getByRole('button', { name: /September 21st, 2026/ }),
+    ).toBeTruthy();
+  });
+
+  it('keeps the chosen visit when a refetch fails', async () => {
+    vi.mocked(getUpcomingBookableDates)
+      .mockResolvedValueOnce(['2026-09-21'])
+      .mockRejectedValueOnce(new Error('boom'));
+    const onChange = vi.fn();
+    const slot = makeSlot({ slot_id: 'slot-1', start_time: '10:00:00' });
+    const value: VisitChoice = {
+      slotId: 'slot-1',
+      date: '2026-09-21',
+      startTime: '10:00:00',
+    };
+
+    const { rerender } = render(
+      <VisitPicker
+        slots={[slot]}
+        value={value}
+        onChange={onChange}
+        language="en"
+        emptyMessage="No visits available."
+        refreshKey={1}
+      />,
+    );
+    await waitForLoadToFinish();
+
+    rerender(
+      <VisitPicker
+        slots={[slot]}
+        value={value}
+        onChange={onChange}
+        language="en"
+        emptyMessage="No visits available."
+        refreshKey={2}
+      />,
+    );
+    await screen.findByRole('alert');
+
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('asks for the full staff horizon when no horizon is given', async () => {

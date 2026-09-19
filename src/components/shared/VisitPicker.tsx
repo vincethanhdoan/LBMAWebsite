@@ -26,7 +26,16 @@ interface DateOption {
   startTime: string;
 }
 
-interface VisitPickerProps {
+// The outcome of the fetch for one `fetchKey`. Success and failure are held in
+// the same value so neither can outlive the attempt it came from: a failure is
+// only ever rendered while its own key is the current one.
+type DatesLoad =
+  | { key: string; status: 'ready'; dates: Map<string, string[]> }
+  | { key: string; status: 'error' };
+
+const NO_DATES: Map<string, string[]> = new Map();
+
+export interface VisitPickerProps {
   slots: AppointmentSlot[];
   value: VisitChoice | null;
   onChange: (choice: VisitChoice | null) => void;
@@ -82,22 +91,23 @@ export function VisitPicker({
   const localeCode = language === 'es' ? 'es-US' : 'en-US';
   const slotIds = useMemo(() => slots.map((s) => s.slot_id).join(','), [slots]);
 
-  const [availableMap, setAvailableMap] = useState<Map<string, string[]>>(
-    new Map(),
-  );
-  const [fetchFailed, setFetchFailed] = useState(false);
-  // The (slotIds, allowToday, horizonWeeks, refreshKey) combination
-  // `availableMap` above was loaded for. `fetching` is derived from it rather
-  // than mirrored in its own state, so a refresh-triggered fetch (refreshKey
-  // or slots changing) shows the loading state immediately instead of leaving
-  // the old available dates -- including one a refetch is about to drop --
-  // rendered while the new fetch is in flight.
+  // Bumped by the "try again" button, so a failed fetch can be run again
+  // without the caller having to change anything the visitor typed.
+  const [retryCount, setRetryCount] = useState(0);
+  // Everything one fetch depends on. `fetching` and the loaded dates are
+  // derived from it rather than mirrored in their own state, so a
+  // refresh-triggered fetch (refreshKey, retry or slots changing) shows the
+  // loading state immediately instead of leaving the old available dates --
+  // including one a refetch is about to drop -- rendered while the new fetch
+  // is in flight.
   const fetchKey =
     slotIds === ''
       ? ''
-      : `${slotIds}::${allowToday}::${horizonWeeks}::${refreshKey ?? ''}`;
-  const [loadedKey, setLoadedKey] = useState<string | null>(null);
-  const fetching = fetchKey !== '' && loadedKey !== fetchKey;
+      : `${slotIds}::${allowToday}::${horizonWeeks}::${refreshKey ?? ''}::${retryCount}`;
+  const [load, setLoad] = useState<DatesLoad | null>(null);
+  const loaded = load && load.key === fetchKey ? load : null;
+  const fetching = fetchKey !== '' && loaded === null;
+  const availableMap = loaded?.status === 'ready' ? loaded.dates : NO_DATES;
   // A day the visitor picked that has more than one arrival time and no
   // time chosen yet. Whenever `value` is set, it (not this) is the source
   // of truth for which day is selected. See `selectedKey` below.
@@ -133,10 +143,12 @@ export function VisitPicker({
     let cancelled = false;
     Promise.all(
       ids.map((id) =>
-        getUpcomingBookableDates(id, horizonWeeks, allowToday).then((dates) => ({
-          id,
-          dates,
-        })),
+        getUpcomingBookableDates(id, horizonWeeks, allowToday).then(
+          (dates) => ({
+            id,
+            dates,
+          }),
+        ),
       ),
     )
       .then((results) => {
@@ -149,13 +161,10 @@ export function VisitPicker({
             map.set(date, existing);
           }
         }
-        setAvailableMap(map);
+        setLoad({ key: fetchKey, status: 'ready', dates: map });
       })
       .catch(() => {
-        if (!cancelled) setFetchFailed(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadedKey(fetchKey);
+        if (!cancelled) setLoad({ key: fetchKey, status: 'error' });
       });
     return () => {
       cancelled = true;
@@ -163,15 +172,17 @@ export function VisitPicker({
   }, [slotIds, allowToday, horizonWeeks, refreshKey, fetchKey]);
 
   // Once a refetch lands, drop a chosen value that is no longer bookable.
+  // Only a ready result can say that: a failed fetch knows nothing about the
+  // chosen day and must not throw the visitor's choice away.
   // (A stale pending day needs no such effect: `selectedKey` above already
   // stops reading it once it drops out of `availableMap`.)
   useEffect(() => {
-    if (fetching || !value) return;
-    const dayIds = availableMap.get(value.date) ?? [];
+    if (loaded?.status !== 'ready' || !value) return;
+    const dayIds = loaded.dates.get(value.date) ?? [];
     if (!dayIds.includes(value.slotId)) {
       onChange(null);
     }
-  }, [fetching, availableMap, value, onChange]);
+  }, [loaded, value, onChange]);
 
   function getDayOptions(dateKey: string): DateOption[] {
     const ids = availableMap.get(dateKey) ?? [];
@@ -235,11 +246,20 @@ export function VisitPicker({
     );
   }
 
-  if (fetchFailed) {
+  if (loaded?.status === 'error') {
     return (
-      <p role="alert" className="text-sm text-destructive text-center py-4">
-        {copy.loadError}
-      </p>
+      <div className="text-center py-4">
+        <p role="alert" className="text-sm text-destructive">
+          {copy.loadError}
+        </p>
+        <button
+          type="button"
+          onClick={() => setRetryCount((n) => n + 1)}
+          className="mt-3 min-h-[44px] px-4 rounded-lg border-2 border-border text-sm font-semibold hover:border-primary/50 hover:bg-muted/50 transition-colors"
+        >
+          {copy.retry}
+        </button>
+      </div>
     );
   }
 

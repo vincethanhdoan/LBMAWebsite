@@ -2,6 +2,7 @@ export type VisitPickerLanguage = 'en' | 'es';
 
 interface VisitPickerCopy {
   loadError: string;
+  retry: string;
   chooseTime: string;
   loading: string;
   selectedDay: (date: string) => string;
@@ -11,7 +12,8 @@ interface VisitPickerCopy {
 export const visitPickerCopy: Record<VisitPickerLanguage, VisitPickerCopy> = {
   en: {
     loadError:
-      "We couldn't load the available days. Please refresh the page or call us at (408) 620-0252.",
+      'We could not load the available days. Please try again, or call us at (408) 620-0252 and we will book your visit for you.',
+    retry: 'Try again',
     chooseTime: 'Choose an arrival time',
     loading: 'Loading available days',
     selectedDay: (date) => `Selected ${date}`,
@@ -19,7 +21,8 @@ export const visitPickerCopy: Record<VisitPickerLanguage, VisitPickerCopy> = {
   },
   es: {
     loadError:
-      'No pudimos cargar los días disponibles. Actualiza la página o llámanos al (408) 620-0252.',
+      'No pudimos cargar los días disponibles. Inténtalo de nuevo, o llámanos al (408) 620-0252 y nosotros reservamos tu visita.',
+    retry: 'Intentar de nuevo',
     chooseTime: 'Elige una hora de llegada',
     loading: 'Cargando los días disponibles',
     selectedDay: (date) => `Seleccionaste ${date}`,
