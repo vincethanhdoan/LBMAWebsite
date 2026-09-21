@@ -12,8 +12,6 @@ import {
   RECEIPT_COPY,
   joinNames,
   fillTemplate,
-  buildGoogleCalendarUrl,
-  buildIcsUrl,
   sanitizeForSubject,
   firstName,
   programLabel,
@@ -120,44 +118,6 @@ Deno.test(
     assertEquals(fillTemplate('Hi {name}', {}), 'Hi {name}');
   },
 );
-
-Deno.test(
-  'buildGoogleCalendarUrl: exact string for one date, one hour long',
-  () => {
-    const url = buildGoogleCalendarUrl({
-      dateKey: '2026-10-05',
-      time: '17:20:00',
-      title: 'Trial visit at Los Banos Martial Arts',
-      address: '1209 South 6th St Suite E, Los Banos, CA',
-      details: 'https://example.com/book/abc123',
-    });
-    assertEquals(
-      url,
-      'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Trial+visit+at+Los+Banos+Martial+Arts&dates=20261005T172000%2F20261005T182000&ctz=America%2FLos_Angeles&location=1209+South+6th+St+Suite+E%2C+Los+Banos%2C+CA&details=https%3A%2F%2Fexample.com%2Fbook%2Fabc123',
-    );
-  },
-);
-
-Deno.test(
-  'buildGoogleCalendarUrl: end time rolls over the date near midnight',
-  () => {
-    const url = buildGoogleCalendarUrl({
-      dateKey: '2026-10-05',
-      time: '23:40:00',
-      title: 'Trial visit',
-      address: 'Los Banos, CA',
-      details: 'https://example.com',
-    });
-    assertStringIncludes(url, 'dates=20261005T234000%2F20261006T004000');
-  },
-);
-
-Deno.test('buildIcsUrl: exact string for one token', () => {
-  assertEquals(
-    buildIcsUrl('https://project.supabase.co', 'abc123'),
-    'https://project.supabase.co/functions/v1/visit-calendar?token=abc123',
-  );
-});
 
 Deno.test(
   'sanitizeForSubject: a newline is collapsed to a single space',

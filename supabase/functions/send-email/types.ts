@@ -92,7 +92,5 @@ export interface AppointmentInfo {
   appointmentDate: string; // raw 'YYYY-MM-DD', for day-count math
   time: string; // formatted, e.g. "4:00 PM"
   rebookingUrl: string; // ${appUrl}/book/${booking_token}
-  googleCalendarUrl: string;
-  icsUrl: string;
   bookingToken: string | null;
 }

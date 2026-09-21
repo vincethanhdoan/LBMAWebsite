@@ -356,22 +356,15 @@ export function bookingConfirmationHtml(
   const cards = appointments
     .map((a) => {
       const arrive = receiptArrive(c, a.time);
-      // A visit with no booking token has no working reschedule or
-      // calendar-file link; omit both rather than pointing a labeled link
-      // at a fallback URL. The Google Calendar link needs no token.
-      const linkLines = [
-        `<p style="margin:0 0 4px;font-size:12px;"><a href="${escHtml(a.googleCalendarUrl)}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.addGoogle)}</a></p>`,
-        a.bookingToken
-          ? `<p style="margin:0 0 4px;font-size:12px;"><a href="${escHtml(a.icsUrl)}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.addIcs)}</a></p>`
-          : null,
-        a.bookingToken
-          ? `<p style="margin:0;font-size:12px;"><a href="${escHtml(a.rebookingUrl)}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.change)}</a></p>`
-          : null,
-      ]
-        .filter((line): line is string => line !== null)
-        .join('\n      ');
-      const inner = `<p style="margin:8px 0 12px;font-size:13px;color:#555;">${escHtml(arrive)}</p>
-      ${linkLines}`;
+      // A visit with no booking token has no working reschedule link; omit
+      // it rather than pointing a labeled link at a fallback URL. Without a
+      // link below it, the arrive line needs no bottom margin of its own.
+      const changeLine = a.bookingToken
+        ? `<p style="margin:0;font-size:12px;"><a href="${escHtml(a.rebookingUrl)}" style="color:#A01F23;text-decoration:underline;">${escHtml(c.change)}</a></p>`
+        : '';
+      const arriveMargin = a.bookingToken ? '8px 0 12px' : '8px 0 0';
+      const inner = `<p style="margin:${arriveMargin};font-size:13px;color:#555;">${escHtml(arrive)}</p>
+      ${changeLine}`;
       return visitCard(a, inner);
     })
     .join('');
@@ -412,11 +405,9 @@ export function bookingConfirmationText(
     lines.push(`${a.programLabel}${a.childNames ? ` - ${a.childNames}` : ''}`);
     lines.push(a.date);
     lines.push(receiptArrive(c, a.time));
-    lines.push(`${c.addGoogle}: ${a.googleCalendarUrl}`);
     // See bookingConfirmationHtml: no booking token means no working
-    // reschedule or calendar-file link, so both lines are omitted.
+    // reschedule link, so the line is omitted.
     if (a.bookingToken) {
-      lines.push(`${c.addIcs}: ${a.icsUrl}`);
       lines.push(`${c.change}: ${a.rebookingUrl}`);
     }
     lines.push('');

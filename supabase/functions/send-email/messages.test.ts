@@ -32,9 +32,6 @@ const single: AppointmentInfo[] = [
     appointmentDate: '2026-04-28',
     time: '4:00 PM',
     rebookingUrl: 'https://lbmaa.com/book/abc123',
-    googleCalendarUrl: 'https://calendar.google.com/calendar/render?abc',
-    icsUrl:
-      'https://project.supabase.co/functions/v1/visit-calendar?token=abc123',
     bookingToken: 'abc123',
   },
 ];
@@ -49,9 +46,6 @@ const multi: AppointmentInfo[] = [
     appointmentDate: '2026-04-30',
     time: '5:30 PM',
     rebookingUrl: 'https://lbmaa.com/book/def456',
-    googleCalendarUrl: 'https://calendar.google.com/calendar/render?def',
-    icsUrl:
-      'https://project.supabase.co/functions/v1/visit-calendar?token=def456',
     bookingToken: 'def456',
   },
 ];

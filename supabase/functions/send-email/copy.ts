@@ -1,11 +1,10 @@
 // supabase/functions/send-email/copy.ts
 // Pure formatting and copy for the receipt (and other) emails: language
-// resolution, date/time formatting, string substitution, and the two
-// calendar-link builders. No I/O, no Deno.env access, so every function
-// here is exact-string testable. The school address and the child-name
-// joiner live in ../_shared/copy.ts, shared with visit-calendar, and are
-// re-exported here so the rest of this directory keeps importing from
-// './copy.ts'.
+// resolution, date/time formatting, and string substitution. No I/O, no
+// Deno.env access, so every function here is exact-string testable. The
+// school address and the child-name joiner live in ../_shared/copy.ts,
+// shared with visit-calendar, and are re-exported here so the rest of this
+// directory keeps importing from './copy.ts'.
 
 import { SCHOOL_ADDRESS, joinNames } from '../_shared/copy.ts';
 import type { Language } from '../_shared/copy.ts';
@@ -113,8 +112,6 @@ export interface ReceiptCopy {
   headingMany: string;
   intro: string;
   arrive: string;
-  addGoogle: string;
-  addIcs: string;
   change: string;
   whereHeading: string;
   openMaps: string;
@@ -133,8 +130,6 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
     intro:
       "Hi {name}, we're looking forward to meeting {children}. Here are the details of your visit.",
     arrive: 'Please arrive at {time}.',
-    addGoogle: 'Add to Google Calendar',
-    addIcs: 'Add to Apple or Outlook calendar',
     change: 'Change or cancel this visit',
     whereHeading: 'Where to find us',
     openMaps: 'Open in Maps',
@@ -152,8 +147,6 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
     intro:
       'Hola {name}, tenemos muchas ganas de conocer a {children}. Aquí están los detalles de tu visita.',
     arrive: 'Por favor llega a las {time}.',
-    addGoogle: 'Agregar a Google Calendar',
-    addIcs: 'Agregar al calendario de Apple u Outlook',
     change: 'Cambiar o cancelar esta visita',
     whereHeading: 'Dónde encontrarnos',
     openMaps: 'Abrir en Mapas',
@@ -174,56 +167,4 @@ export function fillTemplate(
   return template.replace(/\{(\w+)\}/g, (match, key) =>
     Object.prototype.hasOwnProperty.call(vars, key) ? vars[key] : match,
   );
-}
-
-function pad2(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
-// Formats a 'YYYY-MM-DD' + 'HH:MM:SS' wall-clock pair as 'YYYYMMDDTHHMMSS'.
-// Uses Date.UTC purely as an arithmetic scratchpad (never converts to an
-// actual timezone), so adding minutes/hours rolls the date over correctly
-// near midnight instead of being computed by string-splicing.
-function formatWallClock(
-  dateKey: string,
-  time: string,
-  addMinutes: number,
-): string {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  const [hour, minute, second] = time.split(':').map(Number);
-  const instant = new Date(
-    Date.UTC(year, month - 1, day, hour, minute, second) + addMinutes * 60_000,
-  );
-  return (
-    `${instant.getUTCFullYear()}${pad2(instant.getUTCMonth() + 1)}${pad2(instant.getUTCDate())}` +
-    `T${pad2(instant.getUTCHours())}${pad2(instant.getUTCMinutes())}${pad2(instant.getUTCSeconds())}`
-  );
-}
-
-export interface GoogleCalendarLinkInput {
-  dateKey: string; // 'YYYY-MM-DD'
-  time: string; // 'HH:MM:SS'
-  title: string;
-  address: string;
-  details: string;
-}
-
-// One hour long, in local wall-clock time, interpreted by Google via ctz
-// rather than converted to UTC ourselves.
-export function buildGoogleCalendarUrl(input: GoogleCalendarLinkInput): string {
-  const start = formatWallClock(input.dateKey, input.time, 0);
-  const end = formatWallClock(input.dateKey, input.time, 60);
-  const qs = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: input.title,
-    dates: `${start}/${end}`,
-    ctz: 'America/Los_Angeles',
-    location: input.address,
-    details: input.details,
-  });
-  return `https://calendar.google.com/calendar/render?${qs.toString()}`;
-}
-
-export function buildIcsUrl(supabaseUrl: string, bookingToken: string): string {
-  return `${supabaseUrl}/functions/v1/visit-calendar?token=${bookingToken}`;
 }

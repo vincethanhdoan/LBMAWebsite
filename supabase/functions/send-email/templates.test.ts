@@ -113,9 +113,6 @@ const single: AppointmentInfo[] = [
     appointmentDate: '2026-04-28',
     time: '4:00 PM',
     rebookingUrl: 'https://lbmaa.com/book/abc123',
-    googleCalendarUrl: 'https://calendar.google.com/calendar/render?abc',
-    icsUrl:
-      'https://project.supabase.co/functions/v1/visit-calendar?token=abc123',
     bookingToken: 'abc123',
   },
 ];
@@ -129,9 +126,6 @@ const multi: AppointmentInfo[] = [
     appointmentDate: '2026-04-28',
     time: '4:00 PM',
     rebookingUrl: 'https://lbmaa.com/book/abc123',
-    googleCalendarUrl: 'https://calendar.google.com/calendar/render?abc',
-    icsUrl:
-      'https://project.supabase.co/functions/v1/visit-calendar?token=abc123',
     bookingToken: 'abc123',
   },
   {
@@ -142,15 +136,12 @@ const multi: AppointmentInfo[] = [
     appointmentDate: '2026-04-30',
     time: '5:30 PM',
     rebookingUrl: 'https://lbmaa.com/book/def456',
-    googleCalendarUrl: 'https://calendar.google.com/calendar/render?def',
-    icsUrl:
-      'https://project.supabase.co/functions/v1/visit-calendar?token=def456',
     bookingToken: 'def456',
   },
 ];
 
 Deno.test(
-  'bookingConfirmationHtml single, en: heading, arrive sentence, all three links, address',
+  'bookingConfirmationHtml single, en: heading, arrive sentence, change link, address',
   () => {
     const html = bookingConfirmationHtml('Eduardo Guerra', single, 'en');
     assertStringIncludes(html, "You're booked");
@@ -160,14 +151,6 @@ Deno.test(
     assertStringIncludes(html, 'Please arrive at 4:00 PM.');
     assertStringIncludes(html, 'Little Dragons');
     assertStringIncludes(html, 'Emma');
-    assertStringIncludes(
-      html,
-      'https://calendar.google.com/calendar/render?abc',
-    );
-    assertStringIncludes(
-      html,
-      'https://project.supabase.co/functions/v1/visit-calendar?token=abc123',
-    );
     assertStringIncludes(html, 'https://lbmaa.com/book/abc123');
     assertStringIncludes(html, '1209 South 6th St Suite E, Los Banos, CA');
     assertEquals(html.includes('Click here'), false);
@@ -246,30 +229,22 @@ Deno.test(
     const appt: AppointmentInfo[] = [
       {
         ...single[0],
-        googleCalendarUrl:
-          'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Trial+visit&ctz=America/Los_Angeles',
+        rebookingUrl:
+          'https://lbmaa.com/book/abc123?ref=email&utm_source=receipt',
       },
     ];
     const html = bookingConfirmationHtml('Maria Lopez', appt, 'en');
-    assertStringIncludes(html, '&amp;ctz=');
-    assertEquals(html.includes('&ctz='), false);
+    assertStringIncludes(html, '&amp;utm_source=');
+    assertEquals(html.includes('&utm_source='), false);
   },
 );
 
 Deno.test(
-  'bookingConfirmationHtml: no booking token omits the calendar-file and change links, keeps Google Calendar',
+  'bookingConfirmationHtml: no booking token omits the change link',
   () => {
     const appt: AppointmentInfo[] = [{ ...single[0], bookingToken: null }];
     const html = bookingConfirmationHtml('Eduardo Guerra', appt, 'en');
-    assertStringIncludes(html, 'Add to Google Calendar');
-    assertEquals(html.includes('Add to Apple or Outlook calendar'), false);
     assertEquals(html.includes('Change or cancel this visit'), false);
-    assertEquals(
-      html.includes(
-        'https://project.supabase.co/functions/v1/visit-calendar?token=abc123',
-      ),
-      false,
-    );
     assertEquals(html.includes('https://lbmaa.com/book/abc123'), false);
   },
 );
@@ -353,13 +328,27 @@ Deno.test('bookingConfirmationText: greets by first name only', () => {
 });
 
 Deno.test(
-  'bookingConfirmationText: no booking token omits the calendar-file and change lines, keeps Google Calendar',
+  'bookingConfirmationText: no booking token omits the change line',
   () => {
     const appt: AppointmentInfo[] = [{ ...single[0], bookingToken: null }];
     const text = bookingConfirmationText('Eduardo Guerra', appt, 'en');
-    assertStringIncludes(text, 'Add to Google Calendar');
-    assertEquals(text.includes('Add to Apple or Outlook calendar'), false);
     assertEquals(text.includes('Change or cancel this visit'), false);
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml and bookingConfirmationText: no add-to-calendar link or label, en and es',
+  () => {
+    for (const language of ['en', 'es'] as const) {
+      const html = bookingConfirmationHtml('Eduardo Guerra', single, language);
+      const text = bookingConfirmationText('Eduardo Guerra', single, language);
+      for (const rendered of [html, text]) {
+        assertEquals(rendered.includes('calendar.google.com'), false);
+        assertEquals(rendered.includes('visit-calendar'), false);
+        assertEquals(rendered.toLowerCase().includes('calendar'), false);
+        assertEquals(rendered.toLowerCase().includes('calendario'), false);
+      }
+    }
   },
 );
 
