@@ -424,33 +424,31 @@ Deno.test(
 );
 
 Deno.test(
-  'bookingConfirmationHtml: the footer signs off without a second way to reach us',
+  'bookingConfirmationHtml: ends on the phone number, with no footer repeating the address',
   () => {
     for (const language of ['en', 'es'] as const) {
       const html = bookingConfirmationHtml('Maria Lopez', single, language);
-      const footer = html.slice(html.indexOf('class="lb-rule"'));
-      assertStringIncludes(footer, 'Los Banos Martial Arts Academy<br />');
-      assertStringIncludes(footer, '1209 South 6th St Suite E, Los Banos, CA');
-      // Replying reaches the school and the number is just above the rule,
-      // so neither is repeated down here.
-      assertEquals(footer.includes('mailto:'), false, language);
-      assertEquals(footer.includes('tel:'), false, language);
-      // The shared centred footer is gone from the receipt entirely.
+      // The address is given once, under "Where to find us". A footer that
+      // repeated it made the email longer, and Gmail folds a repeated block
+      // behind three dots when receipts share a thread.
+      assertEquals(
+        (html.match(/South 6th St Suite E, Los Banos, CA/g) ?? []).length,
+        1,
+        language,
+      );
       assertEquals(html.includes('LosBanosMartialArts@gmail.com'), false);
       assertEquals(html.includes('text-align:center'), false);
+      // Nothing visible follows the phone link.
+      const afterPhone = html.slice(html.lastIndexOf('tel:+14086200252'));
+      assertEquals(
+        afterPhone
+          .replace(/^[^>]*>[^<]*<\/a>/, '')
+          .replace(/<[^>]+>/g, '')
+          .trim(),
+        '',
+        language,
+      );
     }
-  },
-);
-
-Deno.test(
-  'bookingConfirmationHtml: the address appears where it is needed and in the sign-off, nowhere else',
-  () => {
-    const html = bookingConfirmationHtml('Maria Lopez', single, 'en');
-    const street = 'South 6th St Suite E, Los Banos, CA';
-    assertEquals(
-      (html.match(new RegExp(street.replace(/\+/g, '\\+'), 'g')) ?? []).length,
-      2,
-    );
   },
 );
 
@@ -625,7 +623,6 @@ Deno.test(
       '.lb-ticket-sub { color:#F6D9D6 !important; }',
       '.lb-ticket-rule { border-top-color:#BB5D60 !important; }',
       '.lb-ticket-gap { border-top-color:#1e1e1e !important; }',
-      '.lb-rule { border-top-color:#3a3a3a !important; }',
     ]) {
       assertStringIncludes(html, rule);
     }
@@ -634,7 +631,6 @@ Deno.test(
     for (const [colour, className] of [
       ['#FFFDFC', 'lb-ticket-'],
       ['#F6D9D6', 'lb-ticket-sub'],
-      ['#E8E0DA', 'lb-rule'],
       ['#231A19', 'lb-heading'],
       ['#4A3F3D', 'lb-text'],
       ['#6B5F5C', 'lb-muted'],

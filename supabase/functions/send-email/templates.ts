@@ -66,7 +66,6 @@ const RECEIPT_DARK_MODE_CSS = `
         .lb-ticket-sub { color:#F6D9D6 !important; }
         .lb-ticket-rule { border-top-color:#BB5D60 !important; }
         .lb-ticket-gap { border-top-color:#1e1e1e !important; }
-        .lb-rule { border-top-color:#3a3a3a !important; }
       }`;
 
 // The website's own typefaces. Gmail strips the stylesheet link below, so
@@ -114,7 +113,8 @@ function makeHeader(logoUrl?: string, subtitle?: string): string {
 }
 
 // The shared footer, English only: every email that uses it is English. The
-// receipt is bilingual and writes its own (see receiptFooter).
+// receipt is bilingual and has none: it ends on the phone number, and the
+// address is already in the body.
 function footer(): string {
   return `
   <p class="lb-muted" style="margin:0;font-size:14px;color:#595959;line-height:1.6;text-align:center;">
@@ -512,17 +512,6 @@ function receiptLabel(text: string): string {
   return `<p class="lb-muted" style="margin:0 0 6px;font-family:${BODY_FONT};font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6B5F5C;">${escHtml(text)}</p>`;
 }
 
-// The receipt's own sign-off. The shared footer is centred under left-
-// aligned copy and repeats the address and phone the body has just given;
-// this one only says who wrote. No email address and no second number:
-// replying reaches the school, and the number is directly above.
-function receiptFooter(): string {
-  return `
-        <div class="lb-rule" style="margin:0 28px;border-top:1px solid #E8E0DA;padding:20px 0 28px;">
-          <p class="lb-muted" style="margin:0;font-family:${BODY_FONT};font-size:14px;color:#6B5F5C;line-height:1.6;">Los Banos Martial Arts Academy<br />${SCHOOL_ADDRESS}</p>
-        </div>`;
-}
-
 export function bookingConfirmationHtml(
   parentName: string,
   appointments: AppointmentInfo[],
@@ -546,7 +535,7 @@ export function bookingConfirmationHtml(
           <p class="lb-heading" style="margin:0 0 10px;font-family:${DISPLAY_FONT};font-size:30px;font-weight:800;color:#231A19;line-height:1.1;">${escHtml(heading)}</p>
           <p class="lb-text" style="margin:0;font-family:${BODY_FONT};font-size:16px;color:#4A3F3D;line-height:1.6;">${escHtml(intro)}</p>
         </div>${tickets}
-        <div style="padding:28px 28px 8px;">
+        <div style="padding:28px 28px 20px;">
           ${receiptLabel(c.whereHeading)}
           <p class="lb-heading" style="margin:0;font-family:${BODY_FONT};font-size:16px;color:#231A19;line-height:1.6;">${SCHOOL_ADDRESS}</p>
           <p style="margin:0 0 18px;"><a href="${escHtml(MAPS_URL)}" class="lb-accent" style="display:inline-block;padding:10px 0;font-family:${BODY_FONT};font-size:16px;color:#A01F23;text-decoration:underline;">${escHtml(c.openMaps)}</a></p>
@@ -554,7 +543,7 @@ export function bookingConfirmationHtml(
           <p class="lb-text" style="margin:0 0 28px;font-family:${BODY_FONT};font-size:16px;color:#4A3F3D;line-height:1.6;">${escHtml(c.expectBody)}</p>
           <p class="lb-text" style="margin:0;font-family:${BODY_FONT};font-size:16px;color:#4A3F3D;line-height:1.6;">${escHtml(c.closing)}</p>
           <p style="margin:0;"><a href="${PHONE_HREF}" class="lb-accent" style="display:inline-block;padding:10px 0;font-family:${DISPLAY_FONT};font-size:20px;font-weight:800;color:#A01F23;text-decoration:underline;">${PHONE_DISPLAY}</a></p>
-        </div>${receiptFooter()}`,
+        </div>`,
     {
       title: heading,
       logoUrl,
