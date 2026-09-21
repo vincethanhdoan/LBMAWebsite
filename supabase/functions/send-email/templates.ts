@@ -5,6 +5,7 @@ import {
   RECEIPT_COPY,
   FOOTER_COPY,
   SCHOOL_ADDRESS,
+  SCHOOL_STREET,
   joinNames,
   fillTemplate,
   firstName,
@@ -448,13 +449,13 @@ export function bookingConfirmationHtml(
       title: heading,
       logoUrl,
       language,
-      // The earliest visit only: it is the one a family acts on next, and two
-      // visits would not fit the snippet a mail client shows.
+      // The earliest visit only: it is the one a family acts on next. The
+      // subject already carries the date, so the preheader spends its room
+      // on the arrival time and street instead of repeating it.
       preheader: fillTemplate(c.preheader, {
-        date: appointments[0].date,
         at: timeArticle(appointments[0].time, language),
         time: appointments[0].time,
-        address: SCHOOL_ADDRESS,
+        street: SCHOOL_STREET,
       }),
     },
   );

@@ -522,8 +522,8 @@ Deno.test(
   'bookingConfirmationHtml: a hidden preheader is the first node in the body, en and es',
   () => {
     const expected = [
-      ['en', 'Monday, April 28, 2026 · arrive at 4:00 PM'],
-      ['es', 'Monday, April 28, 2026 · llega a las 4:00 PM'],
+      ['en', 'Arrive at 4:00 PM · 1209 South 6th St Suite E'],
+      ['es', 'Llega a las 4:00 PM · 1209 South 6th St Suite E'],
     ] as const;
 
     for (const [language, text] of expected) {
@@ -539,7 +539,6 @@ Deno.test(
       assertStringIncludes(node, 'color:#f5f2ef;');
       assertStringIncludes(node, 'opacity:0;');
       assertStringIncludes(node, text);
-      assertStringIncludes(node, '1209 South 6th St Suite E, Los Banos, CA');
       // Invisible filler, so the body copy does not trail into the snippet.
       assertStringIncludes(node, '&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;');
       // The logo and wordmark come after it, not before.
@@ -549,14 +548,23 @@ Deno.test(
 );
 
 Deno.test(
-  'bookingConfirmationHtml: the preheader reads at inbox-snippet length',
+  'bookingConfirmationHtml: the preheader is short enough not to get cut off, en and es',
   () => {
     for (const language of ['en', 'es'] as const) {
       const html = bookingConfirmationHtml('Maria Lopez', single, language);
       const node = firstBodyNode(html);
       const visible = node.slice(node.indexOf('>') + 1).split('&#847;')[0];
-      assertEquals(visible.length >= 60, true, `${language}: ${visible}`);
-      assertEquals(visible.length <= 100, true, `${language}: ${visible}`);
+      assertStringIncludes(visible, '4:00 PM');
+      assertStringIncludes(visible, '1209 South 6th St Suite E');
+      // The subject already carries the date; the preheader should not
+      // repeat it.
+      assertEquals(visible.includes('2026'), false, `${language}: ${visible}`);
+      assertEquals(visible.includes('April'), false, `${language}: ${visible}`);
+      assertEquals(
+        visible.length <= 60,
+        true,
+        `${language}: ${visible.length} chars: ${visible}`,
+      );
     }
   },
 );
@@ -566,8 +574,8 @@ Deno.test(
   () => {
     const html = bookingConfirmationHtml('Maria Lopez', multi, 'en');
     const node = firstBodyNode(html);
-    assertStringIncludes(node, 'Monday, April 28, 2026 · arrive at 4:00 PM');
-    assertEquals(node.includes('Wednesday, April 30, 2026'), false);
+    assertStringIncludes(node, 'Arrive at 4:00 PM');
+    assertEquals(node.includes('5:30 PM'), false);
   },
 );
 

@@ -12,6 +12,12 @@ import type { Language } from '../_shared/copy.ts';
 export type { Language };
 export { SCHOOL_ADDRESS, joinNames };
 
+// The street only, no city or state: what the preheader has room for once
+// the subject line already carries the date. Derived from the full address
+// so the two can never drift apart. Only the receipt preheader needs this,
+// so it stays here rather than in the shared copy visit-calendar also uses.
+export const SCHOOL_STREET = SCHOOL_ADDRESS.split(',')[0];
+
 export function toLanguage(value: string | null | undefined): Language {
   return value === 'es' ? 'es' : 'en';
 }
@@ -137,7 +143,7 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
   en: {
     subject: 'Trial visit booked: {dateShort} at {time}',
     subjectMany: 'Trial visits booked, starting {dateShort}',
-    preheader: '{date} · arrive {at} {time} · {address}',
+    preheader: 'Arrive {at} {time} · {street}',
     heading: "You're booked",
     headingMany: 'Your visits are booked',
     intro:
@@ -155,7 +161,7 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
   es: {
     subject: 'Visita reservada: {dateShort}, {time}',
     subjectMany: 'Visitas reservadas, desde el {dateShort}',
-    preheader: '{date} · llega {at} {time} · {address}',
+    preheader: 'Llega {at} {time} · {street}',
     heading: 'Tu visita está reservada',
     headingMany: 'Tus visitas están reservadas',
     intro:
