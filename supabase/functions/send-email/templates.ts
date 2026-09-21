@@ -443,7 +443,19 @@ export function bookingConfirmationHtml(
     <p class="lb-text" style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">${escHtml(c.expectBody)}</p>
     <p class="lb-text" style="margin:0;color:#555;font-size:13px;line-height:1.65;">${escHtml(fillTemplate(c.closing, { phone: PHONE_DISPLAY }))}</p>
   `,
-    { title: heading, logoUrl, language },
+    {
+      title: heading,
+      logoUrl,
+      language,
+      // The earliest visit only: it is the one a family acts on next, and two
+      // visits would not fit the snippet a mail client shows.
+      preheader: fillTemplate(c.preheader, {
+        date: appointments[0].date,
+        at: timeArticle(appointments[0].time, language),
+        time: appointments[0].time,
+        address: SCHOOL_ADDRESS,
+      }),
+    },
   );
 }
 

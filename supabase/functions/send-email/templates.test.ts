@@ -436,6 +436,76 @@ Deno.test(
   },
 );
 
+// Returns the hidden preheader div, asserting nothing else in the body comes
+// before it: a client builds the inbox snippet from the first text it finds.
+function firstBodyNode(html: string): string {
+  const bodyStart = html.indexOf('>', html.indexOf('<body')) + 1;
+  const rest = html.slice(bodyStart);
+  const nodeStart = rest.indexOf('<');
+  assertEquals(rest.slice(0, nodeStart).trim(), '');
+  return rest.slice(nodeStart, rest.indexOf('</div>', nodeStart));
+}
+
+Deno.test(
+  'bookingConfirmationHtml: a hidden preheader is the first node in the body, en and es',
+  () => {
+    const expected = [
+      ['en', 'Monday, April 28, 2026 · arrive at 4:00 PM'],
+      ['es', 'Monday, April 28, 2026 · llega a las 4:00 PM'],
+    ] as const;
+
+    for (const [language, text] of expected) {
+      const html = bookingConfirmationHtml('Maria Lopez', single, language);
+      const node = firstBodyNode(html);
+      assertStringIncludes(node, 'display:none;');
+      assertStringIncludes(node, 'max-height:0;');
+      assertStringIncludes(node, 'overflow:hidden;');
+      assertStringIncludes(node, 'mso-hide:all;');
+      assertStringIncludes(node, 'font-size:1px;');
+      assertStringIncludes(node, 'line-height:1px;');
+      // The hidden text matches the background it sits on.
+      assertStringIncludes(node, 'color:#f5f2ef;');
+      assertStringIncludes(node, 'opacity:0;');
+      assertStringIncludes(node, text);
+      assertStringIncludes(node, '1209 South 6th St Suite E, Los Banos, CA');
+      // Invisible filler, so the body copy does not trail into the snippet.
+      assertStringIncludes(node, '&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;');
+      // The logo and wordmark come after it, not before.
+      assertEquals(node.includes('Los Banos Martial Arts Academy'), false);
+    }
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: the preheader reads at inbox-snippet length',
+  () => {
+    for (const language of ['en', 'es'] as const) {
+      const html = bookingConfirmationHtml('Maria Lopez', single, language);
+      const node = firstBodyNode(html);
+      const visible = node.slice(node.indexOf('>') + 1).split('&#847;')[0];
+      assertEquals(visible.length >= 60, true, `${language}: ${visible}`);
+      assertEquals(visible.length <= 100, true, `${language}: ${visible}`);
+    }
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: several visits put the earliest one in the preheader',
+  () => {
+    const html = bookingConfirmationHtml('Maria Lopez', multi, 'en');
+    const node = firstBodyNode(html);
+    assertStringIncludes(node, 'Monday, April 28, 2026 · arrive at 4:00 PM');
+    assertEquals(node.includes('Wednesday, April 30, 2026'), false);
+  },
+);
+
+Deno.test('bookingConfirmationText: has no preheader; it is HTML-only', () => {
+  const text = bookingConfirmationText('Maria Lopez', single, 'en');
+  assertEquals(text.includes('&#847;'), false);
+  assertEquals(text.includes('display:none'), false);
+  assertEquals(text.startsWith("You're booked"), true);
+});
+
 Deno.test(
   'bookingConfirmationHtml: the document language follows the receipt language',
   () => {

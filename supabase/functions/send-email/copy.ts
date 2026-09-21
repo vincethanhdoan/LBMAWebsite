@@ -117,6 +117,9 @@ export function timeArticle(time: string, language: Language): string {
 export interface ReceiptCopy {
   subject: string;
   subjectMany: string;
+  // The hidden line a mail client shows as the inbox snippet, so the row in
+  // the inbox reads as a standing reminder of when and where to be.
+  preheader: string;
   heading: string;
   headingMany: string;
   intro: string;
@@ -134,6 +137,7 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
   en: {
     subject: 'Trial visit booked: {dateShort} at {time}',
     subjectMany: 'Trial visits booked, starting {dateShort}',
+    preheader: '{date} · arrive {at} {time} · {address}',
     heading: "You're booked",
     headingMany: 'Your visits are booked',
     intro:
@@ -151,6 +155,7 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
   es: {
     subject: 'Visita reservada: {dateShort}, {time}',
     subjectMany: 'Visitas reservadas, desde el {dateShort}',
+    preheader: '{date} · llega {at} {time} · {address}',
     heading: 'Tu visita está reservada',
     headingMany: 'Tus visitas están reservadas',
     intro:
