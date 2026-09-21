@@ -423,9 +423,9 @@ export function bookingConfirmationHtml(
       const changeLine = a.bookingToken
         ? `<p style="margin:2px 0 0;font-size:14px;"><a href="${escHtml(a.rebookingUrl)}" class="lb-accent" style="display:inline-block;padding:8px 0;color:#A01F23;text-decoration:underline;">${escHtml(c.change)}</a></p>`
         : '';
-      // The arrival time carries the same weight as the date: the slot times
-      // are deliberate, and a 4:26 PM reads as a typo when it is whispered.
-      const inner = `<p class="lb-heading" style="margin:4px 0 0;font-size:18px;font-weight:700;color:#1a1a2e;line-height:1.3;">${escHtml(arrive)}</p>
+      // The date is the headline; the arrival time is secondary so the two
+      // aren't read as equally weighted, but still body-size, not whispered.
+      const inner = `<p class="lb-text" style="margin:4px 0 0;font-size:16px;font-weight:400;color:#555;line-height:1.3;">${escHtml(arrive)}</p>
       ${changeLine}`;
       return visitCard(a, inner);
     })

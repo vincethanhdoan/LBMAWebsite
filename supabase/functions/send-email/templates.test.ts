@@ -467,7 +467,7 @@ Deno.test(
 );
 
 Deno.test(
-  'bookingConfirmationHtml: the arrival time is as prominent as the date',
+  'bookingConfirmationHtml: the date is the headline, the arrival time is secondary',
   () => {
     const html = bookingConfirmationHtml('Maria Lopez', single, 'en');
     const dateStyle =
@@ -475,7 +475,13 @@ Deno.test(
     assertStringIncludes(html, dateStyle);
     assertStringIncludes(
       html,
-      'style="margin:4px 0 0;font-size:18px;font-weight:700;color:#1a1a2e;line-height:1.3;">Please arrive at 4:00 PM.',
+      'style="margin:4px 0 0;font-size:16px;font-weight:400;color:#555;line-height:1.3;">Please arrive at 4:00 PM.',
+    );
+    assertEquals(
+      html.includes(
+        'font-size:18px;font-weight:700;color:#1a1a2e;line-height:1.3;">Please arrive',
+      ),
+      false,
     );
   },
 );
