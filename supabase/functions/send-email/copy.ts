@@ -87,6 +87,25 @@ export function formatVisitDate(dateKey: string, language: Language): string {
   });
 }
 
+// The same calendar day with the year dropped, for the receipt's headline
+// date. A trial visit is at most three weeks out, so the year carries no
+// information and only makes a long Spanish date wrap on a phone. Spanish
+// starts the weekday lower-case; upper-cased here because this string opens
+// a line rather than sitting inside a sentence.
+export function formatVisitDateNoYear(
+  dateKey: string,
+  language: Language,
+): string {
+  const d = new Date(`${dateKey}T12:00:00Z`);
+  const formatted = d.toLocaleDateString(LOCALES[language], {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
 export function formatVisitDateShort(
   dateKey: string,
   language: Language,

@@ -7,6 +7,7 @@ import {
 import {
   toLanguage,
   formatVisitDate,
+  formatVisitDateNoYear,
   formatVisitDateShort,
   formatVisitTime,
   RECEIPT_COPY,
@@ -49,6 +50,46 @@ Deno.test(
     assertStringIncludes(en, '29');
     assertStringIncludes(es, '29');
     assertNotEquals(en, es);
+  },
+);
+
+Deno.test('formatVisitDateNoYear: en and es carry no year', () => {
+  assertEquals(
+    formatVisitDateNoYear('2026-10-07', 'en'),
+    'Wednesday, October 7',
+  );
+  assertEquals(
+    formatVisitDateNoYear('2026-10-07', 'es'),
+    'Miércoles, 7 de octubre',
+  );
+});
+
+Deno.test(
+  'formatVisitDateNoYear: the Spanish weekday opens the line upper-case',
+  () => {
+    assertEquals(
+      formatVisitDateNoYear('2026-09-30', 'es'),
+      'Miércoles, 30 de septiembre',
+    );
+    assertEquals(
+      formatVisitDateNoYear('2026-11-26', 'es'),
+      'Jueves, 26 de noviembre',
+    );
+  },
+);
+
+Deno.test(
+  'formatVisitDateNoYear: the long formatter still carries the year',
+  () => {
+    assertStringIncludes(formatVisitDate('2026-10-07', 'en'), '2026');
+    assertEquals(
+      formatVisitDateNoYear('2026-10-07', 'en').includes('2026'),
+      false,
+    );
+    assertEquals(
+      formatVisitDateNoYear('2026-10-07', 'es').includes('2026'),
+      false,
+    );
   },
 );
 
