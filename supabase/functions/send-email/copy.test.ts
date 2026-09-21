@@ -15,6 +15,7 @@ import {
   sanitizeForSubject,
   firstName,
   programLabel,
+  timeArticle,
 } from './copy.ts';
 
 Deno.test('toLanguage: recognizes es', () => {
@@ -82,6 +83,49 @@ Deno.test(
         assertEquals(value.includes('$'), false);
       }
     }
+  },
+);
+
+Deno.test(
+  'timeArticle: Spanish uses "a la" only for the 1 o\'clock hour',
+  () => {
+    assertEquals(timeArticle('1:20 p.m.', 'es'), 'a la');
+    assertEquals(timeArticle('1:00 a.m.', 'es'), 'a la');
+    assertEquals(timeArticle('5:35 p.m.', 'es'), 'a las');
+    assertEquals(timeArticle('12:35 p.m.', 'es'), 'a las');
+    assertEquals(timeArticle('11:05 a.m.', 'es'), 'a las');
+  },
+);
+
+Deno.test('timeArticle: English is always "at"', () => {
+  assertEquals(timeArticle('1:20 PM', 'en'), 'at');
+  assertEquals(timeArticle('5:35 PM', 'en'), 'at');
+});
+
+Deno.test(
+  'RECEIPT_COPY es: the what-to-expect sentence is gender-neutral about the child',
+  () => {
+    const body = RECEIPT_COPY.es.expectBody;
+    assertEquals(body.includes('Tu hijo'), false);
+    assertEquals(body.includes('tu hijo'), false);
+    assertEquals(body.includes('hija'), false);
+    assertStringIncludes(body, 'Solo hace falta ropa deportiva cómoda.');
+  },
+);
+
+Deno.test(
+  'RECEIPT_COPY: the Maps link names Google Maps in both languages',
+  () => {
+    assertEquals(RECEIPT_COPY.en.openMaps, 'Open in Google Maps');
+    assertEquals(RECEIPT_COPY.es.openMaps, 'Abrir en Google Maps');
+  },
+);
+
+Deno.test(
+  'RECEIPT_COPY: both several-visit subjects carry the first date',
+  () => {
+    assertStringIncludes(RECEIPT_COPY.en.subjectMany, '{dateShort}');
+    assertStringIncludes(RECEIPT_COPY.es.subjectMany, '{dateShort}');
   },
 );
 

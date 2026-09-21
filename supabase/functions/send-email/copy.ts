@@ -105,6 +105,15 @@ export function formatVisitTime(time: string, language: Language): string {
   });
 }
 
+// Spanish agrees the article with the hour: "a la 1:20 p.m." but "a las 5:35
+// p.m.". Copy that introduces a clock time carries an {at} placeholder so the
+// article is chosen from the formatted time instead of being written into the
+// string, where it would be wrong for every 1 o'clock slot.
+export function timeArticle(time: string, language: Language): string {
+  if (language !== 'es') return 'at';
+  return time.startsWith('1:') ? 'a la' : 'a las';
+}
+
 export interface ReceiptCopy {
   subject: string;
   subjectMany: string;
@@ -124,15 +133,15 @@ export interface ReceiptCopy {
 export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
   en: {
     subject: 'Trial visit booked: {dateShort} at {time}',
-    subjectMany: 'Your trial visits are booked',
+    subjectMany: 'Trial visits booked, starting {dateShort}',
     heading: "You're booked",
     headingMany: 'Your visits are booked',
     intro:
       "Hi {name}, we're looking forward to meeting {children}. Here are the details of your visit.",
-    arrive: 'Please arrive at {time}.',
+    arrive: 'Please arrive {at} {time}.',
     change: 'Change or cancel this visit',
     whereHeading: 'Where to find us',
-    openMaps: 'Open in Maps',
+    openMaps: 'Open in Google Maps',
     expectHeading: 'What to expect',
     expectBody:
       "Comfortable athletic clothes are all your child needs. We provide everything else for the first class. You're welcome to watch from the side, and we'll answer any questions afterward.",
@@ -140,19 +149,19 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
     familyFallback: 'your family',
   },
   es: {
-    subject: 'Visita de prueba reservada: {dateShort}, {time}',
-    subjectMany: 'Tus visitas de prueba están reservadas',
+    subject: 'Visita reservada: {dateShort}, {time}',
+    subjectMany: 'Visitas reservadas, desde el {dateShort}',
     heading: 'Tu visita está reservada',
     headingMany: 'Tus visitas están reservadas',
     intro:
       'Hola {name}, tenemos muchas ganas de conocer a {children}. Aquí están los detalles de tu visita.',
-    arrive: 'Por favor llega a las {time}.',
+    arrive: 'Por favor, llega {at} {time}.',
     change: 'Cambiar o cancelar esta visita',
     whereHeading: 'Dónde encontrarnos',
-    openMaps: 'Abrir en Mapas',
+    openMaps: 'Abrir en Google Maps',
     expectHeading: 'Qué esperar',
     expectBody:
-      'Tu hijo solo necesita ropa deportiva cómoda. Nosotros proporcionamos todo lo demás para la primera clase. Puedes observar desde un lado, y después responderemos cualquier pregunta que tengas.',
+      'Solo hace falta ropa deportiva cómoda. Nosotros proporcionamos todo lo demás para la primera clase. Puedes observar desde un lado y, al terminar, respondemos con gusto cualquier pregunta que tengas.',
     closing: 'Si algo cambia, responde a este correo o llámanos al {phone}.',
     familyFallback: 'tu familia',
   },

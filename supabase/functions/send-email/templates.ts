@@ -9,6 +9,7 @@ import {
   fillTemplate,
   firstName,
   programLabel,
+  timeArticle,
 } from './copy.ts';
 import type { Language, ReceiptCopy } from './copy.ts';
 
@@ -299,11 +300,18 @@ export function denialEmailHtml(
   );
 }
 
-// The Spanish time format ("5:20 p. m.") already ends in a period, so the
+// The Spanish time format ("5:20 p.m.") already ends in a period, so the
 // "arrive" sentence template would otherwise end in "..". Collapse that back
 // to a single period rather than hand-editing the copy string.
-function receiptArrive(c: ReceiptCopy, time: string): string {
-  return fillTemplate(c.arrive, { time }).replace(/\.\.$/, '.');
+function receiptArrive(
+  c: ReceiptCopy,
+  time: string,
+  language: Language,
+): string {
+  return fillTemplate(c.arrive, {
+    at: timeArticle(time, language),
+    time,
+  }).replace(/\.\.$/, '.');
 }
 
 // The outer container and program/children header are identical between the
@@ -355,7 +363,7 @@ export function bookingConfirmationHtml(
 
   const cards = appointments
     .map((a) => {
-      const arrive = receiptArrive(c, a.time);
+      const arrive = receiptArrive(c, a.time, language);
       // A visit with no booking token has no working reschedule link; omit
       // it rather than pointing a labeled link at a fallback URL. Without a
       // link below it, the arrive line needs no bottom margin of its own.
@@ -404,7 +412,7 @@ export function bookingConfirmationText(
   for (const a of appointments) {
     lines.push(`${a.programLabel}${a.childNames ? ` - ${a.childNames}` : ''}`);
     lines.push(a.date);
-    lines.push(receiptArrive(c, a.time));
+    lines.push(receiptArrive(c, a.time, language));
     // See bookingConfirmationHtml: no booking token means no working
     // reschedule link, so the line is omitted.
     if (a.bookingToken) {

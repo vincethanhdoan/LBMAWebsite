@@ -163,7 +163,7 @@ Deno.test(
   () => {
     const html = bookingConfirmationHtml('Eduardo Guerra', single, 'es');
     assertStringIncludes(html, 'Tu visita está reservada');
-    assertStringIncludes(html, 'Por favor llega a las 4:00 PM.');
+    assertStringIncludes(html, 'Por favor, llega a las 4:00 PM.');
     assertStringIncludes(html, '1209 South 6th St Suite E, Los Banos, CA');
     assertEquals(html.includes('Click here'), false);
     assertEquals(html.includes('confirmed'), false);
@@ -194,8 +194,35 @@ Deno.test(
       { ...single[0], time: '5:20 p. m.' },
     ];
     const html = bookingConfirmationHtml('Eduardo Guerra', esAppointment, 'es');
-    assertStringIncludes(html, 'Por favor llega a las 5:20 p. m.');
+    assertStringIncludes(html, 'Por favor, llega a las 5:20 p. m.');
     assertEquals(html.includes('p. m..'), false);
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml es: the article agrees with the hour, "a la 1:20" but "a las 5:35"',
+  () => {
+    const oneOclock: AppointmentInfo[] = [{ ...single[0], time: '1:20 p.m.' }];
+    const htmlOne = bookingConfirmationHtml('Maria Lopez', oneOclock, 'es');
+    assertStringIncludes(htmlOne, 'Por favor, llega a la 1:20 p.m.');
+    assertEquals(htmlOne.includes('a las 1:20'), false);
+
+    const fiveOclock: AppointmentInfo[] = [{ ...single[0], time: '5:35 p.m.' }];
+    const htmlFive = bookingConfirmationHtml('Maria Lopez', fiveOclock, 'es');
+    assertStringIncludes(htmlFive, 'Por favor, llega a las 5:35 p.m.');
+
+    const textOne = bookingConfirmationText('Maria Lopez', oneOclock, 'es');
+    assertStringIncludes(textOne, 'Por favor, llega a la 1:20 p.m.');
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml en: the hour never picks up a Spanish article',
+  () => {
+    const oneOclock: AppointmentInfo[] = [{ ...single[0], time: '1:20 PM' }];
+    const html = bookingConfirmationHtml('Maria Lopez', oneOclock, 'en');
+    assertStringIncludes(html, 'Please arrive at 1:20 PM.');
+    assertEquals(html.includes('a la '), false);
   },
 );
 
@@ -314,7 +341,7 @@ Deno.test(
 Deno.test('bookingConfirmationText: es uses Spanish copy', () => {
   const text = bookingConfirmationText('Eduardo Guerra', single, 'es');
   assertStringIncludes(text, 'Tu visita está reservada');
-  assertStringIncludes(text, 'Por favor llega a las 4:00 PM.');
+  assertStringIncludes(text, 'Por favor, llega a las 4:00 PM.');
   assertStringIncludes(
     text,
     'Cambiar o cancelar esta visita: https://lbmaa.com/book/abc123',

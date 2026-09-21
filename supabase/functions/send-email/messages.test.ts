@@ -66,21 +66,28 @@ Deno.test(
 Deno.test('buildReceiptMessage: English two visits uses subjectMany', () => {
   const lead = { ...DUMMY_LEAD, preferred_language: 'en' };
   const message = buildReceiptMessage(lead, multi);
-  assertEquals(message.subject, 'Your trial visits are booked');
+  assertEquals(message.subject, 'Trial visits booked, starting Mon, Apr 28');
   assertStringIncludes(message.html, 'Your visits are booked');
 });
+
+Deno.test(
+  'buildReceiptMessage: Spanish two visits names the first date in the subject',
+  () => {
+    const lead = { ...DUMMY_LEAD, preferred_language: 'es' };
+    const message = buildReceiptMessage(lead, multi);
+    assertEquals(message.subject, 'Visitas reservadas, desde el Mon, Apr 28');
+    assertStringIncludes(message.html, 'Tus visitas están reservadas');
+  },
+);
 
 Deno.test(
   'buildReceiptMessage: Spanish one visit uses the Spanish subject, heading, and arrive sentence',
   () => {
     const lead = { ...DUMMY_LEAD, preferred_language: 'es' };
     const message = buildReceiptMessage(lead, single);
-    assertEquals(
-      message.subject.startsWith('Visita de prueba reservada:'),
-      true,
-    );
+    assertEquals(message.subject.startsWith('Visita reservada:'), true);
     assertStringIncludes(message.html, 'Tu visita está reservada');
-    assertStringIncludes(message.text, 'Por favor llega a las 4:00 PM.');
+    assertStringIncludes(message.text, 'Por favor, llega a las 4:00 PM.');
   },
 );
 
