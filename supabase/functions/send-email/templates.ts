@@ -375,10 +375,10 @@ function receiptArrive(
 function visitCard(a: AppointmentInfo, inner: string): string {
   return `
     <div class="lb-panel" style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
-      <div class="lb-accent" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
+      <div class="lb-accent" style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#A01F23;margin-bottom:6px;">
         ${escHtml(a.programLabel)}${a.childNames ? ` · ${escHtml(a.childNames)}` : ''}
       </div>
-      <div class="lb-heading" style="font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(a.date)}</div>
+      <div class="lb-heading" style="font-size:18px;font-weight:700;color:#1a1a2e;line-height:1.3;">${escHtml(a.date)}</div>
       ${inner}
     </div>
   `;
@@ -419,13 +419,13 @@ export function bookingConfirmationHtml(
     .map((a) => {
       const arrive = receiptArrive(c, a.time, language);
       // A visit with no booking token has no working reschedule link; omit
-      // it rather than pointing a labeled link at a fallback URL. Without a
-      // link below it, the arrive line needs no bottom margin of its own.
+      // it rather than pointing a labeled link at a fallback URL.
       const changeLine = a.bookingToken
-        ? `<p style="margin:0;font-size:12px;"><a href="${escHtml(a.rebookingUrl)}" class="lb-accent" style="color:#A01F23;text-decoration:underline;">${escHtml(c.change)}</a></p>`
+        ? `<p style="margin:2px 0 0;font-size:14px;"><a href="${escHtml(a.rebookingUrl)}" class="lb-accent" style="display:inline-block;padding:8px 0;color:#A01F23;text-decoration:underline;">${escHtml(c.change)}</a></p>`
         : '';
-      const arriveMargin = a.bookingToken ? '8px 0 12px' : '8px 0 0';
-      const inner = `<p class="lb-text" style="margin:${arriveMargin};font-size:13px;color:#555;">${escHtml(arrive)}</p>
+      // The arrival time carries the same weight as the date: the slot times
+      // are deliberate, and a 4:26 PM reads as a typo when it is whispered.
+      const inner = `<p class="lb-heading" style="margin:4px 0 0;font-size:18px;font-weight:700;color:#1a1a2e;line-height:1.3;">${escHtml(arrive)}</p>
       ${changeLine}`;
       return visitCard(a, inner);
     })
@@ -433,15 +433,16 @@ export function bookingConfirmationHtml(
 
   return wrap(
     `
-    <p class="lb-heading" style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1a1a2e;">${escHtml(heading)}</p>
-    <p class="lb-text" style="margin:0 0 16px;color:#555;font-size:13px;line-height:1.65;">${escHtml(intro)}</p>
+    <p class="lb-heading" style="margin:0 0 10px;font-size:20px;font-weight:700;color:#1a1a2e;line-height:1.3;">${escHtml(heading)}</p>
+    <p class="lb-text" style="margin:0 0 18px;color:#555;font-size:16px;line-height:1.55;">${escHtml(intro)}</p>
     ${cards}
-    <p class="lb-heading" style="margin:20px 0 4px;font-size:13px;font-weight:700;color:#1a1a2e;">${escHtml(c.whereHeading)}</p>
-    <p class="lb-text" style="margin:0 0 4px;color:#555;font-size:13px;">${SCHOOL_ADDRESS}</p>
-    <p style="margin:0 0 20px;font-size:12px;"><a href="${escHtml(MAPS_URL)}" class="lb-accent" style="color:#A01F23;text-decoration:underline;">${escHtml(c.openMaps)}</a></p>
-    <p class="lb-heading" style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1a1a2e;">${escHtml(c.expectHeading)}</p>
-    <p class="lb-text" style="margin:0 0 18px;color:#555;font-size:13px;line-height:1.65;">${escHtml(c.expectBody)}</p>
-    <p class="lb-text" style="margin:0;color:#555;font-size:13px;line-height:1.65;">${escHtml(fillTemplate(c.closing, { phone: PHONE_DISPLAY }))}</p>
+    <p class="lb-heading" style="margin:22px 0 4px;font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(c.whereHeading)}</p>
+    <p class="lb-text" style="margin:0;color:#555;font-size:16px;line-height:1.55;">${SCHOOL_ADDRESS}</p>
+    <p style="margin:0 0 18px;font-size:14px;"><a href="${escHtml(MAPS_URL)}" class="lb-accent" style="display:inline-block;padding:8px 0;color:#A01F23;text-decoration:underline;">${escHtml(c.openMaps)}</a></p>
+    <p class="lb-heading" style="margin:0 0 4px;font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(c.expectHeading)}</p>
+    <p class="lb-text" style="margin:0 0 18px;color:#555;font-size:16px;line-height:1.55;">${escHtml(c.expectBody)}</p>
+    <p class="lb-text" style="margin:0;color:#555;font-size:16px;line-height:1.55;">${escHtml(c.closing)}</p>
+    <p style="margin:0 0 18px;font-size:16px;"><a href="${PHONE_HREF}" class="lb-accent" style="display:inline-block;padding:12px 0;font-size:16px;font-weight:700;color:#A01F23;text-decoration:underline;">${PHONE_DISPLAY}</a></p>
   `,
     {
       title: heading,
@@ -478,21 +479,25 @@ export function bookingConfirmationText(
     lines.push(a.date);
     lines.push(receiptArrive(c, a.time, language));
     // See bookingConfirmationHtml: no booking token means no working
-    // reschedule link, so the line is omitted.
+    // reschedule link, so the line is omitted. Every URL gets a line to
+    // itself so no client wraps one mid-link.
     if (a.bookingToken) {
-      lines.push(`${c.change}: ${a.rebookingUrl}`);
+      lines.push(`${c.change}:`);
+      lines.push(a.rebookingUrl);
     }
     lines.push('');
   }
 
   lines.push(c.whereHeading);
   lines.push(SCHOOL_ADDRESS);
-  lines.push(`${c.openMaps}: ${MAPS_URL}`);
+  lines.push(`${c.openMaps}:`);
+  lines.push(MAPS_URL);
   lines.push('');
   lines.push(c.expectHeading);
   lines.push(c.expectBody);
   lines.push('');
-  lines.push(fillTemplate(c.closing, { phone: PHONE_DISPLAY }));
+  lines.push(c.closing);
+  lines.push(PHONE_DISPLAY);
 
   return lines.join('\n');
 }

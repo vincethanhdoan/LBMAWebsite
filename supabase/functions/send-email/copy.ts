@@ -149,7 +149,7 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
     expectHeading: 'What to expect',
     expectBody:
       "Comfortable athletic clothes are all your child needs. We provide everything else for the first class. You're welcome to watch from the side, and we'll answer any questions afterward.",
-    closing: 'If anything changes, reply to this email or call us at {phone}.',
+    closing: 'If anything changes, reply to this email or call us.',
     familyFallback: 'your family',
   },
   es: {
@@ -167,7 +167,7 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
     expectHeading: 'Qué esperar',
     expectBody:
       'Solo hace falta ropa deportiva cómoda. Nosotros proporcionamos todo lo demás para la primera clase. Puedes observar desde un lado y, al terminar, respondemos con gusto cualquier pregunta que tengas.',
-    closing: 'Si algo cambia, responde a este correo o llámanos al {phone}.',
+    closing: 'Si algo cambia, responde a este correo o llámanos.',
     familyFallback: 'tu familia',
   },
 };

@@ -436,6 +436,72 @@ Deno.test(
   },
 );
 
+// Every inline font-size in the receipt, minus the hidden preheader, which is
+// deliberately 1px because it is never rendered.
+function receiptFontSizes(html: string): number[] {
+  const visible = html.replace(/<div style="display:none;[\s\S]*?<\/div>/, '');
+  return [...visible.matchAll(/font-size:(\d+)px/g)].map((m) => Number(m[1]));
+}
+
+Deno.test(
+  'bookingConfirmationHtml: nothing renders below 14px, en and es',
+  () => {
+    for (const language of ['en', 'es'] as const) {
+      const sizes = receiptFontSizes(
+        bookingConfirmationHtml('Maria Lopez', single, language, LOGO),
+      );
+      assertEquals(sizes.length > 0, true);
+      for (const size of sizes) {
+        assertEquals(
+          size >= 14,
+          true,
+          `${language}: found font-size:${size}px`,
+        );
+      }
+      // Body copy at 16px, and the hierarchy above it survives.
+      assertEquals(sizes.includes(16), true, language);
+      assertEquals(sizes.includes(18), true, language);
+      assertEquals(sizes.includes(20), true, language);
+    }
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: the arrival time is as prominent as the date',
+  () => {
+    const html = bookingConfirmationHtml('Maria Lopez', single, 'en');
+    const dateStyle =
+      'style="font-size:18px;font-weight:700;color:#1a1a2e;line-height:1.3;">Monday, April 28, 2026';
+    assertStringIncludes(html, dateStyle);
+    assertStringIncludes(
+      html,
+      'style="margin:4px 0 0;font-size:18px;font-weight:700;color:#1a1a2e;line-height:1.3;">Please arrive at 4:00 PM.',
+    );
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: the closing phone is a tappable tel: block, en and es',
+  () => {
+    for (const language of ['en', 'es'] as const) {
+      const html = bookingConfirmationHtml('Maria Lopez', single, language);
+      assertStringIncludes(
+        html,
+        '<a href="tel:+14086200252" class="lb-accent" style="display:inline-block;padding:12px 0;font-size:16px;font-weight:700;color:#A01F23;text-decoration:underline;">(408) 620-0252</a>',
+      );
+      // The footer keeps its own tel: link.
+      assertEquals(
+        (html.match(/href="tel:\+14086200252"/g) ?? []).length,
+        2,
+        language,
+      );
+      // The number is no longer buried inside the closing sentence.
+      assertEquals(html.includes('call us at (408)'), false);
+      assertEquals(html.includes('llámanos al (408)'), false);
+    }
+  },
+);
+
 // Returns the hidden preheader div, asserting nothing else in the body comes
 // before it: a client builds the inbox snippet from the first text it finds.
 function firstBodyNode(html: string): string {
@@ -525,27 +591,49 @@ Deno.test(
   'bookingConfirmationText: one fact per line, urls on their own lines',
   () => {
     const text = bookingConfirmationText('Eduardo Guerra', multi, 'en');
+    const lines = text.split('\n');
     assertStringIncludes(text, 'Monday, April 28, 2026');
     assertStringIncludes(text, 'Wednesday, April 30, 2026');
     assertStringIncludes(
       text,
-      'Change or cancel this visit: https://lbmaa.com/book/abc123',
+      'Change or cancel this visit:\nhttps://lbmaa.com/book/abc123',
     );
     assertStringIncludes(
       text,
-      'Change or cancel this visit: https://lbmaa.com/book/def456',
+      'Change or cancel this visit:\nhttps://lbmaa.com/book/def456',
+    );
+    assertStringIncludes(
+      text,
+      'Open in Google Maps:\nhttps://www.google.com/maps/',
+    );
+    // Every URL and the phone number stand alone on their line.
+    for (const line of lines) {
+      if (line.includes('http')) assertEquals(line.startsWith('http'), true);
+    }
+    assertEquals(lines.includes('(408) 620-0252'), true);
+    assertEquals(
+      lines.includes('If anything changes, reply to this email or call us.'),
+      true,
     );
   },
 );
 
 Deno.test('bookingConfirmationText: es uses Spanish copy', () => {
   const text = bookingConfirmationText('Eduardo Guerra', single, 'es');
+  const lines = text.split('\n');
   assertStringIncludes(text, 'Tu visita está reservada');
   assertStringIncludes(text, 'Por favor, llega a las 4:00 PM.');
   assertStringIncludes(
     text,
-    'Cambiar o cancelar esta visita: https://lbmaa.com/book/abc123',
+    'Cambiar o cancelar esta visita:\nhttps://lbmaa.com/book/abc123',
   );
+  assertStringIncludes(text, 'Solo hace falta ropa deportiva cómoda.');
+  assertEquals(text.includes('Tu hijo'), false);
+  assertEquals(
+    lines.includes('Si algo cambia, responde a este correo o llámanos.'),
+    true,
+  );
+  assertEquals(lines.includes('(408) 620-0252'), true);
 });
 
 Deno.test('bookingConfirmationText: greets by first name only', () => {
