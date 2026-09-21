@@ -14,6 +14,11 @@ import {
   submissionConfirmationHtml,
   approvalEmailHtml,
   multiProgramApprovalEmailHtml,
+  denialEmailHtml,
+  announcementNotificationHtml,
+  blogPostNotificationHtml,
+  commentReplyHtml,
+  postCommentHtml,
 } from './templates.ts';
 import type { AppointmentInfo } from './types.ts';
 
@@ -87,11 +92,13 @@ Deno.test('FOOTER: contrast-safe colors, no #aaa or #bbb', () => {
   assertNotEquals(hasLowContrast, true);
 });
 
-Deno.test('FOOTER: font-size 12px, not 11px', () => {
+Deno.test('FOOTER: font-size 14px, never below', () => {
   const html = messagingNotificationHtml('Alice', 'https://example.com', LOGO);
-  assertStringIncludes(html, 'font-size:12px');
-  const has11px = html.includes('font-size:11px');
-  assertNotEquals(has11px, true);
+  assertStringIncludes(
+    html,
+    '<p class="lb-muted" style="margin:0;font-size:14px;color:#595959;',
+  );
+  assertNotEquals(html.includes('font-size:11px'), true);
 });
 
 Deno.test('wrap: base font-size 15px', () => {
@@ -103,6 +110,114 @@ Deno.test('wrap: max-width 580px', () => {
   const html = messagingNotificationHtml('Alice', 'https://example.com', LOGO);
   assertStringIncludes(html, 'max-width:580px');
 });
+
+Deno.test('wrap: a real HTML document with head, metas, and a title', () => {
+  const html = messagingNotificationHtml('Alice', 'https://example.com', LOGO);
+  assertEquals(html.startsWith('<!DOCTYPE html>'), true);
+  assertStringIncludes(html, '<html lang="en" dir="ltr">');
+  assertStringIncludes(html, '<meta charset="utf-8" />');
+  assertStringIncludes(
+    html,
+    '<meta name="viewport" content="width=device-width,initial-scale=1" />',
+  );
+  assertStringIncludes(
+    html,
+    '<meta name="color-scheme" content="light dark" />',
+  );
+  assertStringIncludes(
+    html,
+    '<meta name="supported-color-schemes" content="light dark" />',
+  );
+  assertStringIncludes(html, '<title>You have a new message</title>');
+  assertStringIncludes(
+    html,
+    '<body class="lb-page" style="margin:0;padding:0;',
+  );
+  assertEquals(html.trimEnd().endsWith('</html>'), true);
+});
+
+Deno.test(
+  'wrap: centred presentation table with an Outlook ghost table',
+  () => {
+    const html = messagingNotificationHtml(
+      'Alice',
+      'https://example.com',
+      LOGO,
+    );
+    assertStringIncludes(
+      html,
+      '<table role="presentation" class="lb-page" cellpadding="0" cellspacing="0" border="0" width="100%"',
+    );
+    assertStringIncludes(html, '<td align="center"');
+    assertStringIncludes(
+      html,
+      '<!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="580" align="center"><tr><td><![endif]-->',
+    );
+    assertStringIncludes(html, '<!--[if mso]></td></tr></table><![endif]-->');
+    // align="center" on the cell would otherwise centre every line of copy.
+    assertStringIncludes(
+      html,
+      'border-radius:6px;overflow:hidden;text-align:left;',
+    );
+  },
+);
+
+Deno.test(
+  'wrap: ships a dark-mode palette rather than leaving it to the client',
+  () => {
+    const html = messagingNotificationHtml(
+      'Alice',
+      'https://example.com',
+      LOGO,
+    );
+    assertStringIncludes(html, '@media (prefers-color-scheme: dark)');
+    for (const rule of [
+      '.lb-page { background:#121212 !important; }',
+      '.lb-card { background:#1e1e1e !important;',
+      '.lb-panel { background:#262626 !important;',
+      '.lb-heading { color:#ffffff !important; }',
+      '.lb-text { color:#e8e4e0 !important; }',
+      '.lb-muted { color:#c9c4bf !important; }',
+      '.lb-accent { color:#E4797D !important; }',
+    ]) {
+      assertStringIncludes(html, rule);
+    }
+    // Every light colour the dark rules override has a class hook on it, so
+    // nothing is left half-inverted.
+    for (const [colour, className] of [
+      ['#1a1a2e', 'lb-heading'],
+      ['#555', 'lb-text'],
+      ['#595959', 'lb-muted'],
+    ] as const) {
+      for (const tag of html.match(/<[a-z]+ [^<>]*>/g) ?? []) {
+        if (
+          tag.includes(`color:${colour};`) ||
+          tag.includes(`color:${colour}"`)
+        ) {
+          assertStringIncludes(tag, `class="${className}"`);
+        }
+      }
+    }
+  },
+);
+
+Deno.test(
+  'makeHeader: the logo is decorative, the wordmark carries the name',
+  () => {
+    const html = messagingNotificationHtml(
+      'Alice',
+      'https://example.com',
+      LOGO,
+    );
+    assertStringIncludes(
+      html,
+      `<img src="${LOGO}" alt="" width="48" height="48"`,
+    );
+    assertEquals(html.includes('alt="Los Banos Martial Arts Academy"'), false);
+    // A transparent logo would vanish against an inverted header without this.
+    assertStringIncludes(html, 'display:block;background:#ffffff;');
+  },
+);
 
 const single: AppointmentInfo[] = [
   {
@@ -316,8 +431,23 @@ Deno.test(
     assertEquals(html.includes('Questions?'), false);
     assertStringIncludes(
       html,
-      'o <a href="tel:+14086200252" style="color:#A01F23;text-decoration:underline;">(408) 620-0252</a>',
+      'o <a href="tel:+14086200252" class="lb-accent" style="color:#A01F23;text-decoration:underline;">(408) 620-0252</a>',
     );
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: the document language follows the receipt language',
+  () => {
+    const htmlEn = bookingConfirmationHtml('Maria Lopez', single, 'en');
+    assertStringIncludes(htmlEn, '<html lang="en" dir="ltr">');
+    assertStringIncludes(htmlEn, "<title>You're booked</title>");
+    assertEquals(htmlEn.includes('lang="es"'), false);
+
+    const htmlEs = bookingConfirmationHtml('Maria Lopez', single, 'es');
+    assertStringIncludes(htmlEs, '<html lang="es" dir="ltr">');
+    assertStringIncludes(htmlEs, '<title>Tu visita está reservada</title>');
+    assertEquals(htmlEs.includes('lang="en"'), false);
   },
 );
 
@@ -668,5 +798,102 @@ Deno.test(
     ]);
     assertEquals(html.toLowerCase().includes('approved'), false);
     assertStringIncludes(html, "We'd love to have you in for a visit.");
+  },
+);
+
+// ── every email type still builds, as a full document ─────────────────────
+
+Deno.test(
+  'every email builds as an English HTML document and keeps its key content',
+  () => {
+    const url = 'https://lbmaa.com/x';
+    const programs = [
+      {
+        programLabel: 'Little Dragons',
+        childNames: 'Emma',
+        bookingUrl: 'https://lbmaa.com/book/abc123',
+      },
+    ];
+    const emails: Array<[string, string, string]> = [
+      [
+        'enrollment alert',
+        enrollmentNotificationHtml(DUMMY_LEAD, url, LOGO),
+        'New enrollment inquiry',
+      ],
+      [
+        'message',
+        messagingNotificationHtml('Alice', url, LOGO),
+        'You have a new message',
+      ],
+      [
+        'invite',
+        approvalEmailHtml(DUMMY_LEAD, url, LOGO),
+        'Book Your Appointment',
+      ],
+      [
+        'multi-program invite',
+        multiProgramApprovalEmailHtml('Jane', programs, LOGO),
+        'Book Little Dragons Intro',
+      ],
+      [
+        'reschedule',
+        rescheduleEmailHtml('Jane', programs, LOGO),
+        'Pick a New Time',
+      ],
+      ['denial', denialEmailHtml(DUMMY_LEAD, LOGO), 'Your enrollment inquiry'],
+      [
+        'reminder',
+        reminderEmailHtml('Jane', single, url, 'tomorrow', LOGO),
+        'Confirm My Attendance',
+      ],
+      [
+        'submission receipt',
+        submissionConfirmationHtml(DUMMY_LEAD, LOGO),
+        'Thank you for your interest in LBMAA',
+      ],
+      [
+        'announcement',
+        announcementNotificationHtml(
+          'Closed Friday',
+          'We are closed.',
+          url,
+          LOGO,
+        ),
+        'Closed Friday',
+      ],
+      [
+        'blog post',
+        blogPostNotificationHtml('Belt testing', 'Sensei', url, LOGO),
+        'Belt testing',
+      ],
+      [
+        'comment reply',
+        commentReplyHtml('Sensei', 'Great class', url, LOGO),
+        'replied to your comment',
+      ],
+      [
+        'post comment',
+        postCommentHtml('Sensei', 'Belt testing', url, LOGO),
+        'New comment on your post',
+      ],
+      [
+        'booking receipt',
+        bookingConfirmationHtml('Jane', single, 'en', LOGO),
+        "You're booked",
+      ],
+    ];
+
+    for (const [name, html, keyContent] of emails) {
+      assertEquals(html.startsWith('<!DOCTYPE html>'), true, name);
+      assertStringIncludes(html, '<html lang="en" dir="ltr">');
+      assertStringIncludes(html, '<meta charset="utf-8" />');
+      assertStringIncludes(html, '@media (prefers-color-scheme: dark)');
+      assertStringIncludes(html, '<body class="lb-page"');
+      assertStringIncludes(html, keyContent);
+      assertEquals(html.trimEnd().endsWith('</html>'), true, name);
+      // One <title>, never empty.
+      assertEquals((html.match(/<title>/g) ?? []).length, 1, name);
+      assertEquals(/<title>\s*<\/title>/.test(html), false, name);
+    }
   },
 );
