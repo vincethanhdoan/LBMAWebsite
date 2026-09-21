@@ -165,8 +165,7 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
     preheader: 'Arrive {at} {time} · {street}',
     heading: "You're booked",
     headingMany: 'Your visits are booked',
-    intro:
-      "Hi {name}, we're looking forward to meeting {children}. Here are the details of your visit.",
+    intro: "Hi {name}, we're looking forward to meeting {children}.",
     arrive: 'Please arrive {at} {time}.',
     change: 'Change or cancel this visit',
     whereHeading: 'Where to find us',
@@ -183,8 +182,7 @@ export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
     preheader: 'Llega {at} {time} · {street}',
     heading: 'Tu visita está reservada',
     headingMany: 'Tus visitas están reservadas',
-    intro:
-      'Hola {name}, tenemos muchas ganas de conocer a {children}. Aquí están los detalles de tu visita.',
+    intro: 'Hola {name}, tenemos muchas ganas de conocer a {children}.',
     arrive: 'Por favor, llega {at} {time}.',
     change: 'Cambiar o cancelar esta visita',
     whereHeading: 'Dónde encontrarnos',
