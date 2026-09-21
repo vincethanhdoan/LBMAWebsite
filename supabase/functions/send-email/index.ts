@@ -114,7 +114,8 @@ async function getLeadAppointments(
     .in('status', ['scheduled', 'confirmed'])
     .not('appointment_date', 'is', null)
     .gte('appointment_date', pacificToday)
-    .order('appointment_date', { ascending: true });
+    .order('appointment_date', { ascending: true })
+    .order('appointment_time', { ascending: true });
 
   if (!bookings || bookings.length === 0) return [];
 
