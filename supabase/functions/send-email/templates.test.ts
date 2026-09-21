@@ -262,7 +262,7 @@ Deno.test(
     assertStringIncludes(html, "You're booked");
     assertStringIncludes(html, 'Hi Eduardo,');
     assertEquals(html.includes('Guerra'), false);
-    assertStringIncludes(html, 'Tuesday, April 28');
+    assertStringIncludes(html, 'Tuesday, April&nbsp;28');
     assertStringIncludes(html, 'Please arrive at 4:00 PM.');
     assertStringIncludes(html, 'Little Dragons');
     assertStringIncludes(html, 'Emma');
@@ -292,8 +292,8 @@ Deno.test(
     assertStringIncludes(html, 'Your visits are booked');
     assertEquals(html.includes('Little Dragons'), true);
     assertEquals(html.includes('Youth Program'), true);
-    assertEquals(html.includes('Tuesday, April 28'), true);
-    assertEquals(html.includes('Thursday, April 30'), true);
+    assertEquals(html.includes('Tuesday, April&nbsp;28'), true);
+    assertEquals(html.includes('Thursday, April&nbsp;30'), true);
     assertEquals(html.includes('Please arrive at 4:00 PM.'), true);
     assertEquals(html.includes('Please arrive at 5:30 PM.'), true);
     assertEquals(html.includes('Jake'), true);
@@ -499,10 +499,10 @@ Deno.test(
       }
       // The whole scale, and nothing off it: labels and sign-off at 14,
       // the change link at 15, body at 16, the arrival line at 17, the
-      // phone at 20, the ticket date at 26, the headline at 30.
+      // phone at 20, the ticket date at 24, the headline at 30.
       assertEquals(
         [...new Set(sizes)].sort((a, b) => a - b),
-        [14, 15, 16, 17, 20, 26, 30],
+        [14, 15, 16, 17, 20, 24, 30],
         language,
       );
     }
@@ -545,11 +545,11 @@ Deno.test(
   'bookingConfirmationHtml: the ticket date drops the year, en and es',
   () => {
     const en = ticketBands(bookingConfirmationHtml('M', single, 'en'))[0];
-    assertStringIncludes(en, '>Tuesday, April 28</div>');
+    assertStringIncludes(en, '>Tuesday, April&nbsp;28</div>');
     assertEquals(en.includes('2026'), false);
 
     const es = ticketBands(bookingConfirmationHtml('M', single, 'es'))[0];
-    assertStringIncludes(es, '>Martes, 28 de abril</div>');
+    assertStringIncludes(es, '>Martes, 28&nbsp;de&nbsp;abril</div>');
     assertEquals(es.includes('2026'), false);
   },
 );
@@ -564,10 +564,10 @@ Deno.test(
       const sizes = [...band.matchAll(/font-size:(\d+)px/g)].map((m) =>
         Number(m[1]),
       );
-      assertEquals(Math.max(...sizes), 26, language);
+      assertEquals(Math.max(...sizes), 24, language);
       // Exactly one element carries it: the date.
-      assertEquals(sizes.filter((s) => s === 26).length, 1, language);
-      assertStringIncludes(band, 'font-size:26px;font-weight:800;');
+      assertEquals(sizes.filter((s) => s === 24).length, 1, language);
+      assertStringIncludes(band, 'font-size:24px;font-weight:800;');
 
       const arrive = language === 'en' ? 'Please arrive' : 'Por favor, llega';
       const arriveTag = band.match(
@@ -594,7 +594,7 @@ Deno.test(
       // Big, underlined and padded out to a real tap target.
       assertStringIncludes(
         html,
-        "display:inline-block;padding:10px 0;font-family:'Barlow Condensed','Arial Narrow',Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#A01F23;text-decoration:underline;\">(408) 620-0252</a>",
+        "display:inline-block;padding:10px 0;font-family:'Barlow Condensed',Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#A01F23;text-decoration:underline;\">(408) 620-0252</a>",
       );
       // The number is not buried inside the closing sentence.
       assertEquals(html.includes('call us at (408)'), false);

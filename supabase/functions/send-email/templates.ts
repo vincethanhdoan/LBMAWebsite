@@ -70,10 +70,12 @@ const RECEIPT_DARK_MODE_CSS = `
       }`;
 
 // The website's own typefaces. Gmail strips the stylesheet link below, so
-// the fallbacks carry the design rather than rescuing it: Arial Narrow is
-// what keeps the headline date on one line at phone width, and plain Arial
-// is the floor beneath that.
-const DISPLAY_FONT = `'Barlow Condensed','Arial Narrow',Arial,Helvetica,sans-serif`;
+// the fallback is what most families actually read: Roboto on Android,
+// Helvetica on iOS, Arial on a desktop. Arial Narrow is deliberately not in
+// this stack. It exists on desktops, where the card is wide enough that
+// plain Arial already fits, and on no phone, where the width is wanted, so
+// all it would buy is a desktop that looks unlike every phone.
+const DISPLAY_FONT = `'Barlow Condensed',Arial,Helvetica,sans-serif`;
 const BODY_FONT = `Nunito,Arial,Helvetica,sans-serif`;
 
 const RECEIPT_HEAD = `<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&amp;family=Nunito:wght@400;700&amp;display=swap" rel="stylesheet" />
@@ -452,6 +454,22 @@ function receiptChildren(
   return joinNames(groups, language) || RECEIPT_COPY[language].familyFallback;
 }
 
+// The ticket's headline date, with the day and month bound together. In
+// Helvetica or Arial the longest dates ("Wednesday, September 30",
+// "Miércoles, 30 de septiembre") cannot fit one line at phone width at any
+// size worth calling a headline, so the question is only where they break.
+// Binding everything after the weekday means the break always lands at the
+// comma, giving a deliberate two-line date instead of a stranded "30".
+function ticketDate(a: AppointmentInfo, language: Language): string {
+  const date = escHtml(formatVisitDateNoYear(a.appointmentDate, language));
+  const afterWeekday = date.indexOf(', ') + 2;
+  if (afterWeekday === 1) return date;
+  return (
+    date.slice(0, afterWeekday) +
+    date.slice(afterWeekday).replace(/ /g, '&nbsp;')
+  );
+}
+
 // One visit, printed as a full-bleed red band: the eyebrow says who it is
 // for, the date is the headline, the arrival line is deliberately quieter,
 // and the change link sits under a hairline so it reads as an action rather
@@ -480,7 +498,7 @@ function visitTicket(
           <tr>
             <td bgcolor="#A01F23" class="lb-ticket${stacked ? ' lb-ticket-gap' : ''}" style="${gap}padding:24px 28px;background:#A01F23;">
               <div class="lb-ticket-sub" style="font-family:${BODY_FONT};font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#F6D9D6;">${escHtml(a.programLabel)}${a.childNames ? ` · ${escHtml(a.childNames)}` : ''}</div>
-              <div class="lb-ticket-date" style="margin-top:8px;font-family:${DISPLAY_FONT};font-size:26px;font-weight:800;color:#FFFDFC;line-height:1.15;">${escHtml(formatVisitDateNoYear(a.appointmentDate, language))}</div>
+              <div class="lb-ticket-date" style="margin-top:8px;font-family:${DISPLAY_FONT};font-size:24px;font-weight:800;color:#FFFDFC;line-height:1.15;">${ticketDate(a, language)}</div>
               <div class="lb-ticket-sub" style="margin-top:6px;font-family:${BODY_FONT};font-size:17px;font-weight:400;color:#F6D9D6;line-height:1.4;">${escHtml(receiptArrive(c, a.time, language))}</div>${change}
             </td>
           </tr>
