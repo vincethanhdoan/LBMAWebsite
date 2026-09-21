@@ -17,7 +17,8 @@ This document covers everything about how a prospective family goes from filling
 9. [Admin Manual Lead Creation](#9-admin-manual-lead-creation)
 10. [Security Model](#10-security-model)
 11. [Design Decisions](#11-design-decisions)
-12. [Glossary](#12-glossary)
+12. [Booking a Trial Visit at Signup (New Backend, Not Yet Live)](#12-booking-a-trial-visit-at-signup-new-backend-not-yet-live)
+13. [Glossary](#13-glossary)
 
 ---
 
@@ -444,7 +445,7 @@ For `new_lead` notifications, the `send-email` function looks up `admin_notifica
 
 ### Email delivery service
 
-Emails are sent via the **Resend** API (`https://api.resend.com/emails`). The API key is stored as a Supabase secret (`RESEND_API_KEY`). All emails come from `no-reply@notifications.lbmartialarts.com`.
+Emails are sent via the **Resend** API (`https://api.resend.com/emails`). The API key is stored as a Supabase secret (`RESEND_API_KEY`). All emails come from `hello@notifications.lbmartialarts.com`, with `reply_to` set to the school's own inbox, `LosBanosMartialArts@gmail.com`, so a reply lands in a mailbox a person actually reads, not a sending address nobody checks.
 
 ### Template design
 
@@ -596,7 +597,154 @@ The `appointment_slots` table has a public RLS policy that allows `anon` users t
 
 ---
 
-## 12. Glossary
+## 12. Booking a Trial Visit at Signup (New Backend, Not Yet Live)
+
+This section documents backend work that lets a family pick a specific date and time for their trial visit at the moment they sign up, instead of submitting an inquiry and waiting for an admin to approve it and email back a booking link. It is a new RPC, a rewritten receipt email, and a new calendar-file endpoint.
+
+**The live public form still calls `submit_enrollment_lead` (§2) and does not use any of this.** Nothing described in this section is reachable from the public site yet. Wiring the contact form to it, the visit-picker UI, and the on-screen confirmation are a follow-up PR.
+
+### The `submit_trial_booking` RPC
+
+**File:** `supabase/migrations/20260921120000_trial_booking.sql`
+
+| Argument | Type | Notes |
+|---|---|---|
+| `p_parent_name` | text | Required |
+| `p_parent_email` | text | Required |
+| `p_phone` | text | Required; the older `submit_enrollment_lead` accepts a lead with no phone (it validates the phone only when one is given) |
+| `p_children` | jsonb | Required, 1–6 entries, each `{ name, age }` |
+| `p_bookings` | jsonb | Required, one entry per program the children fall into, each `{ program_type, slot_id, date }` |
+| `p_request_id` | uuid | Optional but strongly expected; see Retry below |
+| `p_language` | text | `'en'` or `'es'`, defaults to `'en'` |
+| `p_message` | text | Optional, max 1500 characters |
+| `p_source_page` | text | Defaults to `'contact'`; see below |
+
+A child's age decides its program (`program_for_age`: 4–7 is Little Dragons, 8–17 is Youth), and the function requires exactly one booking entry per distinct program the submitted children land in, no more, no fewer, no duplicates. So a family with a 5-year-old and a 10-year-old must submit exactly two bookings, one `little_dragons` and one `youth`; a family with two children both age 6 submits exactly one. Every shape is checked before anything is cast: a child's `age` must match a plain 1–2 digit pattern before it's read as an integer, and a booking's `slot_id` (UUID shape) and `date` (`YYYY-MM-DD` shape) are both regex-checked before either is cast to its real type. A malformed value fails with the function's own error, never a raw Postgres cast error.
+
+The booking window (21 days ahead) and the no-same-day rule are fixed inside the function itself, not parameters the caller can widen. These are the same limits the public `book-appointment` endpoint enforces (§6, §8), applied here at the point of first booking instead of on a later self-service page.
+
+### One transaction, full rollback
+
+Creating the lead, inserting its children, and booking every one of its visits all happen inside `submit_trial_booking`'s single transaction. If any step fails, including a slot that got taken by someone else a moment ago, the whole submission rolls back: no orphaned lead, no half-booked family. A web lead either exists complete with all its visits, or it does not exist at all.
+
+Visits are `INSERT`ed already in `scheduled` or `confirmed` status, not created first and then booked in a second step. This matters for the admin bell: `trg_notify_admins_booking_change` (§4, §7) only fires on `UPDATE`, never on `INSERT`, so booking a visit this way produces exactly one `new_lead` bell and never a second "appointment booked" bell for the same visit.
+
+The lead itself follows the same auto-confirm rule as every other booking path (§4): a public trial booking lands the lead at `appointment_scheduled`, or `appointment_confirmed` when the visit is two calendar days away or less.
+
+### Retry: `p_request_id`
+
+The 12-second client timeout (§2) can time out on a slow connection after the database has already committed. A family that resubmits after a timeout must get back the receipt for the visit they already booked, not a second lead or a `slot_taken` error on their own slot.
+
+The form generates a random `p_request_id` once per submission attempt and resends the same one on every retry. It is stored on the lead in `enrollment_leads.request_id`, which carries a partial unique index (`WHERE request_id IS NOT NULL`) so no two leads can ever share one. When `p_request_id` is supplied, the function checks for an existing lead with that exact `request_id` **and** the same `parent_email` before doing anything else; on a match it returns that lead's receipt again instead of creating anything. An advisory lock keyed on the request id makes a genuine concurrent double-submit (two requests in flight at once) wait for the first to finish rather than race it into the unique index.
+
+This is deliberately not inferred from the submitted email plus the requested slots and a time window, the way older retry logic elsewhere in this codebase works. Slot ids and appointment dates are public and guessable; a lookup keyed on "this email, roughly this slot/date, in the last few minutes" would let anyone who knows a family's email brute-force their way to that family's `booking_token`, the credential that lets someone change or cancel the visit, for free and unthrottled. A request id that's random, generated client-side, and checked against the caller's own claimed email closes that off: guessing it is as hard as guessing any other UUID, and it never leaves the parent's own browser except when their own retry sends it back.
+
+### One upcoming visit per family per program
+
+Before creating anything, the function checks whether the family (matched by `parent_email` or by the phone number's last 10 digits, so a typo'd extension or a different area-code prefix still matches) already has an active (`scheduled` or `confirmed`), not-yet-past visit in any of the programs this submission is trying to book. If so, it raises `already_booked` (`P0409`) and creates nothing. A second visit in a program the family is already booked into would just take a slot another family could use; the intended path for that family is to change their existing visit through the link they already have, not book a second one. A family with children in two different programs, only one of which has been booked so far, can still book the other.
+
+### Rate limits
+
+Three limits, checked in order, all `P0429`:
+
+| Limit | Scope | Message |
+|---|---|---|
+| 30 seconds | Same email | "Please wait a moment before submitting again." |
+| 5 per day | Same email or phone | "You have reached the maximum number of submissions for today. Please try again later." |
+| 10 per hour | Across all non-`admin` leads, site-wide | "Too many requests right now. Please try again later." |
+
+The hourly cap only counts leads whose `source_page` is not `'admin'`, so staff typing leads in by hand can never block the public form. Because that carve-out exists, the public path is not allowed to claim it for itself: `p_source_page` is only kept as given when it matches a plain lowercase slug shape (`^[a-z0-9_-]{1,50}$`) **and** is not literally `'admin'`; anything else, including a caller that deliberately sends `'admin'`, falls back to `'contact'`. A public submission can never be stored as if a staff member had entered it, and can never opt itself out of the hourly cap this way.
+
+### Error contract
+
+| Error | SQLSTATE | Meaning |
+|---|---|---|
+| `P0429` | P0429 | One of the three rate limits above |
+| `already_booked` | P0409 | The family already has an active visit in one of these programs |
+| `slot_taken` | 23P01 | Someone else booked that exact slot/date first (caught by the DB constraint, not a pre-check, so it's race-proof) |
+| `date_unavailable` | P0001 | The date is outside the 21-day window, in the past, today, the wrong day of week, or blocked |
+| `slot_mismatch` | P0001 | That slot belongs to a different program than the one it was booked against |
+| `invalid_booking_request` | P0001 | The booking list's shape is wrong: missing, wrong count, duplicate program, unknown program, malformed `slot_id`/`date`, or (rare) a reused `request_id` under a different email |
+| Validation sentences (e.g. "Please provide a valid email.") | P0001 | Plain-English messages for name, email, phone, message length, child count, child name, and child age |
+
+### `preferred_language`
+
+`enrollment_leads.preferred_language` (`'en'` or `'es'`, defaults to `'en'`) is set once from `p_language` at booking time. Staff see it as a "Prefers Spanish" line under the contact info in the lead detail panel (`src/components/admin/leads/LeadDetailPanel.tsx`) when it's `'es'`; nothing is shown for English. The reminder text message an admin sends from **Contact Actions** (`src/components/admin/leads/ContactActions.tsx`, `reminderSmsHref` in `src/lib/contactLinks.ts`) is drafted in Spanish or English to match, so a staff member texting a family doesn't have to remember which language to write in.
+
+In this PR, only two things follow the family's language: the booking receipt email (below) and that staff reminder text message. The reminder *email* (queued by the `appointment-reminders` cron job, §7) is always English, regardless of `preferred_language`. And because `preferred_language` is only ever set by `submit_trial_booking`, a lead created by staff through the admin dashboard (§9) is always English until a later change adds a way for staff to set it.
+
+### The booking receipt email
+
+**Files:** `supabase/functions/send-email/{index,templates,copy}.ts`, `supabase/functions/_shared/copy.ts`
+
+`booking_confirmation` is a family's first email from the school under this flow (there is no separate "thank you, we'll review this" step first). It's queued in the same transaction as the booking itself and rendered in English or Spanish according to the lead's `preferred_language`. Every send carries both an HTML part and a plain-text part (`bookingConfirmationText`), for clients that prefer or require plain text.
+
+It greets the parent by first name only (`firstName()`, splitting on whitespace) and, per visit, shows the program, the children in it, the date as the headline and the arrival time as secondary body text below it (the slot times are deliberately staggered, so a 4:26 PM must still be legible, just not read as equally weighted with the date), and, when a `booking_token` exists, a "Change or cancel this visit" link. It also includes the school's address with a Google Maps link, a short, deliberately price-free "what to expect" paragraph, and the school phone as a tappable `tel:` link. **It never states a price and never calls the visit free**: the trial is not free, and no email in this flow is allowed to imply otherwise. The subject is `Trial visit booked: {dateShort} at {time}` (Spanish: `Visita reservada: {dateShort}, {time}`) for one visit, or `Trial visits booked, starting {dateShort}` (Spanish: `Visitas reservadas, desde el {dateShort}`) when there's more than one; both name the earliest visit's date.
+
+The receipt is also the only email with a preheader: a hidden first node in the body carrying the earliest visit's arrival time and street (`RECEIPT_COPY[language].preheader`), so it fits next to the subject in a phone's inbox list instead of getting cut off. The subject already names the date, so the preheader does not repeat it; the street comes from `SCHOOL_STREET` (`send-email/copy.ts`), derived from `SCHOOL_ADDRESS` and kept local to send-email since nothing else needs it. Spanish copy that introduces a clock time uses an `{at}` placeholder filled by `timeArticle()`, because the article agrees with the hour ("a la 1:20 p.m." but "a las 5:35 p.m.").
+
+Every email, not just the receipt, is rendered by `wrap()` as a complete HTML document: doctype, `<html lang>` (the receipt's follows the family's language, everything else is English), charset and viewport metas, `color-scheme`/`supported-color-schemes` set to `light dark` with a `prefers-color-scheme` stylesheet behind it, a `<title>`, and a centred `role="presentation"` table with an Outlook ghost table around the 580px card. The dark palette is driven by `lb-*` classes on every element that carries one of the light colours; add the matching class to any new element so it cannot be left half-inverted.
+
+The admin `new_lead` alert (always in English) now shows each booked visit (program, children, date, time) inline in the same table it already used for parent/email/phone/message, and adds a "Language: Spanish" row when the family's `preferred_language` is `'es'`, so an admin scanning the inbox already knows before opening the lead. The invite email (`approval`, sent when staff approve a lead or resend a booking link) was reworded to stop claiming the request had been "approved," using plain, neutral wording instead, since under this flow a family may never have been in a pending "awaiting approval" state at all.
+
+Every email subject built from something a person typed (a parent's name, a portal user's display name) is passed through `sanitizeForSubject()` first: it collapses any run of control characters or whitespace (including a raw newline) to a single space, trims, caps the length, and falls back to a fixed word (e.g. "a family") if nothing usable is left. This keeps a stray character in free text from reaching the email provider's subject header unescaped.
+
+### Sender address
+
+All emails, including this receipt, send from `hello@notifications.lbmartialarts.com` with `reply_to: LosBanosMartialArts@gmail.com`, so a parent who hits "reply" reaches a mailbox the school actually reads.
+
+### `visit-calendar`: the calendar-file endpoint
+
+**Files:** `supabase/functions/visit-calendar/{index,ics}.ts`, `supabase/functions/_shared/pacificTime.ts`
+
+A public endpoint that serves a single visit as an RFC 5545 `.ics` file. The receipt email (above) no longer links to it or to a Google Calendar URL; the site's on-screen booking confirmation is what calls it now. Called as:
+
+```
+GET <SUPABASE_URL>/functions/v1/visit-calendar?token=<booking_token>
+```
+
+The `booking_token` on the program booking is the only credential: no session, no Authorization header, the same trust model as `book-appointment` (§6). The function is deployed with `verify_jwt: false`, so the platform doesn't require a JWT before the request even reaches the code; the function itself needs nothing more than a syntactically valid token.
+
+It returns **404** (plain text, no calendar body) when: the token is missing or not shaped like a UUID (checked before any database query runs); no booking matches it; the booking's status isn't `scheduled` or `confirmed` (which also refuses a cancelled visit); its date or time is unset; or the owning lead is soft-deleted, `denied`, `closed`, or `attended`. That's the same set of lead statuses `book_program_appointment` itself refuses to book against (§4). One gap remains between the two: `book-appointment` does not check `deleted_at` on the lead at all, a pre-existing looseness this endpoint does not share, since `visit-calendar` checks it explicitly. Every response, the 200 and every 404 alike, carries `Cache-Control: private, no-store`, so neither a valid file nor a not-found result sticks around in a browser's or intermediary's cache after a visit is rescheduled or cancelled.
+
+The event is exactly one hour long, starting at the visit's appointment time. `appointment_date`/`appointment_time` are stored as plain Pacific wall-clock values with no timezone attached; `pacificToUtc()` (`_shared/pacificTime.ts`) converts that wall-clock pair into the correct UTC instant for `DTSTART`/`DTEND`, settling on the right side of the daylight-saving transition rather than assuming a fixed UTC offset.
+
+### Deploying these functions
+
+Both functions import from `../_shared/`, so their deploy file lists must be sent directory-prefixed: a flat, root-level file layout will not resolve those imports. `send-email` in particular no longer deploys from the old flat `index.ts`/`templates.ts`/`copy.ts` layout it used before this work; it now needs its `_shared/` dependencies alongside it.
+
+**`send-email`**, `verify_jwt: false`, entrypoint `send-email/index.ts`, files:
+- `send-email/index.ts`
+- `send-email/templates.ts`
+- `send-email/types.ts`
+- `send-email/copy.ts`
+- `send-email/messages.ts`
+- `_shared/copy.ts`
+- `_shared/appUrl.ts`
+
+**`visit-calendar`**, `verify_jwt: false`, entrypoint `visit-calendar/index.ts`, files:
+- `visit-calendar/index.ts`
+- `visit-calendar/ics.ts`
+- `_shared/pacificTime.ts`
+- `_shared/copy.ts`
+- `_shared/appUrl.ts`
+
+After every deploy, fetch the deployed files back and compare them against the branch byte-for-byte. Do not treat a successful deploy call as proof the served code matches what's on disk. `send-email/types.ts` is the one exception worth expecting ahead of time: it must still be sent (the other files import types from it), but every one of those imports is type-only and is erased at build time, so it will not appear in the fetched-back file list. Its absence there is expected, not a mismatch to chase.
+
+### Production rollout notes
+
+After deploying `send-email`, send one real receipt to an address the owner controls: book a throwaway lead through the admin portal, confirm the English receipt arrives with working links, then delete the lead. Staging has no email provider key configured, and this send path has never delivered a real message, so this is the only way to know the Resend integration actually works end to end before a real family relies on it.
+
+### Known exposures
+
+Two things accepted as-is for now rather than fixed in this PR, recorded here so a future reader doesn't have to rediscover them:
+
+- **No CAPTCHA.** Nothing stops a script from calling `submit_trial_booking` directly and repeatedly. Spread across enough different email addresses to dodge the per-email limits, a handful of fake submissions could take every bookable date across the whole three-week window before a real family gets to one. Each fake submission still lands as an ordinary lead with a new-lead bell, so it's visible and cheap to undo: an admin cancelling or deleting the lead frees the slot again immediately.
+- **`already_booked` is a yes/no oracle.** Anyone who already holds (or guesses) a family's email address or phone number learns, from the error alone, that the family has an upcoming visit, without learning its date, time, or program. The signal is limited to that one bit; nothing else about the booking is exposed by it. It's also unthrottled by any of the rate limits above: an `already_booked` probe creates no lead, and every one of the three limits counts only created leads, so repeatedly probing the same or different emails never trips a limit.
+
+---
+
+## 13. Glossary
 
 | Term | Meaning |
 |---|---|

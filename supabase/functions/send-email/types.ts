@@ -49,6 +49,7 @@ export interface EnrollmentLead {
   appointment_time: string | null;
   denial_message: string | null;
   created_at: string;
+  preferred_language?: string | null;
   children?: ChildRecord[];
 }
 
@@ -85,8 +86,9 @@ export interface PortalEmailQueueRecord {
 
 export interface AppointmentInfo {
   programLabel: string;
-  childNames: string; // e.g. "Emma & Lily"; empty string if no children records
-  date: string; // formatted, e.g. "Monday, April 28, 2026"
+  childNames: string; // e.g. "Emma and Lily"; empty string if no children records
+  date: string; // formatted long date, e.g. "Monday, April 28, 2026"
+  dateShort: string; // formatted short date, e.g. "Mon, Apr 28"
   appointmentDate: string; // raw 'YYYY-MM-DD', for day-count math
   time: string; // formatted, e.g. "4:00 PM"
   rebookingUrl: string; // ${appUrl}/book/${booking_token}

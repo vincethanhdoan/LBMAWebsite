@@ -190,6 +190,7 @@ export type EnrollmentLead = {
   deleted_at: string | null;
   attendance_recorded_at: string | null;
   attendance_recorded_by: string | null;
+  preferred_language: 'en' | 'es';
   children: EnrollmentLeadChild[];
   programBookings: EnrollmentLeadProgramBooking[];
   reminderNotification: EnrollmentLeadNotification | null;

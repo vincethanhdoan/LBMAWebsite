@@ -62,6 +62,7 @@ function makeLead(partial: Partial<EnrollmentLead> = {}): EnrollmentLead {
     deleted_at: null,
     attendance_recorded_at: '2026-07-19T00:00:00Z',
     attendance_recorded_by: 'admin-1',
+    preferred_language: 'en',
     children: [
       {
         child_id: 'c1',
@@ -217,5 +218,37 @@ describe('a lead with an email', () => {
         name: 'Call Eduardo Guerra at (209) 555-0123',
       }),
     ).toBeTruthy();
+  });
+});
+
+describe('a lead who prefers Spanish', () => {
+  it('shows Prefers Spanish in the Contact section', () => {
+    renderPanel(makeLead({ preferred_language: 'es' }));
+    expect(screen.getByText('Prefers Spanish')).toBeTruthy();
+  });
+
+  it('shows no language line for an English-preferring lead', () => {
+    renderPanel(makeLead({ preferred_language: 'en' }));
+    expect(screen.queryByText('Prefers Spanish')).toBeNull();
+  });
+
+  it('offers a reminder text in Spanish', () => {
+    const upcoming = makeBooking({
+      status: 'scheduled',
+      appointment_date: '2099-01-05',
+      appointment_time: '16:30:00',
+    });
+    renderPanel(
+      makeLead({
+        preferred_language: 'es',
+        status: 'appointment_scheduled',
+        attendance_recorded_at: null,
+        programBookings: [upcoming],
+      }),
+    );
+    const text = screen.getByRole('link', { name: 'Text a reminder' });
+    const href = text.getAttribute('href')!;
+    const body = decodeURIComponent(href.split('body=')[1]);
+    expect(body.startsWith('Hola')).toBe(true);
   });
 });

@@ -11,13 +11,11 @@ import type {
   ChildRecord,
 } from './types.ts';
 import {
-  enrollmentNotificationHtml,
   messagingNotificationHtml,
   approvalEmailHtml,
   multiProgramApprovalEmailHtml,
   rescheduleEmailHtml,
   denialEmailHtml,
-  bookingConfirmationHtml,
   reminderEmailHtml,
   submissionConfirmationHtml,
   announcementNotificationHtml,
@@ -26,17 +24,33 @@ import {
   postCommentHtml,
   PROGRAM_LABELS,
 } from './templates.ts';
+import {
+  toLanguage,
+  formatVisitDate,
+  formatVisitDateShort,
+  formatVisitTime,
+  joinNames,
+  sanitizeForSubject,
+  programLabel,
+} from './copy.ts';
+import type { Language } from './copy.ts';
+import { getAppUrl } from '../_shared/appUrl.ts';
+import {
+  LOGO_URL,
+  buildReceiptMessage,
+  buildAdminAlertMessage,
+} from './messages.ts';
 
 const RESEND_API_URL = 'https://api.resend.com/emails';
 const FROM =
-  'Los Banos Martial Arts Academy <no-reply@notifications.lbmartialarts.com>';
-const LOGO_URL =
-  'https://qfyeguikxxwwxpxleqrr.supabase.co/storage/v1/object/public/assets/logo-96.png';
+  'Los Banos Martial Arts Academy <hello@notifications.lbmartialarts.com>';
+const REPLY_TO = 'LosBanosMartialArts@gmail.com';
 
 async function sendEmail(
   to: string,
   subject: string,
   html: string,
+  text?: string,
 ): Promise<void> {
   const res = await fetch(RESEND_API_URL, {
     method: 'POST',
@@ -44,7 +58,14 @@ async function sendEmail(
       Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+    body: JSON.stringify({
+      from: FROM,
+      reply_to: REPLY_TO,
+      to: [to],
+      subject,
+      html,
+      ...(text ? { text } : {}),
+    }),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -58,12 +79,6 @@ function adminClient() {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     { auth: { persistSession: false } },
   );
-}
-
-function getAppUrl(): string {
-  const url = Deno.env.get('APP_URL');
-  if (!url) throw new Error('APP_URL environment variable is not set');
-  return url.replace(/\/+$/, '');
 }
 
 // How far off the appointment is, phrased for the reminder subject/heading.
@@ -87,6 +102,7 @@ async function getLeadAppointments(
   supabase: ReturnType<typeof adminClient>,
   leadId: string,
   appUrl: string,
+  language: Language,
 ): Promise<AppointmentInfo[]> {
   const pacificToday = new Date().toLocaleDateString('en-CA', {
     timeZone: 'America/Los_Angeles',
@@ -98,7 +114,8 @@ async function getLeadAppointments(
     .in('status', ['scheduled', 'confirmed'])
     .not('appointment_date', 'is', null)
     .gte('appointment_date', pacificToday)
-    .order('appointment_date', { ascending: true });
+    .order('appointment_date', { ascending: true })
+    .order('appointment_time', { ascending: true });
 
   if (!bookings || bookings.length === 0) return [];
 
@@ -116,32 +133,22 @@ async function getLeadAppointments(
           .eq('lead_id', leadId)
           .eq('program_type', b.program_type);
 
-        const childNames =
-          children?.map((c: { name: string }) => c.name).join(' & ') ?? '';
-        const date = new Date(
-          b.appointment_date + 'T12:00:00',
-        ).toLocaleDateString('en-US', {
-          weekday: 'long',
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
-        });
-        const time = new Date(
-          '1970-01-01T' + b.appointment_time,
-        ).toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-        });
+        const childNames = joinNames(
+          children?.map((c: { name: string }) => c.name) ?? [],
+          language,
+        );
+        const rebookingUrl = b.booking_token
+          ? `${appUrl}/book/${b.booking_token}`
+          : appUrl;
 
         return {
-          programLabel: PROGRAM_LABELS[b.program_type] ?? b.program_type,
+          programLabel: programLabel(b.program_type, language),
           childNames,
-          date,
+          date: formatVisitDate(b.appointment_date, language),
+          dateShort: formatVisitDateShort(b.appointment_date, language),
           appointmentDate: b.appointment_date,
-          time,
-          rebookingUrl: b.booking_token
-            ? `${appUrl}/book/${b.booking_token}`
-            : appUrl,
+          time: formatVisitTime(b.appointment_time, language),
+          rebookingUrl,
           bookingToken: b.booking_token,
         };
       },
@@ -178,8 +185,10 @@ async function getProgramBookingLinks(
           .eq('program_type', b.program_type);
         return {
           programLabel: PROGRAM_LABELS[b.program_type] ?? b.program_type,
-          childNames:
-            children?.map((c: { name: string }) => c.name).join(' & ') ?? '',
+          childNames: joinNames(
+            children?.map((c: { name: string }) => c.name) ?? [],
+            'en',
+          ),
           bookingToken: b.booking_token,
         };
       },
@@ -247,6 +256,7 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
 
   let subject: string;
   let html: string;
+  let text: string | undefined;
 
   switch (record.type) {
     case 'new_lead': {
@@ -260,8 +270,23 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         admins && admins.length > 0
           ? admins.map((a: { email: string }) => a.email)
           : [record.recipient_email];
-      subject = `New enrollment inquiry from ${lead.parent_name}`;
-      html = enrollmentNotificationHtml(enrichedLead, adminUrl, LOGO_URL);
+
+      // Always English (admin-facing); Spanish families still surface via
+      // the Language row below.
+      const visits = await getLeadAppointments(
+        supabase,
+        record.lead_id,
+        appUrl,
+        'en',
+      );
+      const alert = buildAdminAlertMessage(
+        enrichedLead,
+        visits,
+        adminUrl,
+        LOGO_URL,
+      );
+      subject = alert.subject;
+      html = alert.html;
       const results = await Promise.allSettled(
         recipients.map((to: string) => sendEmail(to, subject, html)),
       );
@@ -295,7 +320,7 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
     case 'approval': {
       const programs = await getProgramBookingLinks(supabase, record.lead_id);
 
-      subject = 'Your enrollment request has been approved';
+      subject = 'Pick a time for your visit to Los Banos Martial Arts';
 
       if (programs.length > 0) {
         html = multiProgramApprovalEmailHtml(
@@ -345,10 +370,12 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
       html = denialEmailHtml(lead, LOGO_URL);
       break;
     case 'booking_confirmation': {
+      const language = toLanguage(lead.preferred_language);
       const appointments = await getLeadAppointments(
         supabase,
         record.lead_id,
         appUrl,
+        language,
       );
       if (appointments.length === 0) {
         console.warn(
@@ -362,11 +389,10 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         );
         return;
       }
-      subject =
-        appointments.length > 1
-          ? 'Your LBMAA appointments are confirmed'
-          : 'Your LBMAA appointment is confirmed';
-      html = bookingConfirmationHtml(lead.parent_name, appointments, LOGO_URL);
+      const receipt = buildReceiptMessage(lead, appointments);
+      subject = receipt.subject;
+      html = receipt.html;
+      text = receipt.text;
       break;
     }
     case 'reminder': {
@@ -374,6 +400,7 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
         supabase,
         record.lead_id,
         appUrl,
+        'en',
       );
       if (appointments.length === 0) {
         console.warn(
@@ -411,7 +438,7 @@ async function handleEnrollmentNotification(recordId: string): Promise<void> {
   }
 
   try {
-    await sendEmail(record.recipient_email, subject, html);
+    await sendEmail(record.recipient_email, subject, html, text);
   } catch (err) {
     await markEnrollmentFailed(
       supabase,
@@ -492,9 +519,11 @@ async function handleMessageNotification(recordId: string): Promise<void> {
 
   if (!notifyMessages) return;
 
+  // senderName is a display_name the user typed; a stray newline or control
+  // character must not reach Resend's JSON subject field verbatim.
   await sendEmail(
     user.email,
-    `New message from ${senderName} in the LBMAA Portal`,
+    `New message from ${sanitizeForSubject(senderName, 'Someone')} in the LBMAA Portal`,
     messagingNotificationHtml(senderName, portalUrl, LOGO_URL),
   );
 }
@@ -534,7 +563,10 @@ async function handlePortalNotification(recordId: string): Promise<void> {
       );
       break;
     case 'blog_post':
-      subject = `New post from ${record.payload.author_name ?? 'a member'} in the LBMAA Parent Blog`;
+      // author_name is free text a portal user typed; sanitize before it
+      // reaches the subject line (the html call below is unrelated and
+      // already goes through escHtml in the template).
+      subject = `New post from ${sanitizeForSubject(record.payload.author_name ?? 'a member', 'a member')} in the LBMAA Parent Blog`;
       html = blogPostNotificationHtml(
         record.payload.title ?? '',
         record.payload.author_name ?? 'A member',
@@ -543,7 +575,7 @@ async function handlePortalNotification(recordId: string): Promise<void> {
       );
       break;
     case 'comment_reply':
-      subject = `${record.payload.replier_name ?? 'Someone'} replied to your comment in the LBMAA Portal`;
+      subject = `${sanitizeForSubject(record.payload.replier_name ?? 'Someone', 'Someone')} replied to your comment in the LBMAA Portal`;
       html = commentReplyHtml(
         record.payload.replier_name ?? 'Someone',
         record.payload.original_snippet ?? '',

@@ -469,6 +469,11 @@ export function LeadDetailPanel({
                   {formatPhone(lead.phone)}
                 </div>
               )}
+              {lead.preferred_language === 'es' && (
+                <div className="text-[13px] text-muted-foreground">
+                  Prefers Spanish
+                </div>
+              )}
               <ContactActions lead={lead} />
             </div>
 
