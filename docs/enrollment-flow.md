@@ -124,7 +124,7 @@ The form's own language toggle (English/Spanish, `useLanguage()` in `lang.tsx`) 
 
 ### The on-screen receipt
 
-`TrialBookedPanel` shows, per booked visit: the program and children in it, the date and arrival time, a "View or change this visit" link (routes to `/book/<token>`, the same self-service page a booking-link email points to), and an "Add to calendar" link. That link goes straight to the `visit-calendar` `.ics` endpoint (§12), not a Google Calendar render URL: a downloaded `.ics` file works on every phone, so the panel doesn't need a second copy of the Google Calendar URL builder the receipt email already has. Below the visits: the school's address with a link to Maps, a short "what to expect" paragraph, a note that the same details were emailed (with a spam-folder reminder), and a phone number for questions. It never states a price or calls the visit free, the same rule the email follows (§12).
+`TrialBookedPanel` shows, per booked visit: the program and children in it, the date and arrival time, a "View or change this visit" link (routes to `/book/<token>`, the same self-service page a booking-link email points to), and an "Add to calendar" link. That link goes straight to the `visit-calendar` `.ics` endpoint (§12): a downloaded `.ics` file works on every phone. The receipt email itself carries no calendar links; the panel is the only place that offers one. Below the visits: the school's address with a link to Maps, a short "what to expect" paragraph, a note that the same details were emailed (with a spam-folder reminder), and a phone number for questions. It never states a price or calls the visit free, the same rule the email follows (§12).
 
 ### Why a 12-second timeout?
 
