@@ -327,9 +327,8 @@ const EN = {
     successBody: "We're looking forward to meeting {children}.",
     successArrive: 'Please arrive at {time}.',
     successChange: 'View or change this visit',
-    successCalendar: 'Add to calendar',
     successWhere: 'Where to find us',
-    successMaps: 'Open in Maps',
+    successMaps: 'Open in Google Maps',
     successExpectHeading: 'What to expect',
     successExpectBody:
       "Comfortable athletic clothes are all your child needs. We provide everything else for the first class. You're welcome to watch from the side, and we'll answer any questions afterward.",
@@ -893,14 +892,13 @@ const ES: T = {
       'Parece que ya tienes una visita reservada con nosotros. Revisa tu correo para ver los detalles, o llámanos al (408) 620-0252 para cambiarla.',
     successHeading: 'Tu visita está reservada',
     successBody: 'Tenemos muchas ganas de conocer a {children}.',
-    successArrive: 'Por favor llega a las {time}.',
+    successArrive: 'Por favor, llega {at} {time}.',
     successChange: 'Ver o cambiar esta visita',
-    successCalendar: 'Agregar al calendario',
     successWhere: 'Dónde encontrarnos',
-    successMaps: 'Abrir en Mapas',
+    successMaps: 'Abrir en Google Maps',
     successExpectHeading: 'Qué esperar',
     successExpectBody:
-      'Tu hijo solo necesita ropa deportiva cómoda. Nosotros proporcionamos todo lo demás para la primera clase. Puedes observar desde un lado, y después responderemos cualquier pregunta que tengas.',
+      'Solo hace falta ropa deportiva cómoda. Nosotros proporcionamos todo lo demás para la primera clase. Puedes observar desde un lado y, al terminar, respondemos con gusto cualquier pregunta que tengas.',
     successEmailNote:
       'También enviamos estos detalles a {email}. Si no lo ves, revisa tu carpeta de spam. Tu visita está reservada de cualquier manera.',
     successCall: '¿Preguntas? Llámanos al (408) 620-0252.',

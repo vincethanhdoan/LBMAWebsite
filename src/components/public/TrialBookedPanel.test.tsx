@@ -67,17 +67,13 @@ describe('TrialBookedPanel', () => {
     });
     expect(changeLink.getAttribute('href')).toBe('/book/tok-youth');
 
-    const calendarLink = screen.getByRole('link', {
-      name: 'Add to calendar: Youth Program · Alex',
-    });
-    expect(calendarLink.getAttribute('href')).toBe(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/visit-calendar?token=tok-youth`,
-    );
+    // The receipt email has no calendar links, and the panel matches it.
+    expect(screen.queryByRole('link', { name: /calendar/i })).toBeNull();
 
     expect(
       screen.getByText('1209 South 6th Street Suite E, Los Banos, CA 93635'),
     ).toBeTruthy();
-    const mapsLink = screen.getByRole('link', { name: 'Open in Maps' });
+    const mapsLink = screen.getByRole('link', { name: 'Open in Google Maps' });
     expect(mapsLink.getAttribute('href')).toBe(
       'https://www.google.com/maps/search/?api=1&query=1209+South+6th+St+Suite+E,+Los+Banos,+CA',
     );
@@ -149,26 +145,17 @@ describe('TrialBookedPanel', () => {
     expect(screen.getByText('Youth Program · Alex')).toBeTruthy();
 
     // A screen-reader user browsing by links must be able to tell the two
-    // visits' "View or change"/"Add to calendar" links apart.
+    // visits' "View or change" links apart.
     const changeLittle = screen.getByRole('link', {
       name: 'View or change this visit: Little Dragons · Mia',
     });
     const changeYouth = screen.getByRole('link', {
       name: 'View or change this visit: Youth Program · Alex',
     });
-    const calendarLittle = screen.getByRole('link', {
-      name: 'Add to calendar: Little Dragons · Mia',
-    });
-    const calendarYouth = screen.getByRole('link', {
-      name: 'Add to calendar: Youth Program · Alex',
-    });
-    const names = [
-      changeLittle,
-      changeYouth,
-      calendarLittle,
-      calendarYouth,
-    ].map((link) => link.getAttribute('aria-label'));
-    expect(new Set(names).size).toBe(4);
+    const names = [changeLittle, changeYouth].map((link) =>
+      link.getAttribute('aria-label'),
+    );
+    expect(new Set(names).size).toBe(2);
   });
 
   it('renders Spanish strings and a Spanish date', () => {
@@ -204,19 +191,17 @@ describe('TrialBookedPanel', () => {
     // the child's name, not the English PROGRAM_LABELS value.
     expect(screen.getByText('Programa Juvenil · Alex')).toBeTruthy();
     expect(screen.getByText('viernes, 25 de septiembre de 2026')).toBeTruthy();
-    expect(screen.getByText('Por favor llega a las 5:20 p.m.')).toBeTruthy();
+    expect(screen.getByText('Por favor, llega a las 5:20 p.m.')).toBeTruthy();
     expect(
       screen.getByRole('link', {
         name: 'Ver o cambiar esta visita: Programa Juvenil · Alex',
       }),
     ).toBeTruthy();
-    expect(
-      screen.getByRole('link', {
-        name: 'Agregar al calendario: Programa Juvenil · Alex',
-      }),
-    ).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /calendario/i })).toBeNull();
     expect(screen.getByText('Dónde encontrarnos')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Abrir en Mapas' })).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Abrir en Google Maps' }),
+    ).toBeTruthy();
     expect(screen.getByText('Qué esperar')).toBeTruthy();
     expect(
       screen.getByRole('link', {
@@ -226,5 +211,33 @@ describe('TrialBookedPanel', () => {
 
     expect(document.body.textContent).not.toContain('$');
     expect(document.body.textContent?.toLowerCase()).not.toContain('gratis');
+  });
+
+  it('uses the singular Spanish article for the 1:00 hour', () => {
+    const receipt: TrialBookingReceipt = {
+      lead_id: 'lead-1',
+      visits: [
+        {
+          program_type: 'youth',
+          booking_token: 'tok-youth',
+          appointment_date: '2026-09-25',
+          appointment_time: '13:20:00',
+          status: 'scheduled',
+        },
+      ],
+    };
+
+    render(
+      withLang(
+        'es',
+        <TrialBookedPanel
+          receipt={receipt}
+          childrenByProgram={{ youth: ['Alex'] }}
+          email="parent@example.com"
+        />,
+      ),
+    );
+
+    expect(screen.getByText('Por favor, llega a la 1:20 p.m.')).toBeTruthy();
   });
 });

@@ -27,7 +27,6 @@ describe('lang.tsx contact translations', () => {
       'successBody',
       'successArrive',
       'successChange',
-      'successCalendar',
       'successWhere',
       'successMaps',
       'successExpectHeading',

@@ -38,6 +38,12 @@ function formatVisitTime(time: string, lang: Lang): string {
   });
 }
 
+// Spanish says "a la 1:20" for the one o'clock hour and "a las" for every
+// other. The English sentence has no {at} slot, so the value is unused there.
+function spanishTimeArticle(formattedTime: string): string {
+  return formattedTime.startsWith('1:') ? 'a la' : 'a las';
+}
+
 const HEADING_ID = 'trial-booked-heading';
 
 export function TrialBookedPanel({
@@ -104,6 +110,8 @@ export function TrialBookedPanel({
               ? `${programLabel} · ${joinNames(childNames, lang)}`
               : programLabel;
 
+          const time = formatVisitTime(visit.appointment_time, lang);
+
           return (
             <div
               key={visit.booking_token}
@@ -122,11 +130,12 @@ export function TrialBookedPanel({
               <p className="text-sm mt-1" style={{ color: V3.muted }}>
                 {collapseDoublePeriod(
                   fillTemplate(ct.successArrive, {
-                    time: formatVisitTime(visit.appointment_time, lang),
+                    at: spanishTimeArticle(time),
+                    time,
                   }),
                 )}
               </p>
-              <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3">
+              <div className="mt-3">
                 <Link
                   to={`/book/${encodeURIComponent(visit.booking_token)}`}
                   aria-label={`${ct.successChange}: ${heading}`}
@@ -139,18 +148,6 @@ export function TrialBookedPanel({
                 >
                   {ct.successChange}
                 </Link>
-                <a
-                  href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/visit-calendar?token=${encodeURIComponent(visit.booking_token)}`}
-                  aria-label={`${ct.successCalendar}: ${heading}`}
-                  className="text-sm font-semibold"
-                  style={{
-                    color: V3.primary,
-                    textDecoration: 'underline',
-                    textUnderlineOffset: '2px',
-                  }}
-                >
-                  {ct.successCalendar}
-                </a>
               </div>
             </div>
           );
