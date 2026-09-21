@@ -38,13 +38,15 @@ export function buildReceiptMessage(
 ): ReceiptMessage {
   const language = toLanguage(lead.preferred_language);
   const c = RECEIPT_COPY[language];
-  const subject =
-    appointments.length > 1
-      ? c.subjectMany
-      : fillTemplate(c.subject, {
-          dateShort: appointments[0].dateShort,
-          time: appointments[0].time,
-        });
+  // Appointments arrive sorted by date, so the first one is the visit a
+  // family is waiting on and the one both subject lines name.
+  const subject = fillTemplate(
+    appointments.length > 1 ? c.subjectMany : c.subject,
+    {
+      dateShort: appointments[0].dateShort,
+      time: appointments[0].time,
+    },
+  );
   const html = bookingConfirmationHtml(
     lead.parent_name,
     appointments,

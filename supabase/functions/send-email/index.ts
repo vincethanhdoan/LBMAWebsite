@@ -30,10 +30,8 @@ import {
   formatVisitDateShort,
   formatVisitTime,
   joinNames,
-  buildGoogleCalendarUrl,
-  buildIcsUrl,
   sanitizeForSubject,
-  SCHOOL_ADDRESS,
+  programLabel,
 } from './copy.ts';
 import type { Language } from './copy.ts';
 import { getAppUrl } from '../_shared/appUrl.ts';
@@ -100,11 +98,6 @@ function daysUntilPhrase(appointmentDate: string): string {
   return `in ${days} days`;
 }
 
-const CALENDAR_TITLE: Record<Language, string> = {
-  en: 'Trial visit at Los Banos Martial Arts',
-  es: 'Visita de prueba en Los Banos Martial Arts',
-};
-
 async function getLeadAppointments(
   supabase: ReturnType<typeof adminClient>,
   leadId: string,
@@ -121,11 +114,10 @@ async function getLeadAppointments(
     .in('status', ['scheduled', 'confirmed'])
     .not('appointment_date', 'is', null)
     .gte('appointment_date', pacificToday)
-    .order('appointment_date', { ascending: true });
+    .order('appointment_date', { ascending: true })
+    .order('appointment_time', { ascending: true });
 
   if (!bookings || bookings.length === 0) return [];
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 
   return Promise.all(
     bookings.map(
@@ -150,26 +142,13 @@ async function getLeadAppointments(
           : appUrl;
 
         return {
-          programLabel: PROGRAM_LABELS[b.program_type] ?? b.program_type,
+          programLabel: programLabel(b.program_type, language),
           childNames,
           date: formatVisitDate(b.appointment_date, language),
           dateShort: formatVisitDateShort(b.appointment_date, language),
           appointmentDate: b.appointment_date,
           time: formatVisitTime(b.appointment_time, language),
           rebookingUrl,
-          googleCalendarUrl: buildGoogleCalendarUrl({
-            dateKey: b.appointment_date,
-            time: b.appointment_time,
-            title: CALENDAR_TITLE[language],
-            address: SCHOOL_ADDRESS,
-            details: rebookingUrl,
-          }),
-          // No token means no working calendar-file link; the template
-          // omits the link entirely in that case rather than rendering a
-          // labeled link pointing at a fallback URL.
-          icsUrl: b.booking_token
-            ? buildIcsUrl(supabaseUrl, b.booking_token)
-            : '',
           bookingToken: b.booking_token,
         };
       },

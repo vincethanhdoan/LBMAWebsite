@@ -7,15 +7,16 @@ import {
 import {
   toLanguage,
   formatVisitDate,
+  formatVisitDateNoYear,
   formatVisitDateShort,
   formatVisitTime,
   RECEIPT_COPY,
   joinNames,
   fillTemplate,
-  buildGoogleCalendarUrl,
-  buildIcsUrl,
   sanitizeForSubject,
   firstName,
+  programLabel,
+  timeArticle,
 } from './copy.ts';
 
 Deno.test('toLanguage: recognizes es', () => {
@@ -49,6 +50,46 @@ Deno.test(
     assertStringIncludes(en, '29');
     assertStringIncludes(es, '29');
     assertNotEquals(en, es);
+  },
+);
+
+Deno.test('formatVisitDateNoYear: en and es carry no year', () => {
+  assertEquals(
+    formatVisitDateNoYear('2026-10-07', 'en'),
+    'Wednesday, October 7',
+  );
+  assertEquals(
+    formatVisitDateNoYear('2026-10-07', 'es'),
+    'Miércoles, 7 de octubre',
+  );
+});
+
+Deno.test(
+  'formatVisitDateNoYear: the Spanish weekday opens the line upper-case',
+  () => {
+    assertEquals(
+      formatVisitDateNoYear('2026-09-30', 'es'),
+      'Miércoles, 30 de septiembre',
+    );
+    assertEquals(
+      formatVisitDateNoYear('2026-11-26', 'es'),
+      'Jueves, 26 de noviembre',
+    );
+  },
+);
+
+Deno.test(
+  'formatVisitDateNoYear: the long formatter still carries the year',
+  () => {
+    assertStringIncludes(formatVisitDate('2026-10-07', 'en'), '2026');
+    assertEquals(
+      formatVisitDateNoYear('2026-10-07', 'en').includes('2026'),
+      false,
+    );
+    assertEquals(
+      formatVisitDateNoYear('2026-10-07', 'es').includes('2026'),
+      false,
+    );
   },
 );
 
@@ -86,6 +127,49 @@ Deno.test(
   },
 );
 
+Deno.test(
+  'timeArticle: Spanish uses "a la" only for the 1 o\'clock hour',
+  () => {
+    assertEquals(timeArticle('1:20 p.m.', 'es'), 'a la');
+    assertEquals(timeArticle('1:00 a.m.', 'es'), 'a la');
+    assertEquals(timeArticle('5:35 p.m.', 'es'), 'a las');
+    assertEquals(timeArticle('12:35 p.m.', 'es'), 'a las');
+    assertEquals(timeArticle('11:05 a.m.', 'es'), 'a las');
+  },
+);
+
+Deno.test('timeArticle: English is always "at"', () => {
+  assertEquals(timeArticle('1:20 PM', 'en'), 'at');
+  assertEquals(timeArticle('5:35 PM', 'en'), 'at');
+});
+
+Deno.test(
+  'RECEIPT_COPY es: the what-to-expect sentence is gender-neutral about the child',
+  () => {
+    const body = RECEIPT_COPY.es.expectBody;
+    assertEquals(body.includes('Tu hijo'), false);
+    assertEquals(body.includes('tu hijo'), false);
+    assertEquals(body.includes('hija'), false);
+    assertStringIncludes(body, 'Solo hace falta ropa deportiva cómoda.');
+  },
+);
+
+Deno.test(
+  'RECEIPT_COPY: the Maps link names Google Maps in both languages',
+  () => {
+    assertEquals(RECEIPT_COPY.en.openMaps, 'Open in Google Maps');
+    assertEquals(RECEIPT_COPY.es.openMaps, 'Abrir en Google Maps');
+  },
+);
+
+Deno.test(
+  'RECEIPT_COPY: both several-visit subjects carry the first date',
+  () => {
+    assertStringIncludes(RECEIPT_COPY.en.subjectMany, '{dateShort}');
+    assertStringIncludes(RECEIPT_COPY.es.subjectMany, '{dateShort}');
+  },
+);
+
 Deno.test('joinNames: single name returned as-is', () => {
   assertEquals(joinNames(['Mia'], 'en'), 'Mia');
 });
@@ -119,44 +203,6 @@ Deno.test(
     assertEquals(fillTemplate('Hi {name}', {}), 'Hi {name}');
   },
 );
-
-Deno.test(
-  'buildGoogleCalendarUrl: exact string for one date, one hour long',
-  () => {
-    const url = buildGoogleCalendarUrl({
-      dateKey: '2026-10-05',
-      time: '17:20:00',
-      title: 'Trial visit at Los Banos Martial Arts',
-      address: '1209 South 6th St Suite E, Los Banos, CA',
-      details: 'https://example.com/book/abc123',
-    });
-    assertEquals(
-      url,
-      'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Trial+visit+at+Los+Banos+Martial+Arts&dates=20261005T172000%2F20261005T182000&ctz=America%2FLos_Angeles&location=1209+South+6th+St+Suite+E%2C+Los+Banos%2C+CA&details=https%3A%2F%2Fexample.com%2Fbook%2Fabc123',
-    );
-  },
-);
-
-Deno.test(
-  'buildGoogleCalendarUrl: end time rolls over the date near midnight',
-  () => {
-    const url = buildGoogleCalendarUrl({
-      dateKey: '2026-10-05',
-      time: '23:40:00',
-      title: 'Trial visit',
-      address: 'Los Banos, CA',
-      details: 'https://example.com',
-    });
-    assertStringIncludes(url, 'dates=20261005T234000%2F20261006T004000');
-  },
-);
-
-Deno.test('buildIcsUrl: exact string for one token', () => {
-  assertEquals(
-    buildIcsUrl('https://project.supabase.co', 'abc123'),
-    'https://project.supabase.co/functions/v1/visit-calendar?token=abc123',
-  );
-});
 
 Deno.test(
   'sanitizeForSubject: a newline is collapsed to a single space',
@@ -223,3 +269,21 @@ Deno.test('firstName: a single-word name is used as-is', () => {
 Deno.test('firstName: trims surrounding whitespace before splitting', () => {
   assertEquals(firstName('  Maria   Lopez  '), 'Maria');
 });
+
+Deno.test('programLabel: English names', () => {
+  assertEquals(programLabel('little_dragons', 'en'), 'Little Dragons');
+  assertEquals(programLabel('youth', 'en'), 'Youth Program');
+});
+
+Deno.test('programLabel: Spanish names', () => {
+  assertEquals(programLabel('little_dragons', 'es'), 'Pequeños Dragones');
+  assertEquals(programLabel('youth', 'es'), 'Programa Juvenil');
+});
+
+Deno.test(
+  'programLabel: an unknown program_type falls back to the raw key in either language',
+  () => {
+    assertEquals(programLabel('adult', 'en'), 'adult');
+    assertEquals(programLabel('adult', 'es'), 'adult');
+  },
+);

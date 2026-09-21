@@ -1,11 +1,10 @@
 // supabase/functions/send-email/copy.ts
 // Pure formatting and copy for the receipt (and other) emails: language
-// resolution, date/time formatting, string substitution, and the two
-// calendar-link builders. No I/O, no Deno.env access, so every function
-// here is exact-string testable. The school address and the child-name
-// joiner live in ../_shared/copy.ts, shared with visit-calendar, and are
-// re-exported here so the rest of this directory keeps importing from
-// './copy.ts'.
+// resolution, date/time formatting, and string substitution. No I/O, no
+// Deno.env access, so every function here is exact-string testable. The
+// school address and the child-name joiner live in ../_shared/copy.ts,
+// shared with visit-calendar, and are re-exported here so the rest of this
+// directory keeps importing from './copy.ts'.
 
 import { SCHOOL_ADDRESS, joinNames } from '../_shared/copy.ts';
 import type { Language } from '../_shared/copy.ts';
@@ -13,8 +12,26 @@ import type { Language } from '../_shared/copy.ts';
 export type { Language };
 export { SCHOOL_ADDRESS, joinNames };
 
+// The street only, no city or state: what the preheader has room for once
+// the subject line already carries the date. Derived from the full address
+// so the two can never drift apart. Only the receipt preheader needs this,
+// so it stays here rather than in the shared copy visit-calendar also uses.
+export const SCHOOL_STREET = SCHOOL_ADDRESS.split(',')[0];
+
 export function toLanguage(value: string | null | undefined): Language {
   return value === 'es' ? 'es' : 'en';
+}
+
+const PROGRAM_NAMES: Record<Language, Record<string, string>> = {
+  en: { little_dragons: 'Little Dragons', youth: 'Youth Program' },
+  es: { little_dragons: 'Pequeños Dragones', youth: 'Programa Juvenil' },
+};
+
+// Picks a program's display name in the given language. A program_type
+// outside the two known programs falls back to the raw key, same as the
+// callers did before this lookup existed.
+export function programLabel(programType: string, language: Language): string {
+  return PROGRAM_NAMES[language][programType] ?? programType;
 }
 
 export const FOOTER_COPY: Record<Language, { questions: string; or: string }> =
@@ -70,6 +87,25 @@ export function formatVisitDate(dateKey: string, language: Language): string {
   });
 }
 
+// The same calendar day with the year dropped, for the receipt's headline
+// date. A trial visit is at most three weeks out, so the year carries no
+// information and only makes a long Spanish date wrap on a phone. Spanish
+// starts the weekday lower-case; upper-cased here because this string opens
+// a line rather than sitting inside a sentence.
+export function formatVisitDateNoYear(
+  dateKey: string,
+  language: Language,
+): string {
+  const d = new Date(`${dateKey}T12:00:00Z`);
+  const formatted = d.toLocaleDateString(LOCALES[language], {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
 export function formatVisitDateShort(
   dateKey: string,
   language: Language,
@@ -94,15 +130,25 @@ export function formatVisitTime(time: string, language: Language): string {
   });
 }
 
+// Spanish agrees the article with the hour: "a la 1:20 p.m." but "a las 5:35
+// p.m.". Copy that introduces a clock time carries an {at} placeholder so the
+// article is chosen from the formatted time instead of being written into the
+// string, where it would be wrong for every 1 o'clock slot.
+export function timeArticle(time: string, language: Language): string {
+  if (language !== 'es') return 'at';
+  return time.startsWith('1:') ? 'a la' : 'a las';
+}
+
 export interface ReceiptCopy {
   subject: string;
   subjectMany: string;
+  // The hidden line a mail client shows as the inbox snippet, so the row in
+  // the inbox reads as a standing reminder of when and where to be.
+  preheader: string;
   heading: string;
   headingMany: string;
   intro: string;
   arrive: string;
-  addGoogle: string;
-  addIcs: string;
   change: string;
   whereHeading: string;
   openMaps: string;
@@ -115,40 +161,36 @@ export interface ReceiptCopy {
 export const RECEIPT_COPY: Record<Language, ReceiptCopy> = {
   en: {
     subject: 'Trial visit booked: {dateShort} at {time}',
-    subjectMany: 'Your trial visits are booked',
+    subjectMany: 'Trial visits booked, starting {dateShort}',
+    preheader: 'Arrive {at} {time} · {street}',
     heading: "You're booked",
     headingMany: 'Your visits are booked',
-    intro:
-      "Hi {name}, we're looking forward to meeting {children}. Here are the details of your visit.",
-    arrive: 'Please arrive at {time}.',
-    addGoogle: 'Add to Google Calendar',
-    addIcs: 'Add to Apple or Outlook calendar',
+    intro: "Hi {name}, we're looking forward to meeting {children}.",
+    arrive: 'Please arrive {at} {time}.',
     change: 'Change or cancel this visit',
     whereHeading: 'Where to find us',
-    openMaps: 'Open in Maps',
+    openMaps: 'Open in Google Maps',
     expectHeading: 'What to expect',
     expectBody:
       "Comfortable athletic clothes are all your child needs. We provide everything else for the first class. You're welcome to watch from the side, and we'll answer any questions afterward.",
-    closing: 'If anything changes, reply to this email or call us at {phone}.',
+    closing: 'If anything changes, reply to this email or call us.',
     familyFallback: 'your family',
   },
   es: {
-    subject: 'Visita de prueba reservada: {dateShort}, {time}',
-    subjectMany: 'Tus visitas de prueba están reservadas',
+    subject: 'Visita reservada: {dateShort}, {time}',
+    subjectMany: 'Visitas reservadas, desde el {dateShort}',
+    preheader: 'Llega {at} {time} · {street}',
     heading: 'Tu visita está reservada',
     headingMany: 'Tus visitas están reservadas',
-    intro:
-      'Hola {name}, tenemos muchas ganas de conocer a {children}. Aquí están los detalles de tu visita.',
-    arrive: 'Por favor llega a las {time}.',
-    addGoogle: 'Agregar a Google Calendar',
-    addIcs: 'Agregar al calendario de Apple u Outlook',
+    intro: 'Hola {name}, tenemos muchas ganas de conocer a {children}.',
+    arrive: 'Por favor, llega {at} {time}.',
     change: 'Cambiar o cancelar esta visita',
     whereHeading: 'Dónde encontrarnos',
-    openMaps: 'Abrir en Mapas',
+    openMaps: 'Abrir en Google Maps',
     expectHeading: 'Qué esperar',
     expectBody:
-      'Tu hijo solo necesita ropa deportiva cómoda. Nosotros proporcionamos todo lo demás para la primera clase. Puedes observar desde un lado, y después responderemos cualquier pregunta que tengas.',
-    closing: 'Si algo cambia, responde a este correo o llámanos al {phone}.',
+      'Solo hace falta ropa deportiva cómoda. Nosotros proporcionamos todo lo demás para la primera clase. Puedes observar desde un lado y, al terminar, respondemos con gusto cualquier pregunta que tengas.',
+    closing: 'Si algo cambia, responde a este correo o llámanos.',
     familyFallback: 'tu familia',
   },
 };
@@ -162,56 +204,4 @@ export function fillTemplate(
   return template.replace(/\{(\w+)\}/g, (match, key) =>
     Object.prototype.hasOwnProperty.call(vars, key) ? vars[key] : match,
   );
-}
-
-function pad2(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
-// Formats a 'YYYY-MM-DD' + 'HH:MM:SS' wall-clock pair as 'YYYYMMDDTHHMMSS'.
-// Uses Date.UTC purely as an arithmetic scratchpad (never converts to an
-// actual timezone), so adding minutes/hours rolls the date over correctly
-// near midnight instead of being computed by string-splicing.
-function formatWallClock(
-  dateKey: string,
-  time: string,
-  addMinutes: number,
-): string {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  const [hour, minute, second] = time.split(':').map(Number);
-  const instant = new Date(
-    Date.UTC(year, month - 1, day, hour, minute, second) + addMinutes * 60_000,
-  );
-  return (
-    `${instant.getUTCFullYear()}${pad2(instant.getUTCMonth() + 1)}${pad2(instant.getUTCDate())}` +
-    `T${pad2(instant.getUTCHours())}${pad2(instant.getUTCMinutes())}${pad2(instant.getUTCSeconds())}`
-  );
-}
-
-export interface GoogleCalendarLinkInput {
-  dateKey: string; // 'YYYY-MM-DD'
-  time: string; // 'HH:MM:SS'
-  title: string;
-  address: string;
-  details: string;
-}
-
-// One hour long, in local wall-clock time, interpreted by Google via ctz
-// rather than converted to UTC ourselves.
-export function buildGoogleCalendarUrl(input: GoogleCalendarLinkInput): string {
-  const start = formatWallClock(input.dateKey, input.time, 0);
-  const end = formatWallClock(input.dateKey, input.time, 60);
-  const qs = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: input.title,
-    dates: `${start}/${end}`,
-    ctz: 'America/Los_Angeles',
-    location: input.address,
-    details: input.details,
-  });
-  return `https://calendar.google.com/calendar/render?${qs.toString()}`;
-}
-
-export function buildIcsUrl(supabaseUrl: string, bookingToken: string): string {
-  return `${supabaseUrl}/functions/v1/visit-calendar?token=${bookingToken}`;
 }
