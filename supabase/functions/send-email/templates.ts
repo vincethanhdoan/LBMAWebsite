@@ -3,12 +3,12 @@
 import type { EnrollmentLead, AppointmentInfo } from './types.ts';
 import {
   RECEIPT_COPY,
-  FOOTER_COPY,
   SCHOOL_ADDRESS,
   SCHOOL_STREET,
   joinNames,
   fillTemplate,
   firstName,
+  formatVisitDateNoYear,
   programLabel,
   timeArticle,
 } from './copy.ts';
@@ -54,6 +54,38 @@ const DARK_MODE_CSS = `
         .lb-accent { color:#E4797D !important; }
       }`;
 
+// The receipt's own dark rules, emitted only for a full-bleed shell. The
+// ticket is printed ink, not a surface: it holds its red and its two text
+// colours so a client's auto-inversion cannot repaint the one element the
+// whole message is built around. The two hairlines have to follow the
+// surfaces they sit on, which the shared palette has no class for.
+const RECEIPT_DARK_MODE_CSS = `
+      @media (prefers-color-scheme: dark) {
+        .lb-ticket { background:#A01F23 !important; }
+        .lb-ticket-date, .lb-ticket-link { color:#FFFDFC !important; }
+        .lb-ticket-sub { color:#F6D9D6 !important; }
+        .lb-ticket-rule { border-top-color:#BB5D60 !important; }
+        .lb-ticket-gap { border-top-color:#1e1e1e !important; }
+        .lb-rule { border-top-color:#3a3a3a !important; }
+      }`;
+
+// The website's own typefaces. Gmail strips the stylesheet link below, so
+// the fallbacks carry the design rather than rescuing it: Arial Narrow is
+// what keeps the headline date on one line at phone width, and plain Arial
+// is the floor beneath that.
+const DISPLAY_FONT = `'Barlow Condensed','Arial Narrow',Arial,Helvetica,sans-serif`;
+const BODY_FONT = `Nunito,Arial,Helvetica,sans-serif`;
+
+const RECEIPT_HEAD = `<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&amp;family=Nunito:wght@400;700&amp;display=swap" rel="stylesheet" />
+<!--[if mso]>
+<style>
+  /* Word resolves an unknown first family to Times New Roman instead of
+     reading on down the stack, so Outlook desktop is told outright. */
+  body, table, td, div, p, a { font-family:Arial,Helvetica,sans-serif !important; }
+</style>
+<![endif]-->
+`;
+
 function makeHeader(logoUrl?: string, subtitle?: string): string {
   const subtitleHtml = subtitle
     ? `<div class="lb-muted" style="font-size:14px;color:#595959;margin-top:2px;">${subtitle}</div>`
@@ -79,14 +111,13 @@ function makeHeader(logoUrl?: string, subtitle?: string): string {
   <div class="lb-header" style="padding:16px 28px;border-bottom:1px solid #e2dbd5;">${nameBlock}</div>`;
 }
 
-// English by default; the receipt is the only caller that passes a language,
-// so every other email keeps its existing English footer unchanged.
-function footer(language: Language = 'en'): string {
-  const t = FOOTER_COPY[language];
+// The shared footer, English only: every email that uses it is English. The
+// receipt is bilingual and writes its own (see receiptFooter).
+function footer(): string {
   return `
   <p class="lb-muted" style="margin:0;font-size:14px;color:#595959;line-height:1.6;text-align:center;">
-    ${t.questions} <a href="mailto:LosBanosMartialArts@gmail.com" class="lb-accent" style="color:#A01F23;text-decoration:underline;">LosBanosMartialArts@gmail.com</a>
-    ${t.or} <a href="${PHONE_HREF}" class="lb-accent" style="color:#A01F23;text-decoration:underline;">${PHONE_DISPLAY}</a><br />${SCHOOL_ADDRESS}
+    Questions? <a href="mailto:LosBanosMartialArts@gmail.com" class="lb-accent" style="color:#A01F23;text-decoration:underline;">LosBanosMartialArts@gmail.com</a>
+    or <a href="${PHONE_HREF}" class="lb-accent" style="color:#A01F23;text-decoration:underline;">${PHONE_DISPLAY}</a><br />${SCHOOL_ADDRESS}
   </p>
 `;
 }
@@ -100,6 +131,14 @@ interface Shell {
   // Hidden first line of the body, which is what a mail client shows as the
   // inbox snippet. Only the receipt has one.
   preheader?: string;
+  // The message lays its own sections edge to edge inside the card: it
+  // supplies its own horizontal padding and its own footer, so the shell
+  // adds neither and a band can run the full width of the card without the
+  // negative margins Gmail refuses to apply. Such a message also brings its
+  // own <head> additions (display web fonts, and dark rules for the colours
+  // only it uses), which leaves every other email's markup byte for byte
+  // where it was. Only the booking receipt sets this.
+  bleed?: boolean;
 }
 
 // The hidden inbox snippet. It has to be the first node in the body, ahead of
@@ -112,7 +151,20 @@ function preheaderBlock(text: string): string {
 }
 
 function wrap(inner: string, shell: Shell): string {
-  const { title, logoUrl, subtitle, language = 'en', preheader } = shell;
+  const {
+    title,
+    logoUrl,
+    subtitle,
+    language = 'en',
+    preheader,
+    bleed = false,
+  } = shell;
+  const body = bleed
+    ? inner
+    : `<div style="padding:24px 28px;">
+          ${inner}
+          ${footer()}
+        </div>`;
   return `<!DOCTYPE html>
 <html lang="${language}" dir="ltr">
 <head>
@@ -121,7 +173,7 @@ function wrap(inner: string, shell: Shell): string {
 <meta name="color-scheme" content="light dark" />
 <meta name="supported-color-schemes" content="light dark" />
 <title>${escHtml(title)}</title>
-<style>${DARK_MODE_CSS}
+${bleed ? RECEIPT_HEAD : ''}<style>${DARK_MODE_CSS}${bleed ? RECEIPT_DARK_MODE_CSS : ''}
 </style>
 </head>
 <body class="lb-page" style="margin:0;padding:0;background:#f5f2ef;">
@@ -133,10 +185,7 @@ ${preheader ? preheaderBlock(preheader) : ''}
       <div class="lb-card" style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#3d3d3d;max-width:580px;margin:0 auto;background:#ffffff;border:1px solid #e2dbd5;border-radius:6px;overflow:hidden;text-align:left;">
         ${STRIPE}
         ${makeHeader(logoUrl, subtitle)}
-        <div style="padding:24px 28px;">
-          ${inner}
-          ${footer(language)}
-        </div>
+        ${body}
       </div>
       <!--[if mso]></td></tr></table><![endif]-->
     </td>
@@ -369,10 +418,10 @@ function receiptArrive(
   }).replace(/\.\.$/, '.');
 }
 
-// The outer container and program/children header are identical between the
-// receipt and the reminder; only the content below the date (arrive sentence
-// + links vs. time + one reschedule link) differs, so each caller supplies
-// that inner content and keeps its own href-building and escaping.
+// The reminder's visit panel: a quiet card carrying the program, the
+// children and the date, with the caller supplying whatever belongs under
+// the date and keeping its own href-building and escaping. The receipt used
+// to share this and now prints its visits as full-bleed tickets instead.
 function visitCard(a: AppointmentInfo, inner: string): string {
   return `
     <div class="lb-panel" style="background:#f5f2ef;border:1px solid #e2dbd5;border-radius:6px;padding:14px 18px;margin:0 0 12px;">
@@ -403,6 +452,59 @@ function receiptChildren(
   return joinNames(groups, language) || RECEIPT_COPY[language].familyFallback;
 }
 
+// One visit, printed as a full-bleed red band: the eyebrow says who it is
+// for, the date is the headline, the arrival line is deliberately quieter,
+// and the change link sits under a hairline so it reads as an action rather
+// than another detail. A second and later ticket gets a 2px card-coloured
+// rule on top so the stack reads as separate tickets; a border does that in
+// every client, where a spacer element would need a font-size smaller than
+// the receipt's floor.
+function visitTicket(
+  a: AppointmentInfo,
+  c: ReceiptCopy,
+  language: Language,
+  stacked: boolean,
+): string {
+  // A visit with no booking token has no working reschedule link; omit it,
+  // and the rule that introduces it, rather than pointing a labeled link at
+  // a fallback URL. The hairline is the band's 28%-white tint flattened to
+  // an opaque hex, because Outlook drops an rgba border colour outright.
+  const change = a.bookingToken
+    ? `
+              <div class="lb-ticket-rule" style="margin-top:14px;border-top:1px solid #BB5D60;"></div>
+              <a href="${escHtml(a.rebookingUrl)}" class="lb-ticket-link" style="display:inline-block;margin-top:2px;padding:12px 0 0;font-family:${BODY_FONT};font-size:15px;color:#FFFDFC;text-decoration:underline;">${escHtml(c.change)}</a>`
+    : '';
+  const gap = stacked ? 'border-top:2px solid #ffffff;' : '';
+  return `
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td bgcolor="#A01F23" class="lb-ticket${stacked ? ' lb-ticket-gap' : ''}" style="${gap}padding:24px 28px;background:#A01F23;">
+              <div class="lb-ticket-sub" style="font-family:${BODY_FONT};font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#F6D9D6;">${escHtml(a.programLabel)}${a.childNames ? ` · ${escHtml(a.childNames)}` : ''}</div>
+              <div class="lb-ticket-date" style="margin-top:8px;font-family:${DISPLAY_FONT};font-size:26px;font-weight:800;color:#FFFDFC;line-height:1.15;">${escHtml(formatVisitDateNoYear(a.appointmentDate, language))}</div>
+              <div class="lb-ticket-sub" style="margin-top:6px;font-family:${BODY_FONT};font-size:17px;font-weight:400;color:#F6D9D6;line-height:1.4;">${escHtml(receiptArrive(c, a.time, language))}</div>${change}
+            </td>
+          </tr>
+        </table>`;
+}
+
+// A section label in the receipt's lower half. Small, set in capitals and
+// quiet, so it marks a section without competing with the copy under it the
+// way a bold body-size heading did.
+function receiptLabel(text: string): string {
+  return `<p class="lb-muted" style="margin:0 0 6px;font-family:${BODY_FONT};font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6B5F5C;">${escHtml(text)}</p>`;
+}
+
+// The receipt's own sign-off. The shared footer is centred under left-
+// aligned copy and repeats the address and phone the body has just given;
+// this one only says who wrote. No email address and no second number:
+// replying reaches the school, and the number is directly above.
+function receiptFooter(): string {
+  return `
+        <div class="lb-rule" style="margin:0 28px;border-top:1px solid #E8E0DA;padding:20px 0 28px;">
+          <p class="lb-muted" style="margin:0;font-family:${BODY_FONT};font-size:14px;color:#6B5F5C;line-height:1.6;">Los Banos Martial Arts Academy<br />${SCHOOL_ADDRESS}</p>
+        </div>`;
+}
+
 export function bookingConfirmationHtml(
   parentName: string,
   appointments: AppointmentInfo[],
@@ -416,39 +518,30 @@ export function bookingConfirmationHtml(
     children: receiptChildren(appointments, language),
   });
 
-  const cards = appointments
-    .map((a) => {
-      const arrive = receiptArrive(c, a.time, language);
-      // A visit with no booking token has no working reschedule link; omit
-      // it rather than pointing a labeled link at a fallback URL.
-      const changeLine = a.bookingToken
-        ? `<p style="margin:2px 0 0;font-size:14px;"><a href="${escHtml(a.rebookingUrl)}" class="lb-accent" style="display:inline-block;padding:8px 0;color:#A01F23;text-decoration:underline;">${escHtml(c.change)}</a></p>`
-        : '';
-      // The date is the headline; the arrival time is secondary so the two
-      // aren't read as equally weighted, but still body-size, not whispered.
-      const inner = `<p class="lb-text" style="margin:4px 0 0;font-size:16px;font-weight:400;color:#555;line-height:1.3;">${escHtml(arrive)}</p>
-      ${changeLine}`;
-      return visitCard(a, inner);
-    })
+  const tickets = appointments
+    .map((a, i) => visitTicket(a, c, language, i > 0))
     .join('');
 
   return wrap(
     `
-    <p class="lb-heading" style="margin:0 0 10px;font-size:20px;font-weight:700;color:#1a1a2e;line-height:1.3;">${escHtml(heading)}</p>
-    <p class="lb-text" style="margin:0 0 18px;color:#555;font-size:16px;line-height:1.55;">${escHtml(intro)}</p>
-    ${cards}
-    <p class="lb-heading" style="margin:22px 0 4px;font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(c.whereHeading)}</p>
-    <p class="lb-text" style="margin:0;color:#555;font-size:16px;line-height:1.55;">${SCHOOL_ADDRESS}</p>
-    <p style="margin:0 0 18px;font-size:14px;"><a href="${escHtml(MAPS_URL)}" class="lb-accent" style="display:inline-block;padding:8px 0;color:#A01F23;text-decoration:underline;">${escHtml(c.openMaps)}</a></p>
-    <p class="lb-heading" style="margin:0 0 4px;font-size:16px;font-weight:700;color:#1a1a2e;">${escHtml(c.expectHeading)}</p>
-    <p class="lb-text" style="margin:0 0 18px;color:#555;font-size:16px;line-height:1.55;">${escHtml(c.expectBody)}</p>
-    <p class="lb-text" style="margin:0;color:#555;font-size:16px;line-height:1.55;">${escHtml(c.closing)}</p>
-    <p style="margin:0 0 18px;font-size:16px;"><a href="${PHONE_HREF}" class="lb-accent" style="display:inline-block;padding:12px 0;font-size:16px;font-weight:700;color:#A01F23;text-decoration:underline;">${PHONE_DISPLAY}</a></p>
-  `,
+        <div style="padding:28px 28px 20px;">
+          <p class="lb-heading" style="margin:0 0 10px;font-family:${DISPLAY_FONT};font-size:30px;font-weight:800;color:#231A19;line-height:1.1;">${escHtml(heading)}</p>
+          <p class="lb-text" style="margin:0;font-family:${BODY_FONT};font-size:16px;color:#4A3F3D;line-height:1.6;">${escHtml(intro)}</p>
+        </div>${tickets}
+        <div style="padding:28px 28px 8px;">
+          ${receiptLabel(c.whereHeading)}
+          <p class="lb-heading" style="margin:0;font-family:${BODY_FONT};font-size:16px;color:#231A19;line-height:1.6;">${SCHOOL_ADDRESS}</p>
+          <p style="margin:0 0 18px;"><a href="${escHtml(MAPS_URL)}" class="lb-accent" style="display:inline-block;padding:10px 0;font-family:${BODY_FONT};font-size:16px;color:#A01F23;text-decoration:underline;">${escHtml(c.openMaps)}</a></p>
+          ${receiptLabel(c.expectHeading)}
+          <p class="lb-text" style="margin:0 0 28px;font-family:${BODY_FONT};font-size:16px;color:#4A3F3D;line-height:1.6;">${escHtml(c.expectBody)}</p>
+          <p class="lb-text" style="margin:0;font-family:${BODY_FONT};font-size:16px;color:#4A3F3D;line-height:1.6;">${escHtml(c.closing)}</p>
+          <p style="margin:0;"><a href="${PHONE_HREF}" class="lb-accent" style="display:inline-block;padding:10px 0;font-family:${DISPLAY_FONT};font-size:20px;font-weight:800;color:#A01F23;text-decoration:underline;">${PHONE_DISPLAY}</a></p>
+        </div>${receiptFooter()}`,
     {
       title: heading,
       logoUrl,
       language,
+      bleed: true,
       // The earliest visit only: it is the one a family acts on next. The
       // subject already carries the date, so the preheader spends its room
       // on the arrival time and street instead of repeating it.

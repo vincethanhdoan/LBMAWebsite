@@ -223,8 +223,8 @@ const single: AppointmentInfo[] = [
   {
     programLabel: 'Little Dragons',
     childNames: 'Emma',
-    date: 'Monday, April 28, 2026',
-    dateShort: 'Mon, Apr 28',
+    date: 'Tuesday, April 28, 2026',
+    dateShort: 'Tue, Apr 28',
     appointmentDate: '2026-04-28',
     time: '4:00 PM',
     rebookingUrl: 'https://lbmaa.com/book/abc123',
@@ -236,8 +236,8 @@ const multi: AppointmentInfo[] = [
   {
     programLabel: 'Little Dragons',
     childNames: 'Emma and Lily',
-    date: 'Monday, April 28, 2026',
-    dateShort: 'Mon, Apr 28',
+    date: 'Tuesday, April 28, 2026',
+    dateShort: 'Tue, Apr 28',
     appointmentDate: '2026-04-28',
     time: '4:00 PM',
     rebookingUrl: 'https://lbmaa.com/book/abc123',
@@ -246,8 +246,8 @@ const multi: AppointmentInfo[] = [
   {
     programLabel: 'Youth Program',
     childNames: 'Jake',
-    date: 'Wednesday, April 30, 2026',
-    dateShort: 'Wed, Apr 30',
+    date: 'Thursday, April 30, 2026',
+    dateShort: 'Thu, Apr 30',
     appointmentDate: '2026-04-30',
     time: '5:30 PM',
     rebookingUrl: 'https://lbmaa.com/book/def456',
@@ -262,7 +262,7 @@ Deno.test(
     assertStringIncludes(html, "You're booked");
     assertStringIncludes(html, 'Hi Eduardo,');
     assertEquals(html.includes('Guerra'), false);
-    assertStringIncludes(html, 'Monday, April 28, 2026');
+    assertStringIncludes(html, 'Tuesday, April 28');
     assertStringIncludes(html, 'Please arrive at 4:00 PM.');
     assertStringIncludes(html, 'Little Dragons');
     assertStringIncludes(html, 'Emma');
@@ -292,8 +292,8 @@ Deno.test(
     assertStringIncludes(html, 'Your visits are booked');
     assertEquals(html.includes('Little Dragons'), true);
     assertEquals(html.includes('Youth Program'), true);
-    assertEquals(html.includes('Monday, April 28, 2026'), true);
-    assertEquals(html.includes('Wednesday, April 30, 2026'), true);
+    assertEquals(html.includes('Tuesday, April 28'), true);
+    assertEquals(html.includes('Thursday, April 30'), true);
     assertEquals(html.includes('Please arrive at 4:00 PM.'), true);
     assertEquals(html.includes('Please arrive at 5:30 PM.'), true);
     assertEquals(html.includes('Jake'), true);
@@ -424,15 +424,54 @@ Deno.test(
 );
 
 Deno.test(
-  'bookingConfirmationHtml es: footer uses Spanish "Questions?" and "or"',
+  'bookingConfirmationHtml: the footer signs off without a second way to reach us',
   () => {
-    const html = bookingConfirmationHtml('Maria Lopez', single, 'es');
-    assertStringIncludes(html, '¿Preguntas?');
-    assertEquals(html.includes('Questions?'), false);
-    assertStringIncludes(
-      html,
-      'o <a href="tel:+14086200252" class="lb-accent" style="color:#A01F23;text-decoration:underline;">(408) 620-0252</a>',
+    for (const language of ['en', 'es'] as const) {
+      const html = bookingConfirmationHtml('Maria Lopez', single, language);
+      const footer = html.slice(html.indexOf('class="lb-rule"'));
+      assertStringIncludes(footer, 'Los Banos Martial Arts Academy<br />');
+      assertStringIncludes(footer, '1209 South 6th St Suite E, Los Banos, CA');
+      // Replying reaches the school and the number is just above the rule,
+      // so neither is repeated down here.
+      assertEquals(footer.includes('mailto:'), false, language);
+      assertEquals(footer.includes('tel:'), false, language);
+      // The shared centred footer is gone from the receipt entirely.
+      assertEquals(html.includes('LosBanosMartialArts@gmail.com'), false);
+      assertEquals(html.includes('text-align:center'), false);
+    }
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: the address appears where it is needed and in the sign-off, nowhere else',
+  () => {
+    const html = bookingConfirmationHtml('Maria Lopez', single, 'en');
+    const street = 'South 6th St Suite E, Los Banos, CA';
+    assertEquals(
+      (html.match(new RegExp(street.replace(/\+/g, '\\+'), 'g')) ?? []).length,
+      2,
     );
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: only the receipt asks for the web fonts',
+  () => {
+    const receipt = bookingConfirmationHtml('Maria Lopez', single, 'en', LOGO);
+    assertStringIncludes(receipt, 'fonts.googleapis.com/css2?family=');
+    assertStringIncludes(receipt, 'Barlow+Condensed');
+    assertStringIncludes(receipt, 'Nunito');
+    // Word falls back to Times New Roman rather than reading on down an
+    // unresolved stack, so Outlook desktop is told what to use.
+    assertStringIncludes(receipt, '<!--[if mso]>');
+    assertStringIncludes(
+      receipt,
+      'font-family:Arial,Helvetica,sans-serif !important;',
+    );
+
+    const other = messagingNotificationHtml('Alice', 'https://example.com');
+    assertEquals(other.includes('fonts.googleapis.com'), false);
+    assertEquals(other.includes('Barlow'), false);
   },
 );
 
@@ -458,52 +497,154 @@ Deno.test(
           `${language}: found font-size:${size}px`,
         );
       }
-      // Body copy at 16px, and the hierarchy above it survives.
-      assertEquals(sizes.includes(16), true, language);
-      assertEquals(sizes.includes(18), true, language);
-      assertEquals(sizes.includes(20), true, language);
+      // The whole scale, and nothing off it: labels and sign-off at 14,
+      // the change link at 15, body at 16, the arrival line at 17, the
+      // phone at 20, the ticket date at 26, the headline at 30.
+      assertEquals(
+        [...new Set(sizes)].sort((a, b) => a - b),
+        [14, 15, 16, 17, 20, 26, 30],
+        language,
+      );
+    }
+  },
+);
+
+// The red band for one visit: everything between its opening cell and the
+// end of that cell.
+function ticketBands(html: string): string[] {
+  return [...html.matchAll(/<td bgcolor="#A01F23"[\s\S]*?<\/td>/g)].map(
+    (m) => m[0],
+  );
+}
+
+Deno.test(
+  'bookingConfirmationHtml: one red band per visit, and nothing else wears it',
+  () => {
+    assertEquals(
+      ticketBands(bookingConfirmationHtml('M', single, 'en')).length,
+      1,
+    );
+    assertEquals(
+      ticketBands(bookingConfirmationHtml('M', multi, 'en')).length,
+      2,
+    );
+    // Outlook paints from the attribute, everything else from the style.
+    for (const band of ticketBands(bookingConfirmationHtml('M', multi, 'en'))) {
+      assertStringIncludes(band, 'background:#A01F23;');
+      assertStringIncludes(band, 'class="lb-ticket');
+    }
+    // Several visits read as separate tickets, not one long band.
+    assertStringIncludes(
+      bookingConfirmationHtml('M', multi, 'en'),
+      'border-top:2px solid #ffffff;',
+    );
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: the ticket date drops the year, en and es',
+  () => {
+    const en = ticketBands(bookingConfirmationHtml('M', single, 'en'))[0];
+    assertStringIncludes(en, '>Tuesday, April 28</div>');
+    assertEquals(en.includes('2026'), false);
+
+    const es = ticketBands(bookingConfirmationHtml('M', single, 'es'))[0];
+    assertStringIncludes(es, '>Martes, 28 de abril</div>');
+    assertEquals(es.includes('2026'), false);
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: the date is the largest thing on the ticket and the arrival line is quieter',
+  () => {
+    for (const language of ['en', 'es'] as const) {
+      const band = ticketBands(
+        bookingConfirmationHtml('Maria Lopez', single, language),
+      )[0];
+      const sizes = [...band.matchAll(/font-size:(\d+)px/g)].map((m) =>
+        Number(m[1]),
+      );
+      assertEquals(Math.max(...sizes), 26, language);
+      // Exactly one element carries it: the date.
+      assertEquals(sizes.filter((s) => s === 26).length, 1, language);
+      assertStringIncludes(band, 'font-size:26px;font-weight:800;');
+
+      const arrive = language === 'en' ? 'Please arrive' : 'Por favor, llega';
+      const arriveTag = band.match(
+        new RegExp(`<div[^>]*>${arrive}[^<]*</div>`),
+      )![0];
+      assertStringIncludes(arriveTag, 'font-size:17px;font-weight:400;');
+      assertEquals(arriveTag.includes('font-weight:700'), false, language);
+      assertEquals(arriveTag.includes('font-weight:800'), false, language);
     }
   },
 );
 
 Deno.test(
-  'bookingConfirmationHtml: the date is the headline, the arrival time is secondary',
+  'bookingConfirmationHtml: the phone is the one tel: link in the receipt, en and es',
   () => {
-    const html = bookingConfirmationHtml('Maria Lopez', single, 'en');
-    const dateStyle =
-      'style="font-size:18px;font-weight:700;color:#1a1a2e;line-height:1.3;">Monday, April 28, 2026';
-    assertStringIncludes(html, dateStyle);
-    assertStringIncludes(
-      html,
-      'style="margin:4px 0 0;font-size:16px;font-weight:400;color:#555;line-height:1.3;">Please arrive at 4:00 PM.',
-    );
-    assertEquals(
-      html.includes(
-        'font-size:18px;font-weight:700;color:#1a1a2e;line-height:1.3;">Please arrive',
-      ),
-      false,
-    );
+    for (const language of ['en', 'es'] as const) {
+      const html = bookingConfirmationHtml('Maria Lopez', single, language);
+      assertEquals(
+        (html.match(/href="tel:\+14086200252"/g) ?? []).length,
+        1,
+        language,
+      );
+      assertEquals((html.match(/\(408\) 620-0252/g) ?? []).length, 1, language);
+      // Big, underlined and padded out to a real tap target.
+      assertStringIncludes(
+        html,
+        "display:inline-block;padding:10px 0;font-family:'Barlow Condensed','Arial Narrow',Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#A01F23;text-decoration:underline;\">(408) 620-0252</a>",
+      );
+      // The number is not buried inside the closing sentence.
+      assertEquals(html.includes('call us at (408)'), false);
+      assertEquals(html.includes('llámanos al (408)'), false);
+    }
   },
 );
 
 Deno.test(
-  'bookingConfirmationHtml: the closing phone is a tappable tel: block, en and es',
+  'bookingConfirmationHtml: a visit with no token loses its change link and the rule above it',
   () => {
-    for (const language of ['en', 'es'] as const) {
-      const html = bookingConfirmationHtml('Maria Lopez', single, language);
-      assertStringIncludes(
-        html,
-        '<a href="tel:+14086200252" class="lb-accent" style="display:inline-block;padding:12px 0;font-size:16px;font-weight:700;color:#A01F23;text-decoration:underline;">(408) 620-0252</a>',
-      );
-      // The footer keeps its own tel: link.
-      assertEquals(
-        (html.match(/href="tel:\+14086200252"/g) ?? []).length,
-        2,
-        language,
-      );
-      // The number is no longer buried inside the closing sentence.
-      assertEquals(html.includes('call us at (408)'), false);
-      assertEquals(html.includes('llámanos al (408)'), false);
+    const appt: AppointmentInfo[] = [{ ...single[0], bookingToken: null }];
+    const band = ticketBands(
+      bookingConfirmationHtml('Eduardo Guerra', appt, 'en'),
+    )[0];
+    assertEquals(band.includes('Change or cancel this visit'), false);
+    assertEquals(band.includes('lb-ticket-rule'), false);
+  },
+);
+
+Deno.test(
+  'bookingConfirmationHtml: the ticket keeps its red and its own text colours in dark mode',
+  () => {
+    const html = bookingConfirmationHtml('Maria Lopez', single, 'en');
+    for (const rule of [
+      '.lb-ticket { background:#A01F23 !important; }',
+      '.lb-ticket-date, .lb-ticket-link { color:#FFFDFC !important; }',
+      '.lb-ticket-sub { color:#F6D9D6 !important; }',
+      '.lb-ticket-rule { border-top-color:#BB5D60 !important; }',
+      '.lb-ticket-gap { border-top-color:#1e1e1e !important; }',
+      '.lb-rule { border-top-color:#3a3a3a !important; }',
+    ]) {
+      assertStringIncludes(html, rule);
+    }
+    // Every colour those rules replace is on an element that carries the
+    // class, so nothing is left half-inverted.
+    for (const [colour, className] of [
+      ['#FFFDFC', 'lb-ticket-'],
+      ['#F6D9D6', 'lb-ticket-sub'],
+      ['#E8E0DA', 'lb-rule'],
+      ['#231A19', 'lb-heading'],
+      ['#4A3F3D', 'lb-text'],
+      ['#6B5F5C', 'lb-muted'],
+      ['#A01F23', 'lb-accent'],
+    ] as const) {
+      for (const tag of html.match(/<[a-z]+ [^<>]*>/g) ?? []) {
+        if (tag.includes(`color:${colour};`)) {
+          assertStringIncludes(tag, className);
+        }
+      }
     }
   },
 );
@@ -606,8 +747,8 @@ Deno.test(
   () => {
     const text = bookingConfirmationText('Eduardo Guerra', multi, 'en');
     const lines = text.split('\n');
-    assertStringIncludes(text, 'Monday, April 28, 2026');
-    assertStringIncludes(text, 'Wednesday, April 30, 2026');
+    assertStringIncludes(text, 'Tuesday, April 28, 2026');
+    assertStringIncludes(text, 'Thursday, April 30, 2026');
     assertStringIncludes(
       text,
       'Change or cancel this visit:\nhttps://lbmaa.com/book/abc123',
@@ -649,6 +790,18 @@ Deno.test('bookingConfirmationText: es uses Spanish copy', () => {
   );
   assertEquals(lines.includes('(408) 620-0252'), true);
 });
+
+Deno.test(
+  'bookingConfirmationText: keeps the full date with the year the ticket drops',
+  () => {
+    for (const language of ['en', 'es'] as const) {
+      const text = bookingConfirmationText('Maria Lopez', single, language);
+      assertStringIncludes(text, '2026');
+      const html = bookingConfirmationHtml('Maria Lopez', single, language);
+      assertEquals(html.includes('2026'), false, language);
+    }
+  },
+);
 
 Deno.test('bookingConfirmationText: greets by first name only', () => {
   const text = bookingConfirmationText('Maria Lopez', single, 'en');
@@ -693,8 +846,8 @@ Deno.test(
     assertEquals(html.includes('Eduardo Guerra'), true);
     assertEquals(html.includes('Little Dragons'), true);
     assertEquals(html.includes('Youth Program'), true);
-    assertEquals(html.includes('Monday, April 28, 2026'), true);
-    assertEquals(html.includes('Wednesday, April 30, 2026'), true);
+    assertEquals(html.includes('Tuesday, April 28, 2026'), true);
+    assertEquals(html.includes('Thursday, April 30, 2026'), true);
     assertEquals(html.includes('4:00 PM'), true);
     assertEquals(html.includes('5:30 PM'), true);
     assertEquals(html.includes('https://lbmaa.com/confirm/abc123'), true);

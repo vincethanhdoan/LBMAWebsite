@@ -27,8 +27,8 @@ const single: AppointmentInfo[] = [
   {
     programLabel: 'Little Dragons',
     childNames: 'Emma',
-    date: 'Monday, April 28, 2026',
-    dateShort: 'Mon, Apr 28',
+    date: 'Tuesday, April 28, 2026',
+    dateShort: 'Tue, Apr 28',
     appointmentDate: '2026-04-28',
     time: '4:00 PM',
     rebookingUrl: 'https://lbmaa.com/book/abc123',
@@ -41,8 +41,8 @@ const multi: AppointmentInfo[] = [
   {
     programLabel: 'Youth Program',
     childNames: 'Jake',
-    date: 'Wednesday, April 30, 2026',
-    dateShort: 'Wed, Apr 30',
+    date: 'Thursday, April 30, 2026',
+    dateShort: 'Thu, Apr 30',
     appointmentDate: '2026-04-30',
     time: '5:30 PM',
     rebookingUrl: 'https://lbmaa.com/book/def456',
@@ -57,16 +57,16 @@ Deno.test(
   () => {
     const lead = { ...DUMMY_LEAD, preferred_language: 'en' };
     const message = buildReceiptMessage(lead, single);
-    assertEquals(message.subject, 'Trial visit booked: Mon, Apr 28 at 4:00 PM');
+    assertEquals(message.subject, 'Trial visit booked: Tue, Apr 28 at 4:00 PM');
     assertStringIncludes(message.html, "You're booked");
-    assertStringIncludes(message.text, 'Monday, April 28, 2026');
+    assertStringIncludes(message.text, 'Tuesday, April 28, 2026');
   },
 );
 
 Deno.test('buildReceiptMessage: English two visits uses subjectMany', () => {
   const lead = { ...DUMMY_LEAD, preferred_language: 'en' };
   const message = buildReceiptMessage(lead, multi);
-  assertEquals(message.subject, 'Trial visits booked, starting Mon, Apr 28');
+  assertEquals(message.subject, 'Trial visits booked, starting Tue, Apr 28');
   assertStringIncludes(message.html, 'Your visits are booked');
 });
 
@@ -75,7 +75,7 @@ Deno.test(
   () => {
     const lead = { ...DUMMY_LEAD, preferred_language: 'es' };
     const message = buildReceiptMessage(lead, multi);
-    assertEquals(message.subject, 'Visitas reservadas, desde el Mon, Apr 28');
+    assertEquals(message.subject, 'Visitas reservadas, desde el Tue, Apr 28');
     assertStringIncludes(message.html, 'Tus visitas están reservadas');
   },
 );
@@ -96,7 +96,7 @@ Deno.test(
   () => {
     const lead = { ...DUMMY_LEAD, preferred_language: null };
     const message = buildReceiptMessage(lead, single);
-    assertEquals(message.subject, 'Trial visit booked: Mon, Apr 28 at 4:00 PM');
+    assertEquals(message.subject, 'Trial visit booked: Tue, Apr 28 at 4:00 PM');
     assertStringIncludes(message.html, "You're booked");
   },
 );
@@ -106,7 +106,7 @@ Deno.test(
   () => {
     const lead = { ...DUMMY_LEAD, preferred_language: 'fr' };
     const message = buildReceiptMessage(lead, single);
-    assertEquals(message.subject, 'Trial visit booked: Mon, Apr 28 at 4:00 PM');
+    assertEquals(message.subject, 'Trial visit booked: Tue, Apr 28 at 4:00 PM');
     assertStringIncludes(message.html, "You're booked");
   },
 );
@@ -123,7 +123,7 @@ Deno.test(
     const message = buildAdminAlertMessage(lead, single, ADMIN_URL, LOGO);
     assertEquals(
       message.subject,
-      'New trial booking from Maria Lopez: Mon, Apr 28 at 4:00 PM',
+      'New trial booking from Maria Lopez: Tue, Apr 28 at 4:00 PM',
     );
     assertStringIncludes(message.html, 'New trial booking');
   },
