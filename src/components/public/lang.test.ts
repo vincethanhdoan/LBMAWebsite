@@ -8,6 +8,17 @@ describe('lang.tsx contact translations', () => {
     expect(esKeys).toEqual(enKeys);
   });
 
+  it('numbers each of the three signup-form steps in both languages', () => {
+    for (const lang of ['en', 'es'] as const) {
+      const { step1, step2, step3 } = translations[lang].contact;
+      expect([step1, step2, step3]).toEqual([
+        expect.stringMatching(/^1 · \S/),
+        expect.stringMatching(/^2 · \S/),
+        expect.stringMatching(/^3 · \S/),
+      ]);
+    }
+  });
+
   it('contains no price or "free" claims in the new or changed visit-step keys', () => {
     const forbidden = /\$|free|gratis/i;
     const keysToCheck = [
