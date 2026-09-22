@@ -322,7 +322,7 @@ const EN = {
     errSlotTaken: 'Someone just booked that time. Please pick another.',
     errDateGone: 'That day is no longer available. Please pick another.',
     errAlreadyBooked:
-      'It looks like you already have a visit booked with us. Check your email for the details, or call us at (408) 620-0252 to change it.',
+      'We already have an upcoming visit booked under this email or phone number. Check your email for the details, or call us at (408) 620-0252 to change it.',
     successHeading: "You're booked",
     successBody: "We're looking forward to meeting {children}.",
     successArrive: 'Please arrive at {time}.',
@@ -889,7 +889,7 @@ const ES: T = {
     errSlotTaken: 'Alguien acaba de reservar esa hora. Por favor elige otra.',
     errDateGone: 'Ese día ya no está disponible. Por favor elige otro.',
     errAlreadyBooked:
-      'Parece que ya tienes una visita reservada con nosotros. Revisa tu correo para ver los detalles, o llámanos al (408) 620-0252 para cambiarla.',
+      'Ya tenemos una visita reservada con este correo o número de teléfono. Revisa tu correo para ver los detalles, o llámanos al (408) 620-0252 para cambiarla.',
     successHeading: 'Tu visita está reservada',
     successBody: 'Tenemos muchas ganas de conocer a {children}.',
     successArrive: 'Por favor, llega {at} {time}.',

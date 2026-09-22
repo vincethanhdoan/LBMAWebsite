@@ -309,7 +309,7 @@ describe('ContactPage', () => {
     [
       'P0409',
       undefined,
-      'It looks like you already have a visit booked with us. Check your email for the details, or call us at (408) 620-0252 to change it.',
+      'We already have an upcoming visit booked under this email or phone number. Check your email for the details, or call us at (408) 620-0252 to change it.',
     ],
     [
       'P0429',
