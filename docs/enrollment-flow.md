@@ -80,11 +80,21 @@ The contact form is publicly accessible: no login required. A parent leaves it w
 
 A family can add 1–6 children. Phone and email are both required on this form (unlike a staff-entered lead, §9, where only one of the two is required): a web lead always has both ways to reach the family.
 
+The fields are in that order down the page, with one exception: the optional notes textarea sits last, below the calendars and directly above the submit button. It is the only field nothing depends on, and where it used to sit (inside the children block) it separated the ages from the calendars those ages produce.
+
 ### One calendar per program
 
 Which programs are in play is derived from the children's ages as they're typed, with `programForAgeText()` (`src/lib/programs.ts`) applying the same 1–2 digit whole-number format the server enforces, so the client never shows a program grouping the server would then reject. A family with a 5-year-old and a 10-year-old sees two visit calendars, one for Little Dragons and one for Youth; a family with two children both age 6 sees one. Each calendar is a `VisitPicker` (`src/components/shared/VisitPicker.tsx`), shared with the `/book` self-service page and the admin `PickDateModal`, so the same calendar code decides what's clickable everywhere a family or an admin picks a date.
 
-Editing a child's age away from a program (or removing the child) clears that program's visit selection and its calendar disappears; a program that's already been visited by an edit keeps its own selection untouched.
+Editing a child's age away from a program (or removing the child) clears that program's visit selection and its calendar disappears; a program that's already been visited by an edit keeps its own selection untouched. When one program leaves and another arrives in the same edit (an age crossing the 7/8 boundary), the arriving program's calendar carries a muted note naming the child and asking for a day for that program, since the day already picked for the program they left is gone with it. The note is muted, never the error color (correcting an age is not a mistake), and it clears as soon as a day is picked for the new program. A program that only leaves, with none arriving, says nothing: nothing is owed.
+
+### When the visit section appears
+
+Nothing of the visit section is on the page until a child's age names a program: its heading, its sub-sentence and its "enter an age above" line would otherwise sit mid-page describing a calendar that is not there. In their place, one muted line under the child rows says that entering an age brings up the days.
+
+The section appears once an age has stayed on one program for 400ms, or as soon as the age field is left, whichever comes first. The age field is a number input, so a parent typing 42 passes through 4: revealing on the keystroke would flash a Little Dragons calendar, fetch its slots, and take it away again. Slots are fetched only once the section is revealed, so that round trip is never wasted either.
+
+Revealing is one-way. Once the section is on screen it stays, even if every age later becomes invalid; it falls back to the "enter an age above" line rather than pulling a calendar out from under a parent who may be reading it. It never scrolls the page and never takes focus, since a parent who has just typed an age is often about to tap "Add another child". A visually hidden polite live region inside `TrialVisitStep` announces the section instead, naming two calendars when the family has children in both programs, and it is the same region that announces a child moving program. It is separate from `VisitPicker`'s own live region, which announces the day a visitor picks.
 
 ### Lazy loading the calendar
 
@@ -92,7 +102,7 @@ Editing a child's age away from a program (or removing the child) clears that pr
 
 ### Validating on submit
 
-Submit is never disabled; every check runs when the form is submitted. Name, phone, email, and each child's name/age are checked first. If any of those fail, the form focuses the first invalid field and stops there, before it even looks at visit selections. Only once those pass does it check that every program with children in it has a chosen day and time; if one is missing, it focuses that program's calendar instead. This order means a parent always sees the most fundamental problem first, not a visit error while their own name field is still blank.
+Submit is never disabled and is never relabelled to explain what is missing; the button reads "Book my visit", or "Book our visits" when the children fall into both programs. Every check runs when the form is submitted. Name, phone, email, and each child's name/age are checked first. If any of those fail, the form focuses the first invalid field and stops there, before it even looks at visit selections. Only once those pass does it check that every program with children in it has a chosen day and time; if one is missing, it focuses that program's calendar instead. This order means a parent always sees the most fundamental problem first, not a visit error while their own name field is still blank.
 
 ### What happens on submit
 
@@ -112,8 +122,8 @@ The RPC's error `code` (or a substring of its message, for errors the client can
 |---|---|
 | `P0429` (any of the three rate limits, §12) | "We recently received a request from you. Please wait a moment and try again, or call us directly." |
 | `P0409` (`already_booked`) | "It looks like you already have a visit booked with us. Check your email for the details, or call us at (408) 620-0252 to change it." |
-| `23P01` (`slot_taken`) | "Someone just booked that time. Please pick another." Every visit selection is also cleared and each calendar refetches, since the slot map underneath this one just changed |
-| `date_unavailable`, `slot_mismatch`, or `invalid_booking_request` | "That day is no longer available. Please pick another." Same clear-and-refetch as `slot_taken` |
+| `23P01` (`slot_taken`) | "Someone just took that time. Everything you typed is saved. Please pick another day or time." Every visit selection is also cleared and each calendar refetches, since the slot map underneath this one just changed |
+| `date_unavailable`, `slot_mismatch`, or `invalid_booking_request` | "That day is no longer available. Everything you typed is saved. Please pick another." Same clear-and-refetch as `slot_taken` |
 | Anything else, including a timeout | "Unable to submit right now. Please try again or call us directly." |
 
 Clearing selections and refetching on a slot/date error, rather than just showing the message, means a parent never resubmits into the same stale error: by the time they pick a new day, the calendar is already showing what's actually still open.
