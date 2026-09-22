@@ -12,10 +12,8 @@ import {
   FIELD_ERROR_COLOR,
   FIELD_HELP_CLASS,
   FIELD_LABEL_CLASS,
-  STEP_EYEBROW_CLASS,
-  STEP_EYEBROW_STYLE,
-  STEP_PANEL_CLASS,
-  STEP_PANEL_STYLE,
+  SECTION_HEADING_CLASS,
+  SECTION_HEADING_STYLE,
 } from './formStyles';
 import { useLanguage } from './lang';
 import { isValidEmail, isValidUsPhone } from '../../lib/validation';
@@ -348,37 +346,25 @@ export function ContactPage() {
                 <form
                   onSubmit={handleSubmit}
                   noValidate
-                  className="flex flex-col gap-5"
+                  className="flex flex-col gap-8 sm:gap-10"
                 >
-                  <div className="mb-2">
-                    <h2
-                      className="v3-h font-black mb-1"
-                      style={{
-                        fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
-                        color: V3.text,
-                      }}
-                    >
-                      {ct.formHeading}
-                    </h2>
-                    <p className="text-base" style={{ color: V3.muted }}>
-                      {ct.formSub}
-                    </p>
-                  </div>
-
-                  {/* Step 1: about you */}
-                  <div
-                    role="group"
-                    aria-labelledby="step-about"
-                    className={STEP_PANEL_CLASS}
-                    style={STEP_PANEL_STYLE}
-                  >
-                    <p
-                      id="step-about"
-                      className={STEP_EYEBROW_CLASS}
-                      style={STEP_EYEBROW_STYLE}
-                    >
-                      {ct.step1}
-                    </p>
+                  {/* The card's own heading introduces the contact fields, so
+                      they carry no heading of their own. */}
+                  <div className="flex flex-col gap-3">
+                    <div className="mb-2">
+                      <h2
+                        className="v3-h font-black mb-1"
+                        style={{
+                          fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
+                          color: V3.text,
+                        }}
+                      >
+                        {ct.formHeading}
+                      </h2>
+                      <p className="text-base" style={{ color: V3.muted }}>
+                        {ct.formSub}
+                      </p>
+                    </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="flex flex-col gap-1.5">
@@ -515,24 +501,22 @@ export function ContactPage() {
                     </div>
                   </div>
 
-                  {/* Step 2: your children */}
                   <div
                     role="group"
-                    aria-labelledby="step-children"
+                    aria-labelledby="children-label"
                     aria-describedby={
                       fieldErrors.childCount ? 'child-count-error' : undefined
                     }
-                    className={STEP_PANEL_CLASS}
-                    style={STEP_PANEL_STYLE}
+                    className="flex flex-col gap-5"
                   >
-                    <div className="flex flex-col gap-1.5">
-                      <p
-                        id="step-children"
-                        className={STEP_EYEBROW_CLASS}
-                        style={STEP_EYEBROW_STYLE}
+                    <div className="flex flex-col gap-1">
+                      <h2
+                        id="children-label"
+                        className={SECTION_HEADING_CLASS}
+                        style={SECTION_HEADING_STYLE}
                       >
-                        {ct.step2}
-                      </p>
+                        {ct.childrenLabel}
+                      </h2>
                       <p
                         className={FIELD_HELP_CLASS}
                         style={{ color: V3.muted }}
@@ -550,106 +534,108 @@ export function ContactPage() {
                       )}
                     </div>
 
-                    {children.map((child, i) => {
-                      const pl = programLabel(child.age);
-                      const rowError = fieldErrors.children[i];
-                      return (
-                        <div key={i} className="flex flex-col gap-1.5">
-                          <div className="flex items-end gap-2">
-                            <div className="flex flex-1 flex-col gap-1.5">
-                              <Label
-                                htmlFor={`child-name-${i}`}
-                                className={FIELD_LABEL_CLASS}
-                                style={{ color: V3.text }}
-                              >
-                                {ct.childName}
-                              </Label>
-                              <Input
-                                id={`child-name-${i}`}
-                                aria-label={`${ct.childName} ${i + 1}`}
-                                value={child.name}
-                                onChange={(e) =>
-                                  updateChild(i, 'name', e.target.value)
-                                }
-                                disabled={isSubmitting}
-                                required
-                                maxLength={60}
-                                className="v3-field"
-                                aria-invalid={!!rowError}
-                                aria-describedby={
-                                  rowError ? `child-error-${i}` : undefined
-                                }
-                              />
+                    <div className="flex flex-col gap-3">
+                      {children.map((child, i) => {
+                        const pl = programLabel(child.age);
+                        const rowError = fieldErrors.children[i];
+                        return (
+                          <div key={i} className="flex flex-col gap-1.5">
+                            <div className="flex items-end gap-2">
+                              <div className="flex flex-1 flex-col gap-1.5">
+                                <Label
+                                  htmlFor={`child-name-${i}`}
+                                  className={FIELD_LABEL_CLASS}
+                                  style={{ color: V3.text }}
+                                >
+                                  {ct.childName}
+                                </Label>
+                                <Input
+                                  id={`child-name-${i}`}
+                                  aria-label={`${ct.childName} ${i + 1}`}
+                                  value={child.name}
+                                  onChange={(e) =>
+                                    updateChild(i, 'name', e.target.value)
+                                  }
+                                  disabled={isSubmitting}
+                                  required
+                                  maxLength={60}
+                                  className="v3-field"
+                                  aria-invalid={!!rowError}
+                                  aria-describedby={
+                                    rowError ? `child-error-${i}` : undefined
+                                  }
+                                />
+                              </div>
+                              <div className="flex w-20 flex-col gap-1.5">
+                                <Label
+                                  htmlFor={`child-age-${i}`}
+                                  className={FIELD_LABEL_CLASS}
+                                  style={{ color: V3.text }}
+                                >
+                                  {ct.ageLabel}
+                                </Label>
+                                <Input
+                                  id={`child-age-${i}`}
+                                  type="number"
+                                  min={4}
+                                  max={17}
+                                  aria-label={`${ct.ageLabel} ${i + 1}`}
+                                  value={child.age}
+                                  onChange={(e) =>
+                                    updateChild(i, 'age', e.target.value)
+                                  }
+                                  disabled={isSubmitting}
+                                  required
+                                  className="v3-field w-20"
+                                  aria-invalid={!!rowError}
+                                  aria-describedby={
+                                    rowError ? `child-error-${i}` : undefined
+                                  }
+                                />
+                              </div>
+                              {children.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeChild(i)}
+                                  disabled={isSubmitting}
+                                  aria-label={`${ct.removeChild} ${i + 1}`}
+                                  className="v3-field-button v3-field-button-icon flex-shrink-0"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
-                            <div className="flex w-20 flex-col gap-1.5">
-                              <Label
-                                htmlFor={`child-age-${i}`}
-                                className={FIELD_LABEL_CLASS}
-                                style={{ color: V3.text }}
+                            {pl && (
+                              <p
+                                className={FIELD_HELP_CLASS}
+                                style={{ color: pl.color }}
                               >
-                                {ct.ageLabel}
-                              </Label>
-                              <Input
-                                id={`child-age-${i}`}
-                                type="number"
-                                min={4}
-                                max={17}
-                                aria-label={`${ct.ageLabel} ${i + 1}`}
-                                value={child.age}
-                                onChange={(e) =>
-                                  updateChild(i, 'age', e.target.value)
-                                }
-                                disabled={isSubmitting}
-                                required
-                                className="v3-field w-20"
-                                aria-invalid={!!rowError}
-                                aria-describedby={
-                                  rowError ? `child-error-${i}` : undefined
-                                }
-                              />
-                            </div>
-                            {children.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeChild(i)}
-                                disabled={isSubmitting}
-                                aria-label={`${ct.removeChild} ${i + 1}`}
-                                className="v3-field-button v3-field-button-icon flex-shrink-0"
+                                {pl.text}
+                              </p>
+                            )}
+                            {rowError && (
+                              <p
+                                id={`child-error-${i}`}
+                                className={FIELD_HELP_CLASS}
+                                style={{ color: FIELD_ERROR_COLOR }}
                               >
-                                <X className="w-4 h-4" />
-                              </button>
+                                {rowError}
+                              </p>
                             )}
                           </div>
-                          {pl && (
-                            <p
-                              className={FIELD_HELP_CLASS}
-                              style={{ color: pl.color }}
-                            >
-                              {pl.text}
-                            </p>
-                          )}
-                          {rowError && (
-                            <p
-                              id={`child-error-${i}`}
-                              className={FIELD_HELP_CLASS}
-                              style={{ color: FIELD_ERROR_COLOR }}
-                            >
-                              {rowError}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
 
-                    <button
-                      type="button"
-                      onClick={addChild}
-                      disabled={isSubmitting}
-                      className="v3-field-button self-start"
-                    >
-                      <Plus className="w-4 h-4" />
-                      {ct.addChild}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={addChild}
+                        disabled={isSubmitting}
+                        className="v3-field-button self-start"
+                      >
+                        <Plus className="w-4 h-4" />
+                        {ct.addChild}
+                      </button>
+                    </div>
 
                     <div className="flex flex-col gap-1.5">
                       <Label
@@ -678,7 +664,6 @@ export function ContactPage() {
                     </div>
                   </div>
 
-                  {/* Step 3: pick a day and time */}
                   <TrialVisitStep
                     children={children}
                     value={selections}
@@ -695,7 +680,7 @@ export function ContactPage() {
                     </Alert>
                   )}
 
-                  <div className="flex flex-col gap-3 mt-1">
+                  <div className="flex flex-col gap-3">
                     <button
                       type="submit"
                       disabled={isSubmitting}

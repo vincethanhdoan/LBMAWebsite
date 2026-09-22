@@ -136,10 +136,10 @@
    The app-wide `--input` is transparent, so a shadcn Input has no visible
    edge on the signup card and the fields read as one wall of text. These
    rules give every field on the public form a boundary of its own:
-   #8f817b is 3.19:1 against the cream group surface (#f3ebe9) and 3.75:1
-   against the white field fill, so the boundary clears WCAG 1.4.11 against
-   both colours it touches. 16px text keeps iOS Safari from zooming in when
-   a field takes focus, and 52px of height keeps the tap target generous.
+   #8f817b is 3.75:1 against both the white card the form sits on and the
+   white field fill, so the boundary clears WCAG 1.4.11 against both colours
+   it touches. 16px text keeps iOS Safari from zooming in when a field takes
+   focus, and 52px of height keeps the tap target generous.
 
    Every declaration here outranks the utility classes the shadcn Input and
    Textarea already carry (two class selectors against one), so this is the
