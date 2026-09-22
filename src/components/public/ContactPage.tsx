@@ -365,7 +365,7 @@ export function ContactPage() {
                     </p>
                   </div>
 
-                  {/* Step 1 — about you */}
+                  {/* Step 1: about you */}
                   <div
                     role="group"
                     aria-labelledby="step-about"
@@ -515,7 +515,7 @@ export function ContactPage() {
                     </div>
                   </div>
 
-                  {/* Step 2 — your children */}
+                  {/* Step 2: your children */}
                   <div
                     role="group"
                     aria-labelledby="step-children"
@@ -678,7 +678,7 @@ export function ContactPage() {
                     </div>
                   </div>
 
-                  {/* Step 3 — pick a day and time */}
+                  {/* Step 3: pick a day and time */}
                   <TrialVisitStep
                     children={children}
                     value={selections}
