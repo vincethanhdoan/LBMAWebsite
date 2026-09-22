@@ -125,6 +125,17 @@ afterEach(() => {
 });
 
 describe('ContactPage', () => {
+  it.each([
+    ['en' as const, 'Children enrolling'],
+    ['es' as const, 'Niños que se inscriben'],
+  ])('names the children group after its heading in %s', (lang, heading) => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(<Wrapper lang={lang} />);
+
+    const group = screen.getByRole('group', { name: heading });
+    expect(within(group).getByRole('heading', { name: heading })).toBeTruthy();
+  });
+
   it('shows errVisit on the empty group, focuses it, and does not submit when no visit is chosen', async () => {
     vi.mocked(getAppointmentSlots).mockResolvedValue([]);
     render(<Wrapper lang="en" />);
