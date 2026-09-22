@@ -13,6 +13,7 @@ describe('lang.tsx contact translations', () => {
     const keysToCheck = [
       'formSub',
       'submit',
+      'submitPlural',
       'phoneConsent',
       'visitHeading',
       'visitSub',

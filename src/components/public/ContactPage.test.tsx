@@ -117,7 +117,9 @@ function fillTwoChildren() {
 }
 
 function submitForm() {
-  fireEvent.click(screen.getByRole('button', { name: 'Book my visit' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: /^Book (my visit|our visits)$/ }),
+  );
 }
 
 const VISIT_HEADING = 'Choose a day for your first visit';
@@ -600,6 +602,19 @@ describe('ContactPage', () => {
     expect(
       within(littleGroup).queryByText('Please choose a day and arrival time.'),
     ).toBeNull();
+  });
+
+  it('asks for both visits on the submit button when two programs are in play', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(<Wrapper lang="en" />);
+    expect(screen.getByRole('button', { name: 'Book my visit' })).toBeTruthy();
+
+    fillTwoChildren();
+
+    expect(
+      await screen.findByRole('button', { name: 'Book our visits' }),
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Book my visit' })).toBeNull();
   });
 
   it('disables the submit button while the request is in flight', async () => {

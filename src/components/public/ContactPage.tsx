@@ -116,7 +116,8 @@ export function ContactPage() {
     });
   }, []);
 
-  const childrenByProgram = programsForChildren(children).reduce<
+  const programGroups = programsForChildren(children);
+  const childrenByProgram = programGroups.reduce<
     Partial<Record<Program, string[]>>
   >((acc, g) => {
     acc[g.program] = g.childNames;
@@ -714,6 +715,8 @@ export function ContactPage() {
                           <Loader2 className="w-4 h-4 animate-spin" />
                           {ct.submitting}
                         </span>
+                      ) : programGroups.length > 1 ? (
+                        ct.submitPlural
                       ) : (
                         ct.submit
                       )}
