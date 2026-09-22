@@ -106,7 +106,7 @@ describe('BookingCalendar', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /September 21st, 2026/ }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Arrive at 5:20 PM' }));
+    fireEvent.click(screen.getByRole('button', { name: '5:20 PM' }));
 
     const confirmButton = screen.getByRole('button', {
       name: 'Confirm Visit',
@@ -134,7 +134,7 @@ describe('BookingCalendar', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /September 21st, 2026/ }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Arrive at 5:20 PM' }));
+    fireEvent.click(screen.getByRole('button', { name: '5:20 PM' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Visit' }));
 
     expect(onConfirm).toHaveBeenCalledWith('slot-2', '2026-09-21');

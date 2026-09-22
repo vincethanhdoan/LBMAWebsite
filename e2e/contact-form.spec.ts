@@ -79,7 +79,10 @@ test('a valid submission books a visit and frees the slot on cleanup', async ({
   await expect(dayButtons.first()).toBeVisible();
   await dayButtons.first().click();
 
-  const timeButton = page.getByRole('button', { name: /^Arrive at/ }).first();
+  const timeButton = page
+    .getByRole('group', { name: 'Choose an arrival time' })
+    .getByRole('button')
+    .first();
   await expect(timeButton).toBeVisible();
   await timeButton.click();
 

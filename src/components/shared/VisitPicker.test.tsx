@@ -156,7 +156,7 @@ describe('VisitPicker', () => {
     );
     expect(onChange).toHaveBeenLastCalledWith(null);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Arrive at 5:20 PM' }));
+    fireEvent.click(screen.getByRole('button', { name: '5:20 PM' }));
     expect(onChange).toHaveBeenLastCalledWith({
       slotId: 'slot-2',
       date: '2026-09-21',
@@ -164,7 +164,7 @@ describe('VisitPicker', () => {
     });
   });
 
-  it('marks the chosen time button pressed and labels it "Arrive at ..."', async () => {
+  it('marks the chosen time button pressed and labels it with the time alone', async () => {
     vi.mocked(getUpcomingBookableDates).mockResolvedValue(['2026-09-21']);
     const slots = [
       makeSlot({ slot_id: 'slot-1', start_time: '10:00:00' }),
@@ -183,7 +183,7 @@ describe('VisitPicker', () => {
       screen.getByRole('button', { name: /September 21st, 2026/ }),
     );
     const timeButton = screen.getByRole('button', {
-      name: 'Arrive at 5:20 PM',
+      name: '5:20 PM',
     });
     expect(timeButton.getAttribute('aria-pressed')).toBe('false');
 
@@ -191,7 +191,7 @@ describe('VisitPicker', () => {
     expect(timeButton.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('renders the Spanish month caption and arrival label with the real es-US output', async () => {
+  it('renders the Spanish month caption and time label with the real es-US output', async () => {
     vi.mocked(getUpcomingBookableDates).mockResolvedValue(['2026-09-21']);
     render(
       <VisitPicker
@@ -220,7 +220,7 @@ describe('VisitPicker', () => {
 
     expect(
       screen.getByRole('button', {
-        name: `Llegar a las ${spanishTimeLabel}`,
+        name: spanishTimeLabel,
       }),
     ).toBeTruthy();
   });
@@ -387,7 +387,7 @@ describe('VisitPicker', () => {
     expect(day21.closest('td')?.getAttribute('aria-selected')).toBe('true');
     expect(
       screen
-        .getByRole('button', { name: /^Arrive at 10:00 AM/ })
+        .getByRole('button', { name: /^10:00 AM/ })
         .getAttribute('aria-pressed'),
     ).toBe('true');
 
@@ -408,12 +408,12 @@ describe('VisitPicker', () => {
     expect(day21.closest('td')?.getAttribute('aria-selected')).not.toBe('true');
     expect(
       screen
-        .getByRole('button', { name: /^Arrive at 5:20 PM/ })
+        .getByRole('button', { name: /^5:20 PM/ })
         .getAttribute('aria-pressed'),
     ).toBe('true');
     expect(
       screen
-        .getByRole('button', { name: 'Arrive at 10:00 AM' })
+        .getByRole('button', { name: '10:00 AM' })
         .getAttribute('aria-pressed'),
     ).toBe('false');
   });

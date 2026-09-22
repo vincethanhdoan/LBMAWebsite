@@ -10,7 +10,6 @@ interface VisitPickerCopy {
   chooseTime: string;
   loading: string;
   selectedDay: (date: string) => string;
-  arriveAt: (time: string) => string;
 }
 
 export const visitPickerCopy: Record<VisitPickerLanguage, VisitPickerCopy> = {
@@ -23,7 +22,6 @@ export const visitPickerCopy: Record<VisitPickerLanguage, VisitPickerCopy> = {
     chooseTime: 'Choose an arrival time',
     loading: 'Loading available days',
     selectedDay: (date) => `Selected ${date}`,
-    arriveAt: (time) => `Arrive at ${time}`,
   },
   es: {
     loadError:
@@ -34,6 +32,5 @@ export const visitPickerCopy: Record<VisitPickerLanguage, VisitPickerCopy> = {
     chooseTime: 'Elige una hora de llegada',
     loading: 'Cargando los días disponibles',
     selectedDay: (date) => `Seleccionaste ${date}`,
-    arriveAt: (time) => `Llegar a las ${time}`,
   },
 };
