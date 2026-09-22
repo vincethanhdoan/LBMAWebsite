@@ -79,10 +79,35 @@ function parseProgramsKey(programsKey: string): Program[] {
   return programsKey === '' ? [] : (programsKey.split(',') as Program[]);
 }
 
+// A child whose age crossed the 4-7 / 8-17 boundary has moved to the other
+// program, and the day their parent already picked for the program they
+// left is gone with it.
+type ProgramMove = { program: Program; childName: string };
+
 // What the step's own live region has to say. `VisitPicker` has a live
 // region of its own for the day a visitor picks; these two must stay
 // separate, or month navigation and a reveal would overwrite each other.
-type VisitAnnouncement = { kind: 'revealed'; programCount: number };
+type VisitAnnouncement =
+  | { kind: 'revealed'; programCount: number }
+  | ({ kind: 'moved' } & ProgramMove);
+
+// The move behind a change of program set, or null when nothing is owed: a
+// program that only left (the child was removed, or the age was cleared) or
+// only arrived (the reveal itself already says so). Only the first child is
+// named, because two names would not fit the sentence, and naming one of
+// the children who moved keeps it true.
+function programMove(
+  previousKey: string,
+  groups: Array<{ program: Program; childNames: string[] }>,
+): ProgramMove | null {
+  const previous = parseProgramsKey(previousKey);
+  const left = previous.filter((p) => !groups.some((g) => g.program === p));
+  const arrived = groups.filter((g) => !previous.includes(g.program));
+  if (left.length === 0 || arrived.length === 0) return null;
+  const [childName] = arrived[0].childNames;
+  if (!childName) return null;
+  return { program: arrived[0].program, childName };
+}
 
 type SlotsState =
   | { status: 'loading' }
@@ -103,6 +128,8 @@ function LoadingSpinner({ label }: { label: string }) {
 interface ProgramGroupProps {
   program: Program;
   label: string;
+  /** Why this calendar just appeared, when a child moved program. */
+  note: string | null;
   childNames: string[];
   value: VisitChoice | null;
   onPick: (program: Program, choice: VisitChoice | null) => void;
@@ -119,6 +146,7 @@ interface ProgramGroupProps {
 function ProgramGroup({
   program,
   label,
+  note,
   childNames,
   value,
   onPick,
@@ -155,6 +183,14 @@ function ProgramGroup({
       <legend className={FIELD_LABEL_CLASS} style={{ color: V3.text }}>
         {legend}
       </legend>
+
+      {/* Muted, never the error color: the parent corrected an age, which is
+          not a mistake to be told off for. */}
+      {note && (
+        <p className={FIELD_HELP_CLASS} style={{ color: V3.muted }}>
+          {note}
+        </p>
+      )}
 
       {slotsState.status === 'error' ? (
         <VisitLoadFailure
@@ -250,13 +286,18 @@ export function TrialVisitStep({
     null,
   );
   const [announcedProgramsKey, setAnnouncedProgramsKey] = useState(programsKey);
+  const [move, setMove] = useState<ProgramMove | null>(null);
 
   // An announcement describes one change. Once the programs change again it
   // is stale, and clearing it means the next one is announced as new text
   // even when it reads the same.
   if (announcedProgramsKey !== programsKey) {
+    const nextMove = revealed
+      ? programMove(announcedProgramsKey, groups)
+      : null;
     setAnnouncedProgramsKey(programsKey);
-    setAnnouncement(null);
+    setAnnouncement(nextMove ? { kind: 'moved', ...nextMove } : null);
+    setMove(nextMove);
   }
 
   // Reveal once a program has held still, and never take the section away
@@ -335,18 +376,34 @@ export function TrialVisitStep({
     const next = { ...value };
     if (choice) {
       next[program] = choice;
+      if (move?.program === program) setMove(null);
     } else {
       delete next[program];
     }
     onChange(next);
   }
 
+  function programLabel(program: Program): string {
+    return program === 'little_dragons'
+      ? ct.programNameLittle
+      : ct.programNameYouth;
+  }
+
+  function moveSentence({ program, childName }: ProgramMove): string {
+    return fillTemplate(ct.visitMoved, {
+      child: childName,
+      program: programLabel(program),
+    });
+  }
+
   const announcementText =
     announcement === null
       ? ''
-      : announcement.programCount > 1
-        ? ct.visitRevealedTwo
-        : ct.visitRevealed;
+      : announcement.kind === 'moved'
+        ? moveSentence(announcement)
+        : announcement.programCount > 1
+          ? ct.visitRevealedTwo
+          : ct.visitRevealed;
 
   return (
     <>
@@ -379,16 +436,13 @@ export function TrialVisitStep({
                 : slots
                   ? { status: 'ready', slots }
                   : { status: 'loading' };
-              const label =
-                program === 'little_dragons'
-                  ? ct.programNameLittle
-                  : ct.programNameYouth;
 
               return (
                 <ProgramGroup
                   key={program}
                   program={program}
-                  label={label}
+                  label={programLabel(program)}
+                  note={move?.program === program ? moveSentence(move) : null}
                   childNames={childNames}
                   value={value[program] ?? null}
                   onPick={handlePick}

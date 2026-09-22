@@ -193,6 +193,60 @@ describe('ContactPage', () => {
     );
   });
 
+  it('says which program a child moved into, and drops the note once that day is picked', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(<Wrapper lang="en" />);
+    fireEvent.change(screen.getByLabelText("Child's name 1"), {
+      target: { value: 'Ana' },
+    });
+    fireEvent.change(screen.getByLabelText('Age 1'), {
+      target: { value: '7' },
+    });
+    await screen.findByRole('group', {
+      name: 'Little Dragons visit for Ana',
+    });
+
+    fireEvent.change(screen.getByLabelText('Age 1'), {
+      target: { value: '8' },
+    });
+
+    const youthGroup = await screen.findByRole('group', {
+      name: 'Youth Program visit for Ana',
+    });
+    const note =
+      'Ana is now in Youth Program. Please choose a day for the Youth Program visit.';
+    expect(within(youthGroup).getByText(note)).toBeTruthy();
+
+    fireEvent.click(
+      await within(youthGroup).findByRole('button', { name: 'Pick' }),
+    );
+
+    expect(within(youthGroup).queryByText(note)).toBeNull();
+  });
+
+  it('stays quiet when a program leaves and none arrives', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(<Wrapper lang="en" />);
+    fireEvent.change(screen.getByLabelText("Child's name 1"), {
+      target: { value: 'Ana' },
+    });
+    fireEvent.change(screen.getByLabelText('Age 1'), {
+      target: { value: '7' },
+    });
+    await screen.findByRole('group', {
+      name: 'Little Dragons visit for Ana',
+    });
+
+    fireEvent.change(screen.getByLabelText('Age 1'), { target: { value: '' } });
+
+    expect(screen.queryByText(/is now in/)).toBeNull();
+    expect(
+      screen.getByText(
+        "Enter your child's age above and we'll show the days available.",
+      ),
+    ).toBeTruthy();
+  });
+
   it('submits with the current language, matching bookings, and a uuid requestId, then shows and focuses the booked panel', async () => {
     vi.mocked(getAppointmentSlots).mockResolvedValue([]);
     const receipt: TrialBookingReceipt = {
