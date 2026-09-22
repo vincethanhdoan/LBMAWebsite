@@ -122,9 +122,11 @@ The RPC's error `code` (or a substring of its message, for errors the client can
 |---|---|
 | `P0429` (any of the three rate limits, §12) | "We recently received a request from you. Please wait a moment and try again, or call us directly." |
 | `P0409` (`already_booked`) | "It looks like you already have a visit booked with us. Check your email for the details, or call us at (408) 620-0252 to change it." |
-| `23P01` (`slot_taken`) | "Someone just took that time. Everything you typed is saved. Please pick another day or time." Every visit selection is also cleared and each calendar refetches, since the slot map underneath this one just changed |
+| `23P01` (`slot_taken`) | "Someone just took that time. Everything you typed is saved. Please pick another day or time." The visit that failed is also cleared and every calendar refetches, since the slot map underneath this one just changed |
 | `date_unavailable`, `slot_mismatch`, or `invalid_booking_request` | "That day is no longer available. Everything you typed is saved. Please pick another." Same clear-and-refetch as `slot_taken` |
 | Anything else, including a timeout | "Unable to submit right now. Please try again or call us directly." |
+
+An availability error names the program whose visit could not be booked in its `hint` (§12, Error contract). When the hint matches one of the programs currently on the form, only that program's selection is cleared, only that program's calendar shows the inline error, and focus moves to that calendar: a family booking two visits who lose one of them keeps the other, and is pointed straight at the one they have to pick again. With no usable hint there is no telling which visit failed, so every selection is cleared and the first calendar takes the message. Either way every calendar refetches.
 
 Clearing selections and refetching on a slot/date error, rather than just showing the message, means a parent never resubmits into the same stale error: by the time they pick a new day, the calendar is already showing what's actually still open.
 
@@ -654,7 +656,7 @@ This section documents the backend behind the live form (§2): a family picks a 
 
 ### The `submit_trial_booking` RPC
 
-**File:** `supabase/migrations/20260921120000_trial_booking.sql`
+**Files:** `supabase/migrations/20260921120000_trial_booking.sql`, then `supabase/migrations/20260923120000_slot_error_names_program.sql` (adds the program name to availability errors, below)
 
 | Argument | Type | Notes |
 |---|---|---|
@@ -717,6 +719,8 @@ The e2e smoke test's valid-submission run (`e2e/contact-form.spec.ts`) counts ag
 | `slot_mismatch` | P0001 | That slot belongs to a different program than the one it was booked against |
 | `invalid_booking_request` | P0001 | The booking list's shape is wrong: missing, wrong count, duplicate program, unknown program, malformed `slot_id`/`date`, or (rare) a reused `request_id` under a different email |
 | Validation sentences (e.g. "Please provide a valid email.") | P0001 | Plain-English messages for name, email, phone, message length, child count, child name, and child age |
+
+Every error raised while a visit is being booked carries that visit's program (`little_dragons` or `youth`) as its `HINT`. The booking loop wraps each program's work in its own exception block and re-raises whatever came out of it unchanged apart from that hint, so SQLSTATE, message, and `DETAIL` (the block reason behind a `date_unavailable`, for instance) are all preserved. A family booking two visits at once, only one of which fails, is why: without the hint the form cannot tell which of their two calendars to clear, and has to clear both (§2, How each server error is shown). The hint is set for every error from that loop, not just the availability ones, because re-raising the whole block the same way is simpler and cannot drift out of step with which errors the loop can produce.
 
 ### `preferred_language`
 
