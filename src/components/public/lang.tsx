@@ -288,30 +288,61 @@ const EN = {
       '. This includes a uniform to keep and 5 consecutive training days. Come see if our academy is the right fit for you and your family.',
     formHeading: 'Book Your Trial',
     formSub:
-      "Please fill out the following information and we will confirm within one business day of your child's first class.",
+      'Tell us about your family and choose a day for your first visit. Your visit is booked as soon as you submit.',
     yourName: 'Your name',
     phone: 'Phone',
     email: 'Email address',
+    phoneConsent: 'We may call or text this number about your visit.',
     childrenLabel: 'Children enrolling',
-    childrenSub: 'We use age to place your child in the right program',
     childName: "Child's name",
     age: 'Age',
     ageLabel: 'Age',
     addChild: 'Add another child',
     removeChild: 'Remove child',
+    visitHeading: 'Choose a day for your first visit',
+    visitSub:
+      "Pick a day, then the time you'd like to arrive. We welcome one family at a time so we can show you around and answer your questions.",
+    visitFor: '{program} visit for {children}',
+    visitNeedsAge:
+      "Enter your child's age above and we'll show the days available.",
+    visitHint: "Enter an age and we'll show the days you can visit.",
+    visitRevealed: 'Choose a day for your first visit, added below.',
+    visitRevealedTwo:
+      'Choose a day for your first visit, two calendars added below, one for each program.',
+    visitMoved:
+      '{child} is now in {program}. Please choose a day for the {program} visit.',
+    visitNone:
+      "There are no open visit times in the next three weeks. Please call us at (408) 620-0252 and we'll find a time.",
     notesLabel: 'Questions, notes, or anything we should know',
     notesOptional: '(optional)',
     notesPlaceholder:
       'Please share any questions, notes, or medical awareness information we should know so we can best support your child.',
     submitting: 'Sending…',
-    submit: 'Book a Trial Class',
-    required: '* Required. We never sell your information.',
+    submit: 'Book my visit',
+    submitPlural: 'Book our visits',
+    neverSell: 'We never sell your information.',
     consentPre: 'By submitting this form, you agree to our ',
     consentLink: 'Privacy Policy',
     consentPost: '.',
-    successHeading: 'Trial Request Received',
-    successBody:
-      "We'll be in touch within 24 hours to confirm your child's first class and answer any questions.",
+    errVisit: 'Please choose a day and arrival time.',
+    errSlotTaken:
+      'Someone just took that time. Everything you typed is saved. Please pick another day or time.',
+    errDateGone:
+      'That day is no longer available. Everything you typed is saved. Please pick another.',
+    errAlreadyBooked:
+      'We already have an upcoming visit booked under this email or phone number. Check your email for the details, or call us at (408) 620-0252 to change it.',
+    successHeading: "You're booked",
+    successBody: "We're looking forward to meeting {children}.",
+    successArrive: 'Please arrive at {time}.',
+    successChange: 'View or change this visit',
+    successWhere: 'Where to find us',
+    successMaps: 'Open in Google Maps',
+    successExpectHeading: 'What to expect',
+    successExpectBody:
+      "Comfortable athletic clothes are all your child needs. We provide everything else for the first class. You're welcome to watch from the side, and we'll answer any questions afterward.",
+    successEmailNote:
+      "Check your email at {email} for these details. If it isn't there, look in your spam folder. Your visit is booked either way.",
+    successCall: 'Questions? Call us at (408) 620-0252.',
     locationEyebrow: 'Location',
     hoursEyebrow: 'Class Hours',
     contactEyebrow: 'Phone & Email',
@@ -337,6 +368,8 @@ const EN = {
       'We recently received a request from you. Please wait a moment and try again, or call us directly.',
     programLittle: 'Little Dragons · ages 4–7',
     programYouth: 'Youth Program · ages 8–17',
+    programNameLittle: 'Little Dragons',
+    programNameYouth: 'Youth Program',
     programAgeError: 'Age must be 4–17',
   },
   footer: {
@@ -829,30 +862,63 @@ const ES: T = {
       '. Esto incluye un uniforme para quedarse y 5 días consecutivos de entrenamiento. Ven a ver si nuestra academia es la adecuada para ti y tu familia.',
     formHeading: 'Reserva Tu Prueba',
     formSub:
-      'Por favor completa la siguiente información y confirmaremos dentro de un día hábil la primera clase de tu hijo.',
+      'Cuéntanos sobre tu familia y elige un día para tu primera visita. Tu visita queda reservada en cuanto envías el formulario.',
     yourName: 'Tu nombre',
     phone: 'Teléfono',
     email: 'Correo electrónico',
+    phoneConsent:
+      'Podemos llamarte o escribirte a este número sobre tu visita.',
     childrenLabel: 'Niños que se inscriben',
-    childrenSub: 'Usamos la edad para ubicar a tu hijo en el programa correcto',
     childName: 'Nombre del niño',
     age: 'Edad',
     ageLabel: 'Edad',
     addChild: 'Agregar otro niño',
     removeChild: 'Quitar niño',
+    visitHeading: 'Elige un día para tu primera visita',
+    visitSub:
+      'Elige un día y luego la hora a la que te gustaría llegar. Recibimos a una familia a la vez para mostrarte la academia y responder tus preguntas.',
+    visitFor: 'Visita de {program} para {children}',
+    visitNeedsAge:
+      'Escribe la edad de tu hijo arriba y te mostraremos los días disponibles.',
+    visitHint:
+      'Escribe una edad y te mostraremos los días disponibles para visitarnos.',
+    visitRevealed: 'Elige un día para tu primera visita, se agregó abajo.',
+    visitRevealedTwo:
+      'Elige un día para tu primera visita, se agregaron dos calendarios abajo, uno por cada programa.',
+    visitMoved:
+      '{child} ahora está en {program}. Por favor, elige un día para la visita de {program}.',
+    visitNone:
+      'No hay horarios disponibles en las próximas tres semanas. Llámanos al (408) 620-0252 y encontraremos un horario.',
     notesLabel: 'Preguntas, notas o algo que debamos saber',
     notesOptional: '(opcional)',
     notesPlaceholder:
       'Por favor comparte cualquier pregunta, nota o información médica que debamos saber para apoyar mejor a tu hijo.',
     submitting: 'Enviando…',
-    submit: 'Reservar Clase de Prueba',
-    required: '* Obligatorio. Nunca vendemos tu información.',
+    submit: 'Reservar mi visita',
+    submitPlural: 'Reservar nuestras visitas',
+    neverSell: 'Nunca vendemos tu información.',
     consentPre: 'Al enviar este formulario, aceptas nuestra ',
     consentLink: 'Política de Privacidad',
     consentPost: '.',
-    successHeading: 'Solicitud de Prueba Recibida',
-    successBody:
-      'Nos pondremos en contacto en 24 horas para confirmar la primera clase de tu hijo y responder cualquier pregunta.',
+    errVisit: 'Por favor elige un día y una hora de llegada.',
+    errSlotTaken:
+      'Alguien acaba de tomar esa hora. Todo lo que escribiste está guardado. Por favor, elige otro día u hora.',
+    errDateGone:
+      'Ese día ya no está disponible. Todo lo que escribiste está guardado. Por favor, elige otro.',
+    errAlreadyBooked:
+      'Ya tenemos una visita reservada con este correo o número de teléfono. Revisa tu correo para ver los detalles, o llámanos al (408) 620-0252 para cambiarla.',
+    successHeading: 'Tu visita está reservada',
+    successBody: 'Tenemos muchas ganas de conocer a {children}.',
+    successArrive: 'Por favor, llega {at} {time}.',
+    successChange: 'Ver o cambiar esta visita',
+    successWhere: 'Dónde encontrarnos',
+    successMaps: 'Abrir en Google Maps',
+    successExpectHeading: 'Qué esperar',
+    successExpectBody:
+      'Solo hace falta ropa deportiva cómoda. Nosotros proporcionamos todo lo demás para la primera clase. Puedes observar desde un lado y, al terminar, respondemos con gusto cualquier pregunta que tengas.',
+    successEmailNote:
+      'Revisa tu correo en {email}: te enviamos estos detalles. Si no lo encuentras, mira en la carpeta de spam. Tu visita está reservada de cualquier manera.',
+    successCall: '¿Preguntas? Llámanos al (408) 620-0252.',
     locationEyebrow: 'Ubicación',
     hoursEyebrow: 'Horario de Clases',
     contactEyebrow: 'Teléfono y Correo',
@@ -881,6 +947,8 @@ const ES: T = {
       'Recibimos una solicitud tuya hace poco. Por favor espera un momento e intenta de nuevo, o llámanos directamente.',
     programLittle: 'Pequeños Dragones · edades 4–7',
     programYouth: 'Programa Juvenil · edades 8–17',
+    programNameLittle: 'Pequeños Dragones',
+    programNameYouth: 'Programa Juvenil',
     programAgeError: 'La edad debe ser 4–17',
   },
   footer: {

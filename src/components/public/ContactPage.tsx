@@ -1,22 +1,28 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  CheckCircle2,
-  AlertCircle,
-  X,
-  Plus,
-  MapPin,
-  Loader2,
-} from 'lucide-react';
+import { AlertCircle, X, Plus, MapPin, Loader2 } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription } from '../ui/alert';
-import { submitEnrollmentLeadWithTimeout } from '../../lib/supabase/client';
+import { submitTrialBookingWithTimeout } from '../../lib/supabase/client';
+import type { TrialBookingReceipt } from '../../lib/supabase/client';
 import { V3 } from './design';
+import {
+  FIELD_ERROR_COLOR,
+  FIELD_HELP_CLASS,
+  FIELD_LABEL_CLASS,
+  SECTION_HEADING_CLASS,
+  SECTION_HEADING_STYLE,
+} from './formStyles';
 import { useLanguage } from './lang';
 import { isValidEmail, isValidUsPhone } from '../../lib/validation';
 import { SCHOOL_PHONE_DISPLAY } from '../../lib/contactLinks';
+import { programForAgeText, programsForChildren } from '../../lib/programs';
+import type { Program } from '../../lib/programs';
+import { TrialVisitStep } from './TrialVisitStep';
+import type { VisitSelections } from './TrialVisitStep';
+import { TrialBookedPanel } from './TrialBookedPanel';
 
 const CONTACT_INFO = [
   { label: 'Phone', value: SCHOOL_PHONE_DISPLAY, href: 'tel:+14086200252' },
@@ -37,7 +43,7 @@ type FieldErrors = {
 };
 
 export function ContactPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const ct = t.contact;
 
   const [parentName, setParentName] = useState('');
@@ -45,21 +51,85 @@ export function ContactPage() {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [children, setChildren] = useState<ChildRow[]>([{ name: '', age: '' }]);
-  const [submitted, setSubmitted] = useState(false);
+  const [selections, setSelections] = useState<VisitSelections>({});
+  const [visitErrors, setVisitErrors] = useState<
+    Partial<Record<Program, string>>
+  >({});
+  const [visitRefreshKey, setVisitRefreshKey] = useState(0);
+  // The visit section is hidden until a child's age names a program, so the
+  // page does not open with three lines about a calendar that is not there
+  // yet. `TrialVisitStep` decides when that moment is and calls `onReveal`.
+  const [visitRevealed, setVisitRevealed] = useState(false);
+  const [agesSettled, setAgesSettled] = useState(false);
+  const [receipt, setReceipt] = useState<TrialBookingReceipt | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({ children: {} });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // A request to focus a visit group's fieldset, tagged with a request id so
+  // asking for the same program twice in a row still triggers a fresh focus.
+  const [visitFocusRequest, setVisitFocusRequest] = useState<{
+    program: Program;
+    requestId: number;
+  } | null>(null);
+  const nextVisitFocusRequestId = useRef(0);
+  const handledVisitFocusRequestId = useRef<number | null>(null);
   const successRef = useRef<HTMLDivElement>(null);
+  const [requestId] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
-    if (submitted) successRef.current?.focus();
-  }, [submitted]);
+    if (receipt) successRef.current?.focus();
+  }, [receipt]);
+
+  // Focusing a visit group's fieldset has to wait until `isSubmitting` has
+  // committed back to false: while it's true the fieldset is `disabled`, and
+  // real browsers (unlike jsdom) refuse to focus a disabled element. The
+  // handled-request ref (not state) tracks which request this has already
+  // acted on, so the effect body never calls setState itself.
+  useEffect(() => {
+    if (!visitFocusRequest || isSubmitting) return;
+    if (handledVisitFocusRequestId.current === visitFocusRequest.requestId)
+      return;
+    handledVisitFocusRequestId.current = visitFocusRequest.requestId;
+    document
+      .getElementById(`visit-group-${visitFocusRequest.program}`)
+      ?.focus();
+  }, [visitFocusRequest, isSubmitting]);
+
+  function requestVisitFocus(program: Program) {
+    nextVisitFocusRequestId.current += 1;
+    setVisitFocusRequest({
+      program,
+      requestId: nextVisitFocusRequestId.current,
+    });
+  }
+
+  const revealVisitStep = useCallback(() => setVisitRevealed(true), []);
+
+  const handleVisitChange = useCallback((next: VisitSelections) => {
+    setSelections(next);
+    setVisitErrors((prev) => {
+      const entries = (Object.entries(prev) as [Program, string][]).filter(
+        ([program]) => !next[program],
+      );
+      if (entries.length === Object.keys(prev).length) return prev;
+      return Object.fromEntries(entries) as Partial<Record<Program, string>>;
+    });
+  }, []);
+
+  const programGroups = programsForChildren(children);
+  const childrenByProgram = programGroups.reduce<
+    Partial<Record<Program, string[]>>
+  >((acc, g) => {
+    acc[g.program] = g.childNames;
+    return acc;
+  }, {});
 
   function programLabel(age: string): { text: string; color: string } | null {
-    const n = Number(age);
-    if (!age || isNaN(n)) return null;
-    if (n >= 4 && n <= 7) return { text: ct.programLittle, color: '#6d28d9' };
-    if (n >= 8 && n <= 17) return { text: ct.programYouth, color: '#1d4ed8' };
+    if (!age) return null;
+    const program = programForAgeText(age);
+    if (program === 'little_dragons')
+      return { text: ct.programLittle, color: V3.muted };
+    if (program === 'youth') return { text: ct.programYouth, color: V3.muted };
     return { text: ct.programAgeError, color: '#b91c1c' };
   }
 
@@ -81,6 +151,7 @@ export function ContactPage() {
     setChildren((prev) =>
       prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)),
     );
+    if (field === 'age') setAgesSettled(false);
     setFieldErrors((prev) => {
       if (!prev.children[i]) return prev;
       const nextChildren = { ...prev.children };
@@ -125,8 +196,7 @@ export function ContactPage() {
         errors.children[i] = ct.errChildFields;
         return;
       }
-      const age = Number(c.age);
-      if (!Number.isInteger(age) || age < 4 || age > 17) {
+      if (programForAgeText(c.age) === null) {
         errors.children[i] = ct.errAgeRange;
       }
     });
@@ -154,8 +224,36 @@ export function ContactPage() {
     }
 
     setFieldErrors({ children: {} });
+
+    const groups = programsForChildren(children);
+    const missing = groups.filter((g) => !selections[g.program]);
+    if (missing.length > 0) {
+      const nextVisitErrors: Partial<Record<Program, string>> = {};
+      missing.forEach((g) => {
+        nextVisitErrors[g.program] = ct.errVisit;
+      });
+      setVisitErrors(nextVisitErrors);
+      requestVisitFocus(missing[0].program);
+      return;
+    }
+
+    setVisitErrors({});
     setIsSubmitting(true);
-    const { data, error } = await submitEnrollmentLeadWithTimeout(
+
+    const bookings = groups.flatMap((g) => {
+      const choice = selections[g.program];
+      return choice
+        ? [
+            {
+              program_type: g.program,
+              slot_id: choice.slotId,
+              date: choice.date,
+            },
+          ]
+        : [];
+    });
+
+    const { data, error } = await submitTrialBookingWithTimeout(
       {
         parentName: trimmedName,
         parentEmail: trimmedEmail,
@@ -166,16 +264,52 @@ export function ContactPage() {
           name: c.name.trim(),
           age: Number(c.age),
         })),
+        bookings,
+        requestId,
+        language: lang,
       },
       12000,
     );
 
     if (error || !data) {
-      setSubmitError(error?.code === 'P0429' ? ct.errRateLimit : ct.errSubmit);
+      const code = error?.code;
+      const msg = error?.message ?? '';
+      if (code === 'P0429') {
+        setSubmitError(ct.errRateLimit);
+      } else if (code === 'P0409') {
+        setSubmitError(ct.errAlreadyBooked);
+      } else if (
+        code === '23P01' ||
+        msg.includes('date_unavailable') ||
+        msg.includes('slot_mismatch') ||
+        msg.includes('invalid_booking_request')
+      ) {
+        const availabilityMessage =
+          code === '23P01' ? ct.errSlotTaken : ct.errDateGone;
+        // The server names the program whose visit it could not book in the
+        // error hint, so only that family's calendar is cleared and pointed
+        // at. Without a usable hint there is no telling which visit failed,
+        // so every selection goes and the first calendar takes the blame.
+        const hinted = groups.find((g) => g.program === error?.hint)?.program;
+        const blamed = hinted ?? groups[0].program;
+        setSubmitError(availabilityMessage);
+        setVisitErrors({ [blamed]: availabilityMessage });
+        setSelections((prev) => {
+          if (!hinted) return {};
+          const next = { ...prev };
+          delete next[hinted];
+          return next;
+        });
+        setVisitRefreshKey((k) => k + 1);
+        requestVisitFocus(blamed);
+      } else {
+        setSubmitError(ct.errSubmit);
+      }
       setIsSubmitting(false);
       return;
     }
-    setSubmitted(true);
+
+    setReceipt(data);
     setIsSubmitting(false);
   };
 
@@ -218,316 +352,335 @@ export function ContactPage() {
           <div className="grid lg:grid-cols-[1fr_340px] gap-10 xl:gap-14 items-start">
             {/* ── FORM ── */}
             <div
-              className="rounded-2xl p-7 lg:p-10"
+              className="rounded-2xl p-4 sm:p-7 lg:p-10"
               style={{ backgroundColor: 'white' }}
             >
-              <h2
-                className="v3-h font-black mb-1"
-                style={{
-                  fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
-                  color: V3.text,
-                }}
-              >
-                {ct.formHeading}
-              </h2>
-              <p className="text-base mb-8" style={{ color: V3.muted }}>
-                {ct.formSub}
-              </p>
-
-              {submitted ? (
-                <div
+              {receipt ? (
+                <TrialBookedPanel
                   ref={successRef}
-                  role="status"
-                  tabIndex={-1}
-                  className="py-16 text-center rounded-xl"
-                  style={{ backgroundColor: V3.surface }}
-                >
-                  <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
-                    style={{ backgroundColor: V3.primaryBg }}
-                  >
-                    <CheckCircle2
-                      className="w-8 h-8"
-                      style={{ color: V3.primary }}
-                    />
-                  </div>
-                  <h3
-                    className="v3-h font-black mb-2"
-                    style={{ fontSize: '1.75rem', color: V3.text }}
-                  >
-                    {ct.successHeading}
-                  </h3>
-                  <p
-                    className="text-base max-w-sm mx-auto leading-relaxed"
-                    style={{ color: V3.muted }}
-                  >
-                    {ct.successBody}
-                  </p>
-                </div>
+                  receipt={receipt}
+                  childrenByProgram={childrenByProgram}
+                  email={parentEmail.trim().toLowerCase()}
+                />
               ) : (
                 <form
                   onSubmit={handleSubmit}
                   noValidate
-                  className="flex flex-col gap-6"
+                  className="flex flex-col gap-8 sm:gap-10"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-2">
-                      <Label
-                        htmlFor="parentName"
-                        className="text-sm font-semibold"
-                        style={{ color: V3.text }}
-                      >
-                        {ct.yourName}{' '}
-                        <span style={{ color: V3.primary }}>*</span>
-                      </Label>
-                      <Input
-                        id="parentName"
-                        placeholder="Eduardo Guerra"
-                        value={parentName}
-                        onChange={(e) => {
-                          setParentName(e.target.value);
-                          if (fieldErrors.name)
-                            setFieldErrors((prev) => ({
-                              ...prev,
-                              name: undefined,
-                            }));
+                  {/* The card's own heading introduces the contact fields, so
+                      they carry no heading of their own. */}
+                  <div className="flex flex-col gap-3">
+                    <div className="mb-2">
+                      <h2
+                        className="v3-h font-black mb-1"
+                        style={{
+                          fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
+                          color: V3.text,
                         }}
-                        disabled={isSubmitting}
-                        required
-                        maxLength={100}
-                        className="min-h-[48px] text-base"
-                        autoComplete="name"
-                        aria-invalid={!!fieldErrors.name}
-                        aria-describedby={
-                          fieldErrors.name ? 'parent-name-error' : undefined
-                        }
-                      />
-                      {fieldErrors.name && (
-                        <p
-                          id="parent-name-error"
-                          className="mt-0.5 text-sm"
-                          style={{ color: '#b91c1c' }}
-                        >
-                          {fieldErrors.name}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label
-                        htmlFor="phone"
-                        className="text-sm font-semibold"
-                        style={{ color: V3.text }}
                       >
-                        {ct.phone} <span style={{ color: V3.primary }}>*</span>
-                      </Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="(209) 555-0123"
-                        value={phone}
-                        onChange={(e) => {
-                          setPhone(e.target.value);
-                          if (fieldErrors.phone)
-                            setFieldErrors((prev) => ({
-                              ...prev,
-                              phone: undefined,
-                            }));
-                        }}
-                        disabled={isSubmitting}
-                        required
-                        maxLength={20}
-                        className="min-h-[48px] text-base"
-                        autoComplete="tel"
-                        aria-invalid={!!fieldErrors.phone}
-                        aria-describedby={
-                          fieldErrors.phone ? 'phone-error' : undefined
-                        }
-                      />
-                      {fieldErrors.phone && (
-                        <p
-                          id="phone-error"
-                          className="mt-0.5 text-sm"
-                          style={{ color: '#b91c1c' }}
-                        >
-                          {fieldErrors.phone}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <Label
-                      htmlFor="parentEmail"
-                      className="text-sm font-semibold"
-                      style={{ color: V3.text }}
-                    >
-                      {ct.email} <span style={{ color: V3.primary }}>*</span>
-                    </Label>
-                    <Input
-                      id="parentEmail"
-                      type="email"
-                      placeholder="name@email.com"
-                      value={parentEmail}
-                      onChange={(e) => {
-                        setParentEmail(e.target.value);
-                        if (fieldErrors.email)
-                          setFieldErrors((prev) => ({
-                            ...prev,
-                            email: undefined,
-                          }));
-                      }}
-                      disabled={isSubmitting}
-                      required
-                      maxLength={254}
-                      className="min-h-[48px] text-base"
-                      autoComplete="email"
-                      aria-invalid={!!fieldErrors.email}
-                      aria-describedby={
-                        fieldErrors.email ? 'email-error' : undefined
-                      }
-                    />
-                    {fieldErrors.email && (
-                      <p
-                        id="email-error"
-                        className="mt-0.5 text-sm"
-                        style={{ color: '#b91c1c' }}
-                      >
-                        {fieldErrors.email}
+                        {ct.formHeading}
+                      </h2>
+                      <p className="text-base" style={{ color: V3.muted }}>
+                        {ct.formSub}
                       </p>
-                    )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <Label
+                          htmlFor="parentName"
+                          className={FIELD_LABEL_CLASS}
+                          style={{ color: V3.text }}
+                        >
+                          {ct.yourName}
+                        </Label>
+                        <Input
+                          id="parentName"
+                          value={parentName}
+                          onChange={(e) => {
+                            setParentName(e.target.value);
+                            if (fieldErrors.name)
+                              setFieldErrors((prev) => ({
+                                ...prev,
+                                name: undefined,
+                              }));
+                          }}
+                          disabled={isSubmitting}
+                          required
+                          maxLength={100}
+                          className="v3-field"
+                          autoComplete="name"
+                          aria-invalid={!!fieldErrors.name}
+                          aria-describedby={
+                            fieldErrors.name ? 'parent-name-error' : undefined
+                          }
+                        />
+                        {fieldErrors.name && (
+                          <p
+                            id="parent-name-error"
+                            className={FIELD_HELP_CLASS}
+                            style={{ color: FIELD_ERROR_COLOR }}
+                          >
+                            {fieldErrors.name}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label
+                          htmlFor="phone"
+                          className={FIELD_LABEL_CLASS}
+                          style={{ color: V3.text }}
+                        >
+                          {ct.phone}
+                        </Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="(555) 555-5555"
+                          value={phone}
+                          onChange={(e) => {
+                            setPhone(e.target.value);
+                            if (fieldErrors.phone)
+                              setFieldErrors((prev) => ({
+                                ...prev,
+                                phone: undefined,
+                              }));
+                          }}
+                          disabled={isSubmitting}
+                          required
+                          maxLength={20}
+                          className="v3-field"
+                          autoComplete="tel"
+                          aria-invalid={!!fieldErrors.phone}
+                          aria-describedby={
+                            fieldErrors.phone
+                              ? 'phone-error phone-consent'
+                              : 'phone-consent'
+                          }
+                        />
+                        {fieldErrors.phone && (
+                          <p
+                            id="phone-error"
+                            className={FIELD_HELP_CLASS}
+                            style={{ color: FIELD_ERROR_COLOR }}
+                          >
+                            {fieldErrors.phone}
+                          </p>
+                        )}
+                        <p
+                          id="phone-consent"
+                          className={FIELD_HELP_CLASS}
+                          style={{ color: V3.muted }}
+                        >
+                          {ct.phoneConsent}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label
+                        htmlFor="parentEmail"
+                        className={FIELD_LABEL_CLASS}
+                        style={{ color: V3.text }}
+                      >
+                        {ct.email}
+                      </Label>
+                      <Input
+                        id="parentEmail"
+                        type="email"
+                        placeholder="name@email.com"
+                        value={parentEmail}
+                        onChange={(e) => {
+                          setParentEmail(e.target.value);
+                          if (fieldErrors.email)
+                            setFieldErrors((prev) => ({
+                              ...prev,
+                              email: undefined,
+                            }));
+                        }}
+                        disabled={isSubmitting}
+                        required
+                        maxLength={254}
+                        className="v3-field"
+                        autoComplete="email"
+                        aria-invalid={!!fieldErrors.email}
+                        aria-describedby={
+                          fieldErrors.email ? 'email-error' : undefined
+                        }
+                      />
+                      {fieldErrors.email && (
+                        <p
+                          id="email-error"
+                          className={FIELD_HELP_CLASS}
+                          style={{ color: FIELD_ERROR_COLOR }}
+                        >
+                          {fieldErrors.email}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Children section */}
                   <div
                     role="group"
                     aria-labelledby="children-label"
                     aria-describedby={
                       fieldErrors.childCount ? 'child-count-error' : undefined
                     }
-                    className="flex flex-col gap-3 rounded-xl p-5"
-                    style={{
-                      backgroundColor: V3.surface,
-                      border: `1px solid ${V3.border}`,
-                    }}
+                    className="flex flex-col gap-5"
                   >
-                    <div>
-                      <Label
+                    <div className="flex flex-col gap-1">
+                      <h2
                         id="children-label"
-                        className="text-sm font-semibold"
-                        style={{ color: V3.text }}
+                        className={SECTION_HEADING_CLASS}
+                        style={SECTION_HEADING_STYLE}
                       >
-                        {ct.childrenLabel}{' '}
-                        <span style={{ color: V3.primary }}>*</span>
-                      </Label>
-                      <p className="text-sm mt-1" style={{ color: V3.muted }}>
-                        {ct.childrenSub}
-                      </p>
+                        {ct.childrenLabel}
+                      </h2>
                       {fieldErrors.childCount && (
                         <p
                           id="child-count-error"
-                          className="mt-1 text-sm"
-                          style={{ color: '#b91c1c' }}
+                          className={FIELD_HELP_CLASS}
+                          style={{ color: FIELD_ERROR_COLOR }}
                         >
                           {fieldErrors.childCount}
                         </p>
                       )}
                     </div>
 
-                    {children.map((child, i) => {
-                      const pl = programLabel(child.age);
-                      const rowError = fieldErrors.children[i];
-                      return (
-                        <div key={i} className="flex flex-col gap-1.5">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id={`child-name-${i}`}
-                              placeholder={ct.childName}
-                              aria-label={`${ct.childName} ${i + 1}`}
-                              value={child.name}
-                              onChange={(e) =>
-                                updateChild(i, 'name', e.target.value)
-                              }
-                              disabled={isSubmitting}
-                              required
-                              maxLength={60}
-                              className="min-h-[44px] flex-1 text-base bg-white"
-                              aria-invalid={!!rowError}
-                              aria-describedby={
-                                rowError ? `child-error-${i}` : undefined
-                              }
-                            />
-                            <Input
-                              id={`child-age-${i}`}
-                              type="number"
-                              min={4}
-                              max={17}
-                              placeholder={ct.age}
-                              aria-label={`${ct.ageLabel} ${i + 1}`}
-                              value={child.age}
-                              onChange={(e) =>
-                                updateChild(i, 'age', e.target.value)
-                              }
-                              disabled={isSubmitting}
-                              required
-                              className="min-h-[44px] w-20 text-base bg-white"
-                              aria-invalid={!!rowError}
-                              aria-describedby={
-                                rowError ? `child-error-${i}` : undefined
-                              }
-                            />
-                            {children.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeChild(i)}
-                                disabled={isSubmitting}
-                                aria-label={`${ct.removeChild} ${i + 1}`}
-                                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
-                                style={{
-                                  backgroundColor: '#fee2e2',
-                                  color: '#ef4444',
-                                }}
+                    <div className="flex flex-col gap-3">
+                      {children.map((child, i) => {
+                        const pl = programLabel(child.age);
+                        const rowError = fieldErrors.children[i];
+                        return (
+                          <div key={i} className="flex flex-col gap-1.5">
+                            <div className="flex items-end gap-2">
+                              <div className="flex flex-1 flex-col gap-1.5">
+                                <Label
+                                  htmlFor={`child-name-${i}`}
+                                  className={FIELD_LABEL_CLASS}
+                                  style={{ color: V3.text }}
+                                >
+                                  {ct.childName}
+                                </Label>
+                                <Input
+                                  id={`child-name-${i}`}
+                                  aria-label={`${ct.childName} ${i + 1}`}
+                                  value={child.name}
+                                  onChange={(e) =>
+                                    updateChild(i, 'name', e.target.value)
+                                  }
+                                  disabled={isSubmitting}
+                                  required
+                                  maxLength={60}
+                                  className="v3-field"
+                                  aria-invalid={!!rowError}
+                                  aria-describedby={
+                                    rowError ? `child-error-${i}` : undefined
+                                  }
+                                />
+                              </div>
+                              <div className="flex w-20 flex-col gap-1.5">
+                                <Label
+                                  htmlFor={`child-age-${i}`}
+                                  className={FIELD_LABEL_CLASS}
+                                  style={{ color: V3.text }}
+                                >
+                                  {ct.ageLabel}
+                                </Label>
+                                <Input
+                                  id={`child-age-${i}`}
+                                  type="number"
+                                  min={4}
+                                  max={17}
+                                  aria-label={`${ct.ageLabel} ${i + 1}`}
+                                  value={child.age}
+                                  onChange={(e) =>
+                                    updateChild(i, 'age', e.target.value)
+                                  }
+                                  onBlur={() => setAgesSettled(true)}
+                                  disabled={isSubmitting}
+                                  required
+                                  className="v3-field w-20"
+                                  aria-invalid={!!rowError}
+                                  aria-describedby={
+                                    rowError ? `child-error-${i}` : undefined
+                                  }
+                                />
+                              </div>
+                              {children.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeChild(i)}
+                                  disabled={isSubmitting}
+                                  aria-label={`${ct.removeChild} ${i + 1}`}
+                                  className="v3-field-button v3-field-button-icon flex-shrink-0"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                            {pl && (
+                              <p
+                                className={FIELD_HELP_CLASS}
+                                style={{ color: pl.color }}
                               >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
+                                {pl.text}
+                              </p>
+                            )}
+                            {rowError && (
+                              <p
+                                id={`child-error-${i}`}
+                                className={FIELD_HELP_CLASS}
+                                style={{ color: FIELD_ERROR_COLOR }}
+                              >
+                                {rowError}
+                              </p>
                             )}
                           </div>
-                          {pl && (
-                            <p
-                              className="text-sm font-medium pl-1"
-                              style={{ color: pl.color }}
-                            >
-                              {pl.text}
-                            </p>
-                          )}
-                          {rowError && (
-                            <p
-                              id={`child-error-${i}`}
-                              className="text-sm pl-1"
-                              style={{ color: '#b91c1c' }}
-                            >
-                              {rowError}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
 
-                    <button
-                      type="button"
-                      onClick={addChild}
-                      disabled={isSubmitting}
-                      className="flex items-center gap-1.5 text-sm font-semibold self-start transition-opacity hover:opacity-70"
-                      style={{ color: V3.primary }}
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      {ct.addChild}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={addChild}
+                        disabled={isSubmitting}
+                        className="v3-field-button self-start"
+                      >
+                        <Plus className="w-4 h-4" />
+                        {ct.addChild}
+                      </button>
+                    </div>
+
+                    {!visitRevealed && (
+                      <p
+                        className={FIELD_HELP_CLASS}
+                        style={{ color: V3.muted }}
+                      >
+                        {ct.visitHint}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="flex flex-col gap-2">
+                  <TrialVisitStep
+                    children={children}
+                    value={selections}
+                    onChange={handleVisitChange}
+                    errors={visitErrors}
+                    refreshKey={visitRefreshKey}
+                    disabled={isSubmitting}
+                    revealed={visitRevealed}
+                    onReveal={revealVisitStep}
+                    agesSettled={agesSettled}
+                  />
+
+                  {/* The one optional field on the form, and the only one no
+                      calendar depends on: it sits last, out of the way of the
+                      ages that decide which calendars appear. */}
+                  <div className="flex flex-col gap-1.5">
                     <Label
                       htmlFor="message"
-                      className="text-sm font-semibold"
+                      className={FIELD_LABEL_CLASS}
                       style={{ color: V3.text }}
                     >
                       {ct.notesLabel}{' '}
@@ -543,7 +696,7 @@ export function ContactPage() {
                       onChange={(e) => setMessage(e.target.value)}
                       disabled={isSubmitting}
                       maxLength={1500}
-                      className="text-base"
+                      className="v3-field"
                     />
                   </div>
 
@@ -554,7 +707,7 @@ export function ContactPage() {
                     </Alert>
                   )}
 
-                  <div className="flex flex-col gap-3 pt-1">
+                  <div className="flex flex-col gap-3">
                     <button
                       type="submit"
                       disabled={isSubmitting}
@@ -563,7 +716,9 @@ export function ContactPage() {
                         opacity: isSubmitting ? 0.6 : 1,
                         cursor: isSubmitting ? 'not-allowed' : 'pointer',
                         fontSize: '1rem',
-                        padding: '0.9rem 2rem',
+                        minHeight: '56px',
+                        borderRadius: '12px',
+                        padding: '0 2rem',
                       }}
                     >
                       {isSubmitting ? (
@@ -571,6 +726,8 @@ export function ContactPage() {
                           <Loader2 className="w-4 h-4 animate-spin" />
                           {ct.submitting}
                         </span>
+                      ) : programGroups.length > 1 ? (
+                        ct.submitPlural
                       ) : (
                         ct.submit
                       )}
@@ -579,7 +736,7 @@ export function ContactPage() {
                       className="text-sm text-center"
                       style={{ color: V3.muted }}
                     >
-                      {ct.required}
+                      {ct.neverSell}
                       <br />
                       {ct.consentPre}
                       <Link

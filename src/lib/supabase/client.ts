@@ -53,19 +53,22 @@ export type TrialBookingReceipt = {
 };
 
 function isTrialBookingReceipt(value: unknown): value is TrialBookingReceipt {
+  const visits = (value as { visits?: unknown } | null)?.visits;
   return (
     typeof value === 'object' &&
     value !== null &&
     typeof (value as { lead_id?: unknown }).lead_id === 'string' &&
-    Array.isArray((value as { visits?: unknown }).visits)
+    Array.isArray(visits) &&
+    visits.length > 0
   );
 }
 
 /**
  * POSTs to a PostgREST RPC endpoint with a hard timeout (AbortController),
- * returning the raw JSON success payload or a normalized { message, code? }
- * error. Shared by every *WithTimeout wrapper below; each wrapper owns its
- * own body shape and how it narrows the raw payload to its return type.
+ * returning the raw JSON success payload or a normalized
+ * { message, code?, hint? } error. Shared by every *WithTimeout wrapper below;
+ * each wrapper owns its own body shape and how it narrows the raw payload to
+ * its return type.
  */
 async function postRpcWithTimeout(
   rpcName: string,
@@ -74,7 +77,7 @@ async function postRpcWithTimeout(
   timeoutMessage: string,
 ): Promise<{
   data: unknown;
-  error: { message: string; code?: string } | null;
+  error: { message: string; code?: string; hint?: string } | null;
 }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -95,14 +98,16 @@ async function postRpcWithTimeout(
       const errBody = await res.text();
       let msg = res.statusText;
       let code: string | undefined;
+      let hint: string | undefined;
       try {
         const j = JSON.parse(errBody);
         if (j.message) msg = j.message;
         if (j.code) code = j.code;
+        if (j.hint) hint = j.hint;
       } catch {
         // ignore parse failures
       }
-      return { data: null, error: { message: msg, code } };
+      return { data: null, error: { message: msg, code, hint } };
     }
 
     return { data: await res.json(), error: null };
@@ -222,7 +227,9 @@ export async function submitTrialBookingWithTimeout(
   timeoutMs: number,
 ): Promise<{
   data: TrialBookingReceipt | null;
-  error: { message: string; code?: string } | null;
+  // `hint` carries the program whose visit could not be booked, when the
+  // server could name one; see submit_trial_booking's availability errors.
+  error: { message: string; code?: string; hint?: string } | null;
 }> {
   const { data, error } = await postRpcWithTimeout(
     'submit_trial_booking',
