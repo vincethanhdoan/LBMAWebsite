@@ -286,11 +286,22 @@ export function ContactPage() {
       ) {
         const availabilityMessage =
           code === '23P01' ? ct.errSlotTaken : ct.errDateGone;
+        // The server names the program whose visit it could not book in the
+        // error hint, so only that family's calendar is cleared and pointed
+        // at. Without a usable hint there is no telling which visit failed,
+        // so every selection goes and the first calendar takes the blame.
+        const hinted = groups.find((g) => g.program === error?.hint)?.program;
+        const blamed = hinted ?? groups[0].program;
         setSubmitError(availabilityMessage);
-        setVisitErrors({ [groups[0].program]: availabilityMessage });
-        setSelections({});
+        setVisitErrors({ [blamed]: availabilityMessage });
+        setSelections((prev) => {
+          if (!hinted) return {};
+          const next = { ...prev };
+          delete next[hinted];
+          return next;
+        });
         setVisitRefreshKey((k) => k + 1);
-        requestVisitFocus(groups[0].program);
+        requestVisitFocus(blamed);
       } else {
         setSubmitError(ct.errSubmit);
       }

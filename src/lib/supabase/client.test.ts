@@ -225,6 +225,23 @@ describe('submitTrialBookingWithTimeout', () => {
     );
     const result = await submitTrialBookingWithTimeout(trialInput, 5000);
     expect(result.error).toEqual({ message: 'slot_taken', code: '23P01' });
+    expect(result.error?.hint).toBeUndefined();
+  });
+
+  it('surfaces the hint naming the program whose visit failed', async () => {
+    fetchMock.mockResolvedValue(
+      errorResponse(
+        409,
+        'Conflict',
+        JSON.stringify({ message: 'slot_taken', code: '23P01', hint: 'youth' }),
+      ),
+    );
+    const result = await submitTrialBookingWithTimeout(trialInput, 5000);
+    expect(result.error).toEqual({
+      message: 'slot_taken',
+      code: '23P01',
+      hint: 'youth',
+    });
   });
 
   it('falls back to statusText when the error body is not JSON', async () => {

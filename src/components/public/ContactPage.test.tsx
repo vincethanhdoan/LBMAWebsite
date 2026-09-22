@@ -416,6 +416,108 @@ describe('ContactPage', () => {
     },
   );
 
+  it('clears only the calendar the error hint names and keeps the other choice', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    vi.mocked(submitTrialBookingWithTimeout).mockResolvedValue({
+      data: null,
+      error: { message: 'slot_taken', code: '23P01', hint: 'youth' },
+    });
+
+    render(<Wrapper lang="en" />);
+    fillTwoChildren();
+    const littleGroup = await screen.findByRole('group', {
+      name: 'Little Dragons visit for Mia',
+    });
+    const youthGroup = screen.getByRole('group', {
+      name: 'Youth Program visit for Alex',
+    });
+    fireEvent.click(
+      await within(littleGroup).findByRole('button', { name: 'Pick' }),
+    );
+    fireEvent.click(
+      await within(youthGroup).findByRole('button', { name: 'Pick' }),
+    );
+
+    submitForm();
+
+    await waitFor(() =>
+      expect(submitTrialBookingWithTimeout).toHaveBeenCalledTimes(1),
+    );
+
+    const slotTaken =
+      'Someone just took that time. Everything you typed is saved. Please pick another day or time.';
+    expect(await within(youthGroup).findByText(slotTaken)).toBeTruthy();
+    expect(within(littleGroup).queryByText(slotTaken)).toBeNull();
+    expect(within(littleGroup).getByTestId('picker-value').textContent).toBe(
+      's1|2099-01-05|17:20:00',
+    );
+    expect(within(youthGroup).getByTestId('picker-value').textContent).toBe('');
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        document.getElementById('visit-group-youth'),
+      ),
+    );
+
+    // The Little Dragons visit was never in question, so the next submit
+    // sends it again without the family having to pick that day twice.
+    fireEvent.click(
+      await within(youthGroup).findByRole('button', { name: 'Pick' }),
+    );
+    submitForm();
+
+    await waitFor(() =>
+      expect(submitTrialBookingWithTimeout).toHaveBeenCalledTimes(2),
+    );
+    const [params] = vi.mocked(submitTrialBookingWithTimeout).mock.calls[1];
+    expect(params.bookings).toEqual([
+      { program_type: 'little_dragons', slot_id: 's1', date: '2099-01-05' },
+      { program_type: 'youth', slot_id: 's1', date: '2099-01-05' },
+    ]);
+  });
+
+  it('clears both calendars when the error names no program', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    vi.mocked(submitTrialBookingWithTimeout).mockResolvedValue({
+      data: null,
+      error: { message: 'slot_taken', code: '23P01' },
+    });
+
+    render(<Wrapper lang="en" />);
+    fillTwoChildren();
+    const littleGroup = await screen.findByRole('group', {
+      name: 'Little Dragons visit for Mia',
+    });
+    const youthGroup = screen.getByRole('group', {
+      name: 'Youth Program visit for Alex',
+    });
+    fireEvent.click(
+      await within(littleGroup).findByRole('button', { name: 'Pick' }),
+    );
+    fireEvent.click(
+      await within(youthGroup).findByRole('button', { name: 'Pick' }),
+    );
+
+    submitForm();
+
+    await waitFor(() =>
+      expect(submitTrialBookingWithTimeout).toHaveBeenCalledTimes(1),
+    );
+
+    const slotTaken =
+      'Someone just took that time. Everything you typed is saved. Please pick another day or time.';
+    expect(await within(littleGroup).findByText(slotTaken)).toBeTruthy();
+    expect(within(youthGroup).queryByText(slotTaken)).toBeNull();
+    expect(within(littleGroup).getByTestId('picker-value').textContent).toBe(
+      '',
+    );
+    expect(within(youthGroup).getByTestId('picker-value').textContent).toBe('');
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        document.getElementById('visit-group-little_dragons'),
+      ),
+    );
+  });
+
   it.each([
     [
       'P0409',
