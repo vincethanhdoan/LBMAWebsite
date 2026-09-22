@@ -5,6 +5,15 @@ import { ErrorBoundary } from '../ErrorBoundary';
 import { reportError } from '../../lib/monitoring/sentry';
 import { useLanguage } from './lang';
 import { V3 } from './design';
+import {
+  FIELD_ERROR_COLOR,
+  FIELD_HELP_CLASS,
+  FIELD_LABEL_CLASS,
+  STEP_EYEBROW_CLASS,
+  STEP_EYEBROW_STYLE,
+  STEP_PANEL_CLASS,
+  STEP_PANEL_STYLE,
+} from './formStyles';
 import { fillTemplate } from './fillTemplate';
 import { joinNames } from '../../lib/contactLinks';
 import { programsForChildren } from '../../lib/programs';
@@ -109,55 +118,69 @@ function ProgramGroup({
         });
   const errorId = `visit-error-${program}`;
 
-  // The group is plain and edge to edge on phones: the calendar inside needs
-  // every pixel of the card it sits in. The tinted, bordered box comes back
-  // from `sm` up, where there is room for it.
+  // The step's own cream panel is the tinted, bordered box now, so each
+  // program inside it is a plain block with a heading: a second tinted box
+  // nested in the first would only blur where one program ends.
   return (
     <fieldset
       id={`visit-group-${program}`}
       tabIndex={-1}
       disabled={disabled}
       aria-describedby={error ? errorId : undefined}
-      className="flex flex-col gap-3 py-2 sm:rounded-xl sm:border sm:border-[var(--v3-border)] sm:bg-[var(--v3-surface)] sm:p-5"
+      className="flex flex-col gap-2"
     >
-      <legend className="text-sm font-semibold px-1" style={{ color: V3.text }}>
+      <legend className={FIELD_LABEL_CLASS} style={{ color: V3.text }}>
         {legend}
       </legend>
 
-      {slotsState.status === 'error' ? (
-        <VisitLoadFailure
-          message={copy.loadError}
-          retryLabel={copy.retry}
-          onRetry={() => onRetrySlots(program)}
-        />
-      ) : slotsState.status === 'loading' ? (
-        <LoadingSpinner label={copy.loading} />
-      ) : (
-        // Without this boundary a failed chunk request (a stale hash after a
-        // deploy, a dropped connection) would reach the app root and replace
-        // the whole page with its generic English error. There is no retry:
-        // a failed dynamic import is cached by the browser and never
-        // refetches, so the fallback sends the visitor to call instead.
-        <ErrorBoundary
-          onError={reportError}
-          fallback={() => <VisitLoadFailure message={copy.chunkLoadError} />}
-        >
-          <Suspense fallback={<LoadingSpinner label={copy.loading} />}>
-            <VisitPickerChunk
-              slots={slotsState.slots}
-              value={value}
-              onChange={(choice) => onPick(program, choice)}
-              language={language}
-              horizonWeeks={PUBLIC_HORIZON_WEEKS}
-              refreshKey={refreshKey}
-              emptyMessage={visitNone}
-            />
-          </Suspense>
-        </ErrorBoundary>
-      )}
+      {/* The calendar keeps a white surface of its own: its available-day
+          highlight is a pale red that all but disappears against the step's
+          cream panel. On phones it is ruled top and bottom only and carries
+          no horizontal padding, so the month grid still gets every pixel of
+          the panel's width. */}
+      <div
+        className="border-y py-3 sm:rounded-lg sm:border sm:px-2"
+        style={{ backgroundColor: 'white', borderColor: V3.border }}
+      >
+        {slotsState.status === 'error' ? (
+          <VisitLoadFailure
+            message={copy.loadError}
+            retryLabel={copy.retry}
+            onRetry={() => onRetrySlots(program)}
+          />
+        ) : slotsState.status === 'loading' ? (
+          <LoadingSpinner label={copy.loading} />
+        ) : (
+          // Without this boundary a failed chunk request (a stale hash after
+          // a deploy, a dropped connection) would reach the app root and
+          // replace the whole page with its generic English error. There is
+          // no retry: a failed dynamic import is cached by the browser and
+          // never refetches, so the fallback sends the visitor to call.
+          <ErrorBoundary
+            onError={reportError}
+            fallback={() => <VisitLoadFailure message={copy.chunkLoadError} />}
+          >
+            <Suspense fallback={<LoadingSpinner label={copy.loading} />}>
+              <VisitPickerChunk
+                slots={slotsState.slots}
+                value={value}
+                onChange={(choice) => onPick(program, choice)}
+                language={language}
+                horizonWeeks={PUBLIC_HORIZON_WEEKS}
+                refreshKey={refreshKey}
+                emptyMessage={visitNone}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        )}
+      </div>
 
       {error && (
-        <p id={errorId} className="text-sm" style={{ color: '#b91c1c' }}>
+        <p
+          id={errorId}
+          className={FIELD_HELP_CLASS}
+          style={{ color: FIELD_ERROR_COLOR }}
+        >
           {error}
         </p>
       )}
@@ -268,21 +291,24 @@ export function TrialVisitStep({
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <div>
+    <section className={STEP_PANEL_CLASS} style={STEP_PANEL_STYLE}>
+      <div className="flex flex-col gap-1.5">
+        <p className={STEP_EYEBROW_CLASS} style={STEP_EYEBROW_STYLE}>
+          {ct.step3}
+        </p>
         <h2
-          className="v3-h font-black mb-1"
+          className="v3-h font-black"
           style={{ fontSize: 'clamp(1.35rem, 2.4vw, 1.75rem)', color: V3.text }}
         >
           {ct.visitHeading}
         </h2>
-        <p className="text-base" style={{ color: V3.muted }}>
+        <p className={FIELD_HELP_CLASS} style={{ color: V3.muted }}>
           {ct.visitSub}
         </p>
       </div>
 
       {groups.length === 0 ? (
-        <p className="text-sm" style={{ color: V3.muted }}>
+        <p className={FIELD_HELP_CLASS} style={{ color: V3.muted }}>
           {ct.visitNeedsAge}
         </p>
       ) : (

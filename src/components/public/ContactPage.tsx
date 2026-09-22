@@ -8,6 +8,15 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { submitTrialBookingWithTimeout } from '../../lib/supabase/client';
 import type { TrialBookingReceipt } from '../../lib/supabase/client';
 import { V3 } from './design';
+import {
+  FIELD_ERROR_COLOR,
+  FIELD_HELP_CLASS,
+  FIELD_LABEL_CLASS,
+  STEP_EYEBROW_CLASS,
+  STEP_EYEBROW_STYLE,
+  STEP_PANEL_CLASS,
+  STEP_PANEL_STYLE,
+} from './formStyles';
 import { useLanguage } from './lang';
 import { isValidEmail, isValidUsPhone } from '../../lib/validation';
 import { SCHOOL_PHONE_DISPLAY } from '../../lib/contactLinks';
@@ -113,8 +122,8 @@ export function ContactPage() {
     if (!age) return null;
     const program = programForAgeText(age);
     if (program === 'little_dragons')
-      return { text: ct.programLittle, color: '#6d28d9' };
-    if (program === 'youth') return { text: ct.programYouth, color: '#1d4ed8' };
+      return { text: ct.programLittle, color: V3.muted };
+    if (program === 'youth') return { text: ct.programYouth, color: V3.muted };
     return { text: ct.programAgeError, color: '#b91c1c' };
   }
 
@@ -339,9 +348,9 @@ export function ContactPage() {
                 <form
                   onSubmit={handleSubmit}
                   noValidate
-                  className="flex flex-col gap-6"
+                  className="flex flex-col gap-5"
                 >
-                  <div>
+                  <div className="mb-2">
                     <h2
                       className="v3-h font-black mb-1"
                       style={{
@@ -356,168 +365,185 @@ export function ContactPage() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-2">
-                      <Label
-                        htmlFor="parentName"
-                        className="text-sm font-semibold"
-                        style={{ color: V3.text }}
-                      >
-                        {ct.yourName}{' '}
-                        <span style={{ color: V3.primary }}>*</span>
-                      </Label>
-                      <Input
-                        id="parentName"
-                        placeholder="Eduardo Guerra"
-                        value={parentName}
-                        onChange={(e) => {
-                          setParentName(e.target.value);
-                          if (fieldErrors.name)
-                            setFieldErrors((prev) => ({
-                              ...prev,
-                              name: undefined,
-                            }));
-                        }}
-                        disabled={isSubmitting}
-                        required
-                        maxLength={100}
-                        className="min-h-[48px] text-base"
-                        autoComplete="name"
-                        aria-invalid={!!fieldErrors.name}
-                        aria-describedby={
-                          fieldErrors.name ? 'parent-name-error' : undefined
-                        }
-                      />
-                      {fieldErrors.name && (
-                        <p
-                          id="parent-name-error"
-                          className="mt-0.5 text-sm"
-                          style={{ color: '#b91c1c' }}
-                        >
-                          {fieldErrors.name}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label
-                        htmlFor="phone"
-                        className="text-sm font-semibold"
-                        style={{ color: V3.text }}
-                      >
-                        {ct.phone} <span style={{ color: V3.primary }}>*</span>
-                      </Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="(209) 555-0123"
-                        value={phone}
-                        onChange={(e) => {
-                          setPhone(e.target.value);
-                          if (fieldErrors.phone)
-                            setFieldErrors((prev) => ({
-                              ...prev,
-                              phone: undefined,
-                            }));
-                        }}
-                        disabled={isSubmitting}
-                        required
-                        maxLength={20}
-                        className="min-h-[48px] text-base"
-                        autoComplete="tel"
-                        aria-invalid={!!fieldErrors.phone}
-                        aria-describedby={
-                          fieldErrors.phone
-                            ? 'phone-error phone-consent'
-                            : 'phone-consent'
-                        }
-                      />
-                      {fieldErrors.phone && (
-                        <p
-                          id="phone-error"
-                          className="mt-0.5 text-sm"
-                          style={{ color: '#b91c1c' }}
-                        >
-                          {fieldErrors.phone}
-                        </p>
-                      )}
-                      <p
-                        id="phone-consent"
-                        className="text-sm"
-                        style={{ color: V3.muted }}
-                      >
-                        {ct.phoneConsent}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <Label
-                      htmlFor="parentEmail"
-                      className="text-sm font-semibold"
-                      style={{ color: V3.text }}
-                    >
-                      {ct.email} <span style={{ color: V3.primary }}>*</span>
-                    </Label>
-                    <Input
-                      id="parentEmail"
-                      type="email"
-                      placeholder="name@email.com"
-                      value={parentEmail}
-                      onChange={(e) => {
-                        setParentEmail(e.target.value);
-                        if (fieldErrors.email)
-                          setFieldErrors((prev) => ({
-                            ...prev,
-                            email: undefined,
-                          }));
-                      }}
-                      disabled={isSubmitting}
-                      required
-                      maxLength={254}
-                      className="min-h-[48px] text-base"
-                      autoComplete="email"
-                      aria-invalid={!!fieldErrors.email}
-                      aria-describedby={
-                        fieldErrors.email ? 'email-error' : undefined
-                      }
-                    />
-                    {fieldErrors.email && (
-                      <p
-                        id="email-error"
-                        className="mt-0.5 text-sm"
-                        style={{ color: '#b91c1c' }}
-                      >
-                        {fieldErrors.email}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Children section */}
+                  {/* Step 1 — about you */}
                   <div
                     role="group"
-                    aria-labelledby="children-label"
+                    aria-labelledby="step-about"
+                    className={STEP_PANEL_CLASS}
+                    style={STEP_PANEL_STYLE}
+                  >
+                    <p
+                      id="step-about"
+                      className={STEP_EYEBROW_CLASS}
+                      style={STEP_EYEBROW_STYLE}
+                    >
+                      {ct.step1}
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <Label
+                          htmlFor="parentName"
+                          className={FIELD_LABEL_CLASS}
+                          style={{ color: V3.text }}
+                        >
+                          {ct.yourName}
+                        </Label>
+                        <Input
+                          id="parentName"
+                          value={parentName}
+                          onChange={(e) => {
+                            setParentName(e.target.value);
+                            if (fieldErrors.name)
+                              setFieldErrors((prev) => ({
+                                ...prev,
+                                name: undefined,
+                              }));
+                          }}
+                          disabled={isSubmitting}
+                          required
+                          maxLength={100}
+                          className="v3-field"
+                          autoComplete="name"
+                          aria-invalid={!!fieldErrors.name}
+                          aria-describedby={
+                            fieldErrors.name ? 'parent-name-error' : undefined
+                          }
+                        />
+                        {fieldErrors.name && (
+                          <p
+                            id="parent-name-error"
+                            className={FIELD_HELP_CLASS}
+                            style={{ color: FIELD_ERROR_COLOR }}
+                          >
+                            {fieldErrors.name}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label
+                          htmlFor="phone"
+                          className={FIELD_LABEL_CLASS}
+                          style={{ color: V3.text }}
+                        >
+                          {ct.phone}
+                        </Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="(555) 555-5555"
+                          value={phone}
+                          onChange={(e) => {
+                            setPhone(e.target.value);
+                            if (fieldErrors.phone)
+                              setFieldErrors((prev) => ({
+                                ...prev,
+                                phone: undefined,
+                              }));
+                          }}
+                          disabled={isSubmitting}
+                          required
+                          maxLength={20}
+                          className="v3-field"
+                          autoComplete="tel"
+                          aria-invalid={!!fieldErrors.phone}
+                          aria-describedby={
+                            fieldErrors.phone
+                              ? 'phone-error phone-consent'
+                              : 'phone-consent'
+                          }
+                        />
+                        {fieldErrors.phone && (
+                          <p
+                            id="phone-error"
+                            className={FIELD_HELP_CLASS}
+                            style={{ color: FIELD_ERROR_COLOR }}
+                          >
+                            {fieldErrors.phone}
+                          </p>
+                        )}
+                        <p
+                          id="phone-consent"
+                          className={FIELD_HELP_CLASS}
+                          style={{ color: V3.muted }}
+                        >
+                          {ct.phoneConsent}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label
+                        htmlFor="parentEmail"
+                        className={FIELD_LABEL_CLASS}
+                        style={{ color: V3.text }}
+                      >
+                        {ct.email}
+                      </Label>
+                      <Input
+                        id="parentEmail"
+                        type="email"
+                        placeholder="name@email.com"
+                        value={parentEmail}
+                        onChange={(e) => {
+                          setParentEmail(e.target.value);
+                          if (fieldErrors.email)
+                            setFieldErrors((prev) => ({
+                              ...prev,
+                              email: undefined,
+                            }));
+                        }}
+                        disabled={isSubmitting}
+                        required
+                        maxLength={254}
+                        className="v3-field"
+                        autoComplete="email"
+                        aria-invalid={!!fieldErrors.email}
+                        aria-describedby={
+                          fieldErrors.email ? 'email-error' : undefined
+                        }
+                      />
+                      {fieldErrors.email && (
+                        <p
+                          id="email-error"
+                          className={FIELD_HELP_CLASS}
+                          style={{ color: FIELD_ERROR_COLOR }}
+                        >
+                          {fieldErrors.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Step 2 — your children */}
+                  <div
+                    role="group"
+                    aria-labelledby="step-children"
                     aria-describedby={
                       fieldErrors.childCount ? 'child-count-error' : undefined
                     }
-                    className="flex flex-col gap-3 py-2 sm:rounded-xl sm:border sm:border-[var(--v3-border)] sm:bg-[var(--v3-surface)] sm:p-5"
+                    className={STEP_PANEL_CLASS}
+                    style={STEP_PANEL_STYLE}
                   >
-                    <div>
-                      <Label
-                        id="children-label"
-                        className="text-sm font-semibold"
-                        style={{ color: V3.text }}
+                    <div className="flex flex-col gap-1.5">
+                      <p
+                        id="step-children"
+                        className={STEP_EYEBROW_CLASS}
+                        style={STEP_EYEBROW_STYLE}
                       >
-                        {ct.childrenLabel}{' '}
-                        <span style={{ color: V3.primary }}>*</span>
-                      </Label>
-                      <p className="text-sm mt-1" style={{ color: V3.muted }}>
+                        {ct.step2}
+                      </p>
+                      <p
+                        className={FIELD_HELP_CLASS}
+                        style={{ color: V3.muted }}
+                      >
                         {ct.childrenSub}
                       </p>
                       {fieldErrors.childCount && (
                         <p
                           id="child-count-error"
-                          className="mt-1 text-sm"
-                          style={{ color: '#b91c1c' }}
+                          className={FIELD_HELP_CLASS}
+                          style={{ color: FIELD_ERROR_COLOR }}
                         >
                           {fieldErrors.childCount}
                         </p>
@@ -529,62 +555,74 @@ export function ContactPage() {
                       const rowError = fieldErrors.children[i];
                       return (
                         <div key={i} className="flex flex-col gap-1.5">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id={`child-name-${i}`}
-                              placeholder={ct.childName}
-                              aria-label={`${ct.childName} ${i + 1}`}
-                              value={child.name}
-                              onChange={(e) =>
-                                updateChild(i, 'name', e.target.value)
-                              }
-                              disabled={isSubmitting}
-                              required
-                              maxLength={60}
-                              className="min-h-[44px] flex-1 text-base bg-white"
-                              aria-invalid={!!rowError}
-                              aria-describedby={
-                                rowError ? `child-error-${i}` : undefined
-                              }
-                            />
-                            <Input
-                              id={`child-age-${i}`}
-                              type="number"
-                              min={4}
-                              max={17}
-                              placeholder={ct.age}
-                              aria-label={`${ct.ageLabel} ${i + 1}`}
-                              value={child.age}
-                              onChange={(e) =>
-                                updateChild(i, 'age', e.target.value)
-                              }
-                              disabled={isSubmitting}
-                              required
-                              className="min-h-[44px] w-20 text-base bg-white"
-                              aria-invalid={!!rowError}
-                              aria-describedby={
-                                rowError ? `child-error-${i}` : undefined
-                              }
-                            />
+                          <div className="flex items-end gap-2">
+                            <div className="flex flex-1 flex-col gap-1.5">
+                              <Label
+                                htmlFor={`child-name-${i}`}
+                                className={FIELD_LABEL_CLASS}
+                                style={{ color: V3.text }}
+                              >
+                                {ct.childName}
+                              </Label>
+                              <Input
+                                id={`child-name-${i}`}
+                                aria-label={`${ct.childName} ${i + 1}`}
+                                value={child.name}
+                                onChange={(e) =>
+                                  updateChild(i, 'name', e.target.value)
+                                }
+                                disabled={isSubmitting}
+                                required
+                                maxLength={60}
+                                className="v3-field"
+                                aria-invalid={!!rowError}
+                                aria-describedby={
+                                  rowError ? `child-error-${i}` : undefined
+                                }
+                              />
+                            </div>
+                            <div className="flex w-20 flex-col gap-1.5">
+                              <Label
+                                htmlFor={`child-age-${i}`}
+                                className={FIELD_LABEL_CLASS}
+                                style={{ color: V3.text }}
+                              >
+                                {ct.ageLabel}
+                              </Label>
+                              <Input
+                                id={`child-age-${i}`}
+                                type="number"
+                                min={4}
+                                max={17}
+                                aria-label={`${ct.ageLabel} ${i + 1}`}
+                                value={child.age}
+                                onChange={(e) =>
+                                  updateChild(i, 'age', e.target.value)
+                                }
+                                disabled={isSubmitting}
+                                required
+                                className="v3-field w-20"
+                                aria-invalid={!!rowError}
+                                aria-describedby={
+                                  rowError ? `child-error-${i}` : undefined
+                                }
+                              />
+                            </div>
                             {children.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => removeChild(i)}
                                 disabled={isSubmitting}
                                 aria-label={`${ct.removeChild} ${i + 1}`}
-                                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
-                                style={{
-                                  backgroundColor: '#fee2e2',
-                                  color: '#ef4444',
-                                }}
+                                className="v3-field-button v3-field-button-icon flex-shrink-0"
                               >
-                                <X className="w-3.5 h-3.5" />
+                                <X className="w-4 h-4" />
                               </button>
                             )}
                           </div>
                           {pl && (
                             <p
-                              className="text-sm font-medium pl-1"
+                              className={FIELD_HELP_CLASS}
                               style={{ color: pl.color }}
                             >
                               {pl.text}
@@ -593,8 +631,8 @@ export function ContactPage() {
                           {rowError && (
                             <p
                               id={`child-error-${i}`}
-                              className="text-sm pl-1"
-                              style={{ color: '#b91c1c' }}
+                              className={FIELD_HELP_CLASS}
+                              style={{ color: FIELD_ERROR_COLOR }}
                             >
                               {rowError}
                             </p>
@@ -607,14 +645,40 @@ export function ContactPage() {
                       type="button"
                       onClick={addChild}
                       disabled={isSubmitting}
-                      className="flex items-center gap-1.5 text-sm font-semibold self-start transition-opacity hover:opacity-70"
-                      style={{ color: V3.primary }}
+                      className="v3-field-button self-start"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-4 h-4" />
                       {ct.addChild}
                     </button>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label
+                        htmlFor="message"
+                        className={FIELD_LABEL_CLASS}
+                        style={{ color: V3.text }}
+                      >
+                        {ct.notesLabel}{' '}
+                        <span
+                          className="font-normal"
+                          style={{ color: V3.muted }}
+                        >
+                          {ct.notesOptional}
+                        </span>
+                      </Label>
+                      <Textarea
+                        id="message"
+                        placeholder={ct.notesPlaceholder}
+                        rows={4}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        disabled={isSubmitting}
+                        maxLength={1500}
+                        className="v3-field"
+                      />
+                    </div>
                   </div>
 
+                  {/* Step 3 — pick a day and time */}
                   <TrialVisitStep
                     children={children}
                     value={selections}
@@ -624,29 +688,6 @@ export function ContactPage() {
                     disabled={isSubmitting}
                   />
 
-                  <div className="flex flex-col gap-2">
-                    <Label
-                      htmlFor="message"
-                      className="text-sm font-semibold"
-                      style={{ color: V3.text }}
-                    >
-                      {ct.notesLabel}{' '}
-                      <span className="font-normal" style={{ color: V3.muted }}>
-                        {ct.notesOptional}
-                      </span>
-                    </Label>
-                    <Textarea
-                      id="message"
-                      placeholder={ct.notesPlaceholder}
-                      rows={4}
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      disabled={isSubmitting}
-                      maxLength={1500}
-                      className="text-base"
-                    />
-                  </div>
-
                   {submitError && (
                     <Alert variant="destructive" role="alert">
                       <AlertCircle className="h-4 w-4" />
@@ -654,7 +695,7 @@ export function ContactPage() {
                     </Alert>
                   )}
 
-                  <div className="flex flex-col gap-3 pt-1">
+                  <div className="flex flex-col gap-3 mt-1">
                     <button
                       type="submit"
                       disabled={isSubmitting}
@@ -663,7 +704,9 @@ export function ContactPage() {
                         opacity: isSubmitting ? 0.6 : 1,
                         cursor: isSubmitting ? 'not-allowed' : 'pointer',
                         fontSize: '1rem',
-                        padding: '0.9rem 2rem',
+                        minHeight: '56px',
+                        borderRadius: '12px',
+                        padding: '0 2rem',
                       }}
                     >
                       {isSubmitting ? (
@@ -679,7 +722,7 @@ export function ContactPage() {
                       className="text-sm text-center"
                       style={{ color: V3.muted }}
                     >
-                      {ct.required}
+                      {ct.neverSell}
                       <br />
                       {ct.consentPre}
                       <Link
