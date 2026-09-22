@@ -324,8 +324,10 @@ const EN = {
     consentLink: 'Privacy Policy',
     consentPost: '.',
     errVisit: 'Please choose a day and arrival time.',
-    errSlotTaken: 'Someone just booked that time. Please pick another.',
-    errDateGone: 'That day is no longer available. Please pick another.',
+    errSlotTaken:
+      'Someone just took that time. Everything you typed is saved. Please pick another day or time.',
+    errDateGone:
+      'That day is no longer available. Everything you typed is saved. Please pick another.',
     errAlreadyBooked:
       'We already have an upcoming visit booked under this email or phone number. Check your email for the details, or call us at (408) 620-0252 to change it.',
     successHeading: "You're booked",
@@ -897,8 +899,10 @@ const ES: T = {
     consentLink: 'Política de Privacidad',
     consentPost: '.',
     errVisit: 'Por favor elige un día y una hora de llegada.',
-    errSlotTaken: 'Alguien acaba de reservar esa hora. Por favor elige otra.',
-    errDateGone: 'Ese día ya no está disponible. Por favor elige otro.',
+    errSlotTaken:
+      'Alguien acaba de tomar esa hora. Todo lo que escribiste está guardado. Por favor, elige otro día u hora.',
+    errDateGone:
+      'Ese día ya no está disponible. Todo lo que escribiste está guardado. Por favor, elige otro.',
     errAlreadyBooked:
       'Ya tenemos una visita reservada con este correo o número de teléfono. Revisa tu correo para ver los detalles, o llámanos al (408) 620-0252 para cambiarla.',
     successHeading: 'Tu visita está reservada',

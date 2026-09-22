@@ -349,21 +349,25 @@ describe('ContactPage', () => {
   });
 
   it.each([
-    ['23P01', undefined, 'Someone just booked that time. Please pick another.'],
+    [
+      '23P01',
+      undefined,
+      'Someone just took that time. Everything you typed is saved. Please pick another day or time.',
+    ],
     [
       undefined,
       'date_unavailable',
-      'That day is no longer available. Please pick another.',
+      'That day is no longer available. Everything you typed is saved. Please pick another.',
     ],
     [
       undefined,
       'slot_mismatch',
-      'That day is no longer available. Please pick another.',
+      'That day is no longer available. Everything you typed is saved. Please pick another.',
     ],
     [
       undefined,
       'invalid_booking_request',
-      'That day is no longer available. Please pick another.',
+      'That day is no longer available. Everything you typed is saved. Please pick another.',
     ],
   ] as const)(
     'clears the selection and bumps the refresh key for code=%s message=%s',
