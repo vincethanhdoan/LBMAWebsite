@@ -161,6 +161,58 @@ describe('TrialVisitStep before it is revealed', () => {
     expect(screen.getByText(VISIT_HEADING)).toBeTruthy();
   });
 
+  it('holds an empty live region from the first render, then announces the reveal and clears on the next change', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    const { container, rerender } = render(
+      <Revealing children={[{ name: 'Amy', age: '' }]} />,
+    );
+    const region = container.querySelector(
+      'p[aria-live="polite"][aria-atomic="true"]',
+    ) as HTMLElement;
+    expect(region).toBeTruthy();
+    expect(region.textContent).toBe('');
+
+    rerender(<Revealing children={[{ name: 'Amy', age: '9' }]} />);
+    await screen.findByText(VISIT_HEADING);
+    expect(region.textContent).toBe(
+      'Choose a day for your first visit, added below.',
+    );
+
+    rerender(
+      <Revealing
+        children={[
+          { name: 'Amy', age: '9' },
+          { name: 'Ben', age: '5' },
+        ]}
+      />,
+    );
+    expect(region.textContent).toBe('');
+  });
+
+  it('announces both calendars when the first ages cover both programs', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    const { container, rerender } = render(
+      <Revealing children={[{ name: 'Mia', age: '' }]} />,
+    );
+    const region = container.querySelector(
+      'p[aria-live="polite"][aria-atomic="true"]',
+    ) as HTMLElement;
+
+    rerender(
+      <Revealing
+        children={[
+          { name: 'Mia', age: '5' },
+          { name: 'Alex', age: '9' },
+        ]}
+      />,
+    );
+    await screen.findByText(VISIT_HEADING);
+
+    expect(region.textContent).toBe(
+      'Choose a day for your first visit, two calendars added below, one for each program.',
+    );
+  });
+
   it('stays on screen, showing the needs-age line, when every age is cleared again', async () => {
     vi.mocked(getAppointmentSlots).mockResolvedValue([]);
     const { rerender } = render(

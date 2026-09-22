@@ -79,6 +79,11 @@ function parseProgramsKey(programsKey: string): Program[] {
   return programsKey === '' ? [] : (programsKey.split(',') as Program[]);
 }
 
+// What the step's own live region has to say. `VisitPicker` has a live
+// region of its own for the day a visitor picks; these two must stay
+// separate, or month navigation and a reveal would overwrite each other.
+type VisitAnnouncement = { kind: 'revealed'; programCount: number };
+
 type SlotsState =
   | { status: 'loading' }
   | { status: 'error' }
@@ -238,12 +243,37 @@ export function TrialVisitStep({
     setSlotRetryCount((n) => n + 1);
   }
 
+  // What the live region below is saying right now. Held as the event it
+  // describes, not as a sentence, so switching language never leaves a
+  // half-translated announcement behind.
+  const [announcement, setAnnouncement] = useState<VisitAnnouncement | null>(
+    null,
+  );
+  const [announcedProgramsKey, setAnnouncedProgramsKey] = useState(programsKey);
+
+  // An announcement describes one change. Once the programs change again it
+  // is stale, and clearing it means the next one is announced as new text
+  // even when it reads the same.
+  if (announcedProgramsKey !== programsKey) {
+    setAnnouncedProgramsKey(programsKey);
+    setAnnouncement(null);
+  }
+
   // Reveal once a program has held still, and never take the section away
   // again: a parent editing an age should not have a calendar they may
   // already be reading pulled out from under them.
   useEffect(() => {
     if (revealed || programsKey === '') return;
-    const timer = setTimeout(onReveal, agesSettled ? 0 : REVEAL_IDLE_MS);
+    const timer = setTimeout(
+      () => {
+        setAnnouncement({
+          kind: 'revealed',
+          programCount: parseProgramsKey(programsKey).length,
+        });
+        onReveal();
+      },
+      agesSettled ? 0 : REVEAL_IDLE_MS,
+    );
     return () => clearTimeout(timer);
   }, [revealed, programsKey, agesSettled, onReveal]);
 
@@ -311,56 +341,71 @@ export function TrialVisitStep({
     onChange(next);
   }
 
-  if (!revealed) return null;
+  const announcementText =
+    announcement === null
+      ? ''
+      : announcement.programCount > 1
+        ? ct.visitRevealedTwo
+        : ct.visitRevealed;
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h2 className={SECTION_HEADING_CLASS} style={SECTION_HEADING_STYLE}>
-          {ct.visitHeading}
-        </h2>
-        <p className={FIELD_HELP_CLASS} style={{ color: V3.muted }}>
-          {ct.visitSub}
-        </p>
-      </div>
+    <>
+      {/* Rendered from the first paint, empty: a live region added to the
+          page at the same moment as its text is announced unreliably. */}
+      <p aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcementText}
+      </p>
 
-      {groups.length === 0 ? (
-        <p className={FIELD_HELP_CLASS} style={{ color: V3.muted }}>
-          {ct.visitNeedsAge}
-        </p>
-      ) : (
-        groups.map(({ program, childNames }) => {
-          const slots = slotsByProgram[program];
-          const slotsState: SlotsState = errorPrograms.has(program)
-            ? { status: 'error' }
-            : slots
-              ? { status: 'ready', slots }
-              : { status: 'loading' };
-          const label =
-            program === 'little_dragons'
-              ? ct.programNameLittle
-              : ct.programNameYouth;
+      {revealed && (
+        <section className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className={SECTION_HEADING_CLASS} style={SECTION_HEADING_STYLE}>
+              {ct.visitHeading}
+            </h2>
+            <p className={FIELD_HELP_CLASS} style={{ color: V3.muted }}>
+              {ct.visitSub}
+            </p>
+          </div>
 
-          return (
-            <ProgramGroup
-              key={program}
-              program={program}
-              label={label}
-              childNames={childNames}
-              value={value[program] ?? null}
-              onPick={handlePick}
-              language={lang}
-              refreshKey={refreshKey}
-              error={errors[program]}
-              disabled={disabled}
-              slotsState={slotsState}
-              onRetrySlots={retrySlots}
-              visitFor={ct.visitFor}
-              visitNone={ct.visitNone}
-            />
-          );
-        })
+          {groups.length === 0 ? (
+            <p className={FIELD_HELP_CLASS} style={{ color: V3.muted }}>
+              {ct.visitNeedsAge}
+            </p>
+          ) : (
+            groups.map(({ program, childNames }) => {
+              const slots = slotsByProgram[program];
+              const slotsState: SlotsState = errorPrograms.has(program)
+                ? { status: 'error' }
+                : slots
+                  ? { status: 'ready', slots }
+                  : { status: 'loading' };
+              const label =
+                program === 'little_dragons'
+                  ? ct.programNameLittle
+                  : ct.programNameYouth;
+
+              return (
+                <ProgramGroup
+                  key={program}
+                  program={program}
+                  label={label}
+                  childNames={childNames}
+                  value={value[program] ?? null}
+                  onPick={handlePick}
+                  language={lang}
+                  refreshKey={refreshKey}
+                  error={errors[program]}
+                  disabled={disabled}
+                  slotsState={slotsState}
+                  onRetrySlots={retrySlots}
+                  visitFor={ct.visitFor}
+                  visitNone={ct.visitNone}
+                />
+              );
+            })
+          )}
+        </section>
       )}
-    </section>
+    </>
   );
 }

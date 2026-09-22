@@ -306,6 +306,9 @@ const EN = {
     visitNeedsAge:
       "Enter your child's age above and we'll show the days available.",
     visitHint: "Enter an age and we'll show the days you can visit.",
+    visitRevealed: 'Choose a day for your first visit, added below.',
+    visitRevealedTwo:
+      'Choose a day for your first visit, two calendars added below, one for each program.',
     visitNone:
       "There are no open visit times in the next three weeks. Please call us at (408) 620-0252 and we'll find a time.",
     notesLabel: 'Questions, notes, or anything we should know',
@@ -874,6 +877,9 @@ const ES: T = {
       'Escribe la edad de tu hijo arriba y te mostraremos los días disponibles.',
     visitHint:
       'Escribe una edad y te mostraremos los días disponibles para visitarnos.',
+    visitRevealed: 'Elige un día para tu primera visita, se agregó abajo.',
+    visitRevealedTwo:
+      'Elige un día para tu primera visita, se agregaron dos calendarios abajo, uno por cada programa.',
     visitNone:
       'No hay horarios disponibles en las próximas tres semanas. Llámanos al (408) 620-0252 y encontraremos un horario.',
     notesLabel: 'Preguntas, notas o algo que debamos saber',
