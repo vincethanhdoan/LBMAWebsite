@@ -648,32 +648,6 @@ export function ContactPage() {
                         {ct.visitHint}
                       </p>
                     )}
-
-                    <div className="flex flex-col gap-1.5">
-                      <Label
-                        htmlFor="message"
-                        className={FIELD_LABEL_CLASS}
-                        style={{ color: V3.text }}
-                      >
-                        {ct.notesLabel}{' '}
-                        <span
-                          className="font-normal"
-                          style={{ color: V3.muted }}
-                        >
-                          {ct.notesOptional}
-                        </span>
-                      </Label>
-                      <Textarea
-                        id="message"
-                        placeholder={ct.notesPlaceholder}
-                        rows={4}
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        disabled={isSubmitting}
-                        maxLength={1500}
-                        className="v3-field"
-                      />
-                    </div>
                   </div>
 
                   <TrialVisitStep
@@ -687,6 +661,32 @@ export function ContactPage() {
                     onReveal={revealVisitStep}
                     agesSettled={agesSettled}
                   />
+
+                  {/* The one optional field on the form, and the only one no
+                      calendar depends on: it sits last, out of the way of the
+                      ages that decide which calendars appear. */}
+                  <div className="flex flex-col gap-1.5">
+                    <Label
+                      htmlFor="message"
+                      className={FIELD_LABEL_CLASS}
+                      style={{ color: V3.text }}
+                    >
+                      {ct.notesLabel}{' '}
+                      <span className="font-normal" style={{ color: V3.muted }}>
+                        {ct.notesOptional}
+                      </span>
+                    </Label>
+                    <Textarea
+                      id="message"
+                      placeholder={ct.notesPlaceholder}
+                      rows={4}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      disabled={isSubmitting}
+                      maxLength={1500}
+                      className="v3-field"
+                    />
+                  </div>
 
                   {submitError && (
                     <Alert variant="destructive" role="alert">
