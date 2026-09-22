@@ -131,6 +131,85 @@
   border-radius: 4px;
 }
 
+/* Signup form fields.
+
+   The app-wide `--input` is transparent, so a shadcn Input has no visible
+   edge on the signup card and the fields read as one wall of text. These
+   rules give every field on the public form a boundary of its own:
+   #8f817b is 3.19:1 against the cream group surface (#f3ebe9) and 3.75:1
+   against the white field fill, so the boundary clears WCAG 1.4.11 against
+   both colours it touches. 16px text keeps iOS Safari from zooming in when
+   a field takes focus, and 52px of height keeps the tap target generous.
+
+   Every declaration here outranks the utility classes the shadcn Input and
+   Textarea already carry (two class selectors against one), so this is the
+   whole appearance of a field, not a patch layered over it. */
+.v3-root .v3-field {
+  min-height: 52px;
+  padding: 0.75rem 0.875rem;
+  border: 1.5px solid #8f817b;
+  border-radius: 10px;
+  background-color: white;
+  color: var(--v3-text);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.v3-root textarea.v3-field {
+  min-height: 7rem;
+}
+
+.v3-root .v3-field::placeholder {
+  color: #7c716d;
+}
+
+.v3-root .v3-field:focus-visible {
+  border-color: var(--v3-primary);
+  border-width: 2px;
+  box-shadow: 0 0 0 3px rgb(160 31 35 / 0.18);
+  /* The site-wide outline above is replaced, not dropped: the primary-red
+     border plus ring is the stronger indicator, and keeping a transparent
+     outline preserves a visible focus ring in forced-colours mode. */
+  outline-color: transparent;
+}
+
+.v3-root .v3-field[aria-invalid='true'] {
+  border-color: #b91c1c;
+}
+
+/* The add/remove child controls: bordered and full-height, so they read as
+   buttons rather than as text that happens to be red. */
+.v3-root .v3-field-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 1.5px solid #8f817b;
+  border-radius: 10px;
+  background-color: white;
+  color: var(--v3-primary);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.v3-root .v3-field-button:hover {
+  background-color: var(--v3-primary-bg);
+}
+
+.v3-root .v3-field-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.v3-root .v3-field-button-icon {
+  width: 44px;
+  padding: 0;
+}
+
 /* Student carousel */
 @keyframes v3-student-scroll {
   0% {
