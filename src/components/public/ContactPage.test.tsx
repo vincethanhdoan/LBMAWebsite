@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
+  act,
   render,
   screen,
   fireEvent,
@@ -119,12 +120,51 @@ function submitForm() {
   fireEvent.click(screen.getByRole('button', { name: 'Book my visit' }));
 }
 
+const VISIT_HEADING = 'Choose a day for your first visit';
+const VISIT_HINT = "Enter an age and we'll show the days you can visit.";
+
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.clearAllMocks();
 });
 
 describe('ContactPage', () => {
+  it('points to the calendar under the child rows until the visit section arrives', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(<Wrapper lang="en" />);
+
+    expect(screen.getByText(VISIT_HINT)).toBeTruthy();
+    expect(screen.queryByText(VISIT_HEADING)).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('Age 1'), {
+      target: { value: '9' },
+    });
+
+    expect(await screen.findByText(VISIT_HEADING)).toBeTruthy();
+    expect(screen.queryByText(VISIT_HINT)).toBeNull();
+  });
+
+  it('shows the visit section as soon as the age field is left', async () => {
+    vi.useFakeTimers();
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(<Wrapper lang="en" />);
+    const age = screen.getByLabelText('Age 1');
+
+    fireEvent.change(age, { target: { value: '9' } });
+    await act(async () => {
+      vi.advanceTimersByTime(0);
+    });
+    expect(screen.queryByText(VISIT_HEADING)).toBeNull();
+
+    fireEvent.blur(age);
+    await act(async () => {
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByText(VISIT_HEADING)).toBeTruthy();
+  });
+
   it.each([
     ['en' as const, 'Children enrolling'],
     ['es' as const, 'Niños que se inscriben'],
@@ -431,8 +471,12 @@ describe('ContactPage', () => {
     const youthGroup = screen.getByRole('group', {
       name: 'Youth Program visit for Alex',
     });
-    fireEvent.click(within(littleGroup).getByRole('button', { name: 'Pick' }));
-    fireEvent.click(within(youthGroup).getByRole('button', { name: 'Pick' }));
+    fireEvent.click(
+      await within(littleGroup).findByRole('button', { name: 'Pick' }),
+    );
+    fireEvent.click(
+      await within(youthGroup).findByRole('button', { name: 'Pick' }),
+    );
 
     submitForm();
 
@@ -479,7 +523,9 @@ describe('ContactPage', () => {
     const littleGroup = await screen.findByRole('group', {
       name: 'Little Dragons visit for Mia',
     });
-    fireEvent.click(within(littleGroup).getByRole('button', { name: 'Pick' }));
+    fireEvent.click(
+      await within(littleGroup).findByRole('button', { name: 'Pick' }),
+    );
 
     submitForm();
 

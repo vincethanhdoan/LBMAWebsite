@@ -32,6 +32,9 @@ function tree(lang: Lang) {
         errors={{}}
         refreshKey={0}
         disabled={false}
+        revealed
+        onReveal={vi.fn()}
+        agesSettled={false}
       />
     </LanguageContext.Provider>
   );

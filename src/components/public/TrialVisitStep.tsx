@@ -38,6 +38,12 @@ const VisitPickerChunk: VisitPickerComponent = lazy(() =>
 // (anonymous and signed-in family alike) -- only admins are unclamped.
 const PUBLIC_HORIZON_WEEKS = 3;
 
+// How long a child's age has to stay on one program before the section
+// appears. The age field is a number input, so a parent typing 42 passes
+// through 4 on the way: revealing on the keystroke would flash a Little
+// Dragons calendar, fetch its slots, and then take it away again.
+const REVEAL_IDLE_MS = 400;
+
 export type VisitSelections = Partial<Record<Program, VisitChoice>>;
 
 type ChildRow = { name: string; age: string };
@@ -49,6 +55,20 @@ interface TrialVisitStepProps {
   errors: Partial<Record<Program, string>>;
   refreshKey: number;
   disabled: boolean;
+  /**
+   * Whether the visit section is on screen. The parent owns it, because it
+   * shows its own line under the child rows until the section arrives; this
+   * component owns when it happens and says so through `onReveal`.
+   */
+  revealed: boolean;
+  /** Called once, when the first child's age has settled on a program. */
+  onReveal: () => void;
+  /**
+   * Whether the parent has finished with the age field they last touched
+   * (it lost focus and has not been typed in since). A settled age reveals
+   * the section straight away instead of waiting out the idle delay.
+   */
+  agesSettled: boolean;
 }
 
 // `programsKey` is the present programs, comma-joined in the fixed
@@ -183,6 +203,9 @@ export function TrialVisitStep({
   errors,
   refreshKey,
   disabled,
+  revealed,
+  onReveal,
+  agesSettled,
 }: TrialVisitStepProps) {
   const { t, lang } = useLanguage();
   const ct = t.contact;
@@ -215,7 +238,17 @@ export function TrialVisitStep({
     setSlotRetryCount((n) => n + 1);
   }
 
+  // Reveal once a program has held still, and never take the section away
+  // again: a parent editing an age should not have a calendar they may
+  // already be reading pulled out from under them.
   useEffect(() => {
+    if (revealed || programsKey === '') return;
+    const timer = setTimeout(onReveal, agesSettled ? 0 : REVEAL_IDLE_MS);
+    return () => clearTimeout(timer);
+  }, [revealed, programsKey, agesSettled, onReveal]);
+
+  useEffect(() => {
+    if (!revealed) return;
     const present = new Set(parseProgramsKey(programsKey));
     const refreshKeyChanged = prevRefreshKeyRef.current !== refreshKey;
     prevRefreshKeyRef.current = refreshKey;
@@ -252,7 +285,7 @@ export function TrialVisitStep({
     });
 
     prevPresentRef.current = present;
-  }, [programsKey, refreshKey, slotRetryCount]);
+  }, [revealed, programsKey, refreshKey, slotRetryCount]);
 
   // Prune selections for programs that dropped out of the present set
   // (an age edited out of range, or a child removed). Only calls `onChange`
@@ -277,6 +310,8 @@ export function TrialVisitStep({
     }
     onChange(next);
   }
+
+  if (!revealed) return null;
 
   return (
     <section className="flex flex-col gap-4">

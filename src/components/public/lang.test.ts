@@ -18,6 +18,7 @@ describe('lang.tsx contact translations', () => {
       'visitSub',
       'visitFor',
       'visitNeedsAge',
+      'visitHint',
       'visitNone',
       'errVisit',
       'errSlotTaken',

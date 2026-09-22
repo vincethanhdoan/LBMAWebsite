@@ -56,6 +56,11 @@ export function ContactPage() {
     Partial<Record<Program, string>>
   >({});
   const [visitRefreshKey, setVisitRefreshKey] = useState(0);
+  // The visit section is hidden until a child's age names a program, so the
+  // page does not open with three lines about a calendar that is not there
+  // yet. `TrialVisitStep` decides when that moment is and calls `onReveal`.
+  const [visitRevealed, setVisitRevealed] = useState(false);
+  const [agesSettled, setAgesSettled] = useState(false);
   const [receipt, setReceipt] = useState<TrialBookingReceipt | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({ children: {} });
@@ -97,6 +102,8 @@ export function ContactPage() {
       requestId: nextVisitFocusRequestId.current,
     });
   }
+
+  const revealVisitStep = useCallback(() => setVisitRevealed(true), []);
 
   const handleVisitChange = useCallback((next: VisitSelections) => {
     setSelections(next);
@@ -143,6 +150,7 @@ export function ContactPage() {
     setChildren((prev) =>
       prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)),
     );
+    if (field === 'age') setAgesSettled(false);
     setFieldErrors((prev) => {
       if (!prev.children[i]) return prev;
       const nextChildren = { ...prev.children };
@@ -578,6 +586,7 @@ export function ContactPage() {
                                   onChange={(e) =>
                                     updateChild(i, 'age', e.target.value)
                                   }
+                                  onBlur={() => setAgesSettled(true)}
                                   disabled={isSubmitting}
                                   required
                                   className="v3-field w-20"
@@ -631,6 +640,15 @@ export function ContactPage() {
                       </button>
                     </div>
 
+                    {!visitRevealed && (
+                      <p
+                        className={FIELD_HELP_CLASS}
+                        style={{ color: V3.muted }}
+                      >
+                        {ct.visitHint}
+                      </p>
+                    )}
+
                     <div className="flex flex-col gap-1.5">
                       <Label
                         htmlFor="message"
@@ -665,6 +683,9 @@ export function ContactPage() {
                     errors={visitErrors}
                     refreshKey={visitRefreshKey}
                     disabled={isSubmitting}
+                    revealed={visitRevealed}
+                    onReveal={revealVisitStep}
+                    agesSettled={agesSettled}
                   />
 
                   {submitError && (

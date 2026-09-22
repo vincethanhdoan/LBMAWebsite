@@ -2,7 +2,9 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { useCallback, useState } from 'react';
 import {
+  act,
   render,
   screen,
   waitFor,
@@ -64,14 +66,118 @@ function tree(props: {
         errors={props.errors ?? {}}
         refreshKey={props.refreshKey ?? 0}
         disabled={props.disabled ?? false}
+        revealed
+        onReveal={vi.fn()}
+        agesSettled={false}
       />
     </LanguageContext.Provider>
   );
 }
 
+// The reveal latch lives in the parent, so these tests need a parent that
+// keeps it: `revealed` starts false and never goes back once the step has
+// asked for it.
+function Revealing({
+  children,
+  agesSettled = false,
+  lang = 'en',
+}: {
+  children: ChildRow[];
+  agesSettled?: boolean;
+  lang?: Lang;
+}) {
+  const [revealed, setRevealed] = useState(false);
+  const onReveal = useCallback(() => setRevealed(true), []);
+  return (
+    <LanguageContext.Provider
+      value={{ lang, setLang: vi.fn(), t: translations[lang] }}
+    >
+      <TrialVisitStep
+        children={children}
+        value={{}}
+        onChange={vi.fn()}
+        errors={{}}
+        refreshKey={0}
+        disabled={false}
+        revealed={revealed}
+        onReveal={onReveal}
+        agesSettled={agesSettled}
+      />
+    </LanguageContext.Provider>
+  );
+}
+
+const VISIT_HEADING = 'Choose a day for your first visit';
+
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.clearAllMocks();
+});
+
+describe('TrialVisitStep before it is revealed', () => {
+  it('renders nothing and fetches nothing while no child has a program age', () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    render(<Revealing children={[{ name: 'Amy', age: '' }]} />);
+
+    expect(screen.queryByText(VISIT_HEADING)).toBeNull();
+    expect(screen.queryByRole('group')).toBeNull();
+    expect(getAppointmentSlots).not.toHaveBeenCalled();
+  });
+
+  it('appears once a program age has held still for the idle delay', async () => {
+    vi.useFakeTimers();
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    const { rerender } = render(
+      <Revealing children={[{ name: 'Amy', age: '' }]} />,
+    );
+
+    rerender(<Revealing children={[{ name: 'Amy', age: '9' }]} />);
+    expect(screen.queryByText(VISIT_HEADING)).toBeNull();
+
+    await act(async () => {
+      vi.advanceTimersByTime(400);
+    });
+
+    expect(screen.getByText(VISIT_HEADING)).toBeTruthy();
+    expect(getAppointmentSlots).toHaveBeenCalledWith('youth');
+  });
+
+  it('appears without the idle wait once the age field has been left', async () => {
+    vi.useFakeTimers();
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    const { rerender } = render(
+      <Revealing children={[{ name: 'Amy', age: '9' }]} agesSettled={false} />,
+    );
+    expect(screen.queryByText(VISIT_HEADING)).toBeNull();
+
+    rerender(
+      <Revealing children={[{ name: 'Amy', age: '9' }]} agesSettled={true} />,
+    );
+    await act(async () => {
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByText(VISIT_HEADING)).toBeTruthy();
+  });
+
+  it('stays on screen, showing the needs-age line, when every age is cleared again', async () => {
+    vi.mocked(getAppointmentSlots).mockResolvedValue([]);
+    const { rerender } = render(
+      <Revealing children={[{ name: 'Amy', age: '9' }]} />,
+    );
+    expect(await screen.findByText(VISIT_HEADING)).toBeTruthy();
+
+    rerender(<Revealing children={[{ name: 'Amy', age: '' }]} />);
+
+    expect(screen.getByText(VISIT_HEADING)).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Enter your child's age above and we'll show the days available.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole('group')).toBeNull();
+  });
 });
 
 describe('TrialVisitStep', () => {
