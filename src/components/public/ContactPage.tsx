@@ -517,12 +517,6 @@ export function ContactPage() {
                       >
                         {ct.childrenLabel}
                       </h2>
-                      <p
-                        className={FIELD_HELP_CLASS}
-                        style={{ color: V3.muted }}
-                      >
-                        {ct.childrenSub}
-                      </p>
                       {fieldErrors.childCount && (
                         <p
                           id="child-count-error"

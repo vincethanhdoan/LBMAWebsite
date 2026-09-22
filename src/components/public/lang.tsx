@@ -294,7 +294,6 @@ const EN = {
     email: 'Email address',
     phoneConsent: 'We may call or text this number about your visit.',
     childrenLabel: 'Children enrolling',
-    childrenSub: 'We use age to place your child in the right program',
     childName: "Child's name",
     age: 'Age',
     ageLabel: 'Age',
@@ -333,7 +332,7 @@ const EN = {
     successExpectBody:
       "Comfortable athletic clothes are all your child needs. We provide everything else for the first class. You're welcome to watch from the side, and we'll answer any questions afterward.",
     successEmailNote:
-      "We also emailed these details to {email}. If you don't see it, check your spam folder. Your visit is booked either way.",
+      "Check your email at {email} for these details. If it isn't there, look in your spam folder. Your visit is booked either way.",
     successCall: 'Questions? Call us at (408) 620-0252.',
     locationEyebrow: 'Location',
     hoursEyebrow: 'Class Hours',
@@ -861,7 +860,6 @@ const ES: T = {
     phoneConsent:
       'Podemos llamarte o escribirte a este número sobre tu visita.',
     childrenLabel: 'Niños que se inscriben',
-    childrenSub: 'Usamos la edad para ubicar a tu hijo en el programa correcto',
     childName: 'Nombre del niño',
     age: 'Edad',
     ageLabel: 'Edad',
@@ -900,7 +898,7 @@ const ES: T = {
     successExpectBody:
       'Solo hace falta ropa deportiva cómoda. Nosotros proporcionamos todo lo demás para la primera clase. Puedes observar desde un lado y, al terminar, respondemos con gusto cualquier pregunta que tengas.',
     successEmailNote:
-      'También enviamos estos detalles a {email}. Si no lo ves, revisa tu carpeta de spam. Tu visita está reservada de cualquier manera.',
+      'Revisa tu correo en {email}: te enviamos estos detalles. Si no lo encuentras, mira en la carpeta de spam. Tu visita está reservada de cualquier manera.',
     successCall: '¿Preguntas? Llámanos al (408) 620-0252.',
     locationEyebrow: 'Ubicación',
     hoursEyebrow: 'Horario de Clases',
