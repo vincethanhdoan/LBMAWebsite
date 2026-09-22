@@ -194,7 +194,7 @@ describe('ContactPage', () => {
     const region = await screen.findByRole('region');
     await waitFor(() => expect(document.activeElement).toBe(region));
     expect(
-      screen.getByText(/We also emailed these details to jane@example\.com/),
+      screen.getByText(/Check your email at jane@example\.com/),
     ).toBeTruthy();
   });
 

@@ -96,6 +96,12 @@ export function TrialBookedPanel({
             children: joinNames(allChildNames, lang),
           })}
         </p>
+        <p
+          className="text-base max-w-sm mx-auto leading-relaxed mt-3"
+          style={{ color: V3.text }}
+        >
+          {fillTemplate(ct.successEmailNote, { email })}
+        </p>
       </div>
 
       <div className="flex flex-col gap-4 pt-8">
@@ -187,12 +193,9 @@ export function TrialBookedPanel({
         </p>
       </div>
 
-      <p className="text-sm mt-6" style={{ color: V3.muted }}>
-        {fillTemplate(ct.successEmailNote, { email })}
-      </p>
       <a
         href="tel:+14086200252"
-        className="text-sm font-semibold block mt-2"
+        className="text-sm font-semibold block mt-6"
         style={{ color: V3.primary }}
       >
         {ct.successCall}

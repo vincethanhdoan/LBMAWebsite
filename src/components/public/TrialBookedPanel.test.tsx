@@ -86,7 +86,7 @@ describe('TrialBookedPanel', () => {
     ).toBeTruthy();
 
     expect(
-      screen.getByText(/We also emailed these details to parent@example\.com/),
+      screen.getByText(/Check your email at parent@example\.com/),
     ).toBeTruthy();
 
     const callLink = screen.getByRole('link', {
