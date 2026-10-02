@@ -44,6 +44,17 @@ export function initMonitoring(): void {
     // breadcrumbs stay on — this array merges with Sentry's defaults and only
     // replaces the Breadcrumbs integration.
     integrations: [Sentry.breadcrumbsIntegration({ dom: false })],
+    // Meta's in-app browsers (Instagram, Facebook, Messenger) inject their own
+    // scripts into the page under the iabjs:// scheme. Those scripts call into
+    // the Android native layer on unload, by which point the bridge object has
+    // been collected, and Sentry's addEventListener wrapper attributes the
+    // throw to this app. None of that code is ours and the visitor is already
+    // leaving, so the events are dropped before transmission rather than
+    // ignored in the dashboard, where they would still consume quota. The
+    // message filter is the fallback for when the injected script throws
+    // without a usable stack and denyUrls has no frame to match.
+    denyUrls: [/^iabjs:\/\//],
+    ignoreErrors: ['Java object is gone'],
     beforeSend: (event) => scrubEventOrDrop(event),
     beforeBreadcrumb: (breadcrumb) => {
       if (typeof breadcrumb.message === 'string') {
